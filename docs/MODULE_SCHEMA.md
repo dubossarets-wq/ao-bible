@@ -9,7 +9,7 @@
 |---|---|---|
 | `format` | да | Всегда `"aob-module"` |
 | `formatVersion` | да | `1` |
-| `type` | да | `"bible"`, `"dictionary"` или `"crossrefs"` |
+| `type` | да | `"bible"`, `"commentary"`, `"dictionary"`, `"maps"` или `"crossrefs"` |
 | `id` | да | Уникальный идентификатор: латиница, цифры, дефис. Модуль с тем же `id` заменяет установленный |
 | `name` | да | Короткое имя для верхней панели (`"RST+"`) |
 | `title` | нет | Полное название |
@@ -101,6 +101,36 @@
 ```
 
 Ключ — стих в OSIS. Ссылки: `Книга.Глава.Стих`, диапазон стихов `Gen.1.1-3`, диапазон через главы `Gen.1.1-2.3`.
+
+## Комментарий (`type: "commentary"`)
+
+```json
+{
+  "format": "aob-module", "formatVersion": 1, "type": "commentary",
+  "id": "lopukhin", "name": "Лоп-к", "title": "Толковая Библия Лопухина", "license": "Public Domain",
+  "entries": {
+    "Josh.13.33": { "title": "О уделе левитов", "text": "…" },
+    "Josh.14.1-5": "Текст статьи на несколько стихов"
+  }
+}
+```
+
+Ключ — стих или диапазон в OSIS. Значение — строка или `{ "title", "text" }`. Пометка с `name` модуля
+появляется после первого стиха диапазона; нажатие открывает статью.
+
+## Карты (`type: "maps"`)
+
+```json
+{
+  "format": "aob-module", "formatVersion": 1, "type": "maps",
+  "id": "bible-maps", "name": "Карты", "license": "…",
+  "maps": [
+    { "id": "exodus", "title": "Исход из Египта", "description": "…", "image": "https://…/exodus.jpg", "refs": ["Exod.12.37", "Num.33.1-49"] }
+  ]
+}
+```
+
+`image` — адрес `https://…` или `data:image/…`. Карты открываются из меню ⋮ → «Карты».
 
 ## Каталог (`aob-catalog`)
 
