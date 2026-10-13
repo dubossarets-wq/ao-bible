@@ -5,11 +5,16 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 REMOTE=$(git remote get-url origin)
+NAME=$(git config user.name)
+EMAIL=$(git config user.email)
 TMP=$(mktemp -d)
 cp -r dist/pwa/. "$TMP"
 touch "$TMP/.nojekyll"   # без Jekyll: файлы отдаются как есть
 cd "$TMP"
 git init -q -b gh-pages
+git config core.autocrlf false
+git config user.name "$NAME"
+git config user.email "$EMAIL"
 git add -A
 git commit -q -m "Deploy $(date -u +%Y-%m-%dT%H:%MZ)"
 git push -q -f "$REMOTE" gh-pages
