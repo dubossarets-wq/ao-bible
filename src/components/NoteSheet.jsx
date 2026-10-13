@@ -1,0 +1,67 @@
+// Заметка к стиху (или к выделенным стихам — хранится у первого из них)
+import React, { useEffect, useRef, useState } from 'react';
+import { Trash2, Save } from 'lucide-react';
+import BottomSheet from './BottomSheet.jsx';
+import { useApp } from '../App.jsx';
+import { selectionLabel, selectionText } from './SelectionBar.jsx';
+import { ConfirmButton } from './ui.jsx';
+
+export default function NoteSheet({ payload, onClose }) {
+  const { notes, setNote, toast } = useApp();
+  const refs = payload.refs;
+  const first = refs[0];
+  const key = `${first.book}.${first.chapter}.${first.verse}`;
+  const existing = notes[key];
+  const label = existing?.label || selectionLabel(refs, true);
+  const [text, setText] = useState(existing?.text || '');
+  const [verse, setVerse] = useState('');
+  const area = useRef(null);
+
+  useEffect(() => {
+    if (payload.moduleId) selectionText(payload.moduleId, refs).then(setVerse);
+    setTimeout(() => area.current?.focus(), 250);
+  }, []);
+
+  const save = () => {
+    setNote(first, text, label);
+    toast(text.trim() ? 'Заметка сохранена' : 'Заметка удалена');
+    onClose();
+  };
+
+  return (
+    <BottomSheet
+      title={existing ? 'Заметка' : 'Новая заметка'}
+      subtitle={label}
+      onClose={onClose}
+      initial={1}
+      footer={
+        <div className="row-actions note-actions">
+          {existing && (
+            <ConfirmButton className="btn" confirmText="Удалить" onConfirm={() => (setNote(first, ''), toast('Заметка удалена'), onClose())}>
+              <Trash2 size={16} /> Удалить
+            </ConfirmButton>
+          )}
+          <button className="btn primary push" onClick={save}>
+            <Save size={16} /> Сохранить
+          </button>
+        </div>
+      }
+    >
+      {verse && <blockquote className="xref-source">{verse}</blockquote>}
+      <label htmlFor="note-text" className="sr-only">
+        Текст заметки
+      </label>
+      <textarea
+        id="note-text"
+        ref={area}
+        className="note-area"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Ваши мысли, вопросы, ссылки…"
+        rows={7}
+        onKeyDown={(e) => (e.metaKey || e.ctrlKey) && e.key === 'Enter' && save()}
+      />
+      {existing && <p className="field-hint">Создана {new Date(existing.at).toLocaleString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>}
+    </BottomSheet>
+  );
+}

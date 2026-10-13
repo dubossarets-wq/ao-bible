@@ -62,6 +62,8 @@ export default function App() {
   const [toasts, setToasts] = useState([]);
   const [bookmarks, setBookmarks] = usePersistentState('bookmarks', []);
   const [favorites, setFavorites] = usePersistentState('favorites', []);
+  // Заметки к стихам: { 'Josh.14.15': { text, label, at, updated } } — label хранит выделение («Нав. 14:15–16»)
+  const [notes, setNotes] = usePersistentState('notes', {});
 
   const updates = useUpdates();
 
@@ -206,12 +208,12 @@ export default function App() {
   });
 
   const isBookmarked = (ref) => bookmarks.some((b) => b.book === ref.book && b.chapter === ref.chapter && b.verse === ref.verse);
-  const toggleBookmark = useEvent((ref) => {
+  const toggleBookmark = useEvent((ref, text) => {
     if (isBookmarked(ref)) {
       setBookmarks((bs) => bs.filter((b) => !(b.book === ref.book && b.chapter === ref.chapter && b.verse === ref.verse)));
       toast('Закладка удалена');
     } else {
-      setBookmarks((bs) => [{ ...ref, at: Date.now() }, ...bs]);
+      setBookmarks((bs) => [{ book: ref.book, chapter: ref.chapter, verse: ref.verse, text: text || '', at: Date.now() }, ...bs]);
       toast(`Закладка: ${bookMeta(ref.book).short} ${ref.chapter}:${ref.verse}`);
     }
   });
@@ -225,6 +227,35 @@ export default function App() {
       toast('Стих добавлен в избранное');
     }
   });
+
+  const noteKey = (ref) => `${ref.book}.${ref.chapter}.${ref.verse}`;
+  const setNote = useEvent((ref, text, label) => {
+    const key = noteKey(ref);
+    setNotes((ns) => {
+      const next = { ...ns };
+      if (!text.trim()) delete next[key];
+      else next[key] = { text, label: label || '', at: ns[key]?.at || Date.now(), updated: Date.now() };
+      return next;
+    });
+  });
+
+  // Отметки в тексте: «Книга.глава» → { стих: 'fbn' } (f — избранное, b — закладка, n — заметка)
+  const marks = useMemo(() => {
+    const m = new Map();
+    const add = (book, c, v, flag) => {
+      const k = `${book}.${c}`;
+      const row = m.get(k) || {};
+      row[v] = (row[v] || '') + flag;
+      m.set(k, row);
+    };
+    favorites.forEach((r) => add(r.book, r.chapter, r.verse, 'f'));
+    bookmarks.forEach((r) => add(r.book, r.chapter, r.verse, 'b'));
+    Object.keys(notes).forEach((k) => {
+      const [b, c, v] = k.split('.');
+      add(b, +c, +v, 'n');
+    });
+    return m;
+  }, [favorites, bookmarks, notes]);
 
   const ctx = {
     settings: fullSettings,
@@ -260,6 +291,9 @@ export default function App() {
     toggleBookmark,
     isFavorite,
     toggleFavorite,
+    notes,
+    setNote,
+    marks,
   };
 
   const ready = modules !== null && bibles.length > 0;

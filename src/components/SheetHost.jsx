@@ -15,6 +15,7 @@ import CompareSheet from './CompareSheet.jsx';
 import VersionsSheet from './VersionsSheet.jsx';
 import CommentarySheet from './CommentarySheet.jsx';
 import MapsSheet from './MapsSheet.jsx';
+import NoteSheet from './NoteSheet.jsx';
 
 const KINDS = {
   dict: DictionaryBottomSheet,
@@ -31,6 +32,7 @@ const KINDS = {
   versions: VersionsSheet,
   commentary: CommentarySheet,
   maps: MapsSheet,
+  note: NoteSheet,
 };
 
 export default function SheetHost() {

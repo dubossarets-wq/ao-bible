@@ -7,6 +7,7 @@ import { useApp } from '../App.jsx';
 import { getBook } from '../core/modules.js';
 import { crossrefCounts } from '../core/crossrefs.js';
 import { commentaryIndex } from '../core/commentary.js';
+import { setLivePosition, clearLivePosition } from '../core/livePosition.js';
 import { verseHtml, wordAt, plainText } from '../core/verseMarkup.js';
 
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -21,8 +22,9 @@ function highlightRegex(query) {
   return words.length ? new RegExp(words.join('|'), 'iu') : null;
 }
 
-const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, xrefs, counts, comments, opts, hlRe, flashVerse, isPsalm, selected }) {
+const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, xrefs, counts, comments, opts, hlRe, flashVerse, isPsalm, selected, marks }) {
   const sel = selected ? new Set(selected.split(',').map(Number)) : null;
+  const mk = marks ? Object.fromEntries(marks.split(',').map((x) => x.split(':'))) : {};
   return (
     <div className="chapter" data-c={c}>
       {c === 1 && <h1 className="book-title">{bookName}</h1>}
@@ -36,11 +38,23 @@ const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, x
           return (
             <React.Fragment key={v}>
               {heading && <h3 className="section-title">{heading}</h3>}
-              <p className={`verse${flashVerse === v ? ' flash' : ''}${sel?.has(v) ? ' selected' : ''}`} data-c={c} data-v={v} id={`v-${c}-${v}`} aria-selected={sel ? sel.has(v) : undefined}>
+              <p
+                className={`verse${flashVerse === v ? ' flash' : ''}${sel?.has(v) ? ' selected' : ''}${mk[v]?.includes('f') ? ' fav' : ''}`}
+                data-c={c}
+                data-v={v}
+                id={`v-${c}-${v}`}
+                aria-selected={sel ? sel.has(v) : undefined}
+              >
                 {opts.showVerseNumbers && (
                   <button className="vn" data-act="verse" aria-label={`Стих ${v}: действия`}>
                     {v}
                   </button>
+                )}
+                {mk[v]?.includes('b') && <span className="vmark bm" title="Закладка" aria-label="Закладка" />}
+                {mk[v]?.includes('f') && (
+                  <span className="vmark fav-star" title="В избранном" aria-label="В избранном">
+                    ★
+                  </span>
                 )}
                 <span className="vt" dangerouslySetInnerHTML={{ __html: verseHtml(text, { showStrongs: opts.showStrongs, highlight: hlRe }) }} />
                 {comments?.get(`${bookId}.${c}.${v}`)?.map((cm) => (
@@ -48,6 +62,14 @@ const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, x
                     {cm.name}
                   </button>
                 ))}
+                {mk[v]?.includes('n') && (
+                  <button className="note-tag" data-act="note" aria-label="Заметка к стиху" title="Заметка">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M12 20h9" />
+                      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                    </svg>
+                  </button>
+                )}
                 {opts.showXref && n > 0 && (
                   <button className="xr" data-act="xref" aria-label={`Параллельные места: ${n}`}>
                     [⇅&nbsp;{n}]
@@ -64,6 +86,12 @@ const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, x
 
 const LONG_PRESS_MS = 450;
 
+// Отметки главы строкой «5:fb,7:n» — примитив для memo
+function marksFor(marks, bookId, c) {
+  const row = marks?.get(`${bookId}.${c}`);
+  return row ? Object.entries(row).map(([v, f]) => `${v}:${f}`).join(',') : null;
+}
+
 // Строка номеров выделенных стихов главы («5,6») — примитив, чтобы memo главы не сбрасывался зря
 function selectedIn(selection, bookId, c) {
   if (!selection?.size) return null;
@@ -75,7 +103,7 @@ function selectedIn(selection, bookId, c) {
 
 // selection — Set ключей «Книга.глава.стих»; onSelect(ref, 'start' | 'toggle') — выделение стихов
 export default function ChapterView({ index, pane, module, onScrollDirection, selection, onSelect }) {
-  const { settings, openSheet, openPopover, popover, reportPosition, navigate, sheet, modules } = useApp();
+  const { settings, openSheet, openPopover, popover, reportPosition, navigate, sheet, modules, marks } = useApp();
   const scroller = useRef(null);
   const [book, setBook] = useState(null); // { id, data, meta }
   const [range, setRange] = useState(null);
@@ -103,6 +131,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       setError(`В переводе ${module.name} нет книги «${ref.book}».`);
       return;
     }
+    clearLivePosition(index);
     getBook(module.id, ref.book).then((data) => {
       if (!alive) return;
       if (!data) return setError('Не удалось прочитать книгу из хранилища. Попробуйте переустановить модуль в библиотеке.');
@@ -156,23 +185,55 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     } else if (el.scrollHeight - y - el.clientHeight < 1400 && range.end < total && !pending.current) {
       setRange((r) => ({ ...r, end: r.end + 1 }));
     }
-    clearTimeout(posTimer.current);
-    posTimer.current = setTimeout(() => {
-      const verses = el.querySelectorAll('.verse');
-      const top = el.scrollTop + 12;
-      let lo = 0;
-      let hi = verses.length - 1;
-      let found = verses[0];
-      while (lo <= hi) {
-        const mid = (lo + hi) >> 1;
-        if (verses[mid].offsetTop + verses[mid].offsetHeight > top) {
-          found = verses[mid];
-          hi = mid - 1;
-        } else lo = mid + 1;
-      }
-      if (found) reportPosition(index, { book: book.id, chapter: +found.dataset.c, verse: +found.dataset.v });
-    }, 140);
+    // Текущий стих — раз в кадр, по закэшированным координатам (без перерисовки всего приложения)
+    if (!frame.current) frame.current = requestAnimationFrame(trackPosition);
   };
+
+  // Координаты низа каждого стиха; кэш сбрасывается, когда меняется высота текста (подгрузка глав, шрифт)
+  const positions = useRef(null);
+  const frame = useRef(0);
+  const measure = () => {
+    const els = scroller.current?.querySelectorAll('.verse') || [];
+    positions.current = Array.from(els, (v) => ({ bottom: v.offsetTop + v.offsetHeight, c: +v.dataset.c, v: +v.dataset.v }));
+  };
+  const trackPosition = () => {
+    frame.current = 0;
+    const el = scroller.current;
+    if (!el || !book) return;
+    if (!positions.current) measure();
+    const list = positions.current;
+    if (!list.length) return;
+    const top = el.scrollTop + 12;
+    let lo = 0;
+    let hi = list.length - 1;
+    let found = list[0];
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (list[mid].bottom > top) {
+        found = list[mid];
+        hi = mid - 1;
+      } else lo = mid + 1;
+    }
+    const ref = { book: book.id, chapter: found.c, verse: found.v };
+    setLivePosition(index, ref);
+    // В историю и сохранение — когда прокрутка стихла
+    clearTimeout(posTimer.current);
+    posTimer.current = setTimeout(() => reportPosition(index, ref), 450);
+  };
+  useEffect(() => {
+    positions.current = null;
+    const col = scroller.current?.firstElementChild;
+    if (!col) return;
+    const ro = new ResizeObserver(() => {
+      positions.current = null;
+    });
+    ro.observe(col);
+    return () => {
+      ro.disconnect();
+      cancelAnimationFrame(frame.current);
+      frame.current = 0;
+    };
+  }, [range, book, settings]);
 
   // Долгое нажатие на стих (палец или мышь) — выделение стиха и панель действий сверху.
   // Сдвиг пальца больше 10 px (прокрутка) отменяет нажатие.
@@ -230,6 +291,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     const text = book.data.chapters[c - 1][v - 1];
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (act === 'xref') return openSheet('xrefs', index, { ref: vref, moduleId: module.id });
+    if (act === 'note') return openSheet('note', index, { refs: [vref], moduleId: module.id });
     if (act === 'comment') return openSheet('commentary', index, { ref: vref, moduleId: e.target.closest('[data-m]').dataset.m });
     if (act === 'verse') return openSheet('verse', index, { ref: vref, text: plainText(text), moduleId: module.id });
     const w = e.target.closest('.w');
@@ -312,6 +374,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
                 hlRe={hlRe}
                 isPsalm={book.id === 'Ps'}
                 flashVerse={flash && flash[0] === book.id && +flash[1] === c ? +flash[2] : null}
+                marks={marksFor(marks, book.id, c)}
                 selected={selectedIn(selection, book.id, c)}
               />
             ))}

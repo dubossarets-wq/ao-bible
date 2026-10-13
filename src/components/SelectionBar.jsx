@@ -1,8 +1,8 @@
 // Панель действий над выделенными стихами (появляется вместо верхней панели после долгого нажатия).
-// ✓ · ссылка и число стихов · параллельно в другом переводе · сравнить переводы · избранное ·
-// параллельные места · поделиться · копировать
-import React from 'react';
-import { Check, Shuffle, BookCopy, Star, Link2, Share2, Copy } from 'lucide-react';
+// ✓ · ссылка и число стихов · параллельно в другом переводе · избранное · заметка · закладка · копировать · ⋯
+// В «⋯»: сравнить переводы, параллельные места, поделиться.
+import React, { useEffect, useRef, useState } from 'react';
+import { Check, Shuffle, BookCopy, Star, Link2, Share2, Copy, NotebookPen, Bookmark, BookmarkCheck, MoreHorizontal } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { getVerse } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
@@ -44,10 +44,21 @@ export async function selectionText(moduleId, refs) {
 }
 
 export default function SelectionBar({ index, module, selection, onDone }) {
-  const { openSheet, toast, bibles, openParallel, isFavorite, toggleFavorite } = useApp();
+  const { openSheet, toast, bibles, openParallel, isFavorite, toggleFavorite, isBookmarked, toggleBookmark, notes } = useApp();
+  const [more, setMore] = useState(false);
+  const moreRef = useRef(null);
   const refs = sortedRefs(selection);
   const label = selectionLabel(refs);
   const others = bibles.filter((b) => b.id !== module.id);
+  const first = refs[0];
+  const hasNote = !!notes[`${first.book}.${first.chapter}.${first.verse}`];
+
+  useEffect(() => {
+    if (!more) return;
+    const off = (e) => !moreRef.current?.contains(e.target) && setMore(false);
+    document.addEventListener('pointerdown', off);
+    return () => document.removeEventListener('pointerdown', off);
+  }, [more]);
 
   const fullText = async () => `${await selectionText(module.id, refs)}\n— ${selectionLabel(refs, true)} (${module.name})`;
 
@@ -89,14 +100,34 @@ export default function SelectionBar({ index, module, selection, onDone }) {
     } else openSheet('compare', index, { refs, moduleId: module.id, pick: true });
   };
 
-  const fav = refs.length === 1 && isFavorite(refs[0]);
+  const fav = refs.every((r) => isFavorite(r));
   const toggleFav = async () => {
     for (const r of refs) {
-      const t = await selectionText(module.id, [r]);
-      if (refs.length === 1 || !isFavorite(r)) toggleFavorite(r, t);
+      if (fav || !isFavorite(r)) toggleFavorite(r, await selectionText(module.id, [r]));
     }
     onDone();
   };
+
+  // Закладка «продолжить отсюда» ставится на первый выделенный стих; закладок может быть сколько угодно
+  const bm = isBookmarked(first);
+  const toggleBm = async () => {
+    toggleBookmark(first, bm ? '' : (await selectionText(module.id, [first])).slice(0, 160));
+    onDone();
+  };
+
+  const moreItem = (Icon, text, fn) => (
+    <button
+      role="menuitem"
+      className="menu-item"
+      onClick={() => {
+        setMore(false);
+        fn();
+      }}
+    >
+      <Icon size={18} />
+      <span>{text}</span>
+    </button>
+  );
 
   return (
     <header className="toolbar selection-bar" role="toolbar" aria-label="Действия с выделенными стихами">
@@ -112,23 +143,31 @@ export default function SelectionBar({ index, module, selection, onDone }) {
       <button className="tb tb-icon" onClick={parallel} aria-label="Открыть параллельно в другом переводе" title="Параллельно в другом переводе">
         <Shuffle size={22} />
       </button>
-      <button className="tb tb-icon" onClick={() => openSheet('compare', index, { refs, moduleId: module.id })} aria-label="Сравнить переводы" title="Сравнить переводы">
-        <BookCopy size={22} />
-      </button>
-      <button className={`tb tb-icon tb-opt ${fav ? 'on' : ''}`} onClick={toggleFav} aria-label={fav ? 'Убрать из избранного' : 'В избранное'} title="Избранное">
+      <button className={`tb tb-icon ${fav ? 'on' : ''}`} onClick={toggleFav} aria-label={fav ? 'Убрать из избранного' : 'В избранное'} title="Избранное">
         <Star size={21} fill={fav ? 'currentColor' : 'none'} />
       </button>
-      {refs.length === 1 && (
-        <button className="tb tb-icon tb-opt" onClick={() => openSheet('xrefs', index, { ref: refs[0] })} aria-label="Параллельные места" title="Параллельные места">
-          <Link2 size={21} />
-        </button>
-      )}
-      <button className="tb tb-icon" onClick={share} aria-label="Поделиться" title="Поделиться">
-        <Share2 size={21} />
+      <button className={`tb tb-icon ${hasNote ? 'on' : ''}`} onClick={() => openSheet('note', index, { refs, moduleId: module.id })} aria-label={hasNote ? 'Открыть заметку' : 'Добавить заметку'} title="Заметка">
+        <NotebookPen size={21} />
       </button>
-      <button className="tb tb-icon" onClick={copy} aria-label="Копировать" title="Копировать">
+      <button className={`tb tb-icon ${bm ? 'on' : ''}`} onClick={toggleBm} aria-label={bm ? 'Убрать закладку' : 'Закладка: продолжить отсюда'} title={bm ? 'Убрать закладку' : 'Закладка «продолжить отсюда»'}>
+        {bm ? <BookmarkCheck size={21} /> : <Bookmark size={21} />}
+      </button>
+      <button className="tb tb-icon tb-opt" onClick={copy} aria-label="Копировать" title="Копировать">
         <Copy size={21} />
       </button>
+      <div className="tb-menu-wrap" ref={moreRef}>
+        <button className="tb tb-icon tb-more" onClick={() => setMore((m) => !m)} aria-haspopup="menu" aria-expanded={more} aria-label="Ещё действия">
+          <MoreHorizontal size={22} />
+        </button>
+        {more && (
+          <div className="menu" role="menu">
+            {moreItem(BookCopy, 'Сравнить переводы', () => openSheet('compare', index, { refs, moduleId: module.id }))}
+            {refs.length === 1 && moreItem(Link2, 'Параллельные места', () => openSheet('xrefs', index, { ref: first }))}
+            {moreItem(Copy, 'Копировать', copy)}
+            {moreItem(Share2, 'Поделиться', share)}
+          </div>
+        )}
+      </div>
     </header>
   );
 }

@@ -5,6 +5,7 @@ import { useApp } from '../App.jsx';
 import { bookMeta } from '../core/books.js';
 import { RefreshCw, History, Map as MapIcon } from 'lucide-react';
 import { IS_PWA_BUILD, applyUpdate } from '../core/updates.js';
+import { useLivePosition } from '../core/livePosition.js';
 
 // Стрелки «←…» и «→…» как на скриншоте: стрелка с многоточием (история переходов)
 function HistoryArrow({ dir }) {
@@ -34,7 +35,7 @@ export default function ReaderToolbar({ index, pane, module }) {
   const [menu, setMenu] = useState(false);
   const menuRef = useRef(null);
   const split = !!panes[1];
-  const ref = pane.ref;
+  const ref = useLivePosition(index, pane.ref); // мгновенно при прокрутке
   const label = `${bookMeta(ref.book).short} ${ref.chapter}:${ref.verse}`;
 
   useEffect(() => {
@@ -125,7 +126,7 @@ export default function ReaderToolbar({ index, pane, module }) {
             )}
             {item(ListTree, 'Перейти к книге и главе', () => openSheet('nav', index))}
             {item(isBookmarked(ref) ? BookmarkCheck : Bookmark, isBookmarked(ref) ? 'Убрать закладку' : 'Закладка на это место', () => toggleBookmark(ref))}
-            {item(Star, 'Закладки, избранное, история', () => openSheet('bookmarks', index))}
+            {item(Star, 'Закладки, заметки, избранное', () => openSheet('bookmarks', index))}
             <div className="menu-sep" />
             {item(Library, 'Библиотека модулей', () => openSheet('library', index))}
             {modules.some((m) => m.type === 'maps') && item(MapIcon, 'Карты', () => openSheet('maps', index))}

@@ -349,6 +349,52 @@ async function run(label, viewport, isMobile) {
   await page.keyboard.press('Enter');
   await page.waitForTimeout(600);
 
+  // Заметка, закладка «продолжить отсюда» и избранное — с отметками в тексте
+  const press = async (sel) => {
+    const bx = await page.locator(sel).boundingBox();
+    await page.mouse.move(bx.x + 30, bx.y + 10);
+    await page.mouse.down();
+    await page.waitForTimeout(650);
+    await page.mouse.up();
+    await page.waitForSelector('.selection-bar');
+  };
+  await press('#v-13-33 .vt');
+  await page.click('[aria-label="Добавить заметку"]');
+  await page.fill('#note-text', 'Тестовая заметка о левитах');
+  await page.click('.sheet-foot .btn.primary');
+  await page.waitForSelector('#v-13-33 .note-tag', { timeout: 5000 });
+  await press('#v-13-32 .vt');
+  await page.click('[aria-label="Закладка: продолжить отсюда"]');
+  await press('#v-13-32 .vt');
+  await page.click('[aria-label="В избранное"]');
+  await page.waitForTimeout(400);
+  const marksOk = await page.evaluate(() => ({ note: !!document.querySelector('#v-13-33 .note-tag'), bm: !!document.querySelector('#v-13-32 .vmark.bm'), fav: document.querySelector('#v-13-32').classList.contains('fav') && !!document.querySelector('#v-13-32 .fav-star') }));
+  check(`${label}: заметка, закладка и избранное видны в тексте`, marksOk.note && marksOk.bm && marksOk.fav, JSON.stringify(marksOk));
+  await page.screenshot({ path: `${shots}/${label}-7h-marks.png` });
+  await page.click('#v-13-33 .note-tag');
+  await page.waitForSelector('#note-text');
+  const noteVal = await page.inputValue('#note-text');
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.sheet', { state: 'detached' });
+  await page.click('.pane-slot.first .tb-more');
+  await page.click('.menu-item:has-text("Закладки, заметки")');
+  const cont = await page.textContent('.continue-card');
+  const bmText = await page.textContent('.list .list-text');
+  check(`${label}: закладки «продолжить отсюда» и заметка открывается`, noteVal.includes('левитах') && cont.includes('Продолжить чтение') && bmText.length > 10, `${noteVal}; ${bmText.slice(0, 40)}`);
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.sheet', { state: 'detached' });
+
+  // Стих в верхней панели меняется сразу при прокрутке (без ожидания)
+  const liveBefore = await page.textContent('.pane-slot.first .tb-ref');
+  await page.evaluate(() => { const sc = document.querySelector('.pane-slot.first .scroller'); sc.scrollTop += 900; });
+  await page.waitForTimeout(80);
+  const liveAfter = await page.textContent('.pane-slot.first .tb-ref');
+  check(`${label}: стих в панели обновляется сразу`, liveBefore !== liveAfter, `${liveBefore} → ${liveAfter} за 80 мс`);
+  await page.click('.pane-slot.first .tb-ref');
+  await page.fill('#ref-input', 'Нав 13:32');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(600);
+
   // Настройки: тёмная тема и размер шрифта
   await page.click('.tb-more');
   await page.click('.menu-item:has-text("Оформление")');

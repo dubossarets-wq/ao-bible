@@ -466,3 +466,20 @@ button.row-act:hover { background: color-mix(in srgb, var(--accent) 12%, transpa
 .conf-bar i { display: block; height: 100%; background: var(--accent); }
 .source-note a { color: var(--accent); display: inline-flex; align-items: center; gap: 3px; }
 .maplibregl-ctrl-attrib { font-size: 10px; }
+
+/* ---------- Отметки в тексте: избранное, закладки, заметки ---------- */
+.verse.fav { background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 9%, transparent), transparent 70%); border-radius: 4px; box-shadow: -6px 0 0 color-mix(in srgb, var(--accent) 9%, transparent); }
+.verse.fav.selected { background: var(--panel); }
+.vmark { display: inline-block; vertical-align: .32em; margin-right: .2em; line-height: 1; }
+.fav-star { color: var(--accent); font-size: .55em; }
+.vmark.bm { width: .42em; height: .62em; background: var(--accent); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 74%, 0 100%); vertical-align: .18em; }
+.note-tag { display: inline-flex; align-items: center; justify-content: center; vertical-align: .08em; width: 1.25em; height: 1.05em; margin-left: .3em; border: 0; border-radius: 4px; background: #f3e27a; color: #6b5a10; padding: 0; }
+.note-tag:hover { filter: brightness(.95); }
+.note-area { width: 100%; font: inherit; font-family: var(--font-text); font-size: 1.02rem; line-height: 1.5; padding: 12px; border: 1px solid var(--line); border-radius: calc(var(--radius) * .75); background: var(--bg); resize: vertical; min-height: 140px; }
+.note-area:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.sheet-foot { flex: none; padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); }
+.note-actions .push { margin-left: auto; }
+.continue-card { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: var(--radius); background: color-mix(in srgb, var(--accent) 7%, var(--bg)); text-align: left; }
+.continue-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.continue-title { font-weight: 700; }
+.list-title .list-meta { margin-left: 8px; font-weight: 400; }

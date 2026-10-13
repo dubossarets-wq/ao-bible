@@ -43,7 +43,7 @@ export default function MapPane({ pane }) {
   const card = useRef(null);
   const [state, setState] = useState('loading');
   const [error, setError] = useState('');
-  const [sat, setSat] = useState(false);
+  const [sat, setSat] = useState(true); // по умолчанию — спутник
   // На низкой половине экрана (телефон, панели друг над другом) карточка сначала свёрнута — видна карта
   const [cardOpen, setCardOpen] = useState(() => window.innerHeight > 700 && window.innerWidth >= 720);
 

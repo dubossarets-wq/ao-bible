@@ -6,9 +6,11 @@ import ReaderToolbar from './ReaderToolbar.jsx';
 import SelectionBar from './SelectionBar.jsx';
 import ChapterView from './ChapterView.jsx';
 import MapPane from './MapPane.jsx';
+import { useLivePosition } from '../core/livePosition.js';
 
 // Полоса прогресса чтения книги под верхней панелью: доля стихов книги до текущего места
-function ReadingProgress({ module, ref_ }) {
+function ReadingProgress({ module, index, fallback }) {
+  const ref_ = useLivePosition(index, fallback);
   const book = module?.books.find((b) => b.id === ref_.book);
   if (!book) return null;
   const total = book.verses.reduce((a, b) => a + b, 0) || 1;
@@ -60,7 +62,7 @@ export default function BibleReader({ index }) {
       ) : (
         <ReaderToolbar index={index} pane={pane} module={module} />
       )}
-      <ReadingProgress module={module} ref_={pane.ref} />
+      <ReadingProgress module={module} index={index} fallback={pane.ref} />
       <ChapterView
         index={index}
         pane={pane}
