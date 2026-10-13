@@ -1,9 +1,9 @@
 // Верхняя панель по образцу мобильного приложения: перевод · разделение · ссылка · поиск · назад · вперёд · меню.
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, X, MoreVertical, Library, Palette, Bookmark, BookmarkCheck, Star, ListTree, Info, Eye, EyeOff, Columns2, Rows2 } from 'lucide-react';
+import { Search, X, MoreVertical, Library, Palette, Bookmark, BookmarkCheck, Star, Info, Eye, EyeOff, Columns2, Rows2 } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { bookMeta } from '../core/books.js';
-import { RefreshCw, History, Map as MapIcon } from 'lucide-react';
+import { RefreshCw, History, Map as MapIcon, PlayCircle } from 'lucide-react';
 import { IS_PWA_BUILD, applyUpdate } from '../core/updates.js';
 import { useLivePosition } from '../core/livePosition.js';
 
@@ -31,7 +31,7 @@ function HistoryArrow({ dir }) {
 
 export default function ReaderToolbar({ index, pane, module }) {
   const app = useApp();
-  const { openSheet, go, panes, openSplit, closeSplit, settings, setSettings, isBookmarked, toggleBookmark, updates, toast, modules } = app;
+  const { openSheet, go, panes, openSplit, closeSplit, settings, setSettings, isBookmarked, toggleBookmark, updates, toast, modules, bookmarks, navigate } = app;
   const [menu, setMenu] = useState(false);
   const menuRef = useRef(null);
   const split = !!panes[1];
@@ -103,6 +103,21 @@ export default function ReaderToolbar({ index, pane, module }) {
         </button>
         {menu && (
           <div className="menu" role="menu">
+            {item(isBookmarked(ref) ? BookmarkCheck : Bookmark, isBookmarked(ref) ? 'Убрать закладку' : 'Закладка на это место', () => toggleBookmark(ref))}
+            {/* Самая новая закладка — первая в списке */}
+            {bookmarks.length > 0 &&
+              item(PlayCircle, 'Продолжить с последней закладки', () => navigate(index, bookmarks[0]), `${bookMeta(bookmarks[0].book).short} ${bookmarks[0].chapter}:${bookmarks[0].verse}`)}
+            {item(Star, 'Закладки, заметки, избранное', () => openSheet('bookmarks', index))}
+            <div className="menu-sep" />
+            {item(Library, 'Библиотека модулей', () => openSheet('library', index))}
+            {modules.some((m) => m.type === 'maps') && item(MapIcon, 'Карты', () => openSheet('maps', index))}
+            {item(Palette, 'Оформление', () => openSheet('settings', index))}
+            {item(settings.focusMode ? EyeOff : Eye, 'Режим чтения', () => setSettings({ focusMode: !settings.focusMode }), settings.focusMode ? 'вкл' : 'выкл')}
+            {split &&
+              item(settings.splitLayout === 'rows' ? Columns2 : Rows2, settings.splitLayout === 'rows' ? 'Панели рядом' : 'Панели друг над другом', () =>
+                setSettings({ splitLayout: settings.splitLayout === 'rows' ? 'columns' : 'rows' })
+              )}
+            <div className="menu-sep" />
             {IS_PWA_BUILD && (
               <>
                 <button
@@ -121,22 +136,8 @@ export default function ReaderToolbar({ index, pane, module }) {
                   {updates.available && <span className="menu-extra badge-new">новая версия</span>}
                 </button>
                 {item(History, 'Версии приложения', () => openSheet('versions', index))}
-                <div className="menu-sep" />
               </>
             )}
-            {item(ListTree, 'Перейти к книге и главе', () => openSheet('nav', index))}
-            {item(isBookmarked(ref) ? BookmarkCheck : Bookmark, isBookmarked(ref) ? 'Убрать закладку' : 'Закладка на это место', () => toggleBookmark(ref))}
-            {item(Star, 'Закладки, заметки, избранное', () => openSheet('bookmarks', index))}
-            <div className="menu-sep" />
-            {item(Library, 'Библиотека модулей', () => openSheet('library', index))}
-            {modules.some((m) => m.type === 'maps') && item(MapIcon, 'Карты', () => openSheet('maps', index))}
-            {item(Palette, 'Оформление', () => openSheet('settings', index))}
-            {item(settings.focusMode ? EyeOff : Eye, 'Режим чтения', () => setSettings({ focusMode: !settings.focusMode }), settings.focusMode ? 'вкл' : 'выкл')}
-            {split &&
-              item(settings.splitLayout === 'rows' ? Columns2 : Rows2, settings.splitLayout === 'rows' ? 'Панели рядом' : 'Панели друг над другом', () =>
-                setSettings({ splitLayout: settings.splitLayout === 'rows' ? 'columns' : 'rows' })
-              )}
-            <div className="menu-sep" />
             {item(Info, 'О приложении и источниках', () => openSheet('about', index))}
           </div>
         )}
