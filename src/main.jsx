@@ -22,4 +22,11 @@ if (typeof __PWA__ !== 'undefined' && __PWA__ && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
 
+// После «Обновить приложение» адрес содержит ?v=… (обход кэша) — убираем его из строки адреса
+if (location.search.includes('v=')) {
+  const u = new URL(location.href);
+  u.searchParams.delete('v');
+  history.replaceState(null, '', u.pathname + u.search + u.hash);
+}
+
 createRoot(document.getElementById('root')).render(<App />);

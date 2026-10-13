@@ -353,3 +353,30 @@ mark { background: var(--hl); color: inherit; border-radius: 2px; padding: 0 1px
 .compare-title { color: var(--muted); font-size: .85rem; flex: 1; min-width: 0; }
 .compare-text { margin: 0; font-family: var(--font-text); line-height: 1.5; white-space: pre-line; }
 .copy-area { width: 100%; font: inherit; font-family: var(--font-text); padding: 10px 12px; border: 1px solid var(--line); border-radius: calc(var(--radius) * .75); background: var(--bg); resize: vertical; }
+
+/* ---------- Выборка словарей над словом ---------- */
+.word-pop { position: fixed; z-index: 45; min-width: 210px; max-width: min(340px, calc(100vw - 16px)); background: #3b3a3d; color: #f3f1ec; border-radius: calc(var(--radius) * .9); box-shadow: 0 14px 44px rgba(0,0,0,.38); padding: 4px 0; animation: wpIn .14s ease-out; font-size: 1.02rem; }
+.word-pop.measuring { visibility: hidden; left: 0; top: 0; }
+@keyframes wpIn { from { opacity: 0; transform: scale(.96); } }
+.word-pop::before { content: ""; position: absolute; left: calc(var(--arrow, 50%) - 9px); width: 18px; height: 18px; background: inherit; transform: rotate(45deg); border-radius: 3px; }
+.word-pop.below::before { top: -6px; }
+.word-pop.above::before { bottom: -6px; }
+.wp-item { position: relative; width: 100%; display: flex; align-items: center; gap: 8px; padding: 14px 18px; background: none; border: 0; border-top: 1px solid rgba(255,255,255,.1); color: inherit; text-align: left; font: inherit; }
+.wp-item:first-child, .wp-note + .wp-item { border-top: 0; }
+button.wp-item:hover, button.wp-item:active { background: rgba(255,255,255,.08); }
+.wp-key { font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.wp-sep { opacity: .5; }
+.wp-dict { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wp-muted { opacity: .7; font-size: .92rem; }
+.wp-note { position: relative; padding: 8px 18px 6px; font-size: .78rem; opacity: .7; }
+
+/* ---------- Прогресс чтения книги ---------- */
+.read-progress { flex: none; height: 3px; background: color-mix(in srgb, var(--accent) 16%, var(--bg)); position: relative; z-index: 2; }
+.read-progress span { display: block; height: 100%; background: var(--accent); transition: width .3s ease; border-radius: 0 2px 2px 0; }
+.reader.bar-hidden .read-progress { margin-top: 0; }
+
+/* ---------- Обновление ---------- */
+.tb-more { position: relative; }
+.update-dot { position: absolute; top: calc(var(--sat) + 12px); right: 7px; width: 9px; height: 9px; border-radius: 50%; background: #e0533d; box-shadow: 0 0 0 2px var(--bar); }
+.update-item { color: var(--accent); font-weight: 600; }
+.badge-new { background: #e0533d; color: #fff !important; border-radius: 999px; padding: 2px 8px; font-size: .74rem !important; font-weight: 600; }

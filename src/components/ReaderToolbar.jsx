@@ -3,6 +3,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Search, X, MoreVertical, Library, Palette, Bookmark, BookmarkCheck, Star, ListTree, Info, Eye, EyeOff, Columns2, Rows2 } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { bookMeta } from '../core/books.js';
+import { RefreshCw } from 'lucide-react';
+import { IS_PWA_BUILD, applyUpdate } from '../core/updates.js';
 
 // Стрелки «←…» и «→…» как на скриншоте: стрелка с многоточием (история переходов)
 function HistoryArrow({ dir }) {
@@ -28,7 +30,7 @@ function HistoryArrow({ dir }) {
 
 export default function ReaderToolbar({ index, pane, module }) {
   const app = useApp();
-  const { openSheet, go, panes, openSplit, closeSplit, settings, setSettings, isBookmarked, toggleBookmark } = app;
+  const { openSheet, go, panes, openSplit, closeSplit, settings, setSettings, isBookmarked, toggleBookmark, updates, toast } = app;
   const [menu, setMenu] = useState(false);
   const menuRef = useRef(null);
   const split = !!panes[1];
@@ -88,11 +90,38 @@ export default function ReaderToolbar({ index, pane, module }) {
         <HistoryArrow dir={1} />
       </button>
       <div className="tb-menu-wrap" ref={menuRef}>
-        <button className="tb tb-icon tb-more" onClick={() => setMenu((m) => !m)} aria-haspopup="menu" aria-expanded={menu} aria-label="Ещё">
+        <button
+          className="tb tb-icon tb-more"
+          onClick={() => setMenu((m) => !m)}
+          aria-haspopup="menu"
+          aria-expanded={menu}
+          aria-label={updates.available ? 'Ещё. Доступно обновление' : 'Ещё'}
+        >
           <MoreVertical size={22} />
+          {updates.available && <span className="update-dot" aria-hidden="true" />}
         </button>
         {menu && (
           <div className="menu" role="menu">
+            {IS_PWA_BUILD && (
+              <>
+                <button
+                  role="menuitem"
+                  className={`menu-item ${updates.available ? 'update-item' : ''}`}
+                  onClick={async () => {
+                    if (updates.available) return applyUpdate();
+                    const found = await updates.check();
+                    if (found) return;
+                    setMenu(false);
+                    toast(updates.error ? `Не удалось проверить: ${updates.error}` : 'У вас последняя версия');
+                  }}
+                >
+                  <RefreshCw size={18} className={updates.checking ? 'spin' : ''} />
+                  <span>{updates.available ? 'Обновить приложение' : 'Проверить обновления'}</span>
+                  {updates.available && <span className="menu-extra badge-new">новая версия</span>}
+                </button>
+                <div className="menu-sep" />
+              </>
+            )}
             {item(ListTree, 'Перейти к книге и главе', () => openSheet('nav', index))}
             {item(isBookmarked(ref) ? BookmarkCheck : Bookmark, isBookmarked(ref) ? 'Убрать закладку' : 'Закладка на это место', () => toggleBookmark(ref))}
             {item(Star, 'Закладки, избранное, история', () => openSheet('bookmarks', index))}

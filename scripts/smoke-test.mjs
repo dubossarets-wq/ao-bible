@@ -78,15 +78,26 @@ async function run(label, viewport, isMobile) {
 
   // Слово «Господь» в Нав. 13:33
   const word = page.locator('#v-13-33 .w', { hasText: 'Господь' }).first();
+  // Полоса прогресса книги под верхней панелью
+  const prog = await page.$eval('.read-progress', (e) => ({ v: +e.getAttribute('aria-valuenow'), w: e.firstElementChild.getBoundingClientRect().width }));
+  check(`${label}: прогресс чтения книги`, prog.v > 50 && prog.w > 0, `${prog.v}%`);
+
   await word.click();
-  await page.waitForSelector('.sheet .dict-row, .sheet .empty', { timeout: 15000 });
+  // Сначала — выборка словарей прямо над словом
+  await page.waitForSelector('.word-pop button.wp-item', { timeout: 15000 });
+  const popItems = await page.$$eval('.word-pop button.wp-item', (els) => els.map((e) => e.textContent.trim()));
+  check(`${label}: выборка над словом`, popItems.some((t) => t.includes('H3068') && t.includes('Стронг: иврит')) && popItems.length >= 2, popItems.join(' | '));
+  const popBox = await page.locator('.word-pop').boundingBox();
+  const wordBox = await word.boundingBox();
+  check(`${label}: выборка у слова`, Math.abs(popBox.y - wordBox.y - wordBox.height) < 20 || Math.abs(popBox.y + popBox.height - wordBox.y) < 20, `слово y=${Math.round(wordBox.y)}, выборка y=${Math.round(popBox.y)}`);
+  await page.screenshot({ path: `${shots}/${label}-2-dict-list.png` });
+  await page.locator('.word-pop button.wp-item', { hasText: 'Стронг: иврит' }).click();
+  await page.waitForSelector('.orig.hebrew');
+  await page.waitForTimeout(350);
   const title = await page.textContent('.sheet-title');
   check(`${label}: словарная панель`, title.includes('Господь'), title);
-  const dicts = await page.$$eval('.dict-name', (els) => els.map((e) => e.textContent));
-  check(`${label}: найдены словари`, dicts.length >= 2, dicts.join(', '));
-  await page.screenshot({ path: `${shots}/${label}-2-dict-list.png` });
-  await page.locator('.dict-row', { hasText: 'Стронг: иврит' }).click();
-  await page.waitForSelector('.orig.hebrew');
+  const sheetH = await page.evaluate(() => document.querySelector('.sheet').getBoundingClientRect().height / window.innerHeight);
+  check(`${label}: окно статьи на пол-экрана`, sheetH > 0.45 && sheetH < 0.56, sheetH.toFixed(2));
   const lemma = await page.textContent('.orig.hebrew');
   check(`${label}: статья с ивритом`, /[\u0590-\u05FF]/.test(lemma), lemma);
   // Переключение на другой словарь, не закрывая панель
@@ -181,6 +192,17 @@ async function run(label, viewport, isMobile) {
   await page.screenshot({ path: `${shots}/${label}-7c-parallel.png` });
   await page.click('.pane-slot.first .tb-split');
   await page.waitForTimeout(300);
+
+  // Уведомление об обновлении: сервер отдаёт другую метку сборки
+  await page.route('**/version.json*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ build: 'новая-сборка' }) }));
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await page.waitForSelector('.pane-slot.first .update-dot', { timeout: 10000 });
+  await page.click('.pane-slot.first .tb-more');
+  const upd = await page.textContent('.menu .menu-item');
+  check(`${label}: есть обновление — точка и пункт меню`, upd.includes('Обновить приложение') && upd.includes('новая версия'), upd);
+  await page.screenshot({ path: `${shots}/${label}-7d-update.png` });
+  await page.keyboard.press('Escape');
+  await page.unroute('**/version.json*');
 
   // Настройки: тёмная тема и размер шрифта
   await page.click('.tb-more');

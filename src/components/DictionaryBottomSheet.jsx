@@ -142,12 +142,18 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
   const { openInOther, openSheet } = useApp();
   const { token, ref } = payload;
   const [res, setRes] = useState(null);
-  const [selected, setSelected] = useState(null); // moduleId
+  // preselect — словарь и статья, выбранные во всплывающей выборке над словом
+  const [selected, setSelected] = useState(payload.preselect?.moduleId || null); // moduleId
   const [stack, setStack] = useState([]); // переходы по ссылкам Стронга внутри статьи
   const [entryIdx, setEntryIdx] = useState(0);
 
   useEffect(() => {
-    lookupWord({ token, ref }).then(setRes);
+    lookupWord({ token, ref }).then((r) => {
+      setRes(r);
+      const pre = payload.preselect;
+      const found = pre && r.results.find((x) => x.module.id === pre.moduleId)?.found;
+      if (found) setEntryIdx(Math.max(0, found.findIndex((f) => f.key === pre.key)));
+    });
   }, []);
 
   const openStrong = async (num) => {
@@ -169,7 +175,7 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
   const subtitle = `${bookMeta(ref.book).short} ${ref.chapter}:${ref.verse}`;
 
   return (
-    <BottomSheet title={top ? `Статья ${top.num}` : `Слово: ${token.text}`} subtitle={subtitle} onClose={onClose} onBack={back} initial={1}>
+    <BottomSheet title={top ? `Статья ${top.num}` : `Слово: ${token.text}`} subtitle={subtitle} onClose={onClose} onBack={back} initial={payload.initial ?? 1}>
       {!res && (
         <div className="loading">
           <Loader2 className="spin" size={20} /> Ищу в словарях…

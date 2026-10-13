@@ -6,6 +6,8 @@ import { bookMeta } from './core/books.js';
 import SplitScreenReader from './components/SplitScreenReader.jsx';
 import SheetHost from './components/SheetHost.jsx';
 import Bootstrap from './components/Bootstrap.jsx';
+import WordPopover from './components/WordPopover.jsx';
+import { useUpdates } from './core/updates.js';
 import { Toasts } from './components/ui.jsx';
 
 const AppCtx = createContext(null);
@@ -52,15 +54,22 @@ export default function App() {
 
   const [panes, setPanes] = usePersistentState('panes', () => [newPane(DEFAULT_SETTINGS.primaryModule), null]);
   const [sheet, setSheet] = useState(null);
+  const [popover, setPopover] = useState(null); // выборка словарей над словом
   const [toasts, setToasts] = useState([]);
   const [bookmarks, setBookmarks] = usePersistentState('bookmarks', []);
   const [favorites, setFavorites] = usePersistentState('favorites', []);
+
+  const updates = useUpdates();
 
   const toast = useCallback((text, kind = 'info') => {
     const id = Math.random();
     setToasts((t) => [...t, { id, text, kind }]);
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3200);
   }, []);
+
+  useEffect(() => {
+    if (updates.available) toast('Доступна новая версия — меню ⋮ → «Обновить приложение»');
+  }, [updates.available, toast]);
 
   // Если модуль панели удалён — переключаем на основной/первый доступный перевод.
   useEffect(() => {
@@ -196,6 +205,10 @@ export default function App() {
     openParallel,
     sheet,
     openSheet: (kind, pane = 0, payload = {}) => setSheet({ kind, pane, payload, id: Date.now() }),
+    updates,
+    popover,
+    openPopover: (p) => setPopover({ ...p, id: Date.now() + Math.random() }),
+    closePopover: () => setPopover(null),
     closeSheet: () => setSheet(null),
     toast,
     bookmarks,
@@ -214,6 +227,7 @@ export default function App() {
       <div className="app">
         {modules === null ? null : ready ? <SplitScreenReader /> : <Bootstrap />}
         <SheetHost />
+        <WordPopover />
         <Toasts items={toasts} />
       </div>
     </AppCtx.Provider>

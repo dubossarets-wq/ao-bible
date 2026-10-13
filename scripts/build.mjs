@@ -11,6 +11,8 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dev = process.argv.includes('--dev');
 const VERSION = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8')).version;
+// Метка сборки: приложение сравнивает её с version.json на сервере, чтобы показать «есть обновление»
+const BUILD = `${VERSION}+${new Date().toISOString().replace(/[-:]/g, '').slice(0, 13)}`;
 
 async function bundle(pwa) {
   const res = await build({
@@ -23,7 +25,7 @@ async function bundle(pwa) {
     target: ['es2020', 'safari15'],
     jsx: 'automatic',
     loader: { '.json': 'json' },
-    define: { 'process.env.NODE_ENV': '"production"', __PWA__: String(pwa) },
+    define: { 'process.env.NODE_ENV': '"production"', __PWA__: String(pwa), __BUILD__: JSON.stringify(BUILD) },
     legalComments: 'none',
   });
   const js = res.outputFiles.find((f) => f.path.endsWith('.js')).text.replace(/<\/script/gi, '<\\/script');
@@ -124,7 +126,8 @@ ${FONTS}
   // Service worker: оболочка приложения кэшируется при установке; модули — при первом скачивании
   // (gz-версии, которые и загружает приложение). Тексты уже лежат в IndexedDB, так что офлайн работает.
   const shell = ['./', 'index.html', 'manifest.webmanifest', 'modules/catalog.json', 'icons/icon.svg', 'icons/icon-192.png', 'icons/apple-touch-icon.png'];
-  const sw = `const CACHE = 'aob-${VERSION}-${Date.now().toString(36)}';
+  await writeFile(path.join(dir, 'version.json'), JSON.stringify({ version: VERSION, build: BUILD }));
+  const sw = `const CACHE = 'aob-${BUILD}';
 const SHELL = ${JSON.stringify(shell)};
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -136,8 +139,11 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET') return;
   // Каталог и страница: сначала сеть (чтобы видеть обновления), при офлайне — кэш
+  // version.json — всегда из сети (по нему приложение узнаёт об обновлении)
+  if (url.pathname.endsWith('version.json')) return;
+  // Страница и каталог: сначала сеть мимо HTTP-кэша (GitHub Pages кэширует на 10 минут), при офлайне — кэш
   if (url.origin === location.origin && (url.pathname.endsWith('/') || url.pathname.endsWith('.html') || url.pathname.endsWith('catalog.json'))) {
-    e.respondWith(fetch(e.request).then((r) => { const copy = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); return r; }).catch(() => caches.match(e.request, { ignoreSearch: true })));
+    e.respondWith(fetch(e.request, { cache: 'no-store' }).then((r) => { const copy = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); return r; }).catch(() => caches.match(e.request, { ignoreSearch: true })));
     return;
   }
   // Остальное (иконки, шрифты, модули) — из кэша, иначе из сети с сохранением

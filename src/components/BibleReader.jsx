@@ -6,6 +6,21 @@ import ReaderToolbar from './ReaderToolbar.jsx';
 import SelectionBar from './SelectionBar.jsx';
 import ChapterView from './ChapterView.jsx';
 
+// Полоса прогресса чтения книги под верхней панелью: доля стихов книги до текущего места
+function ReadingProgress({ module, ref_ }) {
+  const book = module?.books.find((b) => b.id === ref_.book);
+  if (!book) return null;
+  const total = book.verses.reduce((a, b) => a + b, 0) || 1;
+  const before = book.verses.slice(0, ref_.chapter - 1).reduce((a, b) => a + b, 0);
+  const pct = Math.min(100, Math.max(0, ((before + ref_.verse) / total) * 100));
+  const label = `Прочитано книги «${book.name}»: ${Math.round(pct)}%`;
+  return (
+    <div className="read-progress" role="progressbar" aria-label={label} title={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
+      <span style={{ width: `${pct}%` }} />
+    </div>
+  );
+}
+
 export default function BibleReader({ index }) {
   const { panes, bibles, settings, sheet } = useApp();
   const pane = panes[index];
@@ -43,6 +58,7 @@ export default function BibleReader({ index }) {
       ) : (
         <ReaderToolbar index={index} pane={pane} module={module} />
       )}
+      <ReadingProgress module={module} ref_={pane.ref} />
       <ChapterView
         index={index}
         pane={pane}

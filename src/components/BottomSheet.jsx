@@ -4,7 +4,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { X, ChevronLeft } from 'lucide-react';
 
-const SNAPS = [0.42, 0.64, 0.92];
+const SNAPS = [0.5, 0.7, 0.92]; // первая ступень — половина экрана
 
 export default function BottomSheet({ title, subtitle, onClose, onBack, children, initial = 1, variant = 'normal', headerExtra, footer }) {
   const [height, setHeight] = useState(variant === 'wide' ? SNAPS[2] : SNAPS[initial]);

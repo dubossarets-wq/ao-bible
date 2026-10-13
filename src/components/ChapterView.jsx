@@ -69,7 +69,7 @@ function selectedIn(selection, bookId, c) {
 
 // selection — Set ключей «Книга.глава.стих»; onSelect(ref, 'start' | 'toggle') — выделение стихов
 export default function ChapterView({ index, pane, module, onScrollDirection, selection, onSelect }) {
-  const { settings, openSheet, reportPosition, navigate, sheet, modules } = useApp();
+  const { settings, openSheet, openPopover, popover, reportPosition, navigate, sheet, modules } = useApp();
   const scroller = useRef(null);
   const [book, setBook] = useState(null); // { id, data, meta }
   const [range, setRange] = useState(null);
@@ -124,13 +124,13 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     }
   }, [range, book]);
 
-  // Снимаем подсветку слова, когда словарная панель закрыта
+  // Снимаем подсветку слова, когда закрыты и выборка словарей, и окно статьи
   useEffect(() => {
-    if (!sheet && activeWord.current) {
+    if (!sheet && !popover && activeWord.current) {
       activeWord.current.classList.remove('active');
       activeWord.current = null;
     }
-  }, [sheet]);
+  }, [sheet, popover]);
 
   const total = book?.data.chapters.length || 0;
 
@@ -230,7 +230,15 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       activeWord.current?.classList.remove('active');
       w.classList.add('active');
       activeWord.current = w;
-      openSheet('dict', index, { token: { text: token.text, strongs: token.strongs || null, morph: token.morph || null }, ref: vref, moduleId: module.id, verseText: plainText(text) });
+      const tok = { text: token.text, strongs: token.strongs || null, morph: token.morph || null };
+      const r = w.getBoundingClientRect();
+      openPopover({
+        pane: index,
+        token: tok,
+        ref: vref,
+        rect: { left: r.left, top: r.top, bottom: r.bottom, width: r.width },
+        payload: { token: tok, ref: vref, moduleId: module.id, verseText: plainText(text) },
+      });
     }
   };
 
