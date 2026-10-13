@@ -1,0 +1,21 @@
+{
+  "name": "ao-bible",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AO Bible — веб-приложение для чтения и изучения Библии",
+  "type": "module",
+  "scripts": {
+    "data": "python -I scripts/build_data.py",
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/build.mjs --dev",
+    "deploy": "npm run build && bash scripts/deploy.sh"
+  },
+  "dependencies": {
+    "lucide-react": "0.468.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.24.2"
+  }
+}
