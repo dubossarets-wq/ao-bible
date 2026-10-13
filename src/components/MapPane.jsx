@@ -1,7 +1,7 @@
 // Карта одного места во второй половине экрана: только точка этого места, остальные скрыты.
 // Карта — MapLibre GL (загружается с CDN при первом открытии), подложка OpenFreeMap, спутник Esri.
 import React, { useEffect, useRef, useState } from 'react';
-import { X, MapPin, Satellite, Map as MapIcon, Loader2, ChevronDown, ExternalLink } from 'lucide-react';
+import { X, MapPin, Satellite, Map as MapIcon, Loader2, ChevronDown, ExternalLink, Layers } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { parseOsisRef, formatRef } from '../core/books.js';
 
@@ -46,6 +46,8 @@ export default function MapPane({ pane }) {
   const [sat, setSat] = useState(true); // по умолчанию — спутник
   // На низкой половине экрана (телефон, панели друг над другом) карточка сначала свёрнута — видна карта
   const [cardOpen, setCardOpen] = useState(() => window.innerHeight > 700 && window.innerWidth >= 720);
+  // «Только карта и точка»: скрыты подписи, дороги, границы, карточка и кнопки — остаются подложка и точка
+  const [clean, setClean] = useState(false);
 
   // Создание карты
   useEffect(() => {
@@ -99,8 +101,16 @@ export default function MapPane({ pane }) {
   }, [place.id]);
 
   useEffect(() => {
-    if (state === 'ready') map.current?.setLayoutProperty('satellite', 'visibility', sat ? 'visible' : 'none');
-  }, [sat, state]);
+    const m = map.current;
+    if (state !== 'ready' || !m) return;
+    m.setLayoutProperty('satellite', 'visibility', sat ? 'visible' : 'none');
+    // В чистом режиме на спутнике видны только снимки; на обычной карте — только фон, суша и вода без подписей и линий
+    for (const layer of m.getStyle().layers) {
+      if (layer.id === 'satellite') continue;
+      const keep = !clean || (!sat && (layer.type === 'background' || layer.type === 'fill') && !/building|aeroway|boundary/.test(layer.id));
+      m.setLayoutProperty(layer.id, 'visibility', keep ? 'visible' : 'none');
+    }
+  }, [sat, clean, state]);
 
   // Точка не должна прятаться под карточкой: сдвигаем «центр» карты на свободную часть
   useEffect(() => {
@@ -123,12 +133,22 @@ export default function MapPane({ pane }) {
   const refs = (place.refs || []).map(parseOsisRef).filter(Boolean);
 
   return (
-    <section className="reader map-pane" aria-label={`Карта: ${place.name}`}>
+    <section className={`reader map-pane ${clean ? 'clean' : ''}`} aria-label={`Карта: ${place.name}`}>
       <header className="toolbar">
         <div className="tb tb-place">
           <MapPin size={18} />
           <span className="tb-place-name">{place.name}</span>
         </div>
+        <button
+          className={`tb tb-icon ${clean ? 'on' : ''}`}
+          onClick={() => setClean((v) => !v)}
+          aria-pressed={clean}
+          aria-label={clean ? 'Показать подписи, дороги и карточку' : 'Только карта и точка'}
+          title={clean ? 'Показать все наложения' : 'Только карта и точка'}
+          disabled={state !== 'ready'}
+        >
+          <Layers size={21} />
+        </button>
         <button className={`tb tb-icon ${sat ? 'on' : ''}`} onClick={() => setSat((v) => !v)} aria-pressed={sat} aria-label={sat ? 'Обычная карта' : 'Спутник'} title={sat ? 'Обычная карта' : 'Спутник'} disabled={state !== 'ready'}>
           {sat ? <MapIcon size={21} /> : <Satellite size={21} />}
         </button>

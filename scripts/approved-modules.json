@@ -1,0 +1,4 @@
+{
+ "comment": "Модули, одобренные для публикации на сайте. Сборка копирует в dist только их; остальное в каталоге — заготовки.",
+ "ids": ["rst-plus", "rst", "rst-dc", "xrefs-rst", "rst-symphony", "strongs-hebrew", "strongs-greek", "goetze", "bible-places"]
+}

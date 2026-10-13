@@ -483,3 +483,5 @@ button.row-act:hover { background: color-mix(in srgb, var(--accent) 12%, transpa
 .continue-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .continue-title { font-weight: 700; }
 .list-title .list-meta { margin-left: 8px; font-weight: 400; }
+/* «Только карта и точка»: прячем карточку и элементы управления карты */
+.map-pane.clean .place-card, .map-pane.clean .maplibregl-ctrl-top-right, .map-pane.clean .maplibregl-ctrl-bottom-left { display: none; }

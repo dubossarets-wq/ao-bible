@@ -42,7 +42,15 @@ const FONTS =
 
 
 // Публикуем только модули из каталога (и их файлы карт): заготовки и непроверенные модули на сайт не попадают
-const catalogIds = new Set(JSON.parse(await readFile(path.join(root, 'public/modules/catalog.json'), 'utf8')).modules.map((m) => m.id));
+// Одобренные модули — scripts/approved-modules.json (добавлять туда после проверки лицензии и данных)
+const approved = new Set(JSON.parse(await readFile(path.join(root, 'scripts/approved-modules.json'), 'utf8')).ids);
+const fullCatalog = JSON.parse(await readFile(path.join(root, 'public/modules/catalog.json'), 'utf8'));
+const catalogIds = new Set(fullCatalog.modules.map((m) => m.id).filter((id) => approved.has(id)));
+const publishedCatalog = (dropGz) => JSON.stringify({ ...fullCatalog, modules: fullCatalog.modules.filter((m) => catalogIds.has(m.id)).map((m) => {
+  if (!dropGz) return m;
+  const { urlGz, sizeGz, ...rest } = m;
+  return rest;
+}) }, null, 1);
 const isPublished = (src) => {
   const rel = path.relative(path.join(root, 'public/modules'), src).split(path.sep);
   if (rel.length === 1 && rel[0] === '') return true;
@@ -68,13 +76,7 @@ ${FONTS}
   await writeFile(path.join(dir, 'index.html'), html);
   // Хостинг артефактов не отдаёт .gz — публикуем только .json и убираем gz-ссылки из каталога
   await cp(path.join(root, 'public/modules'), path.join(dir, 'modules'), { recursive: true, filter: (src) => !src.endsWith('.gz') && isPublished(src) });
-  const catPath = path.join(dir, 'modules/catalog.json');
-  const cat = JSON.parse(await readFile(catPath, 'utf8'));
-  cat.modules.forEach((m) => {
-    delete m.urlGz;
-    delete m.sizeGz;
-  });
-  await writeFile(catPath, JSON.stringify(cat, null, 1));
+  await writeFile(path.join(dir, 'modules/catalog.json'), publishedCatalog(true));
   console.log(`artifact: index.html ${(html.length / 1024).toFixed(0)} КБ`);
 }
 
@@ -111,6 +113,7 @@ ${FONTS}
 `;
   await writeFile(path.join(dir, 'index.html'), html);
   await cp(path.join(root, 'public/modules'), path.join(dir, 'modules'), { recursive: true, filter: isPublished });
+  await writeFile(path.join(dir, 'modules/catalog.json'), publishedCatalog(false));
   if (existsSync(path.join(root, 'public/icons'))) await cp(path.join(root, 'public/icons'), path.join(dir, 'icons'), { recursive: true });
   await writeFile(
     path.join(dir, 'manifest.webmanifest'),
