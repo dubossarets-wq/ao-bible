@@ -40,6 +40,16 @@ const FONTS =
   '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n' +
   '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+Hebrew:wght@400;600&family=Noto+Serif:wght@400;600&display=swap">';
 
+
+// Публикуем только модули из каталога (и их файлы карт): заготовки и непроверенные модули на сайт не попадают
+const catalogIds = new Set(JSON.parse(await readFile(path.join(root, 'public/modules/catalog.json'), 'utf8')).modules.map((m) => m.id));
+const isPublished = (src) => {
+  const rel = path.relative(path.join(root, 'public/modules'), src).split(path.sep);
+  if (rel.length === 1 && rel[0] === '') return true;
+  if (rel[0] === 'catalog.json') return true;
+  if (rel[0] === 'maps') return rel.length === 1 || catalogIds.has(rel[1]);
+  return catalogIds.has(rel[0].replace(/\.json(\.gz)?$/, ''));
+};
 const out = path.join(root, 'dist');
 await rm(out, { recursive: true, force: true });
 
@@ -57,7 +67,7 @@ ${FONTS}
 `;
   await writeFile(path.join(dir, 'index.html'), html);
   // Хостинг артефактов не отдаёт .gz — публикуем только .json и убираем gz-ссылки из каталога
-  await cp(path.join(root, 'public/modules'), path.join(dir, 'modules'), { recursive: true, filter: (src) => !src.endsWith('.gz') });
+  await cp(path.join(root, 'public/modules'), path.join(dir, 'modules'), { recursive: true, filter: (src) => !src.endsWith('.gz') && isPublished(src) });
   const catPath = path.join(dir, 'modules/catalog.json');
   const cat = JSON.parse(await readFile(catPath, 'utf8'));
   cat.modules.forEach((m) => {
@@ -100,7 +110,7 @@ ${FONTS}
 </html>
 `;
   await writeFile(path.join(dir, 'index.html'), html);
-  await cp(path.join(root, 'public/modules'), path.join(dir, 'modules'), { recursive: true });
+  await cp(path.join(root, 'public/modules'), path.join(dir, 'modules'), { recursive: true, filter: isPublished });
   if (existsSync(path.join(root, 'public/icons'))) await cp(path.join(root, 'public/icons'), path.join(dir, 'icons'), { recursive: true });
   await writeFile(
     path.join(dir, 'manifest.webmanifest'),
