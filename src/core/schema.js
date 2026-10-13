@@ -5,9 +5,22 @@ import { BOOKS, findBookId, bookMeta } from './books.js';
 
 export const MODULE_TYPES = {
   bible: 'Перевод Библии',
+  commentary: 'Комментарий',
   dictionary: 'Словарь',
+  maps: 'Карты',
   crossrefs: 'Параллельные места',
 };
+
+// Разделы библиотеки (множественное число) в порядке показа
+export const MODULE_SECTIONS = [
+  ['bible', 'Переводы'],
+  ['commentary', 'Комментарии'],
+  ['dictionary', 'Словари'],
+  ['maps', 'Карты'],
+  ['crossrefs', 'Параллельные места'],
+];
+
+const OSIS_VERSE = /^[1-4]?[A-Za-z]+\.\d+\.\d+(-(\d+\.)?\d+)?$/;
 
 // Порядок книг в западных (протестантских) изданиях — для форматов, где книга задана номером.
 const WESTERN_ORDER = [
@@ -54,8 +67,12 @@ export function detect(json) {
   if (flat && flat.length && isObj(flat[0]) && 'chapter' in flat[0] && 'verse' in flat[0] && 'text' in flat[0])
     return { format: 'flat-verses', type: 'bible' };
   if (isObj(json) && Array.isArray(json.books)) return { format: 'aob', type: 'bible' };
-  if (isObj(json) && isObj(json.entries)) return { format: 'aob', type: 'dictionary' };
+  if (isObj(json) && isObj(json.entries)) {
+    const keys = Object.keys(json.entries).slice(0, 20);
+    return { format: 'aob', type: keys.length && keys.every((k) => OSIS_VERSE.test(k)) ? 'commentary' : 'dictionary' };
+  }
   if (isObj(json) && isObj(json.refs)) return { format: 'aob', type: 'crossrefs' };
+  if (isObj(json) && Array.isArray(json.maps)) return { format: 'aob', type: 'maps' };
   if (isObj(json)) {
     const keys = Object.keys(json).slice(0, 50);
     if (keys.length && keys.every((k) => /^[HG]\d+[a-z]?$/i.test(k))) return { format: 'strongs-map', type: 'dictionary' };
@@ -101,7 +118,9 @@ export function normalize(json, { fileName = '' } = {}) {
   if (type === 'bible') data = normalizeBible(json, format, warnings);
   else if (type === 'dictionary') data = normalizeDictionary(json, format, meta, warnings);
   else if (type === 'crossrefs') data = normalizeCrossrefs(json, warnings);
-  else throw new ModuleError(`Неизвестный тип модуля «${type}». Допустимы: bible, dictionary, crossrefs.`);
+  else if (type === 'commentary') data = normalizeCommentary(json, warnings);
+  else if (type === 'maps') data = normalizeMaps(json, warnings);
+  else throw new ModuleError(`Неизвестный тип модуля «${type}». Допустимы: bible, commentary, dictionary, maps, crossrefs.`);
 
   if (type === 'bible') {
     meta.books = data.books.map((b) => ({
@@ -116,6 +135,8 @@ export function normalize(json, { fileName = '' } = {}) {
   }
   if (type === 'dictionary') meta.stats = { entries: Object.keys(data.entries).length };
   if (type === 'crossrefs') meta.stats = { verses: Object.keys(data.refs).length };
+  if (type === 'commentary') meta.stats = { entries: Object.keys(data.entries).length };
+  if (type === 'maps') meta.stats = { maps: data.maps.length };
   return { meta, data, warnings };
 }
 
@@ -208,6 +229,38 @@ function normalizeDictionary(json, format, meta, warnings) {
   const out = { entries };
   if (isObj(json.wordIndex)) out.wordIndex = json.wordIndex;
   return out;
+}
+
+// Комментарий: entries {"Josh.13.33": "текст" | {title, text}}, ключ — стих или диапазон «Josh.13.1-5»
+function normalizeCommentary(json, warnings) {
+  if (!isObj(json.entries)) throw new ModuleError('В комментарии нет поля "entries" вида {"Gen.1.1": "текст"}.');
+  const entries = {};
+  let bad = 0;
+  for (const [k, v] of Object.entries(json.entries)) {
+    if (!OSIS_VERSE.test(k)) {
+      bad++;
+      continue;
+    }
+    const e = isObj(v) ? { title: v.title ? String(v.title) : '', text: String(v.text ?? '') } : { text: String(v) };
+    if (e.text.trim()) entries[k] = e;
+  }
+  if (bad) warnings.push(`Пропущено статей с ключом не в формате "Книга.глава.стих": ${bad}.`);
+  if (!Object.keys(entries).length) throw new ModuleError('В комментарии нет ни одной статьи с ключом вида "Gen.1.1".');
+  return { entries };
+}
+
+// Карты: maps [{id, title, description, image (https:// или data:), refs}]
+function normalizeMaps(json, warnings) {
+  const maps = [];
+  json.maps.forEach((m, i) => {
+    if (!isObj(m) || typeof m.image !== 'string' || !/^(https?:|data:image\/)/.test(m.image)) {
+      warnings.push(`Карта №${i + 1} пропущена: нет поля "image" с адресом или data:image.`);
+      return;
+    }
+    maps.push({ id: String(m.id || i + 1), title: String(m.title || `Карта ${i + 1}`), description: String(m.description || ''), image: m.image, refs: Array.isArray(m.refs) ? m.refs.map(String) : [] });
+  });
+  if (!maps.length) throw new ModuleError('В модуле карт нет ни одной карты с изображением.');
+  return { maps };
 }
 
 function normalizeCrossrefs(json) {

@@ -6,6 +6,7 @@ import { ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { getBook } from '../core/modules.js';
 import { crossrefCounts } from '../core/crossrefs.js';
+import { commentaryIndex } from '../core/commentary.js';
 import { verseHtml, wordAt, plainText } from '../core/verseMarkup.js';
 
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -20,7 +21,7 @@ function highlightRegex(query) {
   return words.length ? new RegExp(words.join('|'), 'iu') : null;
 }
 
-const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, xrefs, counts, opts, hlRe, flashVerse, isPsalm, selected }) {
+const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, xrefs, counts, comments, opts, hlRe, flashVerse, isPsalm, selected }) {
   const sel = selected ? new Set(selected.split(',').map(Number)) : null;
   return (
     <div className="chapter" data-c={c}>
@@ -42,6 +43,11 @@ const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, x
                   </button>
                 )}
                 <span className="vt" dangerouslySetInnerHTML={{ __html: verseHtml(text, { showStrongs: opts.showStrongs, highlight: hlRe }) }} />
+                {comments?.get(`${bookId}.${c}.${v}`)?.map((cm) => (
+                  <button key={cm.id} className="cm" data-act="comment" data-m={cm.id} aria-label={`Комментарий: ${cm.name}`}>
+                    {cm.name}
+                  </button>
+                ))}
                 {opts.showXref && n > 0 && (
                   <button className="xr" data-act="xref" aria-label={`Параллельные места: ${n}`}>
                     [⇅&nbsp;{n}]
@@ -82,8 +88,10 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
   const ref = pane.ref;
 
   // Счётчики параллельных мест (пересчитываются при включении/выключении модулей)
+  const [comments, setComments] = useState(null);
   useEffect(() => {
     crossrefCounts().then(setCounts);
+    commentaryIndex().then((m) => setComments(m.size ? m : null));
   }, [modules]);
 
   // Навигация: загрузить книгу и прокрутить к стиху
@@ -222,6 +230,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     const text = book.data.chapters[c - 1][v - 1];
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (act === 'xref') return openSheet('xrefs', index, { ref: vref, moduleId: module.id });
+    if (act === 'comment') return openSheet('commentary', index, { ref: vref, moduleId: e.target.closest('[data-m]').dataset.m });
     if (act === 'verse') return openSheet('verse', index, { ref: vref, text: plainText(text), moduleId: module.id });
     const w = e.target.closest('.w');
     if (w) {
@@ -298,6 +307,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
                 headings={book.data.headings}
                 xrefs={book.data.xrefs}
                 counts={counts}
+                comments={comments}
                 opts={opts}
                 hlRe={hlRe}
                 isPsalm={book.id === 'Ps'}

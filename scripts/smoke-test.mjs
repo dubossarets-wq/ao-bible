@@ -1,7 +1,7 @@
 // Проверка основных сценариев в настоящем браузере (Chrome/Edge через playwright-core).
 // Запуск: node scripts/smoke-test.mjs [папка-для-скриншотов]
 import http from 'node:http';
-import { readFile, mkdir } from 'node:fs/promises';
+import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
@@ -175,10 +175,13 @@ async function run(label, viewport, isMobile) {
   // Долгое нажатие на стих → панель действий → тот же стих параллельно в другом переводе
   await page.click('.tb-more');
   await page.click('.menu-item:has-text("Библиотека модулей")');
-  await page.click('.tabs [role=tab]:has-text("Онлайн-каталог")');
-  const rstCard = page.locator('.mod-card').filter({ has: page.locator('.mod-name', { hasText: /^RST$/ }) });
-  await rstCard.locator('button:has-text("Установить")').click();
-  await rstCard.locator('.badge.ok').waitFor({ timeout: 60000 });
+  await page.click('.tabs [role=tab]:has-text("Каталог")');
+  const rstCard = page.locator('.mod-row').filter({ has: page.locator('.mod-name', { hasText: /^RST$/ }) });
+  await page.screenshot({ path: `${shots}/${label}-7a-library.png` });
+  const rowH = await rstCard.locator('.mod-line').evaluate((e) => e.getBoundingClientRect().height);
+  check(`${label}: компактная строка модуля`, rowH <= 64, `${Math.round(rowH)} px`);
+  await rstCard.locator('button[aria-label^="Скачать"]').click();
+  await rstCard.locator('.row-act.ok').waitFor({ timeout: 60000 });
   await page.keyboard.press('Escape');
   await page.waitForSelector('.sheet', { state: 'detached' });
   await page.waitForTimeout(400);
@@ -237,10 +240,13 @@ async function run(label, viewport, isMobile) {
   // Неканонические книги: модуль из каталога, переход к Товиту, звёздочка в навигаторе
   await page.click('.pane-slot.first .tb-more');
   await page.click('.menu-item:has-text("Библиотека модулей")');
-  await page.click('.tabs [role=tab]:has-text("Онлайн-каталог")');
-  const dcCard = page.locator('.mod-card').filter({ has: page.locator('.mod-name', { hasText: /^RST НК$/ }) });
-  await dcCard.locator('button:has-text("Установить")').click();
-  await dcCard.locator('.badge.ok').waitFor({ timeout: 60000 });
+  await page.click('.tabs [role=tab]:has-text("Каталог")');
+  const dcCard = page.locator('.mod-row').filter({ has: page.locator('.mod-name', { hasText: /^RST НК$/ }) });
+  await dcCard.locator('.row-chev').click();
+  const details = await dcCard.locator('.mod-more').textContent();
+  await dcCard.locator('button[aria-label^="Скачать"]').click();
+  await dcCard.locator('.row-act.ok').waitFor({ timeout: 60000 });
+  check(`${label}: стрелка раскрывает подробности`, details.includes('Public Domain') && details.includes('Товит'), details.slice(0, 60));
   await page.keyboard.press('Escape');
   await page.waitForSelector('.sheet', { state: 'detached' });
   await page.click('.pane-slot.first .tb-module');
@@ -261,7 +267,7 @@ async function run(label, viewport, isMobile) {
   if (await readFile(local).then(() => true, () => false)) {
     await page.click('.pane-slot.first .tb-more');
     await page.click('.menu-item:has-text("Библиотека модулей")');
-    await page.click('.tabs [role=tab]:has-text("Импорт файлов")');
+    await page.click('.tabs [role=tab]:has-text("Импорт")');
     await page.setInputFiles('#import-file', local);
     await page.locator('.mod-card button:has-text("Установить")').click({ timeout: 60000 });
     await page.locator('.mod-card .badge.ok').waitFor({ timeout: 60000 });
@@ -289,6 +295,26 @@ async function run(label, viewport, isMobile) {
   await page.fill('#ref-input', 'Нав 13:32');
   await page.keyboard.press('Enter');
   await page.waitForTimeout(600);
+
+  // Комментарий: импорт JSON → пометка у стиха → окно с текстом
+  const cmFile = path.join(shots, 'test-commentary.json');
+  await writeFile(cmFile, JSON.stringify({ format: 'aob-module', formatVersion: 1, type: 'commentary', id: 'test-comm', name: 'Тест-к', title: 'Тестовый комментарий', license: 'тест', entries: { 'Josh.13.33': { title: 'О левитах', text: 'Удел левитов — Сам Господь.' } } }));
+  await page.click('.pane-slot.first .tb-more');
+  await page.click('.menu-item:has-text("Библиотека модулей")');
+  await page.click('.tabs [role=tab]:has-text("Импорт")');
+  await page.setInputFiles('#import-file', cmFile);
+  await page.locator('.mod-card button:has-text("Установить")').last().click({ timeout: 30000 });
+  await page.locator('.mod-card .badge.ok').last().waitFor({ timeout: 30000 });
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.sheet', { state: 'detached' });
+  await page.waitForSelector('#v-13-33 .cm', { timeout: 10000 });
+  await page.click('#v-13-33 .cm');
+  await page.waitForSelector('.commentary-text', { timeout: 10000 });
+  const cmText = await page.textContent('.commentary-text');
+  check(`${label}: комментарий к стиху`, cmText.includes('Удел левитов'), cmText);
+  await page.screenshot({ path: `${shots}/${label}-7f-commentary.png` });
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.sheet', { state: 'detached' });
 
   // Настройки: тёмная тема и размер шрифта
   await page.click('.tb-more');

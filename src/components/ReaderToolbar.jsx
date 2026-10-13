@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Search, X, MoreVertical, Library, Palette, Bookmark, BookmarkCheck, Star, ListTree, Info, Eye, EyeOff, Columns2, Rows2 } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { bookMeta } from '../core/books.js';
-import { RefreshCw, History } from 'lucide-react';
+import { RefreshCw, History, Map as MapIcon } from 'lucide-react';
 import { IS_PWA_BUILD, applyUpdate } from '../core/updates.js';
 
 // Стрелки «←…» и «→…» как на скриншоте: стрелка с многоточием (история переходов)
@@ -30,7 +30,7 @@ function HistoryArrow({ dir }) {
 
 export default function ReaderToolbar({ index, pane, module }) {
   const app = useApp();
-  const { openSheet, go, panes, openSplit, closeSplit, settings, setSettings, isBookmarked, toggleBookmark, updates, toast } = app;
+  const { openSheet, go, panes, openSplit, closeSplit, settings, setSettings, isBookmarked, toggleBookmark, updates, toast, modules } = app;
   const [menu, setMenu] = useState(false);
   const menuRef = useRef(null);
   const split = !!panes[1];
@@ -128,6 +128,7 @@ export default function ReaderToolbar({ index, pane, module }) {
             {item(Star, 'Закладки, избранное, история', () => openSheet('bookmarks', index))}
             <div className="menu-sep" />
             {item(Library, 'Библиотека модулей', () => openSheet('library', index))}
+            {modules.some((m) => m.type === 'maps') && item(MapIcon, 'Карты', () => openSheet('maps', index))}
             {item(Palette, 'Оформление', () => openSheet('settings', index))}
             {item(settings.focusMode ? EyeOff : Eye, 'Режим чтения', () => setSettings({ focusMode: !settings.focusMode }), settings.focusMode ? 'вкл' : 'выкл')}
             {split &&

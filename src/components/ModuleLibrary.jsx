@@ -1,181 +1,254 @@
 // Библиотека модулей: установленные, онлайн-каталог, импорт файлов.
-import React, { useEffect, useState } from 'react';
-import { Download, RefreshCw, Trash2, Star, CheckCircle2, Ban, Globe, BookOpen, BookText, Link2 } from 'lucide-react';
+// Модули разложены по видам (переводы, комментарии, словари, карты, параллельные места) и показаны
+// компактными строками: справа — действие (скачать / установлен / обновить) и стрелка «подробнее».
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  Download, RefreshCw, Trash2, Star, CheckCircle2, Ban, Globe, BookOpen, BookText, Link2, ChevronDown,
+  MessageSquareText, Map as MapIcon, Loader2,
+} from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import ModuleImporter from './ModuleImporter.jsx';
-import DictionaryManager from './DictionaryManager.jsx';
 import { useApp } from '../App.jsx';
 import * as repo from '../core/modules.js';
-import { MODULE_TYPES } from '../core/schema.js';
+import { MODULE_TYPES, MODULE_SECTIONS } from '../core/schema.js';
 import { isPersistent } from '../core/db.js';
-import { ConfirmButton, Progress, Empty, fmtSize } from './ui.jsx';
+import { ConfirmButton, Empty, fmtSize } from './ui.jsx';
 
-const TYPE_ICON = { bible: BookOpen, dictionary: BookText, crossrefs: Link2 };
+export const TYPE_ICON = { bible: BookOpen, commentary: MessageSquareText, dictionary: BookText, maps: MapIcon, crossrefs: Link2 };
 
-function ModuleMeta({ m }) {
-  const stats = m.stats
-    ? m.type === 'bible'
-      ? `${m.stats.books} кн., ${m.stats.verses?.toLocaleString('ru-RU')} стихов`
-      : m.type === 'dictionary'
-        ? `${m.stats.entries?.toLocaleString('ru-RU')} статей`
-        : `ссылки для ${m.stats.verses?.toLocaleString('ru-RU')} стихов`
-    : null;
+function statsText(m) {
+  const s = m.stats;
+  if (!s) return null;
+  if (m.type === 'bible') return `${s.books} кн., ${s.verses?.toLocaleString('ru-RU')} стихов`;
+  if (m.type === 'dictionary' || m.type === 'commentary') return `${s.entries?.toLocaleString('ru-RU')} статей`;
+  if (m.type === 'maps') return `${s.maps} карт`;
+  return `ссылки для ${s.verses?.toLocaleString('ru-RU')} стихов`;
+}
+
+function Details({ m }) {
   return (
-    <div className="mod-meta">
-      {[MODULE_TYPES[m.type], m.language?.toUpperCase(), m.version && `версия ${m.version}`, stats, m.size && fmtSize(m.sizeGz || m.size)].filter(Boolean).join(' · ')}
-      {m.license && <div>Лицензия: {m.license}</div>}
-      {m.author && <div>Автор: {m.author}</div>}
-      {m.source && <div className="mod-source">Источник: {m.source}</div>}
+    <div className="mod-details">
+      {m.description && <p className="mod-desc">{m.description}</p>}
+      <dl className="mod-facts">
+        <dt>Вид</dt>
+        <dd>{MODULE_TYPES[m.type] || m.type}{m.dictionaryKind ? (m.dictionaryKind === 'strongs' ? ' · по номерам Стронга' : ' · по словам') : ''}</dd>
+        {statsText(m) && (
+          <>
+            <dt>Объём</dt>
+            <dd>
+              {statsText(m)}
+              {m.size ? ` · ${fmtSize(m.sizeGz || m.size)}` : ''}
+            </dd>
+          </>
+        )}
+        {m.language && (
+          <>
+            <dt>Язык</dt>
+            <dd>{m.language.toUpperCase()}</dd>
+          </>
+        )}
+        {m.version && (
+          <>
+            <dt>Версия</dt>
+            <dd>{m.version}</dd>
+          </>
+        )}
+        {m.license && (
+          <>
+            <dt>Лицензия</dt>
+            <dd>{m.license}</dd>
+          </>
+        )}
+        {m.author && (
+          <>
+            <dt>Автор</dt>
+            <dd>{m.author}</dd>
+          </>
+        )}
+        {m.source && (
+          <>
+            <dt>Источник</dt>
+            <dd className="mod-source">{m.source}</dd>
+          </>
+        )}
+      </dl>
     </div>
   );
 }
 
-function Installed({ catalog, onUpdate, busy }) {
-  const { modules, settings, setSettings, toast } = useApp();
-  const groups = ['bible', 'dictionary', 'crossrefs'].map((t) => [t, modules.filter((m) => m.type === t)]);
-  if (!modules.length) return <Empty icon={BookOpen} title="Модулей нет">Установите их из онлайн-каталога или импортируйте JSON-файл.</Empty>;
-  return (
-    <>
-      {groups.map(([type, list]) =>
-        list.length ? (
-          <section key={type} className="nav-group">
-            <h4>{{ bible: 'Переводы', dictionary: 'Словари', crossrefs: 'Параллельные места' }[type]}</h4>
-            {type === 'dictionary' ? (
-              <DictionaryManager list={list} catalog={catalog} onUpdate={onUpdate} busy={busy} />
-            ) : (
-              list.map((m) => {
-                const cat = catalog?.find((c) => c.id === m.id);
-                return (
-                  <div key={m.id} className="mod-card">
-                    <div className="mod-head">
-                      <span className="mod-name">{m.name}</span>
-                      <span className="mod-title">{m.title}</span>
-                    </div>
-                    {m.description && <p className="mod-desc">{m.description}</p>}
-                    <ModuleMeta m={m} />
-                    {busy[m.id] && <Progress value={busy[m.id].p} label={busy[m.id].label} />}
-                    <div className="row-actions">
-                      {type === 'bible' &&
-                        (settings.primaryModule === m.id ? (
-                          <span className="badge ok">
-                            <Star size={13} fill="currentColor" /> Основной
-                          </span>
-                        ) : (
-                          <button className="btn small" onClick={() => (setSettings({ primaryModule: m.id }), toast(`${m.name} — основной перевод`))}>
-                            <Star size={14} /> Сделать основным
-                          </button>
-                        ))}
-                      {type === 'crossrefs' && (
-                        <label className="inline-switch">
-                          <input type="checkbox" checked={m.enabled !== false} onChange={(e) => repo.updateModuleMeta(m.id, { enabled: e.target.checked })} /> Включён
-                        </label>
-                      )}
-                      {cat && !cat.unavailable && (
-                        <button className="btn small" disabled={!!busy[m.id]} onClick={() => onUpdate(cat)}>
-                          <RefreshCw size={14} /> Обновить
-                        </button>
-                      )}
-                      <ConfirmButton className="btn small" confirmText="Удалить" onConfirm={() => repo.removeModule(m.id).then(() => toast(`${m.name} удалён`))}>
-                        <Trash2 size={14} /> Удалить
-                      </ConfirmButton>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </section>
-        ) : null
-      )}
-    </>
-  );
-}
+// Одна компактная строка модуля
+function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle }) {
+  const { settings, setSettings, toast } = useApp();
+  const Icon = TYPE_ICON[m.type] || BookText;
+  const isPrimary = installed && settings.primaryModule === installed.id;
+  const updatable = installed && cat && !cat.unavailable && cat.version && installed.catalogVersion && cat.version !== installed.catalogVersion;
+  const toggleable = installed && installed.type !== 'bible';
+  const on = installed?.enabled !== false;
+  const pct = busy ? Math.round((busy.p || 0) * 100) : 0;
 
-function Catalog({ catalog, error, onInstall, busy, reload, sourceUrl, setSourceUrl }) {
-  const { modules } = useApp();
-  const [url, setUrl] = useState(sourceUrl === repo.CATALOG_URL ? '' : sourceUrl);
+  let action;
+  if (busy)
+    action = (
+      <span className="row-act busy" title={busy.label} aria-label={`Загрузка ${pct}%`}>
+        <Loader2 size={16} className="spin" />
+        <span className="row-pct">{pct}%</span>
+      </span>
+    );
+  else if (mode === 'catalog' && m.unavailable)
+    action = (
+      <span className="row-act muted" title="Нет свободной электронной версии" aria-label="Недоступен">
+        <Ban size={20} />
+      </span>
+    );
+  else if (updatable)
+    action = (
+      <button className="row-act accent" onClick={() => onInstall(cat)} aria-label={`Обновить ${m.name}`} title="Доступна новая версия модуля">
+        <RefreshCw size={20} />
+      </button>
+    );
+  else if (mode === 'installed' && installed?.type === 'bible')
+    action = (
+      <button
+        className={`row-act ${isPrimary ? 'accent' : 'muted'}`}
+        onClick={() => !isPrimary && (setSettings({ primaryModule: installed.id }), toast(`${installed.name} — основной перевод`))}
+        aria-label={isPrimary ? 'Основной перевод' : `Сделать ${m.name} основным`}
+        title={isPrimary ? 'Основной перевод' : 'Сделать основным'}
+      >
+        <Star size={20} fill={isPrimary ? 'currentColor' : 'none'} />
+      </button>
+    );
+  else if (mode === 'installed' && toggleable)
+    action = (
+      <label className="row-switch" title={on ? 'Включён' : 'Отключён'}>
+        <input type="checkbox" checked={on} onChange={(e) => repo.updateModuleMeta(installed.id, { enabled: e.target.checked })} aria-label={`${m.name}: ${on ? 'включён' : 'отключён'}`} />
+        <span className="switch" aria-hidden="true" />
+      </label>
+    );
+  else if (installed)
+    action = (
+      <span className="row-act ok" title="Установлен" aria-label="Установлен">
+        <CheckCircle2 size={20} />
+      </span>
+    );
+  else
+    action = (
+      <button className="row-act accent" onClick={() => onInstall(cat || m)} aria-label={`Скачать ${m.name}${m.sizeGz || m.size ? `, ${fmtSize(m.sizeGz || m.size)}` : ''}`} title={`Скачать${m.sizeGz || m.size ? ` · ${fmtSize(m.sizeGz || m.size)}` : ''}`}>
+        <Download size={20} />
+      </button>
+    );
+
   return (
-    <>
-      <p className="sheet-hint">
-        <Globe size={14} /> Источник: {sourceUrl === repo.CATALOG_URL ? 'каталог, опубликованный вместе с приложением' : sourceUrl}
-      </p>
-      {error && <p className="error-text">{error}</p>}
-      {!catalog && !error && <Progress value={0} label="Загружаю каталог…" />}
-      {catalog?.map((c) => {
-        const installed = modules.find((m) => m.id === c.id);
-        const Icon = TYPE_ICON[c.type] || BookText;
-        return (
-          <div key={c.id} className={`mod-card ${c.unavailable ? 'disabled' : ''}`}>
-            <div className="mod-head">
-              <Icon size={18} className="accent" />
-              <span className="mod-name">{c.name}</span>
-              <span className="mod-title">{c.title}</span>
-            </div>
-            {c.description && <p className="mod-desc">{c.description}</p>}
-            {!c.unavailable && <ModuleMeta m={c} />}
-            {busy[c.id] && <Progress value={busy[c.id].p} label={busy[c.id].label} />}
-            <div className="row-actions">
-              {c.unavailable ? (
-                <span className="badge muted-badge">
-                  <Ban size={13} /> Ожидает загрузки — нет свободной электронной версии
-                </span>
-              ) : installed ? (
-                <>
-                  <span className="badge ok">
-                    <CheckCircle2 size={13} /> Установлен
-                  </span>
-                  <button className="btn small" disabled={!!busy[c.id]} onClick={() => onInstall(c)}>
-                    <RefreshCw size={14} /> Переустановить
-                  </button>
-                </>
-              ) : (
-                <button className="btn small primary" disabled={!!busy[c.id]} onClick={() => onInstall(c)}>
-                  <Download size={14} /> Установить {c.sizeGz || c.size ? `· ${fmtSize(c.sizeGz || c.size)}` : ''}
-                </button>
-              )}
-            </div>
-          </div>
-        );
-      })}
-      <section className="nav-group">
-        <h4>Другой каталог</h4>
-        <form
-          className="ref-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setSourceUrl(url.trim() || repo.CATALOG_URL);
-          }}
-        >
-          <label htmlFor="cat-url" className="sr-only">
-            Адрес каталога
-          </label>
-          <input id="cat-url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…/catalog.json (формат aob-catalog)" inputMode="url" autoComplete="off" />
-          <button className="btn" type="submit">
-            Подключить
-          </button>
-        </form>
-        <p className="field-hint">
-          Внутри Claude Artifact браузер пропускает только файлы самого приложения, поэтому внешний адрес здесь не загрузится. В установленной версии (PWA на своём домене) работает любой каталог с разрешённым CORS.
-        </p>
-        {sourceUrl !== repo.CATALOG_URL && (
-          <button className="btn small" onClick={() => (setUrl(''), setSourceUrl(repo.CATALOG_URL))}>
-            Вернуть встроенный каталог
-          </button>
-        )}
-        <button className="btn small" onClick={reload}>
-          <RefreshCw size={14} /> Обновить список
+    <li className={`mod-row ${open ? 'open' : ''} ${toggleable && !on ? 'off' : ''} ${m.unavailable ? 'unavailable' : ''}`}>
+      <div className="mod-line">
+        <button className="mod-main" onClick={onToggle} aria-expanded={open}>
+          <Icon size={20} className="mod-icon" />
+          <span className="mod-texts">
+            <span className="mod-name">{m.name}</span>
+            <span className="mod-sub">{m.title || MODULE_TYPES[m.type]}</span>
+          </span>
         </button>
-      </section>
-    </>
+        {action}
+        <button className="row-chev" onClick={onToggle} aria-label={open ? 'Свернуть' : 'Подробнее'} aria-expanded={open}>
+          <ChevronDown size={20} />
+        </button>
+      </div>
+      {open && (
+        <div className="mod-more">
+          <Details m={installed ? { ...cat, ...installed } : m} />
+          {busy && <div className="progress-label">{busy.label}</div>}
+          <div className="row-actions">
+            {installed?.type === 'bible' && !isPrimary && (
+              <button className="btn small" onClick={() => (setSettings({ primaryModule: installed.id }), toast(`${installed.name} — основной перевод`))}>
+                <Star size={14} /> Сделать основным
+              </button>
+            )}
+            {!installed && !m.unavailable && (
+              <button className="btn small primary" disabled={!!busy} onClick={() => onInstall(cat || m)}>
+                <Download size={14} /> Скачать{m.sizeGz || m.size ? ` · ${fmtSize(m.sizeGz || m.size)}` : ''}
+              </button>
+            )}
+            {installed && cat && !cat.unavailable && (
+              <button className="btn small" disabled={!!busy} onClick={() => onInstall(cat)}>
+                <RefreshCw size={14} /> {updatable ? 'Обновить' : 'Переустановить'}
+              </button>
+            )}
+            {installed && (
+              <ConfirmButton className="btn small" confirmText="Удалить" onConfirm={() => repo.removeModule(installed.id).then(() => toast(`${installed.name} удалён`))}>
+                <Trash2 size={14} /> Удалить
+              </ConfirmButton>
+            )}
+          </div>
+        </div>
+      )}
+    </li>
   );
 }
 
-export default function ModuleLibrary({ pane, payload, onClose }) {
-  const { toast } = useApp();
+function Sections({ items, mode, catalog, busy, onInstall, filter }) {
+  const { modules } = useApp();
+  const [open, setOpen] = useState(null);
+  const groups = MODULE_SECTIONS.map(([type, label]) => [type, label, items.filter((m) => m.type === type)]).filter(
+    ([type, , list]) => (filter === 'all' ? list.length : type === filter)
+  );
+  if (!groups.length) return <Empty icon={BookOpen} title="Модулей нет">{mode === 'installed' ? 'Установите их из онлайн-каталога или импортируйте JSON-файл.' : 'В каталоге пока нет модулей.'}</Empty>;
+  return groups.map(([type, label, list]) => (
+    <section key={type} className="nav-group">
+      <h4>
+        {label} <span className="tab-n">{list.length}</span>
+      </h4>
+      {list.length ? (
+        <ul className="mod-list">
+          {list.map((m) => {
+            const installed = mode === 'installed' ? m : modules.find((x) => x.id === m.id);
+            const cat = mode === 'catalog' ? m : catalog?.find((c) => c.id === m.id);
+            return (
+              <ModuleRow
+                key={m.id}
+                m={m}
+                installed={installed}
+                cat={cat}
+                busy={busy[m.id]}
+                mode={mode}
+                onInstall={onInstall}
+                open={open === m.id}
+                onToggle={() => setOpen((o) => (o === m.id ? null : m.id))}
+              />
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="field-hint">
+          {mode === 'installed' ? `Не установлено. ` : `В каталоге пока нет. `}
+          {type === 'commentary' && 'Комментарии к стихам (например, «Толковая Библия» Лопухина) можно импортировать в формате JSON.'}
+          {type === 'maps' && 'Модули карт можно импортировать в формате JSON.'}
+        </p>
+      )}
+    </section>
+  ));
+}
+
+function Filter({ value, onChange, counts }) {
+  return (
+    <div className="chips filter-chips" role="group" aria-label="Вид модулей">
+      {[['all', 'Все'], ...MODULE_SECTIONS].map(([k, l]) => (
+        <button key={k} className={`chip ${value === k ? 'on' : ''}`} aria-pressed={value === k} onClick={() => onChange(k)}>
+          {l}
+          {k !== 'all' && counts[k] ? <span className="tab-n"> {counts[k]}</span> : null}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export default function ModuleLibrary({ payload, onClose }) {
+  const { toast, modules } = useApp();
   const [tab, setTab] = useState(payload.tab || 'installed');
+  const [filter, setFilter] = useState(payload.section || 'all');
   const [catalog, setCatalog] = useState(null);
   const [catErr, setCatErr] = useState(null);
   const [busy, setBusy] = useState({});
   const [sourceUrl, setSourceUrl] = useState(repo.CATALOG_URL);
+  const [url, setUrl] = useState('');
   const [persist, setPersist] = useState(true);
 
   const loadCatalog = () => {
@@ -204,22 +277,67 @@ export default function ModuleLibrary({ pane, payload, onClose }) {
     }
   };
 
+  const list = tab === 'installed' ? modules : catalog || [];
+  const counts = useMemo(() => Object.fromEntries(MODULE_SECTIONS.map(([t]) => [t, list.filter((m) => m.type === t).length])), [list]);
+
   return (
     <BottomSheet title="Библиотека модулей" onClose={onClose} variant="wide">
       {!persist && <p className="warn small">Браузер не дал доступ к IndexedDB: модули работают до перезагрузки страницы и не сохраняются.</p>}
       <div className="tabs" role="tablist" aria-label="Разделы библиотеки">
         {[
           ['installed', 'Установленные'],
-          ['catalog', 'Онлайн-каталог'],
-          ['import', 'Импорт файлов'],
+          ['catalog', 'Каталог'],
+          ['import', 'Импорт'],
         ].map(([k, l]) => (
           <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>
             {l}
           </button>
         ))}
       </div>
-      {tab === 'installed' && <Installed catalog={catalog} onUpdate={install} busy={busy} />}
-      {tab === 'catalog' && <Catalog catalog={catalog} error={catErr} onInstall={install} busy={busy} reload={loadCatalog} sourceUrl={sourceUrl} setSourceUrl={setSourceUrl} />}
+      {tab !== 'import' && <Filter value={filter} onChange={setFilter} counts={counts} />}
+      {tab === 'installed' && <Sections items={modules} mode="installed" catalog={catalog} busy={busy} onInstall={install} filter={filter} />}
+      {tab === 'catalog' && (
+        <>
+          {catErr && <p className="error-text">{catErr}</p>}
+          {!catalog && !catErr && (
+            <div className="loading">
+              <Loader2 className="spin" size={20} /> Загружаю каталог…
+            </div>
+          )}
+          {catalog && <Sections items={catalog} mode="catalog" catalog={catalog} busy={busy} onInstall={install} filter={filter} />}
+          <section className="nav-group">
+            <h4>Источник каталога</h4>
+            <p className="sheet-hint">
+              <Globe size={14} /> {sourceUrl === repo.CATALOG_URL ? 'Каталог, опубликованный вместе с приложением' : sourceUrl}
+            </p>
+            <form
+              className="ref-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                setSourceUrl(url.trim() || repo.CATALOG_URL);
+              }}
+            >
+              <label htmlFor="cat-url" className="sr-only">
+                Адрес каталога
+              </label>
+              <input id="cat-url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…/catalog.json" inputMode="url" autoComplete="off" />
+              <button className="btn" type="submit">
+                Подключить
+              </button>
+            </form>
+            <div className="row-actions">
+              {sourceUrl !== repo.CATALOG_URL && (
+                <button className="btn small" onClick={() => (setUrl(''), setSourceUrl(repo.CATALOG_URL))}>
+                  Встроенный каталог
+                </button>
+              )}
+              <button className="btn small" onClick={loadCatalog}>
+                <RefreshCw size={14} /> Обновить список
+              </button>
+            </div>
+          </section>
+        </>
+      )}
       {tab === 'import' && <ModuleImporter onDone={() => setTab('installed')} />}
     </BottomSheet>
   );

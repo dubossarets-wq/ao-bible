@@ -13,6 +13,8 @@ import VerseActions from './VerseActions.jsx';
 import About from './About.jsx';
 import CompareSheet from './CompareSheet.jsx';
 import VersionsSheet from './VersionsSheet.jsx';
+import CommentarySheet from './CommentarySheet.jsx';
+import MapsSheet from './MapsSheet.jsx';
 
 const KINDS = {
   dict: DictionaryBottomSheet,
@@ -27,6 +29,8 @@ const KINDS = {
   about: About,
   compare: CompareSheet,
   versions: VersionsSheet,
+  commentary: CommentarySheet,
+  maps: MapsSheet,
 };
 
 export default function SheetHost() {
