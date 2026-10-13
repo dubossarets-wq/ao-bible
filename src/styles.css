@@ -11,6 +11,7 @@
   --font-greek: "Noto Serif", "Gentium Plus", "Times New Roman", serif;
   --fs: 19px; --fw: 400; --lh: 1.45; --verse-gap: .55em; --measure: 44em; --align: left;
   --chapter-size: 2.1em; --radius: 12px; --bar-h: 54px; --vvh: 100dvh; --kb: 0px;
+  --sat: 0px; /* верхний вырез экрана: в PWA = env(safe-area-inset-top), панель уходит под часы */
 }
 /* Тёмные значения здесь не задаются: тему выбирает пользователь (по умолчанию светлая),
    и core/settings.js выставляет переменные сразу при запуске. Так нет «мигания» тёмного фона. */
@@ -53,8 +54,11 @@ button:disabled { cursor: default; opacity: .4; }
 
 /* ---------- Панель чтения ---------- */
 .reader { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; container-type: inline-size; position: relative; background: var(--bg); }
-.toolbar { flex: 0 0 var(--bar-h); height: var(--bar-h); display: flex; align-items: stretch; background: var(--bar); color: var(--bar-text); transition: margin-top .22s ease; z-index: 3; }
+.toolbar { flex: 0 0 auto; height: calc(var(--bar-h) + var(--sat)); padding-top: var(--sat); display: flex; align-items: stretch; background: var(--bar); color: var(--bar-text); transition: margin-top .22s ease; z-index: 3; }
 .reader.bar-hidden .toolbar { margin-top: calc(-1 * var(--bar-h)); }
+/* Нижняя из двух панелей друг над другом не доходит до выреза */
+.split.rows .pane-slot.second .toolbar { --sat: 0px; }
+.split.rows .divider { flex-basis: 10px; }
 .tb { background: none; border: 0; border-right: 1px solid color-mix(in srgb, var(--bar-text) 16%, transparent); color: inherit; display: flex; align-items: center; justify-content: center; padding: 0 10px; min-width: 44px; white-space: nowrap; }
 .tb:last-child, .tb-menu-wrap .tb { border-right: 0; }
 .tb:hover:not(:disabled) { background: color-mix(in srgb, var(--bar-text) 9%, transparent); }
@@ -323,3 +327,29 @@ mark { background: var(--hl); color: inherit; border-radius: 2px; padding: 0 1px
 .toast { background: var(--bar); color: var(--bar-text); padding: 10px 16px; border-radius: 999px; font-size: .9rem; box-shadow: 0 8px 24px rgba(0,0,0,.2); animation: toast .22s ease-out; text-align: center; }
 .toast.error { background: var(--danger); color: #fff; border-radius: 14px; }
 @keyframes toast { from { opacity: 0; transform: translateY(8px); } }
+
+/* ---------- Выделение стихов (долгое нажатие) ---------- */
+@media (pointer: coarse) {
+  /* На телефоне долгое нажатие выделяет стих, а не текст; копирование — кнопкой на панели */
+  .text-col { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+}
+.verse.selected { background: var(--panel); box-shadow: -16px 0 0 var(--panel), 16px 0 0 var(--panel), inset 3px 0 0 var(--accent); border-radius: 0; }
+.verses.continuous .verse.selected { box-shadow: none; background: color-mix(in srgb, var(--accent) 16%, var(--panel)); }
+.scroller.selecting .w { cursor: default; }
+@media (hover: hover) { .scroller.selecting .w:hover { background: none; } .scroller.selecting .verse:not(.selected):hover { background: color-mix(in srgb, var(--accent) 6%, transparent); } }
+.selection-bar { animation: barIn .16s ease-out; }
+@keyframes barIn { from { opacity: .4; } }
+.tb-sel-ref { flex: 1 1 auto; min-width: 0; gap: 8px; cursor: default; }
+.sel-ref { font-size: 1.05rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.sel-count { flex: none; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; display: grid; place-items: center; font-size: .78rem; font-weight: 700; background: var(--accent); color: #fff; font-variant-numeric: tabular-nums; }
+.tb-icon.on { color: var(--accent); }
+@container (max-width: 470px) { .selection-bar .tb-icon { width: 40px; } .sel-ref { font-size: .95rem; } }
+@container (max-width: 400px) { .selection-bar .tb-opt { display: none; } }
+.compare-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.compare-item { border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; background: var(--bg); display: flex; flex-direction: column; gap: 6px; }
+.compare-item.current { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.compare-head { display: flex; align-items: center; gap: 4px 10px; flex-wrap: wrap; }
+.compare-name { font-weight: 800; }
+.compare-title { color: var(--muted); font-size: .85rem; flex: 1; min-width: 0; }
+.compare-text { margin: 0; font-family: var(--font-text); line-height: 1.5; white-space: pre-line; }
+.copy-area { width: 100%; font: inherit; font-family: var(--font-text); padding: 10px 12px; border: 1px solid var(--line); border-radius: calc(var(--radius) * .75); background: var(--bg); resize: vertical; }

@@ -152,6 +152,36 @@ async function run(label, viewport, isMobile) {
   const ref3 = await page.textContent('.tb-ref');
   check(`${label}: назад по истории`, ref3.includes('Нав.'), ref3);
 
+  // Долгое нажатие на стих → панель действий → тот же стих параллельно в другом переводе
+  await page.click('.tb-more');
+  await page.click('.menu-item:has-text("Библиотека модулей")');
+  await page.click('.tabs [role=tab]:has-text("Онлайн-каталог")');
+  const rstCard = page.locator('.mod-card').filter({ has: page.locator('.mod-name', { hasText: /^RST$/ }) });
+  await rstCard.locator('button:has-text("Установить")').click();
+  await rstCard.locator('.badge.ok').waitFor({ timeout: 60000 });
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.sheet', { state: 'detached' });
+  await page.waitForTimeout(400);
+  const box = await page.locator('#v-13-33 .vt').boundingBox();
+  await page.mouse.move(box.x + 30, box.y + 10);
+  await page.mouse.down();
+  await page.waitForTimeout(700);
+  await page.mouse.up();
+  await page.waitForSelector('.selection-bar', { timeout: 5000 });
+  const selRef = await page.textContent('.sel-ref');
+  const selected = await page.$$eval('.verse.selected', (e) => e.map((x) => x.id));
+  check(`${label}: долгое нажатие выделяет стих`, selRef.includes('13:33') && selected.join() === 'v-13-33', `${selRef}, ${selected}`);
+  await page.screenshot({ path: `${shots}/${label}-7b-selection.png` });
+  await page.click('[aria-label="Открыть параллельно в другом переводе"]');
+  await page.waitForSelector('.pane-slot.second .verse', { timeout: 15000 });
+  await page.waitForTimeout(800);
+  const pm = await page.$$eval('.tb-module-name', (e) => e.map((x) => x.textContent));
+  const pr = await page.$$eval('.tb-ref', (e) => e.map((x) => x.textContent));
+  check(`${label}: параллельно в другом переводе`, pm.join('|') === 'RST+|RST' && pr[1].includes('13:33'), `${pm.join(' | ')}; ${pr.join(' | ')}`);
+  await page.screenshot({ path: `${shots}/${label}-7c-parallel.png` });
+  await page.click('.pane-slot.first .tb-split');
+  await page.waitForTimeout(300);
+
   // Настройки: тёмная тема и размер шрифта
   await page.click('.tb-more');
   await page.click('.menu-item:has-text("Оформление")');

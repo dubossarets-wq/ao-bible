@@ -20,7 +20,8 @@ function highlightRegex(query) {
   return words.length ? new RegExp(words.join('|'), 'iu') : null;
 }
 
-const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, xrefs, counts, opts, hlRe, flashVerse, isPsalm }) {
+const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, xrefs, counts, opts, hlRe, flashVerse, isPsalm, selected }) {
+  const sel = selected ? new Set(selected.split(',').map(Number)) : null;
   return (
     <div className="chapter" data-c={c}>
       {c === 1 && <h1 className="book-title">{bookName}</h1>}
@@ -34,7 +35,7 @@ const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, x
           return (
             <React.Fragment key={v}>
               {heading && <h3 className="section-title">{heading}</h3>}
-              <p className={`verse ${flashVerse === v ? 'flash' : ''}`} data-c={c} data-v={v} id={`v-${c}-${v}`}>
+              <p className={`verse${flashVerse === v ? ' flash' : ''}${sel?.has(v) ? ' selected' : ''}`} data-c={c} data-v={v} id={`v-${c}-${v}`} aria-selected={sel ? sel.has(v) : undefined}>
                 {opts.showVerseNumbers && (
                   <button className="vn" data-act="verse" aria-label={`Стих ${v}: действия`}>
                     {v}
@@ -55,7 +56,19 @@ const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, x
   );
 });
 
-export default function ChapterView({ index, pane, module, onScrollDirection }) {
+const LONG_PRESS_MS = 450;
+
+// Строка номеров выделенных стихов главы («5,6») — примитив, чтобы memo главы не сбрасывался зря
+function selectedIn(selection, bookId, c) {
+  if (!selection?.size) return null;
+  const prefix = `${bookId}.${c}.`;
+  const out = [];
+  for (const k of selection) if (k.startsWith(prefix)) out.push(k.slice(prefix.length));
+  return out.length ? out.join(',') : null;
+}
+
+// selection — Set ключей «Книга.глава.стих»; onSelect(ref, 'start' | 'toggle') — выделение стихов
+export default function ChapterView({ index, pane, module, onScrollDirection, selection, onSelect }) {
   const { settings, openSheet, reportPosition, navigate, sheet, modules } = useApp();
   const scroller = useRef(null);
   const [book, setBook] = useState(null); // { id, data, meta }
@@ -153,12 +166,59 @@ export default function ChapterView({ index, pane, module, onScrollDirection }) 
     }, 140);
   };
 
+  // Долгое нажатие на стих (палец или мышь) — выделение стиха и панель действий сверху.
+  // Сдвиг пальца больше 10 px (прокрутка) отменяет нажатие.
+  const press = useRef(null);
+  const suppressClick = useRef(false);
+  const verseRefOf = (el) => {
+    const verseEl = el?.closest?.('.verse');
+    return verseEl && book ? { book: book.id, chapter: +verseEl.dataset.c, verse: +verseEl.dataset.v } : null;
+  };
+  const cancelPress = () => {
+    if (press.current) clearTimeout(press.current.timer);
+    press.current = null;
+  };
+  const onPointerDown = (e) => {
+    if (e.button > 0) return;
+    const vref = verseRefOf(e.target);
+    if (!vref || e.target.closest('[data-act]')) return;
+    cancelPress();
+    press.current = {
+      x: e.clientX,
+      y: e.clientY,
+      timer: setTimeout(() => {
+        press.current = null;
+        suppressClick.current = true;
+        navigator.vibrate?.(12);
+        window.getSelection?.()?.removeAllRanges();
+        onSelect?.(vref, selection?.size ? 'toggle' : 'start');
+      }, LONG_PRESS_MS),
+    };
+  };
+  const onPointerMove = (e) => {
+    if (press.current && Math.hypot(e.clientX - press.current.x, e.clientY - press.current.y) > 10) cancelPress();
+  };
+  const onContextMenu = (e) => {
+    // Правая кнопка мыши на компьютере работает как долгое нажатие; на телефоне глушим системное меню
+    const vref = verseRefOf(e.target);
+    if (!vref) return;
+    e.preventDefault();
+    if (press.current || e.pointerType === 'touch' || e.nativeEvent?.pointerType === 'touch') return;
+    if (!suppressClick.current) onSelect?.(vref, selection?.size ? 'toggle' : 'start');
+  };
+
   const onClick = (e) => {
+    if (suppressClick.current) {
+      suppressClick.current = false;
+      return;
+    }
     const verseEl = e.target.closest('.verse');
     if (!verseEl || !book) return;
     const c = +verseEl.dataset.c;
     const v = +verseEl.dataset.v;
     const vref = { book: book.id, chapter: c, verse: v };
+    // В режиме выделения нажатие на стих добавляет или убирает его из выделения
+    if (selection?.size) return onSelect?.(vref, 'toggle');
     const text = book.data.chapters[c - 1][v - 1];
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (act === 'xref') return openSheet('xrefs', index, { ref: vref, moduleId: module.id });
@@ -192,7 +252,20 @@ export default function ChapterView({ index, pane, module, onScrollDirection }) 
   const nextBook = bookIdx >= 0 && bookIdx < module.books.length - 1 ? module.books[bookIdx + 1] : null;
 
   return (
-    <div className="scroller" ref={scroller} onScroll={onScroll} onClick={onClick}>
+    <div
+      className={`scroller${selection?.size ? ' selecting' : ''}`}
+      ref={scroller}
+      onScroll={(e) => {
+        cancelPress();
+        onScroll(e);
+      }}
+      onClick={onClick}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={cancelPress}
+      onPointerCancel={cancelPress}
+      onContextMenu={onContextMenu}
+    >
       <div className="text-col">
         {error && <div className="notice error-text">{error}</div>}
         {!error && (!book || !range) && (
@@ -221,6 +294,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection }) 
                 hlRe={hlRe}
                 isPsalm={book.id === 'Ps'}
                 flashVerse={flash && flash[0] === book.id && +flash[1] === c ? +flash[2] : null}
+                selected={selectedIn(selection, book.id, c)}
               />
             ))}
             {range.end === total && (

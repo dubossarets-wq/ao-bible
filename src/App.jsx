@@ -132,6 +132,31 @@ export default function App() {
     } else navigate(fromPane, ref);
   });
 
+  // То же место в другом переводе в соседней панели (из первой — во второй, из второй — в первой)
+  const openParallel = useEvent((fromPane, ref, moduleId) => {
+    const mod = bibles.find((b) => b.id === moduleId);
+    if (!mod) return;
+    if (!mod.books.some((b) => b.id === ref.book)) {
+      toast(`В переводе ${mod.name} нет книги «${bookMeta(ref.book).name}»`, 'error');
+      return;
+    }
+    const clean = { book: ref.book, chapter: ref.chapter, verse: ref.verse };
+    const flash = `${clean.book}.${clean.chapter}.${clean.verse}.${Date.now()}`;
+    const target = fromPane === 0 ? 1 : 0;
+    setPanes((ps) => {
+      const next = [...ps];
+      const p = ps[target];
+      if (!p) next[target] = { ...newPane(moduleId, clean), flash };
+      else {
+        const history = p.history.slice(0, p.hIndex + 1);
+        history[history.length - 1] = p.ref;
+        history.push(clean);
+        next[target] = { ...p, moduleId, ref: clean, history, hIndex: history.length - 1, nav: p.nav + 1, flash, highlight: null };
+      }
+      return next;
+    });
+  });
+
   const isBookmarked = (ref) => bookmarks.some((b) => b.book === ref.book && b.chapter === ref.chapter && b.verse === ref.verse);
   const toggleBookmark = useEvent((ref) => {
     if (isBookmarked(ref)) {
@@ -168,6 +193,7 @@ export default function App() {
     openSplit,
     closeSplit,
     openInOther,
+    openParallel,
     sheet,
     openSheet: (kind, pane = 0, payload = {}) => setSheet({ kind, pane, payload, id: Date.now() }),
     closeSheet: () => setSheet(null),

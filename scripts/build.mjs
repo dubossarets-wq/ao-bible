@@ -85,7 +85,7 @@ ${FONTS}
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 ${FONTS}
-<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<style>html:root{--sat:env(safe-area-inset-top,0px)}html,body{height:100%}@supports (height:100dvh){html{height:100dvh}}</style>
 <style>${css}</style>
 </head>
 <body>
