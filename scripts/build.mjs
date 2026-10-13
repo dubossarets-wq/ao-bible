@@ -90,7 +90,7 @@ ${FONTS}
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 ${FONTS}
-<style>html:root{--sat:env(safe-area-inset-top,0px)}html,body{height:100%}/* iOS: приложение прибито ко всем краям экрана, текст доходит до нижнего края */html:root .app{position:fixed;inset:0;height:auto}</style>
+<style>html:root{--sat:env(safe-area-inset-top,0px)}html,body{height:100%}/* iOS: приложение прибито ко всем краям экрана, текст доходит до нижнего края */html:root .app{position:fixed;inset:0;height:auto}/* iOS 26 размывает верх экрана: под строкой состояния — сплошной цвет верхней панели, размытие сливается с ним */html:root,html:root body{background:var(--bar)}html:root body::before{content:"";position:fixed;left:0;right:0;top:0;height:calc(env(safe-area-inset-top,0px) + 2px);background:var(--bar);z-index:100;pointer-events:none}</style>
 <style>${css}</style>
 </head>
 <body>

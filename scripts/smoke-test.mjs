@@ -60,13 +60,13 @@ async function run(label, viewport, isMobile) {
 
   // По умолчанию светлая тема, даже если в системе тёмная (контекст создан с colorScheme: 'dark')
   const LIGHT = 'rgb(246, 245, 242)';
-  const bg0 = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const bg0 = await page.evaluate(() => getComputedStyle(document.querySelector('.reader')).backgroundColor);
   check(`${label}: светлая тема по умолчанию при тёмной системе`, bg0 === LIGHT, bg0);
   // Настройки старой версии с темой «как в системе» переводятся в светлую
   await page.evaluate(() => localStorage.setItem('aob.settings', JSON.stringify({ theme: 'auto', fontSize: 21 })));
   await page.reload();
   await page.waitForSelector('.verse', { timeout: 30000 });
-  const bgM = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const bgM = await page.evaluate(() => getComputedStyle(document.querySelector('.reader')).backgroundColor);
   const fsM = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--fs').trim());
   check(`${label}: миграция старых настроек`, bgM === LIGHT && fsM === '21px', `${bgM}, шрифт ${fsM}`);
   await page.evaluate(() => localStorage.removeItem('aob.settings'));
@@ -320,7 +320,7 @@ async function run(label, viewport, isMobile) {
   await page.click('.tb-more');
   await page.click('.menu-item:has-text("Оформление")');
   await page.click('.segmented button:has-text("Тёмная")');
-  const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const bg = await page.evaluate(() => getComputedStyle(document.querySelector('.reader')).backgroundColor);
   check(`${label}: тёмная тема`, bg === 'rgb(22, 22, 23)', bg);
   await page.screenshot({ path: `${shots}/${label}-8-settings.png` });
   await page.keyboard.press('Escape');
@@ -329,7 +329,7 @@ async function run(label, viewport, isMobile) {
   // Перезагрузка: настройки и модули восстановлены
   await page.reload();
   await page.waitForSelector('.verse', { timeout: 30000 });
-  const bg2 = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const bg2 = await page.evaluate(() => getComputedStyle(document.querySelector('.reader')).backgroundColor);
   const ref4 = await page.textContent('.tb-ref');
   check(`${label}: восстановление после перезагрузки`, bg2 === 'rgb(22, 22, 23)', `${bg2}, ${ref4}`);
   await page.screenshot({ path: `${shots}/${label}-9-dark.png` });
