@@ -12,6 +12,7 @@ import BookmarksManager from './BookmarksManager.jsx';
 import VerseActions from './VerseActions.jsx';
 import About from './About.jsx';
 import CompareSheet from './CompareSheet.jsx';
+import VersionsSheet from './VersionsSheet.jsx';
 
 const KINDS = {
   dict: DictionaryBottomSheet,
@@ -25,6 +26,7 @@ const KINDS = {
   verse: VerseActions,
   about: About,
   compare: CompareSheet,
+  versions: VersionsSheet,
 };
 
 export default function SheetHost() {

@@ -3,3 +3,7 @@ dist/
 public/modules/
 data-src/modsd/
 data-src/fhl_*.html
+# Издание bibles.org.uk (tigran123) — без лицензии, только для личного импорта
+data-src/tigran/
+local-modules/
+.pylib/

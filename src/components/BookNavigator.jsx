@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { CornerDownLeft } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
-import { parseHumanRef, testamentOf } from '../core/books.js';
+import { parseHumanRef, testamentOf, bookMeta } from '../core/books.js';
 
 export default function BookNavigator({ pane, onClose }) {
   const { panes, bibles, navigate } = useApp();
@@ -17,9 +17,11 @@ export default function BookNavigator({ pane, onClose }) {
   const groups = useMemo(() => {
     const ot = module.books.filter((b) => testamentOf(b.id) === 'OT');
     const nt = module.books.filter((b) => testamentOf(b.id) === 'NT');
+    const ap = module.books.filter((b) => testamentOf(b.id) === 'AP');
     return [
       ['Ветхий Завет', ot],
       ['Новый Завет', nt],
+      ['Апокрифы', ap],
     ].filter(([, l]) => l.length);
   }, [module]);
 
@@ -62,7 +64,10 @@ export default function BookNavigator({ pane, onClose }) {
               <div className="book-grid">
                 {list.map((b) => (
                   <button key={b.id} className={`book-cell ${p.ref.book === b.id ? 'on' : ''}`} onClick={() => setBook(b.id)} title={b.name}>
-                    <span className="bc-short">{b.short.replace(/\.$/, '')}</span>
+                    <span className="bc-short">
+                      {b.short.replace(/\.$/, '')}
+                      {bookMeta(b.id).dc && <sup className="bc-dc" title="Неканоническая книга">*</sup>}
+                    </span>
                     <span className="bc-name">{b.name}</span>
                   </button>
                 ))}

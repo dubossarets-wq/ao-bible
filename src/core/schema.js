@@ -108,6 +108,7 @@ export function normalize(json, { fileName = '' } = {}) {
       id: b.id,
       name: b.name,
       short: b.short,
+      t: b.t,
       verses: b.chapters.map((c) => c.length),
     }));
     if (meta.features.strongs == null) meta.features.strongs = data.books.some((b) => b.chapters.some((c) => c.some((v) => v.includes('{'))));
@@ -126,6 +127,7 @@ function normalizeBible(json, format, warnings) {
       id,
       name: (src && src.name) || m.name,
       short: (src && src.short) || m.short,
+      t: (src && ['OT', 'NT', 'AP'].includes(src.t) && src.t) || (m.order < 999 ? m.t : 'AP'),
       chapters,
       headings: (src && isObj(src.headings) && src.headings) || {},
       xrefs: (src && isObj(src.xrefs) && src.xrefs) || {},
@@ -136,7 +138,13 @@ function normalizeBible(json, format, warnings) {
     const list = format === 'aob' ? json.books : json;
     if (!Array.isArray(list) || !list.length) throw new ModuleError('В модуле нет книг (поле "books" пустое).');
     list.forEach((b, i) => {
-      const id = resolveBook(b.id ?? b.osis ?? b.name ?? b.abbrev, b.id || b.osis || b.name ? null : i) || resolveBook(null, i);
+      const raw = b.id ?? b.osis;
+      let id = resolveBook(raw ?? b.name ?? b.abbrev, raw || b.name ? null : i);
+      // Книга вне справочника (апокрифы): берём её код как есть, если у неё есть название
+      if (!id && typeof raw === 'string' && /^[0-9A-Za-z]{2,12}$/.test(raw) && b.name) id = raw;
+      // Совсем без опознаваемого кода — по порядку протестантского канона (форматы вида [{abbrev:"gn", chapters}])
+      if (!id && !raw && !b.name) id = resolveBook(null, i);
+      if (!id && format === 'books-array' && !raw) id = resolveBook(null, i);
       if (!id) return warnings.push(`Книга №${i + 1} («${b.name || b.id || b.abbrev || '?'}») не распознана и пропущена.`);
       if (!Array.isArray(b.chapters)) return warnings.push(`У книги ${id} нет массива "chapters" — пропущена.`);
       push(id, b, b.chapters.map((c) => (Array.isArray(c) ? c.map(verseText) : [])));

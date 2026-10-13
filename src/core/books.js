@@ -9,6 +9,19 @@ export function bookMeta(id) {
   return BY_ID.get(id) || { id, name: id, short: id, t: 'OT', order: 999 };
 }
 
+// Книги, которых нет в справочнике (апокрифы и т. п.), берут название из установленного модуля.
+// t: 'OT' | 'NT' | 'AP' (апокрифы).
+export function registerModuleBooks(modules) {
+  let order = 1000;
+  for (const m of modules || []) {
+    if (m.type !== 'bible') continue;
+    for (const b of m.books || []) {
+      if (BY_ID.has(b.id) && !BY_ID.get(b.id).dynamic) continue;
+      BY_ID.set(b.id, { id: b.id, name: b.name || b.id, short: b.short || b.id, t: b.t || 'AP', order: order++, dynamic: true });
+    }
+  }
+}
+
 export function testamentOf(bookId) {
   return bookMeta(bookId).t;
 }

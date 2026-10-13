@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
-import { usePersistentState, useEvent } from './core/storage.js';
+import { usePersistentState, useEvent, load, save } from './core/storage.js';
 import { DEFAULT_SETTINGS, applySettings, resolveTheme, migrateSettings } from './core/settings.js';
 import * as repo from './core/modules.js';
-import { bookMeta } from './core/books.js';
+import { bookMeta, registerModuleBooks } from './core/books.js';
 import SplitScreenReader from './components/SplitScreenReader.jsx';
 import SheetHost from './components/SheetHost.jsx';
 import Bootstrap from './components/Bootstrap.jsx';
@@ -47,8 +47,12 @@ export default function App() {
 
   const [modules, setModules] = useState(null);
   useEffect(() => {
-    repo.listModules().then((l) => setModules([...l]));
-    return repo.subscribe((l) => setModules([...l]));
+    const update = (l) => {
+      registerModuleBooks(l);
+      setModules([...l]);
+    };
+    repo.listModules().then(update);
+    return repo.subscribe(update);
   }, []);
   const bibles = useMemo(() => (modules || []).filter((m) => m.type === 'bible'), [modules]);
 
@@ -67,9 +71,13 @@ export default function App() {
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3200);
   }, []);
 
+  // О каждой новой версии сообщаем один раз; дальше — только точка на ⋮
   useEffect(() => {
-    if (updates.available) toast('Доступна новая версия — меню ⋮ → «Обновить приложение»');
-  }, [updates.available, toast]);
+    if (!updates.available || !updates.latest) return;
+    if (load('notifiedBuild', null) === updates.latest) return;
+    save('notifiedBuild', updates.latest);
+    toast('Доступна новая версия — меню ⋮ → «Обновить приложение»');
+  }, [updates.available, updates.latest, toast]);
 
   // Если модуль панели удалён — переключаем на основной/первый доступный перевод.
   useEffect(() => {

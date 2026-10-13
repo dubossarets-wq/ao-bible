@@ -12,14 +12,22 @@ const shots = path.resolve(process.argv[2] || path.join(root, 'dist/smoke'));
 await mkdir(shots, { recursive: true });
 
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.json': 'application/json', '.gz': 'application/gzip', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
+const missing = new Set();
 const server = http.createServer(async (req, res) => {
   let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   if (p.endsWith('/')) p += 'index.html';
+  // На сайте versions.json создаёт scripts/deploy.mjs; локально отдаём список из одной текущей сборки
+  if (p.endsWith('/versions.json')) {
+    const v = JSON.parse(await readFile(path.join(dist, 'version.json'), 'utf8'));
+    res.writeHead(200, { 'content-type': 'application/json' });
+    return res.end(JSON.stringify({ latest: v.build, versions: [{ ...v, notes: 'локальная сборка' }] }));
+  }
   try {
     const body = await readFile(path.join(dist, p));
     res.writeHead(200, { 'content-type': TYPES[path.extname(p)] || 'application/octet-stream', 'content-length': body.length });
     res.end(body);
   } catch {
+    missing.add(p);
     res.writeHead(404);
     res.end();
   }
@@ -39,7 +47,8 @@ async function run(label, viewport, isMobile) {
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+  page.on('console', (m) => m.type() === 'error' && !m.text().startsWith('Failed to load resource') && errors.push(m.text()));
+  page.on('response', (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
   await page.goto(url);
   await page.waitForSelector('.verse', { timeout: 60000 });
   await page.waitForTimeout(800);
@@ -193,16 +202,93 @@ async function run(label, viewport, isMobile) {
   await page.click('.pane-slot.first .tb-split');
   await page.waitForTimeout(300);
 
-  // Уведомление об обновлении: сервер отдаёт другую метку сборки
-  await page.route('**/version.json*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ build: 'новая-сборка' }) }));
+  // Версии: сервер сообщает о более новой сборке; приложение само не переходит, показывает точку и список
+  const build = await page.evaluate(() => localStorage.getItem('aob.activeBuild'));
+  const fakeVersions = { latest: '29991231-235900', versions: [
+    { build: '29991231-235900', date: '2999-12-31T23:59:00Z', notes: 'Тестовая новая версия' },
+    { build, notes: 'Текущая сборка' },
+    { build: '20200101-000000', date: '2020-01-01T00:00:00Z', notes: 'Тестовая старая версия' },
+  ] };
+  await page.route('**/versions.json*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify(fakeVersions) }));
   await page.evaluate(() => window.dispatchEvent(new Event('focus')));
   await page.waitForSelector('.pane-slot.first .update-dot', { timeout: 10000 });
+  check(`${label}: не обновляется само`, (await page.evaluate(() => localStorage.getItem('aob.activeBuild'))) === build && !page.url().includes('versions/'), build);
   await page.click('.pane-slot.first .tb-more');
   const upd = await page.textContent('.menu .menu-item');
   check(`${label}: есть обновление — точка и пункт меню`, upd.includes('Обновить приложение') && upd.includes('новая версия'), upd);
-  await page.screenshot({ path: `${shots}/${label}-7d-update.png` });
+  await page.click('.menu-item:has-text("Версии приложения")');
+  await page.waitForSelector('.version', { timeout: 10000 });
+  const vers = await page.$$eval('.version', (els) => els.map((e) => e.textContent.replace(/\s+/g, ' ').trim()));
+  check(`${label}: список версий с датами`, vers.length === 3 && vers[0].includes('Тестовая новая версия') && vers[0].includes('последняя') && vers[1].includes('установлена') && vers[2].includes('Откатиться'), vers.map((v) => v.slice(0, 60)).join(' | '));
+  await page.screenshot({ path: `${shots}/${label}-7d-versions.png` });
+  // Архивная версия на сайте лежит в versions/<метка>/ — здесь подставляем заглушку
+  await page.route('**/versions/20200101-000000/**', (r) => r.fulfill({ contentType: 'text/html; charset=utf-8', body: '<p>архивная версия</p>' }));
+  await page.locator('.version', { hasText: 'Тестовая старая версия' }).locator('button').click();
+  await page.waitForURL(/versions\/20200101-000000\//, { timeout: 10000 }).catch(() => {});
+  check(`${label}: откат на выбранную версию`, page.url().includes('versions/20200101-000000/') && (await page.evaluate(() => localStorage.getItem('aob.activeBuild'))) === '20200101-000000', page.url());
+  // Возврат на текущую сборку
+  await page.unroute('**/versions.json*');
+  await page.unroute('**/versions/20200101-000000/**');
+  await page.evaluate((b) => localStorage.setItem('aob.activeBuild', b), build);
+  await page.goto(url);
+  await page.waitForSelector('.verse', { timeout: 30000 });
+  await page.waitForTimeout(500);
+
+  // Неканонические книги: модуль из каталога, переход к Товиту, звёздочка в навигаторе
+  await page.click('.pane-slot.first .tb-more');
+  await page.click('.menu-item:has-text("Библиотека модулей")');
+  await page.click('.tabs [role=tab]:has-text("Онлайн-каталог")');
+  const dcCard = page.locator('.mod-card').filter({ has: page.locator('.mod-name', { hasText: /^RST НК$/ }) });
+  await dcCard.locator('button:has-text("Установить")').click();
+  await dcCard.locator('.badge.ok').waitFor({ timeout: 60000 });
   await page.keyboard.press('Escape');
-  await page.unroute('**/version.json*');
+  await page.waitForSelector('.sheet', { state: 'detached' });
+  await page.click('.pane-slot.first .tb-module');
+  await page.locator('.pick-row', { hasText: 'RST НК' }).click();
+  await page.waitForTimeout(500);
+  await page.click('.pane-slot.first .tb-ref');
+  const stars = await page.$$eval('.bc-dc', (e) => e.length);
+  await page.fill('#ref-input', 'Тов 1:3');
+  await page.keyboard.press('Enter');
+  await page.waitForSelector('#v-1-3', { timeout: 15000 });
+  const tob = await page.textContent('#v-1-3 .vt');
+  const tobRef = await page.textContent('.pane-slot.first .tb-ref');
+  check(`${label}: неканонические книги`, stars === 12 && tobRef.includes('Тов. 1:3') && tob.includes('благодеяний'), `${stars} книг со *, ${tobRef}: ${tob.slice(0, 50)}`);
+  await page.screenshot({ path: `${shots}/${label}-7e-tobit.png` });
+
+  // Личный модуль с апокрифами — импорт файла
+  const local = path.join(root, 'local-modules/rst-bibles-org-uk.json.gz');
+  if (await readFile(local).then(() => true, () => false)) {
+    await page.click('.pane-slot.first .tb-more');
+    await page.click('.menu-item:has-text("Библиотека модулей")');
+    await page.click('.tabs [role=tab]:has-text("Импорт файлов")');
+    await page.setInputFiles('#import-file', local);
+    await page.locator('.mod-card button:has-text("Установить")').click({ timeout: 60000 });
+    await page.locator('.mod-card .badge.ok').waitFor({ timeout: 60000 });
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('.sheet', { state: 'detached' });
+    await page.click('.pane-slot.first .tb-module');
+    await page.locator('.pick-row', { hasText: 'RST А' }).click();
+    await page.waitForTimeout(500);
+    await page.click('.pane-slot.first .tb-ref');
+    const groups = await page.$$eval('.nav-group h4', (e) => e.map((x) => x.textContent));
+    await page.locator('.book-cell', { hasText: 'Завещание Левия' }).click();
+    await page.locator('.num-grid button', { hasText: /^1$/ }).first().click();
+    await page.locator('.btn.wide:has-text("Читать главу")').click();
+    await page.waitForSelector('#v-1-1', { timeout: 15000 });
+    const lvRef = await page.textContent('.pane-slot.first .tb-ref');
+    check(`${label}: импорт апокрифов`, groups.includes('Апокрифы') && lvRef.includes('1:1'), `${groups.join(', ')}; ${lvRef}`);
+    await page.click('.pane-slot.first .tb-module');
+    await page.locator('.pick-row', { hasText: 'RST+' }).click();
+    await page.waitForTimeout(400);
+  }
+  await page.click('.pane-slot.first .tb-module');
+  await page.locator('.pick-row', { hasText: 'RST+' }).click();
+  await page.waitForTimeout(300);
+  await page.click('.pane-slot.first .tb-ref');
+  await page.fill('#ref-input', 'Нав 13:32');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(600);
 
   // Настройки: тёмная тема и размер шрифта
   await page.click('.tb-more');

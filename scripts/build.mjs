@@ -12,7 +12,9 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dev = process.argv.includes('--dev');
 const VERSION = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8')).version;
 // Метка сборки: приложение сравнивает её с version.json на сервере, чтобы показать «есть обновление»
-const BUILD = `${VERSION}+${new Date().toISOString().replace(/[-:]/g, '').slice(0, 13)}`;
+// Метка сборки = дата и время по UTC (20261013-181500); по ней же называется папка версии versions/<метка>/
+const BUILT_AT = new Date();
+const BUILD = BUILT_AT.toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
 
 async function bundle(pwa) {
   const res = await build({
@@ -81,13 +83,14 @@ ${FONTS}
 <meta name="theme-color" content="#38363a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- Сплошная чёрная строка состояния: без прозрачности iOS не размывает панель под часами -->
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="AO Bible">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 ${FONTS}
-<style>html:root{--sat:env(safe-area-inset-top,0px)}html,body{height:100%}@supports (height:100dvh){html{height:100dvh}}</style>
+<style>html:root{--sat:env(safe-area-inset-top,0px)}html,body{height:100%}/* iOS: приложение прибито ко всем краям экрана, текст доходит до нижнего края */html:root .app{position:fixed;inset:0;height:auto}</style>
 <style>${css}</style>
 </head>
 <body>
@@ -126,7 +129,7 @@ ${FONTS}
   // Service worker: оболочка приложения кэшируется при установке; модули — при первом скачивании
   // (gz-версии, которые и загружает приложение). Тексты уже лежат в IndexedDB, так что офлайн работает.
   const shell = ['./', 'index.html', 'manifest.webmanifest', 'modules/catalog.json', 'icons/icon.svg', 'icons/icon-192.png', 'icons/apple-touch-icon.png'];
-  await writeFile(path.join(dir, 'version.json'), JSON.stringify({ version: VERSION, build: BUILD }));
+  await writeFile(path.join(dir, 'version.json'), JSON.stringify({ version: VERSION, build: BUILD, date: BUILT_AT.toISOString() }));
   const sw = `const CACHE = 'aob-${BUILD}';
 const SHELL = ${JSON.stringify(shell)};
 self.addEventListener('install', (e) => {

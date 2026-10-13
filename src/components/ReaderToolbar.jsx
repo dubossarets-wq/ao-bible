@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Search, X, MoreVertical, Library, Palette, Bookmark, BookmarkCheck, Star, ListTree, Info, Eye, EyeOff, Columns2, Rows2 } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { bookMeta } from '../core/books.js';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, History } from 'lucide-react';
 import { IS_PWA_BUILD, applyUpdate } from '../core/updates.js';
 
 // Стрелки «←…» и «→…» как на скриншоте: стрелка с многоточием (история переходов)
@@ -119,6 +119,7 @@ export default function ReaderToolbar({ index, pane, module }) {
                   <span>{updates.available ? 'Обновить приложение' : 'Проверить обновления'}</span>
                   {updates.available && <span className="menu-extra badge-new">новая версия</span>}
                 </button>
+                {item(History, 'Версии приложения', () => openSheet('versions', index))}
                 <div className="menu-sep" />
               </>
             )}
