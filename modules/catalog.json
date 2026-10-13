@@ -144,6 +144,23 @@
    "description": "Синодальный текст с протестантскими примечаниями и подзаголовками. Свободно распространяемой электронной версии не найдено, поэтому модуль в каталоге не публикуется. Если у вас есть законная копия в JSON, импортируйте её во вкладке «Импорт файлов».",
    "language": "ru",
    "unavailable": true
+  },
+  {
+   "id": "bible-places",
+   "type": "maps",
+   "name": "Места",
+   "title": "Библейские места на карте",
+   "description": "1335 мест Библии с координатами, современным отождествлением, степенью уверенности, описанием и всеми стихами, где место упомянуто. Нажмите на название города в стихе — в выборке появится «Карта», и место откроется на карте во второй половине экрана.",
+   "language": "ru",
+   "version": "BibleMap 2026-09-29",
+   "author": "OpenBible.info (координаты и стихи); русские названия и описания — проект BibleMap",
+   "source": "OpenBible.info Bible Geocoding Data (https://github.com/openbibleinfo/Bible-Geocoding-Data) через проект BibleMap",
+   "license": "CC BY 4.0 (OpenBible.info); русские тексты — BibleMap",
+   "versification": "synodal",
+   "url": "bible-places.json",
+   "urlGz": "bible-places.json.gz",
+   "size": 811430,
+   "sizeGz": 193137
   }
  ]
 }
