@@ -61,4 +61,18 @@ docs/MODULE_SCHEMA.md — формат модулей
 | RST+, RST, параллельные места RST | Синодальный перевод (1876), разметка Стронга — В. Столярский ([swmail/RST](https://github.com/swmail/RST)) | Public Domain |
 | Симфония RST+ | Собрана автоматически из RST+ | Public Domain |
 | Стронг: иврит / греческий | J. Strong (1890/1894), JSON — [Open Scriptures](https://github.com/openscriptures/strongs) | CC-BY-SA |
+| Синодальный с неканоническими книгами (RST НК) | CrossWire RusSynodal | Public Domain |
+| Места (карта мест) | OpenBible.info Bible Geocoding Data; русские названия и описания — проект BibleMap | CC BY 4.0 (OpenBible.info) |
+| KJV со Стронгом | ebible.org eng-kjv2006 | Public Domain (кроме Великобритании) |
+| Berean Standard Bible | CrossWire BSB | CC0 1.0 |
+| Еврейский ВЗ (OSHB/WLC) | Open Scriptures Hebrew Bible, github.com/openscriptures/morphhb | CC BY 4.0 (OSHB); WLC — Public Domain |
+| Греческий НЗ Robinson–Pierpont 2018 | github.com/byztxt/byzantine-majority-text | Public Domain |
+| Елизаветинская Библия, Пятикнижие Макария, НЗ Кулиша | CrossWire (CSlElizabeth, RusMakarij, UkrKulish) | Public Domain |
+| Толковая Библия Лопухина | github.com/swmail/lopukhin_commentary | Public Domain |
+| Matthew Henry Concise, Jamieson-Fausset-Brown, Barnes | CrossWire | Public Domain |
+| Библейская энциклопедия архим. Никифора | ru.wikisource.org | CC BY-SA 4.0 (Викитека); текст 1891 г. — Public Domain |
+| Easton, Smith, Hitchcock, Nave, Abbott-Smith, BDB (краткие значения) | CrossWire | Public Domain |
+| Параллельные места OpenBible.info | a.openbible.info/data/cross-references.zip | CC BY (OpenBible.info) |
+| Treasury of Scripture Knowledge | CrossWire TSK | Public Domain |
+| Библейские карты | Wikimedia Commons (Biblica Open Bible Maps и др.; автор и лицензия — в описании каждой карты) | CC BY-SA 4.0 / CC BY-SA 3.0 / Public Domain |
 | Библия Гёце | Свободной электронной версии не найдено | — (в каталоге помечена как недоступная) |

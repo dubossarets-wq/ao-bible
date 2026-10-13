@@ -484,4 +484,24 @@ button.row-act:hover { background: color-mix(in srgb, var(--accent) 12%, transpa
 .continue-title { font-weight: 700; }
 .list-title .list-meta { margin-left: 8px; font-weight: 400; }
 /* «Только карта и точка»: прячем карточку и элементы управления карты */
-.map-pane.clean .place-card, .map-pane.clean .maplibregl-ctrl-top-right, .map-pane.clean .maplibregl-ctrl-bottom-left { display: none; }
+.map-pane.clean .maplibregl-ctrl-top-right, .map-pane.clean .maplibregl-ctrl-bottom-left { display: none; }
+
+/* Еврейский текст (OSHB): справа налево, шрифт с огласовками */
+.text-col[dir="rtl"] { font-family: var(--font-hebrew); }
+.text-col[dir="rtl"] .verse { text-align: right; }
+.text-col[dir="rtl"] .verse.selected::before { left: auto; right: -11px; }
+.text-col[dir="rtl"] .chapter-title, .text-col[dir="rtl"] .book-title, .text-col[dir="rtl"] .section-title { font-family: var(--font-text); }
+.text-col[lang="grc"] { font-family: var(--font-greek); }
+
+/* Меню поверх всего окна: панель с открытым меню поднимается над соседней */
+.pane-slot { position: relative; z-index: 1; }
+.pane-slot:has(.menu) { z-index: 30; }
+.menu { max-height: calc(var(--vvh, 100dvh) - var(--bar-h) - var(--sat) - 24px); overflow-y: auto; overscroll-behavior: contain; }
+
+/* Разделитель панелей: толще и с увеличенной зоной захвата */
+.split.rows .divider { flex-basis: 18px; }
+.split.columns .divider { flex-basis: 14px; }
+.divider::before { content: ""; position: absolute; inset: -10px 0; }
+.split.columns .divider::before { inset: 0 -10px; }
+.divider-grip { width: 72px; height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--bar-text) 60%, transparent); }
+.split.columns .divider-grip { width: 6px; height: 72px; }

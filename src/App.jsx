@@ -7,7 +7,7 @@ import SplitScreenReader from './components/SplitScreenReader.jsx';
 import SheetHost from './components/SheetHost.jsx';
 import Bootstrap from './components/Bootstrap.jsx';
 import WordPopover from './components/WordPopover.jsx';
-import { useUpdates } from './core/updates.js';
+import { useUpdates, applyUpdate } from './core/updates.js';
 import { Toasts } from './components/ui.jsx';
 
 const AppCtx = createContext(null);
@@ -73,9 +73,18 @@ export default function App() {
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3200);
   }, []);
 
+  // Автообновление (по умолчанию) и экстренное обновление: переходим на новую версию сразу,
+  // но не посреди открытого окна (например, недописанной заметки) — ждём, пока его закроют
+  useEffect(() => {
+    if (!updates.available || !(updates.auto || updates.forced) || sheet) return;
+    toast(updates.forced ? 'Экстренное обновление…' : 'Обновляюсь до новой версии…');
+    const t = setTimeout(() => applyUpdate(), 600);
+    return () => clearTimeout(t);
+  }, [updates.available, updates.auto, updates.forced, sheet]);
+
   // О каждой новой версии сообщаем один раз; дальше — только точка на ⋮
   useEffect(() => {
-    if (!updates.available || !updates.latest) return;
+    if (!updates.available || !updates.latest || updates.auto || updates.forced) return;
     if (load('notifiedBuild', null) === updates.latest) return;
     save('notifiedBuild', updates.latest);
     toast('Доступна новая версия — меню ⋮ → «Обновить приложение»');

@@ -141,9 +141,13 @@ export default function MapPane({ pane }) {
         </div>
         <button
           className={`tb tb-icon ${clean ? 'on' : ''}`}
-          onClick={() => setClean((v) => !v)}
+          onClick={() => {
+            // Включая «только карту», сворачиваем карточку до строки с названием — она остаётся внизу
+            if (!clean) setCardOpen(false);
+            setClean((v) => !v);
+          }}
           aria-pressed={clean}
-          aria-label={clean ? 'Показать подписи, дороги и карточку' : 'Только карта и точка'}
+          aria-label={clean ? 'Показать подписи, дороги и кнопки' : 'Только карта и точка'}
           title={clean ? 'Показать все наложения' : 'Только карта и точка'}
           disabled={state !== 'ready'}
         >

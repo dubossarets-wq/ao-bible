@@ -213,12 +213,22 @@ async function run(label, viewport, isMobile) {
     { build, notes: 'Текущая сборка' },
     { build: '20200101-000000', date: '2020-01-01T00:00:00Z', notes: 'Тестовая старая версия' },
   ] };
+  // Автообновление по умолчанию включено: с ним приложение само уходит на новую версию
+  await page.route('**/versions.json*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify(fakeVersions) }));
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  const autoWent = await page.waitForURL(/[?&]v=/, { timeout: 15000 }).then(() => true, () => false);
+  await page.unroute('**/versions.json*');
+  await page.goto(url);
+  await page.waitForSelector('.verse', { timeout: 30000 });
+  check(`${label}: автообновление по умолчанию`, autoWent, page.url());
+  // Дальше — с выключенным автообновлением: приложение остаётся на своей версии
+  await page.evaluate((b) => { localStorage.setItem('aob.autoUpdate2', '0'); localStorage.setItem('aob.activeBuild', b); }, build);
   await page.route('**/versions.json*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify(fakeVersions) }));
   await page.evaluate(() => window.dispatchEvent(new Event('focus')));
   await page.waitForSelector('.pane-slot.first .update-dot', { timeout: 10000 });
   check(`${label}: не обновляется само`, (await page.evaluate(() => localStorage.getItem('aob.activeBuild'))) === build && !page.url().includes('versions/'), build);
   await page.click('.pane-slot.first .tb-more');
-  const upd = await page.textContent('.menu .menu-item');
+  const upd = await page.textContent('.menu .menu-item:has-text("Обновить приложение")');
   check(`${label}: есть обновление — точка и пункт меню`, upd.includes('Обновить приложение') && upd.includes('новая версия'), upd);
   await page.click('.menu-item:has-text("Версии приложения")');
   await page.waitForSelector('.version', { timeout: 10000 });
@@ -233,7 +243,7 @@ async function run(label, viewport, isMobile) {
   // Возврат на текущую сборку
   await page.unroute('**/versions.json*');
   await page.unroute('**/versions/20200101-000000/**');
-  await page.evaluate((b) => localStorage.setItem('aob.activeBuild', b), build);
+  await page.evaluate((b) => { localStorage.setItem('aob.activeBuild', b); localStorage.removeItem('aob.autoUpdate2'); }, build);
   await page.goto(url);
   await page.waitForSelector('.verse', { timeout: 30000 });
   await page.waitForTimeout(500);

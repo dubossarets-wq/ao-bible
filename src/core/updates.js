@@ -10,7 +10,8 @@ export const BUILD = typeof __BUILD__ !== 'undefined' ? __BUILD__ : 'dev';
 export const IS_PWA_BUILD = typeof __PWA__ !== 'undefined' && __PWA__;
 
 const K_ACTIVE = 'aob.activeBuild';
-const K_AUTO = 'aob.autoUpdate';
+// Новый ключ: автообновление включено у всех по умолчанию, прежний выбор «выкл» не переносится
+const K_AUTO = 'aob.autoUpdate2';
 const K_KNOWN = 'aob.knownBuilds';
 const K_HOPS = 'aob.versionHops';
 
@@ -34,7 +35,7 @@ const ls = {
 // Корень сайта: у архивных версий <base href="../../"> указывает на него
 export const appRoot = () => new URL('./', document.baseURI).href;
 export const isArchivedPage = () => location.pathname.includes('/versions/');
-export const autoUpdateEnabled = () => ls.get(K_AUTO) === '1';
+export const autoUpdateEnabled = () => ls.get(K_AUTO) !== '0';
 export const setAutoUpdate = (on) => ls.set(K_AUTO, on ? '1' : '0');
 export const activeBuild = () => ls.get(K_ACTIVE) || BUILD;
 
@@ -63,6 +64,11 @@ export function bootVersionGate() {
     ls.set(K_ACTIVE, BUILD);
     return false;
   }
+  if (isArchivedPage() && autoUpdateEnabled()) {
+    ls.set(K_ACTIVE, '');
+    location.replace(new URL(`./?v=${Date.now().toString(36)}`, appRoot()).href);
+    return true;
+  }
   // Защита от зацикливания и от перехода на версию, которой нет в архиве
   const hops = +(sessionStorage.getItem(K_HOPS) || 0);
   if (hops > 2 || !knownBuilds().includes(active)) {
@@ -85,19 +91,21 @@ export async function fetchVersions() {
   const data = await fetchJson('versions.json');
   const list = Array.isArray(data.versions) ? data.versions : [];
   ls.set(K_KNOWN, JSON.stringify(list.map((v) => v.build)));
-  return { versions: list, latest: data.latest || list[0]?.build };
+  // minBuild — экстренное обновление: версии ниже обновляются принудительно, даже без автообновления
+  return { versions: list, latest: data.latest || list[0]?.build, minBuild: data.minBuild || null };
 }
 
 export function useUpdates() {
-  const [state, setState] = useState({ available: false, checking: false, latest: null, error: null });
+  const [state, setState] = useState({ available: false, checking: false, latest: null, error: null, forced: false });
 
   const check = useCallback(async () => {
     if (!IS_PWA_BUILD) return false;
     setState((s) => ({ ...s, checking: true, error: null }));
     try {
-      const { latest } = await fetchVersions();
+      const { latest, minBuild } = await fetchVersions();
       const available = !!latest && latest !== BUILD && latest > BUILD;
-      setState({ available, checking: false, latest, error: null });
+      const forced = !!minBuild && BUILD < minBuild && available;
+      setState({ available, checking: false, latest, error: null, forced, auto: autoUpdateEnabled() });
       return available;
     } catch {
       setState((s) => ({ ...s, checking: false, error: 'Нет связи с сервером' }));
@@ -111,7 +119,7 @@ export function useUpdates() {
     const onVisible = () => document.visibilityState === 'visible' && check();
     document.addEventListener('visibilitychange', onVisible);
     window.addEventListener('focus', onVisible);
-    const t = setInterval(check, 30 * 60 * 1000);
+    const t = setInterval(check, 5 * 60 * 1000); // раз в 5 минут
     return () => {
       document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('focus', onVisible);
@@ -126,6 +134,8 @@ export function useUpdates() {
 // Модули, закладки и настройки общие для всех версий (IndexedDB и localStorage того же сайта).
 export async function switchToVersion(build, latest) {
   ls.set(K_ACTIVE, build);
+  // Откат на старую версию выключает автообновление — иначе приложение сразу вернуло бы последнюю
+  if (build !== latest) setAutoUpdate(false);
   sessionStorage.removeItem(K_HOPS);
   try {
     const reg = await navigator.serviceWorker?.getRegistration();

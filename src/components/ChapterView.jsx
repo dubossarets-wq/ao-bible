@@ -8,6 +8,7 @@ import { getBook } from '../core/modules.js';
 import { crossrefCounts } from '../core/crossrefs.js';
 import { commentaryIndex } from '../core/commentary.js';
 import { setLivePosition, clearLivePosition } from '../core/livePosition.js';
+import { setDriver, isDriver, onSync, emitSync } from '../core/scrollSync.js';
 import { verseHtml, wordAt, plainText } from '../core/verseMarkup.js';
 
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -194,7 +195,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
   const frame = useRef(0);
   const measure = () => {
     const els = scroller.current?.querySelectorAll('.verse') || [];
-    positions.current = Array.from(els, (v) => ({ bottom: v.offsetTop + v.offsetHeight, c: +v.dataset.c, v: +v.dataset.v }));
+    positions.current = Array.from(els, (v) => ({ top: v.offsetTop, bottom: v.offsetTop + v.offsetHeight, c: +v.dataset.c, v: +v.dataset.v }));
   };
   const trackPosition = () => {
     frame.current = 0;
@@ -216,6 +217,11 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     }
     const ref = { book: book.id, chapter: found.c, verse: found.v };
     setLivePosition(index, ref);
+    // Синхронная прокрутка: ведущая панель передаёт стих и долю его высоты
+    if (settings.syncScroll && isDriver(index)) {
+      const frac = Math.max(0, Math.min(1, (top - found.top) / Math.max(1, found.bottom - found.top)));
+      emitSync(index, { ref, frac });
+    }
     // В историю и сохранение — когда прокрутка стихла
     clearTimeout(posTimer.current);
     posTimer.current = setTimeout(() => reportPosition(index, ref), 450);
@@ -248,6 +254,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     press.current = null;
   };
   const onPointerDown = (e) => {
+    setDriver(index);
     if (e.button > 0) return;
     const vref = verseRefOf(e.target);
     if (!vref || e.target.closest('[data-act]')) return;
@@ -313,6 +320,29 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     }
   };
 
+  // Ведомая панель: встаём на стих ведущей. Если стих не загружен или книга другая — переходим туда.
+  const syncNav = useRef(null);
+  useEffect(
+    () =>
+      onSync(index, ({ ref, frac }) => {
+        const el = scroller.current;
+        if (!settings.syncScroll || !el || isDriver(index) || !book) return;
+        if (!module.books.some((b) => b.id === ref.book)) return;
+        const target = book.id === ref.book ? el.querySelector(`#v-${ref.chapter}-${ref.verse}`) : null;
+        if (target) {
+          el.scrollTop = target.offsetTop + frac * target.offsetHeight - 12;
+          lastY.current = el.scrollTop;
+          return;
+        }
+        const key = `${ref.book}.${ref.chapter}`;
+        if (syncNav.current === key) return;
+        syncNav.current = key;
+        navigate(index, ref, { push: false, flash: false });
+        setTimeout(() => syncNav.current === key && (syncNav.current = null), 800);
+      }),
+    [index, book, module, settings.syncScroll]
+  );
+
   const opts = useMemo(
     () => ({
       showVerseNumbers: settings.showVerseNumbers,
@@ -340,12 +370,14 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       }}
       onClick={onClick}
       onPointerDown={onPointerDown}
+      onWheel={() => setDriver(index)}
+      onTouchStart={() => setDriver(index)}
       onPointerMove={onPointerMove}
       onPointerUp={cancelPress}
       onPointerCancel={cancelPress}
       onContextMenu={onContextMenu}
     >
-      <div className="text-col">
+      <div className="text-col" dir={module.language === 'he' ? 'rtl' : undefined} lang={module.language || undefined}>
         {error && <div className="notice error-text">{error}</div>}
         {!error && (!book || !range) && (
           <div className="loading">

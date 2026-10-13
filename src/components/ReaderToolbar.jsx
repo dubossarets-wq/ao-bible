@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Search, X, MoreVertical, Library, Palette, Bookmark, BookmarkCheck, Star, Info, Eye, EyeOff, Columns2, Rows2 } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { bookMeta } from '../core/books.js';
-import { RefreshCw, History, Map as MapIcon, PlayCircle } from 'lucide-react';
+import { RefreshCw, History, Map as MapIcon, PlayCircle, Link2 } from 'lucide-react';
 import { IS_PWA_BUILD, applyUpdate } from '../core/updates.js';
 import { useLivePosition } from '../core/livePosition.js';
 
@@ -113,6 +113,9 @@ export default function ReaderToolbar({ index, pane, module }) {
             {modules.some((m) => m.type === 'maps') && item(MapIcon, 'Карты', () => openSheet('maps', index))}
             {item(Palette, 'Оформление', () => openSheet('settings', index))}
             {item(settings.focusMode ? EyeOff : Eye, 'Режим чтения', () => setSettings({ focusMode: !settings.focusMode }), settings.focusMode ? 'вкл' : 'выкл')}
+            {split &&
+              panes[1]?.kind !== 'map' &&
+              item(Link2, 'Синхронная прокрутка', () => setSettings({ syncScroll: !settings.syncScroll }), settings.syncScroll ? 'вкл' : 'выкл')}
             {split &&
               item(settings.splitLayout === 'rows' ? Columns2 : Rows2, settings.splitLayout === 'rows' ? 'Панели рядом' : 'Панели друг над другом', () =>
                 setSettings({ splitLayout: settings.splitLayout === 'rows' ? 'columns' : 'rows' })

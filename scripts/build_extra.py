@@ -1,0 +1,475 @@
+"""Дополнительные модули AO Bible: переводы, комментарии, словари, параллельные места и карты из источников
+со свободной лицензией (Public Domain, CC0, CC BY, CC BY-SA). Формат — docs/MODULE_SCHEMA.md.
+
+Запуск (после build_data.py и build_dc.py — дописывает свои записи в public/modules/catalog.json):
+  python -I scripts/build_extra.py              # все модули
+  python -I scripts/build_extra.py kjv mhcc     # только перечисленные id (остальные записи каталога не трогаются)
+
+Исходники (скачаны в data-src/extra/; откуда загружать заново — ниже):
+  crosswire/*.zip        — модули CrossWire SWORD (https://crosswire.org/ftpmirror/pub/sword/packages/rawzip/),
+                           распаковываются в crosswire/x/<Модуль>/
+  sword-src/             — canon_synodal.h и versificationmgr.cpp из исходников SWORD (таблица Synodal<->KJV)
+  ebible/eng-kjv2006/    — KJV с номерами Стронга, USFM (https://ebible.org/Scriptures/eng-kjv2006_usfm.zip)
+  morphhb/repo/          — git clone https://github.com/openscriptures/morphhb (OSHB)
+  byztxt/repo/           — git clone https://github.com/byztxt/byzantine-majority-text (RP2018)
+  openbible/             — https://a.openbible.info/data/cross-references.zip
+  lopukhin/github-swmail-lopukhin_commentary/ — https://github.com/swmail/lopukhin_commentary
+  nikifor/ru-wikisource/ — статьи «БЭАН/…» Русской Викитеки (MediaWiki API)
+  wikimedia-maps/        — карты с Wikimedia Commons + manifest.json (лицензия и автор каждой карты)
+Нужен pysword в .pylib (см. build_dc.py).
+"""
+import json
+import os
+import re
+import shutil
+import sys
+import zipfile
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import extra_bibles as B  # noqa: E402
+import extra_comm as C  # noqa: E402
+import extra_dicts as D  # noqa: E402
+import extra_ru as R  # noqa: E402
+from extra_lib import (BOOK_BY_ID, CW, OUT, SRC, kjv2syn, log, merge_catalog, parse_osis_ref,  # noqa: E402
+                       write_module)
+
+# Картинки карт: путь от корня сайта (src/core/schema.js принимает https://, data:image/ и путь вида
+# modules/maps/<id>/файл.jpg; build.mjs публикует папку maps/<id> вместе с модулем). Абсолютный адрес можно
+# задать переменной AOB_MAPS_BASE (например, https://dubossarets-wq.github.io/ao-bible/).
+MAPS_BASE = os.environ.get("AOB_MAPS_BASE", "")
+
+BASE = {"format": "aob-module", "formatVersion": 1}
+CW_SRC = "CrossWire Bible Society, модуль {} (https://crosswire.org/sword/modules/)"
+
+
+def unpack_crosswire():
+    for z in sorted((SRC / "crosswire").glob("*.zip")):
+        dest = CW / z.stem
+        if not (dest / "mods.d").exists():
+            zipfile.ZipFile(z).extractall(dest)
+
+
+def bible(meta, col, skip=()):
+    books = col.books(skip)
+    B.validate(books, meta["id"])
+    feats = meta.setdefault("features", {})
+    feats.setdefault("strongs", any("{" in v for b in books for ch in b["chapters"] for v in ch))
+    feats.setdefault("headings", any(b.get("headings") for b in books))
+    return {**BASE, "type": "bible", "versification": "synodal", **meta, "books": books}
+
+
+# ---------------------------------------------------------------------------------------------
+# Переводы
+# ---------------------------------------------------------------------------------------------
+
+def m_kjv():
+    col = B.usfm_bible(SRC / "ebible" / "eng-kjv2006", kjv2syn)
+    return bible({
+        "id": "kjv", "name": "KJV", "title": "King James Version (1769) с номерами Стронга", "language": "en",
+        "description": "Английская Библия короля Якова (Authorized Version, стандартный текст 1769 г.) с номерами "
+                       "Стронга и курсивом добавленных слов. 66 книг. Нумерация стихов переведена в синодальную "
+                       "(Псалтирь, Иов, Малахия и др.), надписания псалмов — отдельным стихом, как в синодальном.",
+        "version": "eBible.org eng-kjv2006 (2026-09-26)", "author": "Перевод 1611 г., редакция 1769 г.; номера Стронга — CrossWire / eBible.org",
+        "source": "https://ebible.org/find/details.php?id=eng-kjv2006",
+        "license": "Public Domain (вне Великобритании; в Великобритании права на печать — королевский патент)",
+        "features": {"strongs": True, "italics": True, "headings": False},
+    }, col)
+
+
+def m_bsb():
+    col = B.sword_bible("BSB", "kjv", kjv2syn)
+    return bible({
+        "id": "bsb", "name": "BSB", "title": "Berean Standard Bible с номерами Стронга", "language": "en",
+        "description": "Современный английский перевод Berean Standard Bible с номерами Стронга у каждого слова или "
+                       "фразы и заголовками разделов. Нумерация стихов переведена в синодальную.",
+        "version": "CrossWire BSB " + B.sword_version("BSB"), "author": "Bible Hub / Berean Bible (2016–2023)",
+        "source": CW_SRC.format("BSB") + "; https://berean.bible",
+        "license": "CC0 1.0 (общественное достояние, с 30.04.2023)",
+        "features": {"strongs": True, "headings": True},
+    }, col)
+
+
+def m_oshb():
+    col = B.oshb()
+    return bible({
+        "id": "oshb", "name": "OSHB", "title": "Еврейский текст Ветхого Завета (Ленинградский кодекс) с номерами Стронга",
+        "language": "he",
+        "description": "Масоретский текст по Вестминстерскому Ленинградскому кодексу (WLC) с огласовками и знаками "
+                       "кантилляции, номерами Стронга и морфологическими кодами OSHB. Нумерация переведена в "
+                       "синодальную (по таблице VerseMap OSHB и SWORD); Ис 64:1 в еврейском тексте входит в 63:19.",
+        "version": "openscriptures/morphhb (git)", "author": "Open Scriptures Hebrew Bible (D. Owens, D. Troidl и др.); WLC — Groves Center",
+        "source": "https://github.com/openscriptures/morphhb",
+        "license": "CC BY 4.0 (Open Scriptures Hebrew Bible); текст WLC — Public Domain",
+        "features": {"strongs": True, "morphology": True},
+    }, col)
+
+
+def m_byz():
+    col = B.byz(kjv2syn)
+    return bible({
+        "id": "byz-rp2018", "name": "Byz", "title": "Новый Завет на греческом: Византийский текст (Робинсон — Пирпонт 2018)",
+        "language": "grc",
+        "description": "Греческий Новый Завет в византийской текстовой форме (Robinson–Pierpont 2018) с ударениями, "
+                       "номерами Стронга и морфологическими кодами Робинсона. Нумерация переведена в синодальную.",
+        "version": "byztxt/byzantine-majority-text (git)", "author": "Maurice A. Robinson, William G. Pierpont",
+        "source": "https://github.com/byztxt/byzantine-majority-text",
+        "license": "Public Domain (передано в общественное достояние авторами)",
+        "features": {"strongs": True, "morphology": True},
+    }, col)
+
+
+def m_csl():
+    col = B.sword_bible("CSlElizabeth", "synodal", None, strongs=False)
+    h = col.headings.get("Ps", {})
+    if "150:6" in h:  # надписание Пс 151 в модуле стоит после Пс 150:6
+        col.heading("Ps", 151, 1, h.pop("150:6"))
+    return bible({
+        "id": "csl-elizabeth", "name": "ЦСЯ", "title": "Елизаветинская Библия на церковнославянском языке (1751/1757)",
+        "language": "cu",
+        "description": "Церковнославянская Библия в редакции 1751 г. (издание 1757 г.) гражданским шрифтом в "
+                       "современной орфографии, полный канон с неканоническими книгами. Синодальная нумерация.",
+        "version": "CrossWire CSlElizabeth " + B.sword_version("CSlElizabeth"), "author": "Елизаветинская Библия (1751); электронный текст — rusbible.ru",
+        "source": CW_SRC.format("CSlElizabeth"), "license": "Public Domain",
+        "features": {"strongs": False, "deuterocanonical": True},
+    }, col)
+
+
+MAKARIJ_FIX = str.maketrans({"ј": "ѣ", "Ј": "Ѣ", "ѕ": "ѳ", "Ѕ": "Ѳ", "ў": "ѵ"})
+
+
+def _makarij_fix(raw):
+    raw = raw.translate(MAKARIJ_FIX)  # шрифтовая подстановка старой орфографии в исходнике: ј=ѣ, ѕ=ѳ, ў=ѵ
+    return re.sub(r"\[ \(\w+ \d+:\d+\) (.*?) \]", r"\1", raw)
+
+
+def m_makarij():
+    col = B.sword_bible("RusMakarij", "kjv", kjv2syn, strongs=False, fix=_makarij_fix,
+                        book_filter=lambda b: b != "Num")
+    return bible({
+        "id": "rus-makarij", "name": "Макарий", "title": "Пятикнижие в переводе архим. Макария (Глухарева)",
+        "language": "ru",
+        "description": "Перевод книг Моисеевых с еврейского архимандрита Макария (Глухарева, 1792–1847) в "
+                       "дореформенной орфографии: Бытие, Исход, Левит, Второзаконие. Книга Чисел не включена — в "
+                       "исходном электронном тексте у неё сбиты главы и стихи.",
+        "version": "CrossWire RusMakarij " + B.sword_version("RusMakarij"), "author": "Архим. Макарий (Глухарев); электронный текст — С. А. Федосов (Slavic Bible)",
+        "source": CW_SRC.format("RusMakarij"), "license": "Public Domain",
+        "features": {"strongs": False},
+    }, col)
+
+
+def m_kulish():
+    col = B.sword_bible("UkrKulish", "kjv", kjv2syn, strongs=False)
+    return bible({
+        "id": "ukr-kulish", "name": "Куліш", "title": "Новий Завіт у перекладі П. Куліша (1871)", "language": "uk",
+        "description": "Украинский перевод Нового Завета Пантелеймона Кулиша (1871). Нумерация стихов переведена в "
+                       "синодальную (Рим 16:25–27 → 14:24–26 и др.).",
+        "version": "CrossWire UkrKulish " + B.sword_version("UkrKulish"), "author": "П. О. Куліш; электронный текст — Unbound Bible (Biola University)",
+        "source": CW_SRC.format("UkrKulish"), "license": "Public Domain",
+        "features": {"strongs": False},
+    }, col)
+
+
+# ---------------------------------------------------------------------------------------------
+# Комментарии
+# ---------------------------------------------------------------------------------------------
+
+def commentary(meta, entries):
+    return {**BASE, "type": "commentary", "versification": "synodal", **meta, "entries": C.sort_entries(entries)}
+
+
+LOP_PARTS = [
+    ("lopukhin-1", "Лопухин 1", "Бытие — Есфирь", "Gen", "Esth"),
+    ("lopukhin-2", "Лопухин 2", "Иов — 3 Ездры", "Job", "2Esd"),
+    ("lopukhin-3", "Лопухин 3", "Новый Завет", "Matt", "Rev"),
+]
+
+
+def m_lopukhin():
+    entries, skipped = R.lopukhin()
+    if skipped:
+        log("  лопухин: пропущены ссылки", skipped)
+    order = [b["id"] for b in json.loads((Path(__file__).resolve().parent.parent / "src" / "core" / "books.json").read_text(encoding="utf-8"))]
+    mods = []
+    for mid, name, rng, first, last in LOP_PARTS:
+        books = set(order[order.index(first):order.index(last) + 1])
+        part = {k: v for k, v in entries.items() if k.split(".")[0] in books}
+        mods.append(commentary({
+            "id": mid, "name": name, "title": f"Толковая Библия Лопухина: {rng}", "language": "ru",
+            "description": f"«Толковая Библия, или Комментарий на все книги Св. Писания» под ред. А. П. Лопухина и его "
+                           f"преемников (СПб., 1904–1913), часть: {rng}. Вступления к книгам и главам, толкования на "
+                           f"стихи и группы стихов. Синодальная нумерация.",
+            "version": "swmail/lopukhin_commentary d471c95", "author": "А. П. Лопухин и преемники (1904–1913); электронный текст — волонтёры (OCR, вычитка), SWORD-модуль — swmail",
+            "source": "https://github.com/swmail/lopukhin_commentary (SWORD-модуль, DistributionLicense=Public Domain)",
+            "license": "Public Domain",
+        }, part))
+    return mods
+
+
+def m_mhcc():
+    return commentary({
+        "id": "mhcc", "name": "M. Henry", "title": "Matthew Henry's Concise Commentary", "language": "en",
+        "description": "Краткий комментарий Мэтью Генри на всю Библию (англ.). Статьи на группы стихов; ссылки "
+                       "переведены в синодальную нумерацию.",
+        "version": "CrossWire MHCC " + B.sword_version("MHCC"), "author": "Matthew Henry (1662–1714)",
+        "source": CW_SRC.format("MHCC"), "license": "Public Domain",
+    }, C.sword_commentary("MHCC", intro_title="Introduction"))
+
+
+def m_jfb():
+    return commentary({
+        "id": "jfb", "name": "JFB", "title": "Jamieson, Fausset & Brown Commentary (1871)", "language": "en",
+        "description": "Критико-толковый комментарий Джеймисона, Фоссета и Брауна на всю Библию (англ.). Ссылки "
+                       "переведены в синодальную нумерацию.",
+        "version": "CrossWire JFB " + B.sword_version("JFB"), "author": "Robert Jamieson, A. R. Fausset, David Brown",
+        "source": CW_SRC.format("JFB"), "license": "Public Domain",
+    }, C.sword_commentary("JFB", intro_title="Introduction"))
+
+
+def m_barnes():
+    gospels = {"Matt", "Mark", "Luke", "John", "Acts"}
+    rest = {"Jas", "1Pet", "2Pet", "1John", "2John", "3John", "Jude", "Rom", "1Cor", "2Cor", "Gal", "Eph",
+            "Phil", "Col", "1Thess", "2Thess", "1Tim", "2Tim", "Titus", "Phlm", "Heb", "Rev"}
+    out = []
+    for mid, name, rng, books in (("barnes-1", "Barnes 1", "Евангелия и Деяния", gospels),
+                                  ("barnes-2", "Barnes 2", "Послания и Откровение", rest)):
+        out.append(commentary({
+            "id": mid, "name": name, "title": f"Barnes' Notes on the New Testament: {rng}", "language": "en",
+            "description": f"Комментарий Альберта Барнса на Новый Завет (англ.), часть: {rng}. Ссылки переведены в "
+                           f"синодальную нумерацию.",
+            "version": "CrossWire Barnes " + B.sword_version("Barnes"), "author": "Albert Barnes (1798–1870)",
+            "source": CW_SRC.format("Barnes"), "license": "Public Domain",
+        }, C.sword_commentary("Barnes", books=books, intro_title="Introduction")))
+    return out
+
+
+# ---------------------------------------------------------------------------------------------
+# Словари
+# ---------------------------------------------------------------------------------------------
+
+def dictionary(meta, entries, kind="words"):
+    return {**BASE, "type": "dictionary", "dictionaryKind": kind, **meta, "entries": entries}
+
+
+def m_nikifor():
+    return dictionary({
+        "id": "nikifor", "name": "Никифор", "title": "Библейская энциклопедия архимандрита Никифора (1891–1892)",
+        "language": "ru",
+        "description": "Иллюстрированная полная популярная Библейская энциклопедия архим. Никифора (Бажанова): "
+                       "4,5 тыс. статей о лицах, местах, предметах и понятиях Библии. Ищется по слову, на которое "
+                       "нажали в тексте; у статей — ссылки на стихи (синодальная нумерация).",
+        "version": "Викитека, выгрузка 2026-10-13", "author": "Архимандрит Никифор (Бажанов); электронный текст — участники Русской Викитеки",
+        "source": "https://ru.wikisource.org/wiki/Библейская_энциклопедия_архимандрита_Никифора",
+        "license": "CC BY-SA 4.0 (Викитека; текст 1891–1892 гг. — Public Domain)", "versification": "synodal",
+    }, R.nikifor())
+
+
+def _en_dict(mid, name, title, desc, author, sword):
+    return dictionary({
+        "id": mid, "name": name, "title": title, "language": "en", "description": desc,
+        "version": f"CrossWire {sword} " + B.sword_version(sword), "author": author,
+        "source": CW_SRC.format(sword), "license": "Public Domain",
+    }, D.word_dictionary(sword))
+
+
+def m_easton():
+    return _en_dict("easton", "Easton", "Easton's Bible Dictionary (1897)",
+                    "Библейский словарь М. Г. Истона (англ.), ~4 тыс. статей. Ищется по английскому слову (KJV, BSB). "
+                    "Ссылки в тексте статей — в нумерации KJV.", "Matthew George Easton (1823–1894)", "Easton")
+
+
+def m_smith():
+    return _en_dict("smith", "Smith", "Smith's Bible Dictionary (1884)",
+                    "Библейский словарь Уильяма Смита (англ.), ~4,5 тыс. статей. Ищется по английскому слову. "
+                    "Ссылки в тексте статей — в нумерации KJV.", "William Smith (1813–1893)", "Smith")
+
+
+def m_hitchcock():
+    return _en_dict("hitchcock", "Hitchcock", "Hitchcock's Bible Names Dictionary (1869)",
+                    "Значения библейских имён собственных по Р. Д. Хичкоку (англ.), ~2,6 тыс. имён.",
+                    "Roswell D. Hitchcock (1817–1887)", "Hitchcock")
+
+
+def m_nave():
+    return _en_dict("nave", "Nave", "Nave's Topical Bible (1896)",
+                    "Тематический указатель Орвилла Нейва (англ.): ~5 тыс. тем со списками мест Писания "
+                    "(ссылки в нумерации KJV).", "Orville J. Nave (1841–1917)", "Nave")
+
+
+def m_abbott_smith():
+    return dictionary({
+        "id": "abbott-smith", "name": "Abbott-Smith", "title": "Abbott-Smith: A Manual Greek Lexicon of the New Testament (1922)",
+        "language": "en",
+        "description": "Греческо-английский словарь Нового Завета Дж. Эбботт-Смита по номерам Стронга: значения, "
+                       "параллели в Септуагинте, синонимы. Открывается для слов с номерами Стронга (RST+, KJV, BSB, Byz).",
+        "version": "CrossWire AbbottSmithStrongs " + B.sword_version("AbbottSmithStrongs"),
+        "author": "George Abbott-Smith (1864–1947); электронный текст — Tyndale House / CrossWire",
+        "source": CW_SRC.format("AbbottSmithStrongs"), "license": "Public Domain",
+    }, D.abbott_smith(), kind="strongs")
+
+
+def m_bdb():
+    return dictionary({
+        "id": "bdb-glosses", "name": "BDB", "title": "Brown–Driver–Briggs: краткие значения еврейских слов",
+        "language": "en",
+        "description": "Краткие значения из еврейско-английского словаря Брауна — Драйвера — Бриггса (1906) по "
+                       "номерам Стронга (англ.). Дополняет словарь Стронга для Ветхого Завета.",
+        "version": "CrossWire BDBGlosses_Strongs " + B.sword_version("BDBGlosses_Strongs"),
+        "author": "F. Brown, S. R. Driver, C. A. Briggs; выборка значений — CrossWire",
+        "source": CW_SRC.format("BDBGlosses_Strongs"), "license": "Public Domain",
+    }, D.bdb_glosses(), kind="strongs")
+
+
+# ---------------------------------------------------------------------------------------------
+# Параллельные места
+# ---------------------------------------------------------------------------------------------
+
+def crossrefs(meta, refs):
+    refs = C.sort_refs(refs)
+    n = sum(len(v) for v in refs.values())
+    meta["description"] = meta["description"].format(n=n, v=len(refs))
+    return {**BASE, "type": "crossrefs", "versification": "synodal", **meta, "refs": refs}
+
+
+def m_openbible():
+    return crossrefs({
+        "id": "xrefs-openbible", "name": "OpenBible", "title": "Параллельные места OpenBible.info", "language": "en",
+        "description": "{n} ссылок для {v} стихов, упорядочены по голосам читателей (взяты ссылки с ≥1 голосом). "
+                       "Основа — Treasury of Scripture Knowledge и др. Нумерация переведена в синодальную.",
+        "version": "OpenBible.info cross references, 2026-10-12", "author": "OpenBible.info",
+        "source": "https://www.openbible.info/labs/cross-references/",
+        "license": "CC BY (OpenBible.info)",
+    }, C.openbible())
+
+
+def m_tsk():
+    return crossrefs({
+        "id": "xrefs-tsk", "name": "TSK", "title": "Treasury of Scripture Knowledge", "language": "en",
+        "description": "Сокровищница библейских знаний (ок. 1880): {n} параллельных мест для {v} стихов. "
+                       "Нумерация переведена в синодальную.",
+        "version": "CrossWire TSK " + B.sword_version("TSK"), "author": "J. Canne, Browne, B. Blayney, T. Scott и др. (изд. S. Bagster)",
+        "source": CW_SRC.format("TSK"), "license": "Public Domain",
+    }, C.tsk())
+
+
+# ---------------------------------------------------------------------------------------------
+# Карты
+# ---------------------------------------------------------------------------------------------
+
+def m_maps():
+    src = SRC / "wikimedia-maps"
+    man = src / "manifest.json"
+    if not man.exists():
+        log("  карты: нет manifest.json — пропуск")
+        return None
+    items = json.loads(man.read_text(encoding="utf-8"))
+    dest = OUT / "maps" / "bible-maps"
+    if dest.exists():
+        shutil.rmtree(dest)
+    dest.mkdir(parents=True)
+    maps = []
+    for it in items:
+        f = src / it["file"]
+        if not f.exists():
+            log("  карты: нет файла", f)
+            continue
+        assert f.stat().st_size <= 2_000_000, f"{f} больше 2 МБ"
+        shutil.copyfile(f, dest / f.name)
+        refs = [r for r in it.get("refs", []) if parse_osis_ref(r)]
+        credit = f"{it.get('author') or 'автор не указан'}, {it['license']}, Wikimedia Commons: {it['commonsUrl']}"
+        maps.append({
+            "id": it["id"], "title": it["titleRu"],
+            "description": (it.get("descriptionRu", "").strip() + "\n\nИсточник: " + credit).strip(),
+            "image": (MAPS_BASE.rstrip("/") + "/" if MAPS_BASE else "") + f"modules/maps/bible-maps/{f.name}",
+            "refs": refs,
+        })
+    lic = sorted({it["license"] for it in items})
+    return {**BASE, "type": "maps", "id": "bible-maps", "name": "Карты", "title": "Библейские карты (Wikimedia Commons)",
+            "language": "ru",
+            "description": f"{len(maps)} карт библейских земель и событий из Wikimedia Commons. У каждой карты в "
+                           f"описании — автор, лицензия и ссылка на оригинал.",
+            "version": "1.0", "author": "Авторы карт указаны у каждой карты",
+            "source": "https://commons.wikimedia.org (список файлов — data-src/extra/wikimedia-maps/manifest.json)",
+            "license": "Разные свободные лицензии по картам: " + ", ".join(lic),
+            "versification": "synodal", "maps": maps}
+
+
+# ---------------------------------------------------------------------------------------------
+
+BUILDERS = [m_kjv, m_bsb, m_oshb, m_byz, m_csl, m_makarij, m_kulish,
+            m_lopukhin, m_mhcc, m_jfb, m_barnes,
+            m_nikifor, m_easton, m_smith, m_hitchcock, m_nave, m_abbott_smith, m_bdb,
+            m_openbible, m_tsk, m_maps]
+
+BUILDER_IDS = {"m_kjv": ["kjv"], "m_bsb": ["bsb"], "m_oshb": ["oshb"], "m_byz": ["byz-rp2018"],
+               "m_csl": ["csl-elizabeth"], "m_makarij": ["rus-makarij"], "m_kulish": ["ukr-kulish"],
+               "m_lopukhin": ["lopukhin-1", "lopukhin-2", "lopukhin-3"], "m_mhcc": ["mhcc"], "m_jfb": ["jfb"],
+               "m_barnes": ["barnes-1", "barnes-2"], "m_nikifor": ["nikifor"], "m_easton": ["easton"],
+               "m_smith": ["smith"], "m_hitchcock": ["hitchcock"], "m_nave": ["nave"],
+               "m_abbott_smith": ["abbott-smith"], "m_bdb": ["bdb-glosses"], "m_openbible": ["xrefs-openbible"],
+               "m_tsk": ["xrefs-tsk"], "m_maps": ["bible-maps"]}
+
+
+def main(argv):
+    sys.stdout.reconfigure(errors="replace")
+    want = set(argv)
+    unpack_crosswire()
+    entries = []
+    for fn in BUILDERS:
+        ids = BUILDER_IDS[fn.__name__]
+        if want and not want.intersection(ids):
+            continue
+        log(f"{fn.__name__[2:]}…")
+        res = fn()
+        for mod in (res if isinstance(res, list) else [res] if res else []):
+            check_module(mod)
+            entries.append(write_module(mod))
+    merge_catalog(entries, in_place=bool(want))
+
+
+# ---------------------------------------------------------------------------------------------
+# Проверка по правилам src/core/schema.js
+# ---------------------------------------------------------------------------------------------
+
+OSIS_VERSE = re.compile(r"^[1-4]?[A-Za-z]+\.\d+\.\d+(-(\d+\.)?\d+)?$")
+XREF_KEY = re.compile(r"^[1-3]?[A-Za-z]+\.\d+\.\d+$")
+
+
+def check_module(m):
+    for k in ("format", "formatVersion", "type", "id", "name", "license", "source"):
+        assert m.get(k), f"{m.get('id')}: нет поля {k}"
+    assert re.fullmatch(r"[a-z0-9-]+", m["id"]), m["id"]
+    t = m["type"]
+    if t == "bible":
+        seen = set()
+        for b in m["books"]:
+            assert b["id"] not in seen
+            seen.add(b["id"])
+            assert b["id"] in BOOK_BY_ID or (b.get("name") and b.get("short") and b.get("t") == "AP"), b["id"]
+            assert all(isinstance(v, str) for ch in b["chapters"] for v in ch)
+            for ch in b["chapters"]:
+                for v in ch:
+                    assert v.count("{") == v.count("}"), (m["id"], b["id"], v[:80])
+    elif t == "commentary":
+        bad = [k for k in m["entries"] if not OSIS_VERSE.match(k)]
+        assert not bad, (m["id"], bad[:5])
+    elif t == "crossrefs":
+        bad = [k for k in m["refs"] if not XREF_KEY.match(k)]
+        bad += [r for v in m["refs"].values() for r in v if not parse_osis_ref(r)]
+        assert not bad, (m["id"], bad[:5])
+    elif t == "dictionary":
+        if m["dictionaryKind"] == "strongs":
+            assert all(re.fullmatch(r"[HG]\d+[a-z]?", k) for k in m["entries"])
+        for e in m["entries"].values():
+            for r in e.get("refs", []):
+                assert parse_osis_ref(r), r
+    elif t == "maps":
+        for mp in m["maps"]:
+            img = mp["image"]
+            assert re.match(r"^(https?:|data:image/)", img) or (
+                re.fullmatch(r"[\w./-]+\.(jpe?g|png|webp|gif|svg)", img, re.I) and ".." not in img), img
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

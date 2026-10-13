@@ -7,3 +7,6 @@ data-src/fhl_*.html
 data-src/tigran/
 local-modules/
 .pylib/
+# Скачанные исходники дополнительных модулей (~430 МБ) — пересобираются scripts/build_extra.py
+data-src/extra/
+data-src/biblemap/report.txt

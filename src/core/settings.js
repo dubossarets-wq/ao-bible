@@ -55,6 +55,7 @@ export const DEFAULT_SETTINGS = {
   focusMode: false,
   splitLayout: 'auto', // auto | rows | columns
   splitRatio: 0.5,
+  syncScroll: true, // синхронная прокрутка двух панелей
   primaryModule: 'rst-plus',
 };
 

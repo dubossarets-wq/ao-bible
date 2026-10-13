@@ -49,10 +49,12 @@ const listPath = path.join(tmp, 'versions.json');
 const list = existsSync(listPath) ? JSON.parse(await readFile(listPath, 'utf8')) : { versions: [] };
 list.versions = [{ build, date, version, notes }, ...list.versions.filter((v) => v.build !== build)];
 list.latest = build;
+// Экстренное обновление: EMERGENCY=1 npm run deploy — все версии ниже этой обновятся принудительно
+if (process.env.EMERGENCY === '1') list.minBuild = build;
 await writeFile(listPath, JSON.stringify(list, null, 1));
 
 git(['add', '-A'], tmp);
 git(['commit', '-q', '-m', `Версия ${build}: ${notes}`], tmp);
 git(['push', '-q', ...(fresh ? ['-f'] : []), remote, 'gh-pages'], tmp);
 await rm(tmp, { recursive: true, force: true });
-console.log(`Опубликовано: ${build} — ${notes} (всего версий: ${list.versions.length})`);
+console.log(`Опубликовано: ${build} — ${notes} (всего версий: ${list.versions.length})${list.minBuild === build ? ' · ЭКСТРЕННОЕ' : ''}`);
