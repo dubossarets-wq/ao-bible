@@ -72,7 +72,7 @@ export function detect(json) {
     return { format: 'aob', type: keys.length && keys.every((k) => OSIS_VERSE.test(k)) ? 'commentary' : 'dictionary' };
   }
   if (isObj(json) && isObj(json.refs)) return { format: 'aob', type: 'crossrefs' };
-  if (isObj(json) && Array.isArray(json.maps)) return { format: 'aob', type: 'maps' };
+  if (isObj(json) && (Array.isArray(json.maps) || Array.isArray(json.places))) return { format: 'aob', type: 'maps' };
   if (isObj(json)) {
     const keys = Object.keys(json).slice(0, 50);
     if (keys.length && keys.every((k) => /^[HG]\d+[a-z]?$/i.test(k))) return { format: 'strongs-map', type: 'dictionary' };
@@ -136,7 +136,7 @@ export function normalize(json, { fileName = '' } = {}) {
   if (type === 'dictionary') meta.stats = { entries: Object.keys(data.entries).length };
   if (type === 'crossrefs') meta.stats = { verses: Object.keys(data.refs).length };
   if (type === 'commentary') meta.stats = { entries: Object.keys(data.entries).length };
-  if (type === 'maps') meta.stats = { maps: data.maps.length };
+  if (type === 'maps') meta.stats = { maps: data.maps.length, places: data.places.length };
   return { meta, data, warnings };
 }
 
@@ -250,17 +250,49 @@ function normalizeCommentary(json, warnings) {
 }
 
 // Карты: maps [{id, title, description, image (https:// или data:), refs}]
+// Карты: maps [{id, title, description, image, refs}] — изображения (https://, data:image/ или путь на сайте),
+// и/или places [{id, name, lat, lng, refs, stems, …}] — места с координатами для карты одного места.
 function normalizeMaps(json, warnings) {
   const maps = [];
-  json.maps.forEach((m, i) => {
-    if (!isObj(m) || typeof m.image !== 'string' || !/^(https?:|data:image\/)/.test(m.image)) {
-      warnings.push(`Карта №${i + 1} пропущена: нет поля "image" с адресом или data:image.`);
+  (Array.isArray(json.maps) ? json.maps : []).forEach((m, i) => {
+    const img = isObj(m) && typeof m.image === 'string' ? m.image.trim() : '';
+    const ok = /^(https?:|data:image\/)/.test(img) || (/^[\w./-]+\.(jpe?g|png|webp|gif|svg)$/i.test(img) && !img.includes('..'));
+    if (!ok) {
+      warnings.push(`Карта №${i + 1} пропущена: нет поля "image" (адрес, data:image или путь к картинке).`);
       return;
     }
-    maps.push({ id: String(m.id || i + 1), title: String(m.title || `Карта ${i + 1}`), description: String(m.description || ''), image: m.image, refs: Array.isArray(m.refs) ? m.refs.map(String) : [] });
+    maps.push({ id: String(m.id || i + 1), title: String(m.title || `Карта ${i + 1}`), description: String(m.description || ''), image: img, refs: Array.isArray(m.refs) ? m.refs.map(String) : [] });
   });
-  if (!maps.length) throw new ModuleError('В модуле карт нет ни одной карты с изображением.');
-  return { maps };
+  const places = [];
+  let bad = 0;
+  (Array.isArray(json.places) ? json.places : []).forEach((p) => {
+    const lat = Number(p?.lat);
+    const lng = Number(p?.lng ?? p?.lon);
+    if (!isObj(p) || !p.name || !isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+      bad++;
+      return;
+    }
+    places.push({
+      ...p,
+      id: String(p.id || p.name),
+      name: String(p.name),
+      lat,
+      lng,
+      refs: Array.isArray(p.refs) ? p.refs.map(String) : [],
+      stems: Array.isArray(p.stems) && p.stems.length ? p.stems.map(String) : placeStems(String(p.name)),
+    });
+  });
+  if (bad) warnings.push(`Пропущено мест без названия или координат: ${bad}.`);
+  if (!maps.length && !places.length) throw new ModuleError('В модуле карт нет ни карт с изображением, ни мест с координатами.');
+  return { maps, places };
+}
+
+// Основы названия места для поиска в стихе: «Вифлеем» → «вифл», «Гора Мориа» → «мор»
+export function placeStems(name) {
+  const skip = ['гора', 'река', 'море', 'поток', 'долина', 'пустыня', 'земля', 'город', 'страна'];
+  let words = name.toLowerCase().replace(/ё/g, 'е').split(/[\s\-–(),]+/).filter((w) => w.length >= 3);
+  words = words.filter((w) => !skip.includes(w)).length ? words.filter((w) => !skip.includes(w)) : words;
+  return [...new Set(words.map((w) => w.slice(0, Math.max(3, Math.min(w.length - 2, 5)))))];
 }
 
 function normalizeCrossrefs(json) {

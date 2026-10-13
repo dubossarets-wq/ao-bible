@@ -150,7 +150,7 @@ self.addEventListener('fetch', (e) => {
     return;
   }
   // Остальное (иконки, шрифты, модули) — из кэша, иначе из сети с сохранением
-  if (url.origin === location.origin || url.host.endsWith('gstatic.com') || url.host.endsWith('googleapis.com')) {
+  if (url.origin === location.origin || url.host.endsWith('gstatic.com') || url.host.endsWith('googleapis.com') || url.host === 'cdn.jsdelivr.net') {
     e.respondWith(caches.match(e.request).then((hit) => hit || fetch(e.request).then((r) => {
       if (r.ok && !url.pathname.endsWith('.json')) { const copy = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); }
       return r;

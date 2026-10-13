@@ -1,14 +1,15 @@
 // Всплывающая выборка над словом: «H7887 · Стронг: иврит», «H7887 · Симфония RST+» …
 // Выбор пункта открывает статью в нижнем окне на половину экрана.
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, MapPin } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { lookupWord } from '../core/lexicon.js';
+import { placesForWord } from '../core/places.js';
 
 const GAP = 10;
 
 export default function WordPopover() {
-  const { popover, closePopover, openSheet } = useApp();
+  const { popover, closePopover, openSheet, openPlaceMap } = useApp();
   const [res, setRes] = useState(null);
   const [pos, setPos] = useState(null);
   const box = useRef(null);
@@ -17,7 +18,9 @@ export default function WordPopover() {
     setRes(null);
     if (!popover) return;
     let alive = true;
-    lookupWord({ token: popover.token, ref: popover.ref }).then((r) => alive && setRes(r));
+    Promise.all([lookupWord({ token: popover.token, ref: popover.ref }), placesForWord(popover.token, popover.ref).catch(() => [])]).then(
+      ([r, places]) => alive && setRes({ ...r, places })
+    );
     return () => {
       alive = false;
     };
@@ -57,6 +60,7 @@ export default function WordPopover() {
 
   const items = res ? res.results.flatMap((r) => r.found.map((f) => ({ module: r.module, key: f.key, label: f.entry.lemma || f.entry.word || '' }))) : [];
   const approx = res?.mapping.mode === 'approx';
+  const places = res?.places || [];
 
   const choose = (it) => {
     closePopover({ keepWord: true });
@@ -77,6 +81,22 @@ export default function WordPopover() {
         </div>
       )}
       {res && approx && <div className="wp-note">≈ приблизительно: перевод без номеров Стронга</div>}
+      {places.map((pl) => (
+        <button
+          key={`place|${pl.id}`}
+          role="menuitem"
+          className="wp-item wp-place"
+          onClick={() => {
+            closePopover();
+            openPlaceMap(pl);
+          }}
+        >
+          <MapPin size={17} className="wp-pin" />
+          <span className="wp-key">{pl.name}</span>
+          <span className="wp-sep">·</span>
+          <span className="wp-dict">Карта</span>
+        </button>
+      ))}
       {res &&
         items.map((it) => (
           <button key={`${it.module.id}|${it.key}`} role="menuitem" className="wp-item" onClick={() => choose(it)}>
@@ -85,7 +105,7 @@ export default function WordPopover() {
             <span className="wp-dict">{it.module.name}</span>
           </button>
         ))}
-      {res && !items.length && (
+      {res && !items.length && !places.length && (
         <>
           <div className="wp-item wp-muted">Статей для «{popover.token.text}» нет</div>
           <button

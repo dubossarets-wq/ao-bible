@@ -36,7 +36,8 @@ await new Promise((r) => server.listen(0, r));
 const url = `http://localhost:${server.address().port}/`;
 
 const exe = ['C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'];
-const browser = await chromium.launch({ executablePath: exe[0], headless: true });
+// SwiftShader — программный WebGL, чтобы в headless рисовалась карта MapLibre
+const browser = await chromium.launch({ executablePath: exe[0], headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const results = [];
 const check = (name, ok, extra = '') => {
   results.push(`${ok ? 'OK  ' : 'FAIL'} ${name}${extra ? ' — ' + extra : ''}`);
@@ -315,6 +316,38 @@ async function run(label, viewport, isMobile) {
   await page.screenshot({ path: `${shots}/${label}-7f-commentary.png` });
   await page.keyboard.press('Escape');
   await page.waitForSelector('.sheet', { state: 'detached' });
+
+  // Город в стихе → «Карта» в выборке → карта во второй половине с одной точкой
+  await page.waitForFunction(async () => { const r = indexedDB.open('ao-bible'); const db = await new Promise((ok) => (r.onsuccess = () => ok(r.result))); const n = await new Promise((ok) => { const q = db.transaction('modules').objectStore('modules').getAllKeys(); q.onsuccess = () => ok(q.result); }); return n.includes('bible-places'); }, null, { timeout: 90000, polling: 1000 });
+  await page.click('.pane-slot.first .tb-ref');
+  await page.fill('#ref-input', 'Нав 14:15');
+  await page.keyboard.press('Enter');
+  await page.waitForSelector('#v-14-15');
+  await page.waitForTimeout(500);
+  await page.locator('#v-14-15 .w', { hasText: 'Хеврону' }).click();
+  await page.waitForSelector('.word-pop .wp-place', { timeout: 15000 });
+  const placeItem = await page.textContent('.word-pop .wp-place');
+  await page.click('.word-pop .wp-place');
+  await page.waitForSelector('.maplibregl-marker', { timeout: 60000 });
+  await page.waitForTimeout(3500);
+  const mapInfo = await page.evaluate(() => {
+    const area = document.querySelector('.map-canvas').getBoundingClientRect();
+    const mk = document.querySelector('.maplibregl-marker').getBoundingClientRect();
+    const card = document.querySelector('.place-card').getBoundingClientRect();
+    const cx = mk.left + mk.width / 2;
+    const cy = mk.bottom - 4;
+    const inArea = cx > area.left && cx < area.right && cy > area.top && cy < area.bottom;
+    const underCard = cx > card.left && cx < card.right && cy > card.top && cy < card.bottom;
+    return { markers: document.querySelectorAll('.maplibregl-marker').length, h: Math.round(area.height), inArea, underCard, name: document.querySelector('.tb-place-name').textContent, ref0: document.querySelector('.pane-slot.first .tb-ref').textContent };
+  });
+  check(`${label}: карта места из стиха`, placeItem.includes('Хеврон') && mapInfo.markers === 1 && mapInfo.h > 150 && mapInfo.inArea && !mapInfo.underCard && mapInfo.ref0.includes('14:15'), JSON.stringify(mapInfo));
+  await page.screenshot({ path: `${shots}/${label}-7g-map.png` });
+  await page.click('[aria-label="Закрыть карту"]');
+  await page.waitForTimeout(300);
+  await page.click('.pane-slot.first .tb-ref');
+  await page.fill('#ref-input', 'Нав 13:32');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(600);
 
   // Настройки: тёмная тема и размер шрифта
   await page.click('.tb-more');

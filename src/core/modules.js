@@ -199,4 +199,7 @@ export async function importFile(file, onProgress) {
 }
 
 // Первый запуск: ставим базовый набор из каталога, сначала перевод — чтобы сразу можно было читать.
-export const STARTER = ['rst-plus', 'xrefs-rst', 'rst-symphony', 'strongs-hebrew', 'strongs-greek'];
+export const STARTER = ['rst-plus', 'xrefs-rst', 'rst-symphony', 'strongs-hebrew', 'strongs-greek', 'bible-places'];
+
+// Модули, которые один раз доустанавливаются тем, кто начал пользоваться приложением до их появления
+export const LATE_STARTER = ['bible-places'];

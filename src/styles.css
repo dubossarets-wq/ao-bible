@@ -443,3 +443,26 @@ button.row-act:hover { background: color-mix(in srgb, var(--accent) 12%, transpa
 .mod-facts dt { color: var(--muted); }
 .mod-facts dd { margin: 0; overflow-wrap: anywhere; }
 @media (max-width: 420px) { .mod-more { padding-left: 14px; } }
+
+/* ---------- Карта места во второй панели ---------- */
+.wp-pin { flex: none; color: #f0b866; }
+.wp-place .wp-key { font-weight: 600; }
+.map-pane .toolbar { gap: 0; }
+.tb-place { flex: 1 1 auto; min-width: 0; justify-content: flex-start; gap: 8px; padding: 0 14px; font-size: 1.08rem; font-weight: 600; cursor: default; }
+.tb-place-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.map-body { flex: 1; min-height: 0; position: relative; background: #dfe6e9; }
+.map-body > .map-canvas, .map-body > .map-canvas.maplibregl-map { position: absolute; inset: 0; } /* стили MapLibre задают relative — перебиваем */
+.map-status { position: absolute; left: 12px; right: 12px; top: 12px; display: flex; gap: 8px; align-items: center; padding: 10px 12px; background: var(--panel); border-radius: var(--radius); box-shadow: 0 4px 16px rgba(0,0,0,.15); font-size: .9rem; z-index: 2; }
+.place-card { position: absolute; left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 3; background: var(--panel); color: var(--text); border-radius: var(--radius); box-shadow: 0 8px 28px rgba(0,0,0,.22); max-height: 55%; display: flex; flex-direction: column; overflow: hidden; }
+@container (min-width: 640px) { .place-card { right: auto; width: 380px; } }
+.place-card-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 0; background: none; text-align: left; font-size: .98rem; }
+.place-card-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.place-chev { flex: none; color: var(--muted); transition: transform .2s; transform: rotate(180deg); }
+.place-card.open .place-chev { transform: none; }
+.place-card-body { overflow-y: auto; padding: 0 12px 12px; display: flex; flex-direction: column; gap: 8px; font-size: .9rem; line-height: 1.45; overscroll-behavior: contain; }
+.place-card-body p { margin: 0; }
+.conf { display: flex; flex-direction: column; gap: 4px; font-size: .82rem; }
+.conf-bar { height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--muted) 20%, transparent); overflow: hidden; }
+.conf-bar i { display: block; height: 100%; background: var(--accent); }
+.source-note a { color: var(--accent); display: inline-flex; align-items: center; gap: 3px; }
+.maplibregl-ctrl-attrib { font-size: 10px; }

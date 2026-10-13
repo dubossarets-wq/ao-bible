@@ -79,6 +79,26 @@ export default function App() {
     toast('Доступна новая версия — меню ⋮ → «Обновить приложение»');
   }, [updates.available, updates.latest, toast]);
 
+  // Один раз доустанавливаем новые базовые модули (например, «Места» для карты) у прежних пользователей
+  useEffect(() => {
+    if (!modules || !bibles.length) return;
+    const done = load('lateStarter', []);
+    const todo = repo.LATE_STARTER.filter((id) => !done.includes(id) && !modules.some((m) => m.id === id));
+    if (!todo.length) return;
+    save('lateStarter', [...done, ...todo]);
+    repo
+      .fetchCatalog()
+      .then(async (cat) => {
+        for (const id of todo) {
+          const entry = cat.find((c) => c.id === id);
+          if (!entry) continue;
+          await repo.installFromCatalog(entry);
+          toast(`Установлен модуль «${entry.name}»: нажмите на название города в стихе, чтобы увидеть его на карте`);
+        }
+      })
+      .catch(() => save('lateStarter', done));
+  }, [modules, bibles.length]);
+
   // Если модуль панели удалён — переключаем на основной/первый доступный перевод.
   useEffect(() => {
     if (!modules || !bibles.length) return;
@@ -86,7 +106,7 @@ export default function App() {
     setPanes((ps) => {
       let changed = false;
       const next = ps.map((p) => {
-        if (!p || bibles.some((b) => b.id === p.moduleId)) return p;
+        if (!p || p.kind === 'map' || bibles.some((b) => b.id === p.moduleId)) return p;
         changed = true;
         return { ...p, moduleId: fallback, nav: p.nav + 1 };
       });
@@ -138,12 +158,23 @@ export default function App() {
 
   const openSplit = useEvent(() => setPanes((ps) => (ps[1] ? ps : [ps[0], { ...newPane(ps[0].moduleId, ps[0].ref), flash: null }])));
 
+  // Карта одного места во второй половине экрана. Если там была панель чтения, она запоминается
+  // и возвращается, когда карту закрывают.
+  const openPlaceMap = useEvent((place) => {
+    const { module, ...rest } = place;
+    setPanes((ps) => {
+      const under = ps[1]?.kind === 'map' ? ps[1].under : ps[1];
+      return [ps[0], { kind: 'map', place: { ...rest, moduleName: module?.name, license: module?.license, author: module?.author }, under: under || null }];
+    });
+  });
+  const closePlaceMap = useEvent(() => setPanes((ps) => [ps[0], ps[1]?.kind === 'map' ? ps[1].under || null : ps[1]]));
+
   const closeSplit = useEvent(() => setPanes((ps) => [ps[0], null]));
 
   // Открыть место во второй панели (из первой) или в самой второй панели (из второй).
   const openInOther = useEvent((fromPane, ref) => {
     if (fromPane === 0) {
-      if (!panes[1]) {
+      if (!panes[1] || panes[1].kind === 'map') {
         setPanes((ps) => [ps[0], { ...newPane(ps[0].moduleId, ref), flash: `${ref.book}.${ref.chapter}.${ref.verse}.${Date.now()}` }]);
       } else navigate(1, ref);
     } else navigate(fromPane, ref);
@@ -162,7 +193,7 @@ export default function App() {
     const target = fromPane === 0 ? 1 : 0;
     setPanes((ps) => {
       const next = [...ps];
-      const p = ps[target];
+      const p = ps[target]?.kind === 'map' ? null : ps[target];
       if (!p) next[target] = { ...newPane(moduleId, clean), flash };
       else {
         const history = p.history.slice(0, p.hIndex + 1);
@@ -211,6 +242,8 @@ export default function App() {
     closeSplit,
     openInOther,
     openParallel,
+    openPlaceMap,
+    closePlaceMap,
     sheet,
     openSheet: (kind, pane = 0, payload = {}) => setSheet({ kind, pane, payload, id: Date.now() }),
     updates,

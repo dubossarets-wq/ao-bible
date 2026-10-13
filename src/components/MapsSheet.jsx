@@ -1,6 +1,6 @@
 // Карты: список карт из установленных модулей и просмотр с увеличением.
 import React, { useEffect, useState } from 'react';
-import { Map as MapIcon, ZoomIn, ZoomOut, Library } from 'lucide-react';
+import { Map as MapIcon, ZoomIn, ZoomOut, Library, MapPin, Search } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { getPayload } from '../core/modules.js';
@@ -8,15 +8,21 @@ import { parseOsisRef, formatRef } from '../core/books.js';
 import { Empty } from './ui.jsx';
 
 export default function MapsSheet({ pane, onClose }) {
-  const { modules, openSheet, openInOther } = useApp();
+  const { modules, openSheet, openInOther, openPlaceMap } = useApp();
   const mapMods = modules.filter((m) => m.type === 'maps' && m.enabled !== false);
   const [maps, setMaps] = useState(null);
   const [open, setOpen] = useState(null);
   const [zoom, setZoom] = useState(1);
+  const [places, setPlaces] = useState([]);
+  const [q, setQ] = useState('');
 
   useEffect(() => {
     Promise.all(mapMods.map(async (m) => ((await getPayload(m.id))?.maps || []).map((x) => ({ ...x, module: m })))).then((l) => setMaps(l.flat()));
+    Promise.all(mapMods.map(async (m) => ((await getPayload(m.id))?.places || []).map((x) => ({ ...x, module: m })))).then((l) => setPlaces(l.flat()));
   }, [modules]);
+
+  const query = q.trim().toLowerCase().replace(/ё/g, 'е');
+  const found = query.length >= 2 ? places.filter((p) => p.name.toLowerCase().replace(/ё/g, 'е').includes(query)).slice(0, 50) : [];
 
   if (open)
     return (
@@ -58,7 +64,34 @@ export default function MapsSheet({ pane, onClose }) {
 
   return (
     <BottomSheet title="Карты" onClose={onClose} initial={1}>
-      {maps && !maps.length && (
+      {places.length > 0 && (
+        <section className="nav-group">
+          <h4>Места · {places.length}</h4>
+          <div className="input-wrap">
+            <Search size={18} className="input-icon" />
+            <label htmlFor="place-q" className="sr-only">
+              Найти место
+            </label>
+            <input id="place-q" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Найти место: Хеврон, Вифлеем…" autoComplete="off" />
+          </div>
+          {found.length > 0 && (
+            <ul className="list">
+              {found.map((p) => (
+                <li key={`${p.module.id}|${p.id}`} className="list-row">
+                  <button className="list-main stacked" onClick={() => (onClose(), openPlaceMap(p))}>
+                    <span className="list-title">
+                      <MapPin size={14} className="accent" /> {p.name}
+                    </span>
+                    <span className="list-text">{[p.type, p.modern].filter(Boolean).join(' · ')}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {query.length >= 2 && !found.length && <p className="field-hint">Ничего не найдено.</p>}
+        </section>
+      )}
+      {maps && !maps.length && !places.length && (
         <Empty icon={MapIcon} title="Карты не установлены">
           Модули карт можно установить из каталога или импортировать из JSON.{' '}
           <button className="link-inline" onClick={() => openSheet('library', pane, { tab: 'catalog', section: 'maps' })}>
@@ -82,7 +115,7 @@ export default function MapsSheet({ pane, onClose }) {
         </ul>
       )}
       {!maps && null}
-      {maps && !maps.length ? null : (
+      {maps && !maps.length && places.length ? null : maps && !maps.length ? null : (
         <p className="sheet-hint">
           <Library size={14} /> Модули карт подключаются в библиотеке модулей.
         </p>

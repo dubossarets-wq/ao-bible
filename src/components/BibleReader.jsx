@@ -5,6 +5,7 @@ import { useApp } from '../App.jsx';
 import ReaderToolbar from './ReaderToolbar.jsx';
 import SelectionBar from './SelectionBar.jsx';
 import ChapterView from './ChapterView.jsx';
+import MapPane from './MapPane.jsx';
 
 // Полоса прогресса чтения книги под верхней панелью: доля стихов книги до текущего места
 function ReadingProgress({ module, ref_ }) {
@@ -51,6 +52,7 @@ export default function BibleReader({ index }) {
   }, []);
 
   if (!pane) return null;
+  if (pane.kind === 'map') return <MapPane pane={pane} />;
   return (
     <section className={`reader ${settings.focusMode && barHidden && !selection.size ? 'bar-hidden' : ''}`} aria-label={index === 0 ? 'Основная панель' : 'Вторая панель'}>
       {selection.size ? (
