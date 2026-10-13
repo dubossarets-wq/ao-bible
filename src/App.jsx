@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { usePersistentState, useEvent } from './core/storage.js';
-import { DEFAULT_SETTINGS, applySettings, resolveTheme } from './core/settings.js';
+import { DEFAULT_SETTINGS, applySettings, resolveTheme, migrateSettings } from './core/settings.js';
 import * as repo from './core/modules.js';
 import { bookMeta } from './core/books.js';
 import SplitScreenReader from './components/SplitScreenReader.jsx';
@@ -37,7 +37,7 @@ function usePrefersDark() {
 }
 
 export default function App() {
-  const [settings, setSettings] = usePersistentState('settings', DEFAULT_SETTINGS);
+  const [settings, setSettings] = usePersistentState('settings', DEFAULT_SETTINGS, migrateSettings);
   const fullSettings = useMemo(() => ({ ...DEFAULT_SETTINGS, ...settings, colors: { ...DEFAULT_SETTINGS.colors, ...settings.colors } }), [settings]);
   const prefersDark = usePrefersDark();
   const themeName = resolveTheme(fullSettings, prefersDark);

@@ -29,8 +29,11 @@ export const FONTS = {
   Georgia: { label: 'Georgia', css: 'Georgia, "Times New Roman", serif' },
 };
 
+export const SETTINGS_VERSION = 2;
+
 export const DEFAULT_SETTINGS = {
-  theme: 'auto', // light | dark | sepia | auto
+  v: SETTINGS_VERSION,
+  theme: 'light', // light | dark | sepia | auto
   fontFamily: 'system',
   fontSize: 19,
   fontWeight: 400,
@@ -54,6 +57,14 @@ export const DEFAULT_SETTINGS = {
   splitRatio: 0.5,
   primaryModule: 'rst-plus',
 };
+
+// Сохранённые настройки старых версий. v1 по умолчанию следовала теме системы,
+// с v2 по умолчанию светлая: «как в системе» из v1 переводим в светлую, явный выбор не трогаем.
+export function migrateSettings(s) {
+  if (!s || typeof s !== 'object') return s;
+  if ((s.v || 1) < 2) s = { ...s, v: 2, theme: !s.theme || s.theme === 'auto' ? 'light' : s.theme };
+  return s;
+}
 
 export function resolveTheme(settings, prefersDark) {
   if (settings.theme === 'auto') return prefersDark ? 'dark' : 'light';

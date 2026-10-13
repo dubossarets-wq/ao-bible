@@ -12,16 +12,8 @@
   --fs: 19px; --fw: 400; --lh: 1.45; --verse-gap: .55em; --measure: 44em; --align: left;
   --chapter-size: 2.1em; --radius: 12px; --bar-h: 54px; --vvh: 100dvh; --kb: 0px;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #161617; --text: #dedbd4; --muted: #8d8a84; --accent: #d9a35c; --panel: #212123;
-    --bar: #0c0c0d; --bar-text: #e8e5de; --line: #2e2e31; --hl: #5b4a1c; --verse-num: #a7a39b; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #161617; --text: #dedbd4; --muted: #8d8a84; --accent: #d9a35c; --panel: #212123;
-  --bar: #0c0c0d; --bar-text: #e8e5de; --line: #2e2e31; --hl: #5b4a1c; --verse-num: #a7a39b; color-scheme: dark;
-}
+/* Тёмные значения здесь не задаются: тему выбирает пользователь (по умолчанию светлая),
+   и core/settings.js выставляет переменные сразу при запуске. Так нет «мигания» тёмного фона. */
 
 *, *::before, *::after { box-sizing: border-box; }
 html { height: 100%; box-sizing: border-box; background: var(--bg); -webkit-text-size-adjust: 100%; }

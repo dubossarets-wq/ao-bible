@@ -22,11 +22,13 @@ export function save(key, value) {
 }
 
 // Состояние, которое переживает перезагрузку. Запись откладывается, чтобы не писать на каждый скролл.
-export function usePersistentState(key, initial) {
+// migrate — необязательное преобразование сохранённого значения старого формата.
+export function usePersistentState(key, initial, migrate) {
   const [value, setValue] = useState(() => {
     const stored = load(key, undefined);
     const base = typeof initial === 'function' ? initial() : initial;
-    return stored === undefined ? base : stored;
+    if (stored === undefined) return base;
+    return migrate ? migrate(stored) : stored;
   });
   const timer = useRef(null);
   useEffect(() => {

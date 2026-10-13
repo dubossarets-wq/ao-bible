@@ -35,7 +35,7 @@ const check = (name, ok, extra = '') => {
 };
 
 async function run(label, viewport, isMobile) {
-  const ctx = await browser.newContext({ viewport, isMobile, hasTouch: isMobile, deviceScaleFactor: 2, serviceWorkers: 'block' });
+  const ctx = await browser.newContext({ viewport, isMobile, hasTouch: isMobile, deviceScaleFactor: 2, serviceWorkers: 'block', colorScheme: 'dark' });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -48,6 +48,22 @@ async function run(label, viewport, isMobile) {
   await page.screenshot({ path: `${shots}/${label}-1-reader.png` });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   check(`${label}: нет горизонтальной прокрутки`, overflow <= 0, `${overflow}px`);
+
+  // По умолчанию светлая тема, даже если в системе тёмная (контекст создан с colorScheme: 'dark')
+  const LIGHT = 'rgb(246, 245, 242)';
+  const bg0 = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  check(`${label}: светлая тема по умолчанию при тёмной системе`, bg0 === LIGHT, bg0);
+  // Настройки старой версии с темой «как в системе» переводятся в светлую
+  await page.evaluate(() => localStorage.setItem('aob.settings', JSON.stringify({ theme: 'auto', fontSize: 21 })));
+  await page.reload();
+  await page.waitForSelector('.verse', { timeout: 30000 });
+  const bgM = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const fsM = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--fs').trim());
+  check(`${label}: миграция старых настроек`, bgM === LIGHT && fsM === '21px', `${bgM}, шрифт ${fsM}`);
+  await page.evaluate(() => localStorage.removeItem('aob.settings'));
+  await page.reload();
+  await page.waitForSelector('.verse', { timeout: 30000 });
+  await page.waitForTimeout(500);
 
   // Ждём, пока доустановятся словари (первый запуск)
   await page.waitForFunction(async () => {
