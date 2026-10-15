@@ -1,21 +1,27 @@
-// Планы чтения: активные планы с прогрессом и чтением дня, начало нового плана, свой план
-import React, { useEffect, useState } from 'react';
-import { CalendarCheck, Check, ChevronLeft, ChevronRight, Loader2, Plus, Trash2 } from 'lucide-react';
+// Планы чтения: активные планы с прогрессом и кнопкой «Читать» (весь день одной страницей),
+// учёт прочитанного, начало нового плана, свой план
+import React, { useEffect, useMemo, useState } from 'react';
+import { BookOpen, CalendarCheck, Check, ChevronLeft, ChevronRight, Loader2, Plus, Trash2 } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
-import { usePersistentState } from '../core/storage.js';
-import { fetchPlanIndex, fetchPlan, makeCustomPlan, SCOPES, parseReading, todayIndex, calendarIndex, isoDate } from '../core/plans.js';
+import { usePlans } from '../core/planStore.js';
+import { readStats } from '../core/readLog.js';
+import { bookMeta } from '../core/books.js';
+import { fetchPlanIndex, fetchPlan, makeCustomPlan, SCOPES, parseReading, planToday, behindDays, readingDone, isoDate } from '../core/plans.js';
 import { ConfirmButton, Empty, Segmented, Hint } from './ui.jsx';
 
-function ActivePlan({ plan, onChange, onRemove, open }) {
+function ActivePlan({ plan, onChange, onRemove, read }) {
   const days = plan.readings.length;
-  const today = plan.calendar ? calendarIndex() : todayIndex(plan.start, days);
+  const today = planToday(plan);
   const [day, setDay] = useState(today);
   const done = plan.done || {};
   const doneCount = Object.keys(done).length;
-  // Для календарного плана «отставание» считаем с дня начала, а не с 1 января
-  const from = plan.calendar ? Math.min(today, calendarIndex(new Date(plan.start))) : 0;
-  const behind = Array.from({ length: today - from }, (_, i) => i + from).filter((i) => !done[i]).length;
+  const behind = behindDays(plan);
+  const rs = plan.readings[day] || [];
+  const flags = rs.map((r) => readingDone(plan, day, r));
+  const partDone = flags.filter(Boolean).length;
+  const dayDone = !!done[day];
+  const firstLeft = flags.findIndex((f) => !f);
   const toggle = (i) => {
     const next = { ...done };
     if (next[i]) delete next[i];
@@ -27,7 +33,7 @@ function ActivePlan({ plan, onChange, onRemove, open }) {
       <div className="plan-head">
         <span className="plan-name">{plan.name}</span>
         <span className="plan-meta">
-          {doneCount} из {days} дн.{behind ? ` · отстаёте на ${behind}` : ''}
+          {doneCount} из {days} дн.
         </span>
         <ConfirmButton className="icon-btn subtle" confirmText="Удалить" onConfirm={onRemove} aria-label="Удалить план">
           <Trash2 size={15} />
@@ -36,6 +42,16 @@ function ActivePlan({ plan, onChange, onRemove, open }) {
       <div className="progress-track">
         <div className="progress-bar" style={{ width: `${(doneCount / days) * 100}%` }} />
       </div>
+      {behind.length > 0 && (
+        <div className="plan-behind">
+          Пропущено дней: {behind.length}
+          {day !== behind[0] && (
+            <button className="link-btn" onClick={() => setDay(behind[0])}>
+              к первому пропущенному
+            </button>
+          )}
+        </div>
+      )}
       <div className="plan-day">
         <button className="icon-btn subtle" onClick={() => setDay((d) => Math.max(0, d - 1))} disabled={day === 0} aria-label="Предыдущий день">
           <ChevronLeft size={18} />
@@ -43,31 +59,80 @@ function ActivePlan({ plan, onChange, onRemove, open }) {
         <span className="plan-day-label">
           День {day + 1}
           {day === today ? ' · сегодня' : ''}
+          <small>{dayDone ? 'прочитано' : `${partDone} из ${rs.length} отрывков`}</small>
         </span>
         <button className="icon-btn subtle" onClick={() => setDay((d) => Math.min(days - 1, d + 1))} disabled={day === days - 1} aria-label="Следующий день">
           <ChevronRight size={18} />
         </button>
-        <button className={`btn small ${done[day] ? 'primary' : ''}`} onClick={() => toggle(day)}>
-          <Check size={14} /> {done[day] ? 'Прочитано' : 'Отметить'}
+        <button className={`btn small ${dayDone ? 'primary' : ''}`} onClick={() => toggle(day)} title={dayDone ? 'Снять отметку дня' : 'Отметить весь день прочитанным'}>
+          <Check size={14} /> {dayDone ? 'Прочитано' : 'Отметить'}
         </button>
       </div>
       <div className="chips">
-        {plan.readings[day].map((r) => {
-          const p = parseReading(r);
-          return (
-            <button key={r} className={`chip ${done[day] ? 'done' : ''}`} onClick={() => open(p)}>
-              {p.label}
-            </button>
-          );
-        })}
+        {rs.map((r, i) => (
+          <button key={r + i} className={`chip ${flags[i] ? 'done' : ''}`} onClick={() => read(plan, day, i)}>
+            {flags[i] && <Check size={12} />} {parseReading(r).label}
+          </button>
+        ))}
       </div>
+      <button className={`btn ${dayDone ? '' : 'primary'} plan-read`} onClick={() => read(plan, day, dayDone || firstLeft < 0 ? 0 : firstLeft)}>
+        <BookOpen size={17} /> {dayDone ? 'Перечитать' : partDone ? 'Продолжить чтение' : 'Читать'}
+        {!dayDone && <span className="plan-read-sub">{rs.length > 1 ? `все ${rs.length} отрывка на одной странице` : 'отрывок дня'}</span>}
+      </button>
     </div>
   );
 }
 
+const plural = (n, one, few, many) => (n % 10 === 1 && n % 100 !== 11 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? few : many);
+const chLabel = (key) => {
+  const [b, c] = key.split('.');
+  return `${bookMeta(b).short.replace(/\.$/, '')} ${c}`;
+};
+
+// Сколько и что прочитано — по дочитанным до конца главам
+function ReadStats({ open }) {
+  const st = useMemo(() => readStats(), []);
+  const [more, setMore] = useState(false);
+  if (!st.total) return null;
+  const fmt = (d) => new Date(`${d}T12:00`).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+  return (
+    <section className="nav-group read-stats">
+      <h4>
+        Прочитано <Hint>Глава засчитывается, когда вы дочитали её до последнего стиха — в плане или в обычном чтении.</Hint>
+      </h4>
+      <div className="stat-row">
+        <div className="stat">
+          <b>{st.today}</b>
+          <span>сегодня</span>
+        </div>
+        <div className="stat">
+          <b>{st.week}</b>
+          <span>за 7 дней</span>
+        </div>
+        <div className="stat">
+          <b>{st.total}</b>
+          <span>{plural(st.total, 'глава', 'главы', 'глав')} всего</span>
+        </div>
+      </div>
+      <div className="chips">
+        {st.recent.slice(0, more ? 30 : 8).map((x) => (
+          <button key={x.key + x.day} className="chip" onClick={() => open(x.key)} title={fmt(x.day)}>
+            {chLabel(x.key)} <small className="muted">{fmt(x.day)}</small>
+          </button>
+        ))}
+        {st.recent.length > 8 && !more && (
+          <button className="chip" onClick={() => setMore(true)}>
+            ещё…
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export default function PlansSheet({ pane, onClose }) {
-  const { navigate, toast } = useApp();
-  const [plans, setPlans] = usePersistentState('plans', []);
+  const { navigate, toast, openPlanDay } = useApp();
+  const [plans, setPlans] = usePlans();
   const [index, setIndex] = useState(null);
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(null);
@@ -78,13 +143,19 @@ export default function PlansSheet({ pane, onClose }) {
     fetchPlanIndex().then(setIndex, (e) => setErr(e.message));
   }, []);
 
-  const open = (p) => {
+  // Весь день плана одной страницей, с прокруткой к нужному отрывку
+  const read = (plan, day, at) => {
     onClose();
-    navigate(pane, { book: p.book, chapter: p.chapter, verse: p.verse || 1 });
+    openPlanDay(pane, plan.uid, day, at);
+  };
+  const openChapter = (key) => {
+    const [book, c] = key.split('.');
+    onClose();
+    navigate(pane, { book, chapter: +c, verse: 1 });
   };
   const add = (plan) => {
     setPlans((ps) => [{ ...plan, uid: Date.now().toString(36), start: isoDate(), done: {} }, ...ps]);
-    toast(`План «${plan.name}» начат`);
+    toast(`План «${plan.name}» начат — нажмите «Читать»`);
   };
   const start = async (meta) => {
     setBusy(meta.id);
@@ -116,11 +187,13 @@ export default function PlansSheet({ pane, onClose }) {
         <ActivePlan
           key={p.uid}
           plan={p}
-          open={open}
+          read={read}
           onChange={(np) => setPlans((ps) => ps.map((x) => (x.uid === p.uid ? np : x)))}
           onRemove={() => setPlans((ps) => ps.filter((x) => x.uid !== p.uid))}
         />
       ))}
+
+      <ReadStats open={openChapter} />
 
       <section className="nav-group">
         <h4>Начать план</h4>

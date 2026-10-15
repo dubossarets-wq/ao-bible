@@ -73,7 +73,7 @@ export default function VersionsSheet({ onClose }) {
       <section className="nav-group">
         <h4>
           Резервные копии ваших данных
-          <Hint>Настройки, закладки, заметки и избранное сохраняются перед каждым обновлением (последние 5 копий).</Hint>
+          <Hint>Настройки, закладки, заметки и любимые стихи сохраняются перед каждым обновлением (последние 5 копий).</Hint>
         </h4>
         {backups.length === 0 && <p className="field-hint">Копий пока нет — первая появится при следующем обновлении.</p>}
         {backups.length > 0 && (
@@ -84,7 +84,7 @@ export default function VersionsSheet({ onClose }) {
                   <span className="version-date">{new Date(b.at).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
                 <p className="version-notes">
-                  {b.reason} · закладок {b.bookmarks}, заметок {b.notes}, в избранном {b.favorites}
+                  {b.reason} · закладок {b.bookmarks}, заметок {b.notes}, любимых {b.favorites}
                 </p>
                 <ConfirmButton className="btn small" confirmText="Восстановить" onConfirm={() => restoreBackup(b.at)}>
                   <RotateCcw size={14} /> Восстановить эту копию

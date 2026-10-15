@@ -3,10 +3,70 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useApp } from '../App.jsx';
 import ReaderToolbar from './ReaderToolbar.jsx';
-import SelectionBar from './SelectionBar.jsx';
+import SelectionBar, { sortedRefs } from './SelectionBar.jsx';
+import { listenFrom } from '../core/listen.js';
+import { useAudio } from '../core/audio.js';
+import { formatRef } from '../core/books.js';
 import ChapterView from './ChapterView.jsx';
 import MapPane from './MapPane.jsx';
+import PlanView from './PlanView.jsx';
 import { useLivePosition } from '../core/livePosition.js';
+import { usePlan } from '../core/planStore.js';
+import { dayUnits, unitDone, readingDone } from '../core/plans.js';
+import { CornerUpLeft, X, Headphones } from 'lucide-react';
+
+// В режиме плана полоса показывает, сколько отрывков дня уже прочитано
+function PlanProgress({ uid, day }) {
+  const plan = usePlan(uid);
+  if (!plan) return null;
+  const units = dayUnits(plan, day);
+  const pct = units.length ? (units.filter((u) => unitDone(plan, day, u.key)).length / units.length) * 100 : 0;
+  const label = `Прочитано за день: ${Math.round(pct)}%`;
+  return (
+    <div className="read-progress plan" role="progressbar" aria-label={label} title={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
+      <span style={{ width: `${pct}%` }} />
+    </div>
+  );
+}
+
+// Выделен стих — снизу кнопка «Слушать» с первого выделенного стиха
+function ListenSelected({ index, module, selection, onDone }) {
+  const audio = useAudio();
+  const first = sortedRefs(selection)[0];
+  if (!first || (audio.active && audio.playing)) return null;
+  return (
+    <div className="float-pill listen-pill">
+      <button
+        className="float-pill-btn"
+        onClick={() => {
+          listenFrom(index, module.id, first);
+          onDone();
+        }}
+      >
+        <Headphones size={17} /> Слушать с {formatRef(first)}
+      </button>
+    </div>
+  );
+}
+
+// Человек ушёл из плана читать дальше — кнопка возврата к плану на день
+function PlanReturn({ index, lastPlan }) {
+  const { returnToPlan, dismissPlanReturn } = useApp();
+  const plan = usePlan(lastPlan.uid);
+  if (!plan || plan.done?.[lastPlan.day]) return null;
+  const rs = plan.readings[lastPlan.day] || [];
+  const done = rs.filter((r) => readingDone(plan, lastPlan.day, r)).length;
+  return (
+    <div className="plan-return">
+      <button className="plan-return-btn" onClick={() => returnToPlan(index)}>
+        <CornerUpLeft size={16} /> Вернуться к плану · {done} из {rs.length}
+      </button>
+      <button className="plan-return-x" onClick={() => dismissPlanReturn(index)} aria-label="Скрыть кнопку возврата к плану">
+        <X size={15} />
+      </button>
+    </div>
+  );
+}
 
 // Полоса прогресса чтения книги под верхней панелью: доля стихов книги до текущего места
 function ReadingProgress({ module, index, fallback }) {
@@ -62,15 +122,21 @@ export default function BibleReader({ index }) {
       ) : (
         <ReaderToolbar index={index} pane={pane} module={module} />
       )}
-      <ReadingProgress module={module} index={index} fallback={pane.ref} />
-      <ChapterView
-        index={index}
-        pane={pane}
-        module={module}
-        selection={selection}
-        onSelect={onSelect}
-        onScrollDirection={(down) => settings.focusMode && setBarHidden(down)}
-      />
+      {pane.plan ? <PlanProgress uid={pane.plan.uid} day={pane.plan.day} /> : <ReadingProgress module={module} index={index} fallback={pane.ref} />}
+      {pane.plan ? (
+        <PlanView index={index} pane={pane} module={module} selection={selection} onSelect={onSelect} />
+      ) : (
+        <ChapterView
+          index={index}
+          pane={pane}
+          module={module}
+          selection={selection}
+          onSelect={onSelect}
+          onScrollDirection={(down) => settings.focusMode && setBarHidden(down)}
+        />
+      )}
+      {!pane.plan && pane.lastPlan && !selection.size && <PlanReturn index={index} lastPlan={pane.lastPlan} />}
+      {selection.size > 0 && <ListenSelected index={index} module={module} selection={selection} onDone={() => setSelection(new Set())} />}
     </section>
   );
 }

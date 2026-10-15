@@ -1,6 +1,6 @@
-// Закладки «продолжить отсюда» (сколько угодно), избранные стихи, заметки и история переходов
+// Закладки «продолжить отсюда» (сколько угодно), любимые стихи, заметки и история переходов
 import React, { useEffect, useState } from 'react';
-import { Bookmark, Star, History, Trash2, NotebookPen, PlayCircle, Highlighter, Folder, ChevronLeft, Search } from 'lucide-react';
+import { Bookmark, Heart, History, Trash2, NotebookPen, PlayCircle, Highlighter, Folder, ChevronLeft, Search } from 'lucide-react';
 import { HL_COLORS, hlLabel } from '../core/highlights.js';
 import { getVerse } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
@@ -151,7 +151,7 @@ export default function BookmarksManager({ pane, payload, onClose }) {
       <div className="tabs" role="tablist">
         {[
           ['bookmarks', 'Закладки', bookmarks.length],
-          ['favorites', 'Избранное', favorites.length],
+          ['favorites', 'Любимые стихи', favorites.length],
           ['notes', 'Заметки', noteList.length],
           ['highlights', 'Выделения', Object.keys(highlights).length],
           ['collections', 'Подборки', collections.length],
@@ -206,19 +206,19 @@ export default function BookmarksManager({ pane, payload, onClose }) {
               <li key={`${f.book}.${f.chapter}.${f.verse}`} className="list-row">
                 <button className="list-main stacked" onClick={() => open(f)}>
                   <span className="list-title">
-                    <Star size={14} className="accent" /> {formatRef(f, { full: true })}
+                    <Heart size={14} className="love" fill="currentColor" /> {formatRef(f, { full: true })}
                   </span>
                   <span className="list-text">{f.text}</span>
                 </button>
-                <button className="icon-btn subtle" aria-label="Убрать из избранного" onClick={() => setFavorites((fs) => fs.filter((x) => x !== f))}>
+                <button className="icon-btn subtle" aria-label="Убрать из любимых" onClick={() => setFavorites((fs) => fs.filter((x) => x !== f))}>
                   <Trash2 size={16} />
                 </button>
               </li>
             ))}
           </ul>
         ) : (
-          <Empty icon={Star} title="Избранных стихов нет">
-            Зажмите стих и нажмите звёздочку.
+          <Empty icon={Heart} title="Любимых стихов пока нет">
+            Дважды быстро нажмите на стих — он станет любимым. Или зажмите стих и нажмите сердечко.
           </Empty>
         ))}
 

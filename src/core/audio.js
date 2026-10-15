@@ -40,6 +40,8 @@ export async function audioSourcesFor(moduleId, ref) {
   const others = mods.filter((m) => !fits.includes(m) && (m.chapterKeys || []).includes(key));
   return { recorded: fits, otherRecorded: others, tts: typeof speechSynthesis !== 'undefined' };
 }
+// Подходит ли аудиокнига (её translation) к переводу bibleId
+export const fitsTranslation = (translation, bibleId) => !translation || translation === bibleId || sameText(translation, bibleId);
 // Синодальный с разметкой и без — один и тот же текст
 const sameText = (a, b) => new Set(['rst', 'rst-plus', 'rst-dc']).has(a) && new Set(['rst', 'rst-plus', 'rst-dc']).has(b);
 

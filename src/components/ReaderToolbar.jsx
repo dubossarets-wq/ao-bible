@@ -1,6 +1,6 @@
 // Верхняя панель по образцу мобильного приложения: перевод · разделение · ссылка · поиск · назад · вперёд · меню.
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, X, MoreVertical, ChevronDown, ArrowLeft, ArrowRight, Library, Palette, Bookmark, BookmarkCheck, Star, Info, Eye, EyeOff, Columns2, Rows2 } from 'lucide-react';
+import { Search, X, MoreVertical, ChevronDown, ArrowLeft, ArrowRight, Library, Palette, Bookmark, BookmarkCheck, Heart, Info, Eye, EyeOff, Columns2, Rows2 } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { bookMeta } from '../core/books.js';
 import { getVerse } from '../core/modules.js';
@@ -135,7 +135,7 @@ export default function ReaderToolbar({ index, pane, module }) {
                 </span>
               </button>
             )}
-            {item(Star, 'Закладки, заметки, избранное', () => openSheet('bookmarks', index))}
+            {item(Heart, 'Закладки, заметки, любимые стихи', () => openSheet('bookmarks', index))}
             {item(CalendarCheck, 'Планы чтения', () => openSheet('plans', index))}
             {item(Headphones, 'Слушать с этого места', () => listenFrom(index, module.id, ref))}
             <div className="menu-sep" />

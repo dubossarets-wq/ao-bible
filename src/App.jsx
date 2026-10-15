@@ -8,6 +8,7 @@ import SheetHost from './components/SheetHost.jsx';
 import Bootstrap from './components/Bootstrap.jsx';
 import WordPopover from './components/WordPopover.jsx';
 import AudioBar from './components/AudioBar.jsx';
+import { fitsTranslation } from './core/audio.js';
 import { useUpdates, applyUpdate } from './core/updates.js';
 import { IS_STAGING } from './core/channel.js';
 import { Toasts } from './components/ui.jsx';
@@ -117,6 +118,37 @@ export default function App() {
       .catch(() => save('lateStarter', done));
   }, [modules, bibles.length]);
 
+  // Аудиокниги ставятся вместе с переводом: к каждому установленному переводу — его записи из каталога.
+  // Каждая ставится один раз: если человек её удалил, сама она больше не вернётся.
+  const bibleIds = bibles.map((b) => b.id).join();
+  useEffect(() => {
+    if (!modules || !bibleIds || !navigator.onLine) return;
+    let alive = true;
+    repo
+      .fetchCatalog()
+      .then(async (cat) => {
+        const tried = load('autoAudio', []);
+        const todo = cat.filter(
+          (e) => e.type === 'audio' && !e.unavailable && !tried.includes(e.id) && !modules.some((m) => m.id === e.id) && bibles.some((b) => fitsTranslation(e.translation, b.id))
+        );
+        for (const e of todo) {
+          if (!alive) return;
+          save('autoAudio', [...load('autoAudio', []), e.id]);
+          try {
+            await repo.installFromCatalog(e);
+            const bible = bibles.find((b) => fitsTranslation(e.translation, b.id));
+            toast(`Подключена аудиокнига «${e.name}»${bible ? ` к переводу ${bible.name}` : ''}`);
+          } catch {
+            save('autoAudio', load('autoAudio', []).filter((x) => x !== e.id)); // не вышло — попробуем в следующий раз
+          }
+        }
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [bibleIds, !!modules]);
+
   // Если модуль панели удалён — переключаем на основной/первый доступный перевод.
   useEffect(() => {
     if (!modules || !bibles.length) return;
@@ -134,7 +166,12 @@ export default function App() {
 
   const updatePane = useCallback((i, fn) => setPanes((ps) => ps.map((p, j) => (j === i && p ? fn(p) : p))), [setPanes]);
 
-  const navigate = useEvent((i, ref, { highlight = null, flash = true, push = true } = {}) => {
+  // Режим «план на день» (pane.plan = { uid, day, at }). Любой переход в другое место выводит из него,
+  // а план запоминается в lastPlan — внизу появляется кнопка «Вернуться к плану».
+  // planReturn — куда вернуться: { at } — к отрывку с этим номером.
+  const leavePlan = (p, planReturn) => (p.plan ? { plan: null, lastPlan: { ...p.plan, at: null, ref: p.ref, ...planReturn } } : {});
+
+  const navigate = useEvent((i, ref, { highlight = null, flash = true, push = true, planReturn = null } = {}) => {
     const clean = { book: ref.book, chapter: ref.chapter, verse: ref.verse || 1 };
     updatePane(i, (p) => {
       const history = p.history.slice(0, p.hIndex + 1);
@@ -142,9 +179,22 @@ export default function App() {
       if (push) history.push(clean);
       else history[history.length - 1] = clean;
       const trimmed = history.slice(-100);
-      return { ...p, ref: clean, history: trimmed, hIndex: trimmed.length - 1, nav: p.nav + 1, highlight, flash: flash ? `${clean.book}.${clean.chapter}.${clean.verse}.${Date.now()}` : null };
+      return { ...p, ...leavePlan(p, planReturn), ref: clean, history: trimmed, hIndex: trimmed.length - 1, nav: p.nav + 1, highlight, flash: flash ? `${clean.book}.${clean.chapter}.${clean.verse}.${Date.now()}` : null };
     });
   });
+
+  // Открыть день плана одной страницей; at — номер отрывка, к которому прокрутить
+  const openPlanDay = useEvent((i, uid, day, at = 0) =>
+    updatePane(i, (p) => ({ ...p, plan: { uid, day, at, t: Date.now() }, lastPlan: null, nav: p.nav + 1, flash: null, highlight: null }))
+  );
+  const returnToPlan = useEvent((i) =>
+    updatePane(i, (p) => (p.lastPlan ? { ...p, plan: { ...p.lastPlan, t: Date.now() }, lastPlan: null, nav: p.nav + 1, flash: null, highlight: null } : p))
+  );
+  // Выйти из плана: остаёмся на том же месте в обычном чтении
+  const exitPlan = useEvent((i) => updatePane(i, (p) => ({ ...p, plan: null, lastPlan: null, nav: p.nav + 1, flash: null, highlight: null })));
+  // Место открытия плана уже применено — дальше открываемся на последнем месте чтения
+  const settlePlan = useEvent((i) => updatePane(i, (p) => (p.plan ? { ...p, plan: { uid: p.plan.uid, day: p.plan.day } } : p)));
+  const dismissPlanReturn = useEvent((i) => updatePane(i, (p) => ({ ...p, lastPlan: null })));
 
   const reportPosition = useEvent((i, ref) => {
     updatePane(i, (p) => {
@@ -161,7 +211,7 @@ export default function App() {
       if (h < 0 || h >= p.history.length) return p;
       const history = [...p.history];
       history[p.hIndex] = p.ref;
-      return { ...p, history, hIndex: h, ref: history[h], nav: p.nav + 1, flash: null, highlight: null };
+      return { ...p, ...leavePlan(p), history, hIndex: h, ref: history[h], nav: p.nav + 1, flash: null, highlight: null };
     });
   });
 
@@ -217,7 +267,7 @@ export default function App() {
         const history = p.history.slice(0, p.hIndex + 1);
         history[history.length - 1] = p.ref;
         history.push(clean);
-        next[target] = { ...p, moduleId, ref: clean, history, hIndex: history.length - 1, nav: p.nav + 1, flash, highlight: null };
+        next[target] = { ...p, ...leavePlan(p), moduleId, ref: clean, history, hIndex: history.length - 1, nav: p.nav + 1, flash, highlight: null };
       }
       return next;
     });
@@ -237,10 +287,10 @@ export default function App() {
   const toggleFavorite = useEvent((ref, text) => {
     if (isFavorite(ref)) {
       setFavorites((fs) => fs.filter((b) => !(b.book === ref.book && b.chapter === ref.chapter && b.verse === ref.verse)));
-      toast('Убрано из избранного');
+      toast('Убрано из любимых стихов');
     } else {
       setFavorites((fs) => [{ ...ref, text, at: Date.now() }, ...fs]);
-      toast('Стих добавлен в избранное');
+      toast('♥ Добавлено в любимые стихи');
     }
   });
 
@@ -255,7 +305,7 @@ export default function App() {
     });
   });
 
-  // Отметки в тексте: «Книга.глава» → { стих: 'fbn' } (f — избранное, b — закладка, n — заметка)
+  // Отметки в тексте: «Книга.глава» → { стих: 'fbn' } (f — любимый стих, b — закладка, n — заметка)
   const marks = useMemo(() => {
     const m = new Map();
     const add = (book, c, v, flag) => {
@@ -315,6 +365,11 @@ export default function App() {
     bibles,
     panes,
     navigate,
+    openPlanDay,
+    returnToPlan,
+    exitPlan,
+    dismissPlanReturn,
+    settlePlan,
     reportPosition,
     go,
     setPaneModule,

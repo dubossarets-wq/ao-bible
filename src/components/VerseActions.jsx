@@ -1,6 +1,6 @@
 // Действия со стихом (нажатие на номер стиха)
 import React from 'react';
-import { Bookmark, BookmarkCheck, Star, Copy, Link2, Columns2, NotebookPen } from 'lucide-react';
+import { Bookmark, BookmarkCheck, Heart, Copy, Link2, Columns2, NotebookPen } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { formatRef } from '../core/books.js';
@@ -44,7 +44,7 @@ export default function VerseActions({ pane, payload, onClose }) {
       <div className="actions">
         {row(isBookmarked(ref) ? BookmarkCheck : Bookmark, isBookmarked(ref) ? 'Убрать закладку' : 'Закладка', () => toggleBookmark(ref, text.slice(0, 160)), isBookmarked(ref))}
         {row(NotebookPen, notes[`${ref.book}.${ref.chapter}.${ref.verse}`] ? 'Заметка' : 'Добавить заметку', () => openSheet('note', pane, { refs: [ref], moduleId: mod?.id }))}
-        {row(Star, isFavorite(ref) ? 'Убрать из избранного' : 'В избранное', () => toggleFavorite(ref, text), isFavorite(ref))}
+        {row(Heart, isFavorite(ref) ? 'Убрать из любимых' : 'В любимые', () => toggleFavorite(ref, text), isFavorite(ref))}
         {row(Copy, 'Копировать', copy)}
         {row(Link2, 'Параллельные места', () => openSheet('xrefs', pane, { ref }))}
         {pane === 0 && row(Columns2, 'Открыть во второй панели', () => (onClose(), openInOther(0, ref)))}

@@ -388,13 +388,13 @@ async function run(label, viewport, isMobile) {
   await page.click('[aria-label="Закладка: продолжить отсюда"]');
   await press('#v-13-32 .vt');
   // На узком экране звёздочка — в «⋯»
-  if (await page.locator('.selection-bar [aria-label="В избранное"]').isVisible()) await page.click('.selection-bar [aria-label="В избранное"]');
+  if (await page.locator('.selection-bar [aria-label="В любимые"]').isVisible()) await page.click('.selection-bar [aria-label="В любимые"]');
   else {
     await page.click('[aria-label="Ещё действия"]');
-    await page.click('.menu-item:has-text("В избранное")');
+    await page.click('.menu-item:has-text("В любимые")');
   }
   await page.waitForTimeout(400);
-  const marksOk = await page.evaluate(() => ({ note: !!document.querySelector('#v-13-33 .note-tag'), bm: !!document.querySelector('#v-13-32 .vmark.bm'), fav: document.querySelector('#v-13-32').classList.contains('fav') && !!document.querySelector('#v-13-32 .fav-star') }));
+  const marksOk = await page.evaluate(() => ({ note: !!document.querySelector('#v-13-33 .note-tag'), bm: !!document.querySelector('#v-13-32 .vmark.bm'), fav: document.querySelector('#v-13-32').classList.contains('fav') && !!document.querySelector('#v-13-32 .fav-heart') }));
   check(`${label}: заметка, закладка и избранное видны в тексте`, marksOk.note && marksOk.bm && marksOk.fav, JSON.stringify(marksOk));
   await page.screenshot({ path: `${shots}/${label}-7h-marks.png` });
   await page.click('#v-13-33 .note-tag');

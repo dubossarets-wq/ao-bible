@@ -1,8 +1,8 @@
 // Панель действий над выделенными стихами (появляется вместо верхней панели после долгого нажатия).
-// ✓ · ссылка и число стихов · параллельно в другом переводе · избранное · заметка · закладка · копировать · ⋯
+// ✓ · ссылка и число стихов · параллельно в другом переводе · любимые · заметка · закладка · копировать · ⋯
 // В «⋯»: сравнить переводы, параллельные места, поделиться.
 import React, { useEffect, useRef, useState } from 'react';
-import { Check, Languages, BookCopy, Star, Link2, Share2, Copy, NotebookPen, Bookmark, BookmarkCheck, MoreHorizontal, MessageSquareText, Headphones, Highlighter, FolderPlus, Eraser, Compass } from 'lucide-react';
+import { Check, Languages, BookCopy, Heart, Link2, Share2, Copy, NotebookPen, Bookmark, BookmarkCheck, MoreHorizontal, MessageSquareText, Headphones, Highlighter, FolderPlus, Eraser, Compass } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { getVerse } from '../core/modules.js';
 import { listenFrom } from '../core/listen.js';
@@ -185,8 +185,8 @@ export default function SelectionBar({ index, module, selection, onDone }) {
           </div>
         )}
       </div>
-      <button className={`tb tb-icon tb-opt ${fav ? 'on' : ''}`} onClick={toggleFav} aria-label={fav ? 'Убрать из избранного' : 'В избранное'} title="Избранное">
-        <Star size={21} fill={fav ? 'currentColor' : 'none'} />
+      <button className={`tb tb-icon tb-opt ${fav ? 'on' : ''}`} onClick={toggleFav} aria-label={fav ? 'Убрать из любимых' : 'В любимые'} title="Любимые стихи">
+        <Heart size={21} fill={fav ? 'currentColor' : 'none'} />
       </button>
       <button className={`tb tb-icon ${hasNote ? 'on' : ''}`} onClick={() => (openSheet('note', index, { refs, moduleId: module.id }), onDone())} aria-label={hasNote ? 'Открыть заметку' : 'Добавить заметку'} title="Заметка">
         <NotebookPen size={21} />
@@ -202,7 +202,7 @@ export default function SelectionBar({ index, module, selection, onDone }) {
           <div className="menu" role="menu">
             {moreItem(Compass, 'Всё о стихе', () => openSheet('guide', index, { ref: first, moduleId: module.id }))}
             {moreItem(FolderPlus, 'В подборку…', () => openSheet('collect', index, { refs, moduleId: module.id }))}
-            {moreItem(Star, fav ? 'Убрать из избранного' : 'В избранное', toggleFav)}
+            {moreItem(Heart, fav ? 'Убрать из любимых' : 'В любимые', toggleFav)}
             {moreItem(BookCopy, 'Сравнить переводы', () => openSheet('compare', index, { refs, moduleId: module.id }))}
             {refs.length === 1 && moreItem(Link2, 'Параллельные места', () => openSheet('xrefs', index, { ref: first }))}
             {moreItem(Headphones, 'Слушать отсюда', () => (listenFrom(index, module.id, first), onDone()))}

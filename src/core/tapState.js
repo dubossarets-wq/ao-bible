@@ -12,3 +12,22 @@ export function wasClosedOnWord(el) {
   if (hit) closedOn = { el: null, at: 0 };
   return hit;
 }
+
+// Двойное нажатие на стих (два нажатия на один стих быстрее 350 мс) — в любимые
+let lastTap = { key: null, at: 0 };
+export function isDoubleTap(key) {
+  const now = Date.now();
+  const hit = lastTap.key === key && now - lastTap.at < 350;
+  lastTap = hit ? { key: null, at: 0 } : { key, at: now };
+  return hit;
+}
+
+// Короткая вспышка на стихе, который только что стал любимым
+export function pulseFavorite(verseEl) {
+  window.getSelection?.()?.removeAllRanges();
+  if (!verseEl) return;
+  verseEl.classList.remove('fav-pulse');
+  void verseEl.offsetWidth;
+  verseEl.classList.add('fav-pulse');
+  setTimeout(() => verseEl.classList.remove('fav-pulse'), 800);
+}

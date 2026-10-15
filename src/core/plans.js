@@ -72,5 +72,37 @@ const day0 = (d) => {
   x.setHours(0, 0, 0, 0);
   return x;
 };
+// Отрывки чтения: «Ps.119-120» — две главы, «Ps.9.1-21» — часть главы.
+// to: null — до конца главы. key — по нему отмечаются прочитанные отрывки дня.
+export function readingUnits(r) {
+  const [book, ch, vs] = r.split('.');
+  if (vs) {
+    const [v1, v2] = vs.split('-').map(Number);
+    return [{ book, chapter: +ch, from: v1, to: v2 || v1, key: r }];
+  }
+  const [a, b] = (ch || '1').split('-').map(Number);
+  return Array.from({ length: (b || a) - a + 1 }, (_, i) => ({ book, chapter: a + i, from: 1, to: null, key: `${book}.${a + i}` }));
+}
+
+export const dayUnits = (plan, day) => (plan.readings[day] || []).flatMap(readingUnits);
+
+// Прочитан ли отрывок: день отмечен целиком (вручную или сам) или отмечен этот отрывок
+export const unitDone = (plan, day, key) => !!(plan.done?.[day] || plan.parts?.[day]?.[key]);
+export const readingDone = (plan, day, r) => readingUnits(r).every((u) => unitDone(plan, day, u.key));
+
+// День плана, который сейчас «сегодня»
+export const planToday = (plan) => (plan.calendar ? calendarIndex() : todayIndex(plan.start, plan.readings.length));
+
+// Пропущенные дни до сегодняшнего (с начала плана)
+export function behindDays(plan) {
+  const today = planToday(plan);
+  const from = plan.calendar ? Math.min(today, calendarIndex(new Date(plan.start))) : 0;
+  const out = [];
+  for (let i = from; i < today; i++) if (!plan.done?.[i]) out.push(i);
+  return out;
+}
+
 export const todayIndex = (start, days) => Math.max(0, Math.min(days - 1, Math.round((day0(Date.now()) - day0(start)) / 86400000)));
 export const isoDate = (d = new Date()) => d.toISOString().slice(0, 10);
+// Дата по местному времени (для учёта «прочитано сегодня»)
+export const localDate = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;

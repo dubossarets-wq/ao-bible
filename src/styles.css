@@ -468,10 +468,15 @@ button.row-act:hover { background: color-mix(in srgb, var(--accent) 12%, transpa
 .maplibregl-ctrl-attrib { font-size: 10px; }
 
 /* ---------- Отметки в тексте: избранное, закладки, заметки ---------- */
-.verse.fav { background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 9%, transparent), transparent 70%); border-radius: 4px; box-shadow: -6px 0 0 color-mix(in srgb, var(--accent) 9%, transparent); }
+.verse.fav { background: linear-gradient(90deg, color-mix(in srgb, var(--love) 11%, transparent), color-mix(in srgb, var(--love) 4%, transparent) 75%); border-radius: 4px; box-shadow: -6px 0 0 color-mix(in srgb, var(--love) 11%, transparent); }
 .verse.fav.selected { background: var(--panel); }
 .vmark { display: inline-block; vertical-align: .32em; margin-right: .2em; line-height: 1; }
-.fav-star { color: var(--accent); font-size: .55em; }
+:root { --love: #d9475e; }
+.fav-heart { color: var(--love); width: .62em; height: .62em; vertical-align: .22em; margin-right: .25em; }
+.fav-heart svg { display: block; width: 100%; height: 100%; }
+.love { color: var(--love); }
+.verse.fav-pulse { animation: fav-pulse .8s ease-out; }
+@keyframes fav-pulse { 0% { background-color: color-mix(in srgb, var(--love) 30%, transparent); } 100% { background-color: transparent; } }
 .vmark.bm { width: .42em; height: .62em; background: var(--accent); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 74%, 0 100%); vertical-align: .18em; }
 .note-tag { display: inline-flex; align-items: center; justify-content: center; vertical-align: .08em; width: 1.25em; height: 1.05em; margin-left: .3em; border: 0; border-radius: 4px; background: #f3e27a; color: #6b5a10; padding: 0; }
 .note-tag:hover { filter: brightness(.95); }
@@ -626,7 +631,8 @@ mark.diff { background: color-mix(in srgb, #f2a65a 38%, transparent); border-rad
 .plan-meta { color: var(--muted); font-size: .82rem; flex: 1; min-width: 0; }
 .plan-day { display: flex; align-items: center; gap: 4px; }
 .plan-day-label { flex: 1; font-weight: 600; font-size: .9rem; text-align: center; }
-.chip.done { opacity: .6; text-decoration: line-through; }
+.chip.done { color: var(--muted); background: color-mix(in srgb, #3aa66b 10%, var(--bg)); border-color: color-mix(in srgb, #3aa66b 35%, var(--line)); }
+.chip.done svg { color: #2f9a5f; }
 .plan-offer { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .plan-offer-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 #plan-days { max-width: 110px; }
@@ -649,3 +655,65 @@ mark.diff { background: color-mix(in srgb, #f2a65a 38%, transparent); border-rad
 .toolbar .tb-icon.on { color: color-mix(in srgb, var(--accent) 55%, #fff); }
 .update-dot { box-shadow: 0 0 0 2px var(--bar); }
 .map-pane .tb-place { color: var(--bar-text); }
+
+/* Планы: карточка активного плана */
+.plan-day-label small { display: block; font-weight: 400; font-size: .76rem; color: var(--muted); }
+.plan-behind { font-size: .82rem; color: #b5642a; display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+.link-btn { background: none; border: 0; padding: 0; color: var(--accent); font: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.plan-read { justify-content: center; flex-wrap: wrap; gap: 2px 8px; padding: 10px 14px; font-size: 1rem; }
+.plan-read-sub { flex-basis: 100%; text-align: center; font-size: .76rem; font-weight: 400; opacity: .85; }
+.read-stats .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
+.read-stats .stat { display: flex; flex-direction: column; align-items: center; padding: 8px 4px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+.read-stats .stat b { font-size: 1.25rem; }
+.read-stats .stat span { font-size: .76rem; color: var(--muted); text-align: center; }
+.read-stats .chip small { font-size: .72rem; }
+
+/* Страница «план на день» */
+.plan-strip { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 12px; min-height: 44px; background: color-mix(in srgb, var(--panel) 94%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); font-family: var(--font-ui); }
+.plan-strip-day { flex: none; font-size: .8rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.plan-strip-chips { flex: 1; min-width: 0; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 0; }
+.plan-strip-chips::-webkit-scrollbar { display: none; }
+.plan-strip-chips .chip { flex: none; padding: 4px 10px; font-size: .82rem; }
+.plan-strip-chips .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.plan-strip-chips .chip.on svg { color: #fff; }
+.plan-intro { font-family: var(--font-ui); padding: 14px 0 4px; }
+.plan-intro-name { font-weight: 700; font-size: 1.05rem; }
+.plan-intro-meta { color: var(--muted); font-size: .86rem; margin-top: 2px; }
+.plan-intro-hint { margin: 8px 0 0; font-size: .84rem; color: var(--muted); line-height: 1.45; }
+.plan-seg { padding-top: 10px; }
+.plan-seg + .plan-seg { border-top: 2px dashed var(--line); margin-top: 6px; }
+.plan-seg-head { font-family: var(--font-ui); display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; padding: 14px 0 0; }
+.plan-seg-n { flex-basis: 100%; font-size: .74rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.plan-seg-label { font-size: 1.45rem; font-weight: 700; color: var(--text); }
+.plan-seg-ok { display: inline-flex; align-items: center; gap: 4px; font-size: .8rem; font-weight: 600; color: #2f9a5f; }
+.plan-seg .chapter-title { font-size: calc(var(--chapter-size) * .55); color: var(--muted); margin-top: .8em; }
+.plan-seg-end { font-family: var(--font-ui); display: flex; flex-direction: column; align-items: stretch; gap: 10px; margin: 18px 0 26px; padding: 14px; border-radius: var(--radius); background: var(--panel); border: 1px solid var(--line); }
+.plan-ok { display: flex; align-items: center; gap: 6px; color: #2f9a5f; font-weight: 600; font-size: .92rem; }
+.plan-mark { align-self: flex-start; background: none; color: var(--muted); }
+.plan-next { justify-content: center; padding: 11px 14px; font-size: .98rem; }
+.plan-finish { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 6px 2px; color: #2f9a5f; }
+.plan-finish div { flex: 1; min-width: 160px; display: flex; flex-direction: column; color: var(--text); }
+.plan-finish span { font-size: .84rem; color: var(--muted); }
+.plan-finish .link-btn { align-self: flex-start; font-size: .84rem; margin-top: 4px; }
+.plan-left { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: .86rem; color: var(--muted); }
+.plan-offplan { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 10px 12px; border: 1px dashed var(--line); border-radius: calc(var(--radius) * .8); background: none; color: var(--text); cursor: pointer; font: inherit; }
+.plan-offplan:hover { border-color: var(--accent); }
+.plan-offplan-main { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; font-size: .9rem; }
+.plan-offplan-sub { font-size: .76rem; color: var(--muted); }
+.read-progress.plan span { background: #3aa66b; }
+
+/* Кнопка «Вернуться к плану» после чтения вне плана */
+.plan-return { position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); transform: translateX(-50%); z-index: 6; display: flex; align-items: center; background: var(--accent); color: #fff; border-radius: 999px; box-shadow: 0 8px 24px rgba(0,0,0,.22); font-family: var(--font-ui); animation: plan-ret .25s ease-out; max-width: calc(100% - 24px); }
+@keyframes plan-ret { from { transform: translate(-50%, 24px); opacity: 0; } }
+.plan-return-btn { display: inline-flex; align-items: center; gap: 7px; background: none; border: 0; color: inherit; font: inherit; font-weight: 600; font-size: .92rem; padding: 10px 6px 10px 16px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.plan-return-x { background: none; border: 0; color: inherit; opacity: .8; padding: 10px 12px 10px 6px; cursor: pointer; display: inline-flex; }
+.audio-src { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+/* Кнопка «Слушать» при выделенном стихе */
+.float-pill { position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); transform: translateX(-50%); z-index: 6; display: flex; background: var(--bar); color: var(--bar-text); border-radius: 999px; box-shadow: 0 8px 24px rgba(0,0,0,.25); font-family: var(--font-ui); animation: plan-ret .22s ease-out; max-width: calc(100% - 24px); }
+.float-pill-btn { display: inline-flex; align-items: center; gap: 8px; background: none; border: 0; color: inherit; font: inherit; font-weight: 600; font-size: .95rem; padding: 11px 20px; cursor: pointer; white-space: nowrap; }
+
+/* Двойное нажатие на стих — «в любимые», а не увеличение страницы (щипок по-прежнему работает) */
+.scroller { touch-action: manipulation; }
+/* Внизу кнопка «Слушать» или «Вернуться к плану» — сообщения поднимаются над ней */
+.app:has(.float-pill, .plan-return) .toasts { bottom: calc(env(safe-area-inset-bottom, 0px) + 74px); }

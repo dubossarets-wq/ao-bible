@@ -47,7 +47,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "public" / "modules"
 DATA = ROOT / "data-src" / "audio"
 PYLIB = ROOT / ".pylib-audio"
-ALIGN_VERSION = 12  # меняется — кеш выравнивания пересчитывается
+ALIGN_VERSION = 13  # меняется — кеш выравнивания пересчитывается
 RST_ALIGN_VERSION = 10  # то же для Hexapla (последние правки касались только пропусков в записи — у синтеза их нет)
 STAR_LOGP = float(os.environ.get("AOB_STAR_LOGP", "-0.05"))  # log p «звёздочки» на кадр
 MIN_SCORE = 0.15  # средняя вероятность букв стиха ниже — стих в записи не найден (пропущен/сжат)
@@ -341,18 +341,34 @@ class Aligner:
                 # Чтец пропустил кусок текста (так бывает: 2 Цар 19:17–35 у LibriVox нет) — ищем, через
                 # сколько стихов запись снова совпадает с текстом; пропущенные стихи остаются без времени
                 base = mean3(r)
+
+                def ok(k):
+                    j2, r2 = run(i + k, pos, first)
+                    if r2 is None:
+                        return None
+                    if os.environ.get("AOB_DEBUG"):
+                        log(f"    пропуск {k}: {verses[i + k][0]} оценка {mean3(r2):.2f} (было {base:.2f})")
+                    good = mean3(r2) >= 0.6 and mean3(r2) > base - 0.1 and not bad(r2, 0, pos, first)
+                    return (j2, r2) if good else False
+
+                prev_k = 0
                 for k in (1, 2, 3, 5, 8, 12, 18, 25, 35, 50, 70):
                     if i + k >= len(verses):
                         break
-                    j2, r2 = run(i + k, pos, first)
-                    if r2 is None:
+                    hit = ok(k)
+                    if hit is None:
                         break
-                    if os.environ.get("AOB_DEBUG"):
-                        log(f"    пропуск {k}: {verses[i + k][0]} оценка {mean3(r2):.2f} (было {base:.2f})")
-                    if mean3(r2) >= 0.6 and mean3(r2) > base - 0.1 and not bad(r2, 0, pos, first):
+                    if hit:
+                        # уточняем: самый короткий пропуск между предыдущей пробой и этой
+                        for kk in range(prev_k + 1, k):
+                            h2 = ok(kk)
+                            if h2:
+                                k, hit = kk, h2
+                                break
                         log(f"  ! в записи нет стихов {verses[i][0]} … {verses[i + k - 1][0]} ({k} шт.)")
-                        i, j, r = i + k, j2, r2
+                        i, (j, r) = i + k, hit
                         break
+                    prev_k = k
             # Конец последних стихов группы ничем не «закреплён»: их хвост может уехать на такие же слова
             # дальше (Исх 14:22 и 14:29 оба кончаются «on their left»). Поэтому два последних стиха
             # группы не принимаем, а выравниваем заново в начале следующей. Так же поступаем со стихами
@@ -708,7 +724,7 @@ def build_kjv(args):
                     break
                 vv.append(x)
             # время стихов должно расти вместе с номером; ненайденные стихи (оценка < MIN_SCORE) — без времени
-            n_all, all_vs = len(vv), [x[1] for x in vv]
+            n_all, all_vs = len(kjv[ck.split(".")[0]][int(ck.split(".")[1]) - 1]), [x[1] for x in vv]
             vv = [x for k, x in enumerate(vv) if (k == 0 or x[1] > vv[k - 1][1]) and x[4] >= MIN_SCORE]
             if len(vv) < 0.8 * n_all:
                 dropped.append(ck)
@@ -820,7 +836,7 @@ def build_wwjd(args):
                 futs[k] = pool.submit(mp3_path, items[k])
 
     al, t0, audio_s, align_s = None, time.time(), 0.0, 0.0
-    problems, cur_book, seen = [], None, {}
+    problems, cur_book, seen, skipped = [], None, {}, []
     order = {b: i for i, b in enumerate(PROT)}
 
     def save():
@@ -880,7 +896,10 @@ def build_wwjd(args):
             align_s += time.time() - ta
         sc = r["chapter"]
         good = [v for v in r["verses"] if v[3] >= MIN_SCORE]
-        if r["score"] < 0.45 or len(good) < 0.8 * len(r["all"]):
+        # Чтецы иногда сокращают перечни имён (Быт 36, 46 — родословия): такие стихи остаются без времени,
+        # а глава размечается, если найденные стихи совпали надёжно
+        mean_good = sum(v[3] for v in good) / max(1, len(good))
+        if mean_good < 0.6 or len(good) < 0.3 * len(r["all"]):
             problems.append(f"{name}→{bid}.{sc} (оценка {r['score']:.2f}, найдено {len(good)}/{len(r['all'])})")
             continue
         if sc != c:
@@ -888,6 +907,7 @@ def build_wwjd(args):
         miss = [v for v in r["all"] if v not in {g[0] for g in good}]
         if miss:
             log(f"  {bid}.{sc}: стихов нет в записи (или не найдены): {miss}")
+            skipped.append(f"{bid}.{sc}:{miss[0]}" + (f"–{miss[-1]}" if len(miss) > 1 else "") + f" ({len(miss)})")
         keys = [v[0] for v in good]
         starts = verse_starts(keys, {v[0]: v[1:] for v in good})
         ck = f"{bid}.{sc}"
@@ -904,6 +924,8 @@ def build_wwjd(args):
         log(f"  выровнено {audio_s/3600:.1f} ч аудио за {align_s/60:.1f} мин")
     if problems:
         log(f"  не размечены ({len(problems)}): " + "; ".join(problems))
+    if skipped:
+        log(f"  главы с пропущенными в записи стихами ({len(skipped)}): " + ", ".join(skipped))
     save()
 
 

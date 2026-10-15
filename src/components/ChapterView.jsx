@@ -11,11 +11,14 @@ import { setLivePosition, clearLivePosition } from '../core/livePosition.js';
 import { setDriver, isDriver, onSync, emitSync } from '../core/scrollSync.js';
 import { useAudio } from '../core/audio.js';
 import { verseHtml, wordAt, plainText } from '../core/verseMarkup.js';
-import { wasClosedOnWord } from '../core/tapState.js';
+import { wasClosedOnWord, isDoubleTap, pulseFavorite } from '../core/tapState.js';
+import { logChapter, minSeconds } from '../core/readLog.js';
+import { creditChapter } from '../core/planStore.js';
+import { formatRef } from '../core/books.js';
 
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-function highlightRegex(query) {
+export function highlightRegex(query) {
   if (!query) return null;
   const words = query
     .toLowerCase()
@@ -25,17 +28,19 @@ function highlightRegex(query) {
   return words.length ? new RegExp(words.join('|'), 'iu') : null;
 }
 
-const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, xrefs, counts, comments, opts, hlRe, flashVerse, isPsalm, selected, marks }) {
+// from/to — показать только часть главы (отрывок плана), idp — приставка к id стихов (на странице плана
+// одна и та же глава может встретиться дважды), noBookTitle/noChapterTitle — без заголовков (их заменяет заголовок отрывка)
+export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, xrefs, counts, comments, opts, hlRe, flashVerse, isPsalm, selected, marks, from = 1, to = null, idp = '', noBookTitle = false, noChapterTitle = false }) {
   const sel = selected ? new Set(selected.split(',').map(Number)) : null;
   const mk = marks ? Object.fromEntries(marks.split(',').map((x) => x.split(':'))) : {};
   return (
     <div className="chapter" data-c={c}>
-      {c === 1 && <h1 className="book-title">{bookName}</h1>}
-      <h2 className="chapter-title">{isPsalm ? `Псалом ${c}` : `Глава ${c}`}</h2>
+      {c === 1 && !noBookTitle && <h1 className="book-title">{bookName}</h1>}
+      {!noChapterTitle && <h2 className="chapter-title">{isPsalm ? `Псалом ${c}` : `Глава ${c}`}</h2>}
       <div className={`verses ${opts.continuous ? 'continuous' : ''}`}>
         {verses.map((text, i) => {
           const v = i + 1;
-          if (!text) return null;
+          if (!text || v < from || (to && v > to)) return null;
           const heading = opts.showHeadings && headings?.[`${c}:${v}`];
           const n = (counts?.get(`${bookId}.${c}.${v}`) || 0) + (xrefs?.[`${c}:${v}`]?.length || 0);
           return (
@@ -43,9 +48,10 @@ const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, x
               {heading && <h3 className="section-title">{heading}</h3>}
               <p
                 className={`verse${flashVerse === v ? ' flash' : ''}${sel?.has(v) ? ' selected' : ''}${mk[v]?.includes('f') ? ' fav' : ''}${/[1-6]/.test(mk[v] || '') ? ` hl-${mk[v].match(/[1-6]/)[0]}` : ''}`}
+                data-b={bookId}
                 data-c={c}
                 data-v={v}
-                id={`v-${c}-${v}`}
+                id={`${idp}v-${c}-${v}`}
                 aria-selected={sel ? sel.has(v) : undefined}
               >
                 {opts.showVerseNumbers && (
@@ -55,8 +61,10 @@ const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, x
                 )}
                 {mk[v]?.includes('b') && <span className="vmark bm" title="Закладка" aria-label="Закладка" />}
                 {mk[v]?.includes('f') && (
-                  <span className="vmark fav-star" title="В избранном" aria-label="В избранном">
-                    ★
+                  <span className="vmark fav-heart" title="Любимый стих" aria-label="Любимый стих">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 21s-7.6-4.7-9.7-9.4C.8 8.3 3 4.4 6.8 4.4c2.2 0 3.7 1.2 5.2 3 1.5-1.8 3-3 5.2-3 3.8 0 6 3.9 4.5 7.2C19.6 16.3 12 21 12 21z" fill="currentColor" />
+                    </svg>
                   </span>
                 )}
                 <span className="vt" dangerouslySetInnerHTML={{ __html: verseHtml(text, { showStrongs: opts.showStrongs, highlight: hlRe }) }} />
@@ -90,16 +98,16 @@ const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, x
   );
 });
 
-const LONG_PRESS_MS = 450;
+export const LONG_PRESS_MS = 450;
 
 // Отметки главы строкой «5:fb,7:n» — примитив для memo
-function marksFor(marks, bookId, c) {
+export function marksFor(marks, bookId, c) {
   const row = marks?.get(`${bookId}.${c}`);
   return row ? Object.entries(row).map(([v, f]) => `${v}:${f}`).join(',') : null;
 }
 
 // Строка номеров выделенных стихов главы («5,6») — примитив, чтобы memo главы не сбрасывался зря
-function selectedIn(selection, bookId, c) {
+export function selectedIn(selection, bookId, c) {
   if (!selection?.size) return null;
   const prefix = `${bookId}.${c}.`;
   const out = [];
@@ -109,7 +117,7 @@ function selectedIn(selection, bookId, c) {
 
 // selection — Set ключей «Книга.глава.стих»; onSelect(ref, 'start' | 'toggle') — выделение стихов
 export default function ChapterView({ index, pane, module, onScrollDirection, selection, onSelect }) {
-  const { settings, openSheet, openPopover, popover, reportPosition, navigate, sheet, modules, marks } = useApp();
+  const { settings, openSheet, openPopover, closePopover, popover, reportPosition, navigate, sheet, modules, marks, toast, toggleFavorite } = useApp();
   const scroller = useRef(null);
   const [book, setBook] = useState(null); // { id, data, meta }
   const [range, setRange] = useState(null);
@@ -249,6 +257,39 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     };
   }, [range, book, settings]);
 
+  // Учёт прочитанного: сколько секунд каждая глава была на экране и дошёл ли человек до её конца.
+  // Дочитанная глава записывается в историю чтения и засчитывается в планы чтения.
+  const dwell = useRef(new Map()); // «Книга.глава» -> { t, end, done }
+  useEffect(() => {
+    if (!book) return;
+    const timer = setInterval(() => {
+      const el = scroller.current;
+      if (!el || document.visibilityState !== 'visible') return;
+      const top = el.scrollTop;
+      const bottom = top + el.clientHeight;
+      for (const ch of el.querySelectorAll('.chapter')) {
+        const cTop = ch.offsetTop;
+        if (cTop + ch.offsetHeight < top || cTop > bottom) continue;
+        const key = `${book.id}.${ch.dataset.c}`;
+        const d = dwell.current.get(key) || { t: 0, end: false, done: false };
+        dwell.current.set(key, d);
+        if (d.done) continue;
+        d.t += 1;
+        const vs = ch.querySelectorAll('.verse');
+        const last = vs[vs.length - 1];
+        if (last && last.offsetTop + last.offsetHeight <= bottom + 4) d.end = true;
+        if (!d.end || d.t < minSeconds(vs.length)) continue;
+        d.done = true;
+        const c = +ch.dataset.c;
+        logChapter(book.id, c);
+        const { credited, finished } = creditChapter(book.id, c);
+        if (finished.length) toast(`План «${finished[0]}»: чтение на сегодня выполнено ✓`);
+        else if (credited.length) toast(`Засчитано в план «${credited[0]}»: ${formatRef({ book: book.id, chapter: c, verse: 1 }).replace(/:1$/, '')}`);
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [book]);
+
   // Долгое нажатие на стих (палец или мышь) — выделение стиха и панель действий сверху.
   // Сдвиг пальца больше 10 px (прокрутка) отменяет нажатие.
   const press = useRef(null);
@@ -309,6 +350,14 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     if (selection?.size) return onSelect?.(vref, 'toggle');
     const text = book.data.chapters[c - 1][v - 1];
     const act = e.target.closest('[data-act]')?.dataset.act;
+    // Двойное нажатие на стих — в любимые (повторное — убрать)
+    if (!act && isDoubleTap(`${book.id}.${c}.${v}`)) {
+      closePopover();
+      activeWord.current?.classList.remove('active');
+      activeWord.current = null;
+      toggleFavorite(vref, plainText(text));
+      return pulseFavorite(verseEl);
+    }
     if (act === 'xref') return openSheet('xrefs', index, { ref: vref, moduleId: module.id });
     if (act === 'note') return openSheet('note', index, { refs: [vref], moduleId: module.id });
     if (act === 'comment') return openSheet('commentary', index, { ref: vref, moduleId: e.target.closest('[data-m]').dataset.m });
