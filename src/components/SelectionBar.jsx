@@ -2,7 +2,7 @@
 // ✓ · ссылка и число стихов · параллельно в другом переводе · избранное · заметка · закладка · копировать · ⋯
 // В «⋯»: сравнить переводы, параллельные места, поделиться.
 import React, { useEffect, useRef, useState } from 'react';
-import { Check, Shuffle, BookCopy, Star, Link2, Share2, Copy, NotebookPen, Bookmark, BookmarkCheck, MoreHorizontal } from 'lucide-react';
+import { Check, Languages, BookCopy, Star, Link2, Share2, Copy, NotebookPen, Bookmark, BookmarkCheck, MoreHorizontal, MessageSquareText } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { getVerse } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
@@ -141,7 +141,7 @@ export default function SelectionBar({ index, module, selection, onDone }) {
         </span>
       </div>
       <button className="tb tb-icon" onClick={parallel} aria-label="Открыть параллельно в другом переводе" title="Параллельно в другом переводе">
-        <Shuffle size={22} />
+        <Languages size={22} />
       </button>
       <button className={`tb tb-icon ${fav ? 'on' : ''}`} onClick={toggleFav} aria-label={fav ? 'Убрать из избранного' : 'В избранное'} title="Избранное">
         <Star size={21} fill={fav ? 'currentColor' : 'none'} />
@@ -152,8 +152,8 @@ export default function SelectionBar({ index, module, selection, onDone }) {
       <button className={`tb tb-icon ${bm ? 'on' : ''}`} onClick={toggleBm} aria-label={bm ? 'Убрать закладку' : 'Закладка: продолжить отсюда'} title={bm ? 'Убрать закладку' : 'Закладка «продолжить отсюда»'}>
         {bm ? <BookmarkCheck size={21} /> : <Bookmark size={21} />}
       </button>
-      <button className="tb tb-icon tb-opt" onClick={copy} aria-label="Копировать" title="Копировать">
-        <Copy size={21} />
+      <button className="tb tb-icon" onClick={() => openSheet('commentary', index, { ref: first })} aria-label="Комментарии" title="Комментарии">
+        <MessageSquareText size={21} />
       </button>
       <div className="tb-menu-wrap" ref={moreRef}>
         <button className="tb tb-icon tb-more" onClick={() => setMore((m) => !m)} aria-haspopup="menu" aria-expanded={more} aria-label="Ещё действия">

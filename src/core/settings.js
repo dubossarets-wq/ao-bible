@@ -56,6 +56,7 @@ export const DEFAULT_SETTINGS = {
   splitLayout: 'auto', // auto | rows | columns
   splitRatio: 0.5,
   syncScroll: true, // синхронная прокрутка двух панелей
+  inlineCommentaries: null, // какие комментарии подписывать в тексте: null — все включённые, иначе список id
   primaryModule: 'rst-plus',
 };
 
@@ -102,5 +103,5 @@ export function applySettings(settings, themeName) {
   root.classList.toggle('no-anim', !settings.animations);
   ensureFont(settings.fontFamily);
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', t.bar);
+  if (meta) meta.setAttribute('content', t.panel); // цвет строки состояния Android — как у верхней панели
 }

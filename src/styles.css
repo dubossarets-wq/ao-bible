@@ -516,3 +516,35 @@ button.row-act:hover { background: color-mix(in srgb, var(--accent) 12%, transpa
 
 /* Метка тестового приложения — чтобы не перепутать с основным */
 .staging-badge { position: fixed; left: calc(env(safe-area-inset-left, 0px) + 8px); bottom: calc(env(safe-area-inset-bottom, 0px) + 8px); z-index: 55; pointer-events: none; padding: 2px 8px; border-radius: 6px; background: #e0533d; color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .12em; opacity: .85; }
+
+/* Пояснение к настройке: «!» в кружке рядом с названием */
+.hint-btn { display: inline-grid; place-items: center; width: 24px; height: 24px; margin-left: 4px; vertical-align: -6px; border: 0; background: none; color: var(--muted); border-radius: 50%; padding: 0; }
+.hint-btn:hover, .hint-btn.on { color: var(--accent); }
+.hint-pop { display: block; margin-top: 4px; font-size: .82rem; font-weight: 400; line-height: 1.4; color: var(--muted); text-transform: none; letter-spacing: 0; }
+.nav-group h4 .hint-pop, .settings-group h4 .hint-pop { margin-top: 6px; }
+.sheet-h4 { margin: 0; font-size: .74rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); font-weight: 600; }
+
+.lang-chips { margin-top: -4px; }
+
+/* ---------- Верхняя панель (новый вид): светлая, без перегородок, перевод «таблеткой» ---------- */
+.toolbar { background: var(--panel); color: var(--text); box-shadow: 0 1px 0 var(--line), 0 4px 14px rgba(0,0,0,.05); align-items: center; gap: 2px; padding-left: 8px; padding-right: 4px; }
+.toolbar .tb { border-right: 0; color: var(--text); height: 40px; min-width: 40px; border-radius: 999px; padding: 0 8px; }
+.toolbar .tb:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.toolbar .tb:active:not(:disabled) { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+.toolbar .tb-icon { width: 40px; padding: 0; }
+.toolbar .tb-icon.on { color: var(--accent); }
+.toolbar .tb-module { flex: none; max-width: 38%; height: 34px; padding: 0 10px 0 12px; gap: 3px; font-size: .95rem; font-weight: 800; letter-spacing: .01em; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--panel)); }
+.toolbar .tb-ref { flex: 1 1 auto; justify-content: flex-start; gap: 4px; font-size: 1.12rem; font-weight: 700; padding: 0 8px; min-width: 0; }
+.tb-ref-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tb-chev { flex: none; opacity: .55; }
+.toolbar .tb-more { width: 36px; }
+.toolbar .tb-menu-wrap { margin-left: 0; }
+.update-dot { box-shadow: 0 0 0 2px var(--panel); top: calc(var(--sat) + 9px); right: 5px; }
+.selection-bar .tb-sel-ref { justify-content: flex-start; padding-left: 4px; }
+.map-pane .tb-place { color: var(--text); }
+@container (max-width: 470px) {
+  .toolbar .tb-icon { width: 36px; min-width: 36px; }
+  .toolbar .tb-ref { font-size: 1.02rem; }
+  .toolbar .tb-module { font-size: .88rem; padding: 0 8px 0 10px; }
+}
+@container (max-width: 360px) { .toolbar .tb-chev { display: none; } }

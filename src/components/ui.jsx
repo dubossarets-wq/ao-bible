@@ -1,5 +1,6 @@
 // Общие мелкие элементы интерфейса.
 import React, { useState } from 'react';
+import { CircleAlert } from 'lucide-react';
 
 export function Toasts({ items }) {
   return (
@@ -24,12 +25,41 @@ export function Progress({ value, label }) {
   );
 }
 
+// Пояснение к настройке: значок «!» в кружке рядом с названием, текст раскрывается по нажатию
+export function Hint({ children, label = 'Пояснение' }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        className={`hint-btn ${open ? 'on' : ''}`}
+        aria-label={label}
+        aria-expanded={open}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setOpen((o) => !o);
+        }}
+      >
+        <CircleAlert size={15} />
+      </button>
+      {open && (
+        <span className="hint-pop" role="note">
+          {children}
+        </span>
+      )}
+    </>
+  );
+}
+
 export function Switch({ id, checked, onChange, label, hint }) {
   return (
     <label className="field switch-field" htmlFor={id}>
       <span className="field-text">
-        <span className="field-label">{label}</span>
-        {hint && <span className="field-hint">{hint}</span>}
+        <span className="field-label">
+          {label}
+          {hint && <Hint>{hint}</Hint>}
+        </span>
       </span>
       <input id={id} type="checkbox" role="switch" checked={!!checked} onChange={(e) => onChange(e.target.checked)} />
       <span className="switch" aria-hidden="true" />

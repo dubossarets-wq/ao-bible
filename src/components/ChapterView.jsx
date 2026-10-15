@@ -10,6 +10,7 @@ import { commentaryIndex } from '../core/commentary.js';
 import { setLivePosition, clearLivePosition } from '../core/livePosition.js';
 import { setDriver, isDriver, onSync, emitSync } from '../core/scrollSync.js';
 import { verseHtml, wordAt, plainText } from '../core/verseMarkup.js';
+import { wasClosedOnWord } from '../core/tapState.js';
 
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -58,11 +59,6 @@ const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, x
                   </span>
                 )}
                 <span className="vt" dangerouslySetInnerHTML={{ __html: verseHtml(text, { showStrongs: opts.showStrongs, highlight: hlRe }) }} />
-                {comments?.get(`${bookId}.${c}.${v}`)?.map((cm) => (
-                  <button key={cm.id} className="cm" data-act="comment" data-m={cm.id} aria-label={`Комментарий: ${cm.name}`}>
-                    {cm.name}
-                  </button>
-                ))}
                 {mk[v]?.includes('n') && (
                   <button className="note-tag" data-act="note" aria-label="Заметка к стиху" title="Заметка">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -76,6 +72,14 @@ const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, x
                     [⇅&nbsp;{n}]
                   </button>
                 )}
+                {comments
+                  ?.get(`${bookId}.${c}.${v}`)
+                  ?.filter((cm) => !opts.inlineComments || opts.inlineComments.includes(cm.id))
+                  .map((cm) => (
+                    <button key={cm.id} className="cm" data-act="comment" data-m={cm.id} aria-label={`Комментарий: ${cm.name}`}>
+                      {cm.name}
+                    </button>
+                  ))}
               </p>
             </React.Fragment>
           );
@@ -254,6 +258,9 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     press.current = null;
   };
   const onPointerDown = (e) => {
+    // Новое касание — новый жест: после долгого нажатия телефон может не прислать щелчок,
+    // и без этого следующее обычное нажатие (снять выделение) проглатывалось
+    suppressClick.current = false;
     setDriver(index);
     if (e.button > 0) return;
     const vref = verseRefOf(e.target);
@@ -303,6 +310,12 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     if (act === 'verse') return openSheet('verse', index, { ref: vref, text: plainText(text), moduleId: module.id });
     const w = e.target.closest('.w');
     if (w) {
+      // Повторное нажатие на выделенное слово — снимаем выделение, выборку не открываем
+      if (wasClosedOnWord(w) || (w === activeWord.current && !popover && !sheet)) {
+        w.classList.remove('active');
+        activeWord.current = null;
+        return;
+      }
       const token = wordAt(text, +w.dataset.i);
       if (!token) return;
       activeWord.current?.classList.remove('active');
@@ -349,9 +362,10 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       showStrongs: settings.showStrongs && module.features?.strongs,
       showHeadings: settings.showHeadings,
       showXref: settings.showXrefButtons && !settings.focusMode,
+      inlineComments: settings.inlineCommentaries, // null — все включённые комментарии
       continuous: settings.continuousVerses,
     }),
-    [settings.showVerseNumbers, settings.showStrongs, settings.showHeadings, settings.showXrefButtons, settings.focusMode, settings.continuousVerses, module]
+    [settings.showVerseNumbers, settings.showStrongs, settings.showHeadings, settings.showXrefButtons, settings.focusMode, settings.continuousVerses, settings.inlineCommentaries, module]
   );
   const hlRe = useMemo(() => highlightRegex(pane.highlight), [pane.highlight]);
   const flash = pane.flash ? pane.flash.split('.') : null;

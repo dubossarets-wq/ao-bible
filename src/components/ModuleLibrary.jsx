@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   Download, RefreshCw, Trash2, Star, CheckCircle2, Ban, Globe, BookOpen, BookText, Link2, ChevronDown,
   MessageSquareText, Map as MapIcon, Loader2,
+  Search,
 } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import ModuleImporter from './ModuleImporter.jsx';
@@ -12,7 +13,7 @@ import { useApp } from '../App.jsx';
 import * as repo from '../core/modules.js';
 import { MODULE_TYPES, MODULE_SECTIONS } from '../core/schema.js';
 import { isPersistent } from '../core/db.js';
-import { ConfirmButton, Empty, fmtSize } from './ui.jsx';
+import { ConfirmButton, Empty, Hint, fmtSize } from './ui.jsx';
 
 export const TYPE_ICON = { bible: BookOpen, commentary: MessageSquareText, dictionary: BookText, maps: MapIcon, crossrefs: Link2 };
 
@@ -144,7 +145,7 @@ function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle })
           <Icon size={20} className="mod-icon" />
           <span className="mod-texts">
             <span className="mod-name">{m.name}</span>
-            <span className="mod-sub">{m.title || MODULE_TYPES[m.type]}</span>
+            <span className="mod-sub">{[m.language && langName(m.language), m.title || MODULE_TYPES[m.type]].filter(Boolean).join(' · ')}</span>
           </span>
         </button>
         {action}
@@ -227,6 +228,30 @@ function Sections({ items, mode, catalog, busy, onInstall, filter }) {
   ));
 }
 
+// Языки модулей: код → название; порядок показа
+export const LANGS = { ru: 'Русский', cu: 'Церковнославянский', uk: 'Українська', en: 'English', he: 'Иврит', grc: 'Греческий' };
+const langName = (code) => LANGS[code] || (code ? code.toUpperCase() : 'Другие');
+
+function LangFilter({ value, onChange, items }) {
+  const counts = {};
+  items.forEach((m) => (counts[m.language || ''] = (counts[m.language || ''] || 0) + 1));
+  const codes = Object.keys(counts).sort((a, b) => Object.keys(LANGS).indexOf(a) - Object.keys(LANGS).indexOf(b));
+  if (codes.length < 2) return null;
+  return (
+    <div className="chips filter-chips lang-chips" role="group" aria-label="Язык модулей">
+      {[['all', 'Все языки'], ...codes.map((c) => [c, langName(c)])].map(([k, l]) => (
+        <button key={k} className={`chip ${value === k ? 'on' : ''}`} aria-pressed={value === k} onClick={() => onChange(k)}>
+          {l}
+          {k !== 'all' ? <span className="tab-n"> {counts[k]}</span> : null}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// Поиск по названию, описанию, автору и языку модуля
+const matches = (m, q) => !q || [m.name, m.title, m.description, m.author, langName(m.language)].some((x) => x && x.toLowerCase().replace(/ё/g, 'е').includes(q));
+
 function Filter({ value, onChange, counts }) {
   return (
     <div className="chips filter-chips" role="group" aria-label="Вид модулей">
@@ -277,7 +302,11 @@ export default function ModuleLibrary({ payload, onClose }) {
     }
   };
 
-  const list = tab === 'installed' ? modules : catalog || [];
+  const [lang, setLang] = useState('all');
+  const [mq, setMq] = useState('');
+  const q = mq.trim().toLowerCase().replace(/ё/g, 'е');
+  const base = tab === 'installed' ? modules : catalog || [];
+  const list = base.filter((m) => (lang === 'all' || (m.language || '') === lang) && matches(m, q));
   const counts = useMemo(() => Object.fromEntries(MODULE_SECTIONS.map(([t]) => [t, list.filter((m) => m.type === t).length])), [list]);
 
   return (
@@ -294,8 +323,20 @@ export default function ModuleLibrary({ payload, onClose }) {
           </button>
         ))}
       </div>
-      {tab !== 'import' && <Filter value={filter} onChange={setFilter} counts={counts} />}
-      {tab === 'installed' && <Sections items={modules} mode="installed" catalog={catalog} busy={busy} onInstall={install} filter={filter} />}
+      {tab !== 'import' && (
+        <>
+          <div className="input-wrap">
+            <Search size={18} className="input-icon" />
+            <label htmlFor="mod-q" className="sr-only">
+              Поиск модулей
+            </label>
+            <input id="mod-q" type="search" value={mq} onChange={(e) => setMq(e.target.value)} placeholder="Поиск модулей: Лопухин, Стронг, KJV…" autoComplete="off" />
+          </div>
+          <Filter value={filter} onChange={setFilter} counts={counts} />
+          <LangFilter value={lang} onChange={setLang} items={base} />
+        </>
+      )}
+      {tab === 'installed' && <Sections items={list} mode="installed" catalog={catalog} busy={busy} onInstall={install} filter={filter} />}
       {tab === 'catalog' && (
         <>
           {catErr && <p className="error-text">{catErr}</p>}
@@ -304,12 +345,15 @@ export default function ModuleLibrary({ payload, onClose }) {
               <Loader2 className="spin" size={20} /> Загружаю каталог…
             </div>
           )}
-          {catalog && <Sections items={catalog} mode="catalog" catalog={catalog} busy={busy} onInstall={install} filter={filter} />}
+          {catalog && <Sections items={list} mode="catalog" catalog={catalog} busy={busy} onInstall={install} filter={filter} />}
           <section className="nav-group">
-            <h4>Источник каталога</h4>
-            <p className="sheet-hint">
-              <Globe size={14} /> {sourceUrl === repo.CATALOG_URL ? 'Каталог, опубликованный вместе с приложением' : sourceUrl}
-            </p>
+            <h4>
+              Источник каталога
+              <Hint>
+                {sourceUrl === repo.CATALOG_URL ? 'Сейчас — каталог, опубликованный вместе с приложением. ' : `Сейчас — ${sourceUrl}. `}
+                Можно подключить другой каталог в формате aob-catalog по адресу https://…/catalog.json (сервер должен разрешать CORS).
+              </Hint>
+            </h4>
             <form
               className="ref-form"
               onSubmit={(e) => {

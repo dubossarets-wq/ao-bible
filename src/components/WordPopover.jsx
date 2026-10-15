@@ -4,6 +4,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Loader2, MapPin } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { lookupWord } from '../core/lexicon.js';
+import { markClosedOnWord } from '../core/tapState.js';
 import { placesForWord } from '../core/places.js';
 
 const GAP = 10;
@@ -43,7 +44,12 @@ export default function WordPopover() {
   useEffect(() => {
     if (!popover) return;
     const onKey = (e) => e.key === 'Escape' && closePopover();
-    const onDown = (e) => !box.current?.contains(e.target) && closePopover();
+    const onDown = (e) => {
+      if (box.current?.contains(e.target)) return;
+      const w = e.target.closest?.('.w.active');
+      if (w) markClosedOnWord(w);
+      closePopover();
+    };
     window.addEventListener('keydown', onKey);
     document.addEventListener('pointerdown', onDown, true);
     document.addEventListener('scroll', closePopover, true);

@@ -1,6 +1,6 @@
 // Верхняя панель по образцу мобильного приложения: перевод · разделение · ссылка · поиск · назад · вперёд · меню.
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, X, MoreVertical, Library, Palette, Bookmark, BookmarkCheck, Star, Info, Eye, EyeOff, Columns2, Rows2 } from 'lucide-react';
+import { Search, X, MoreVertical, ChevronDown, ArrowLeft, ArrowRight, Library, Palette, Bookmark, BookmarkCheck, Star, Info, Eye, EyeOff, Columns2, Rows2 } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { bookMeta } from '../core/books.js';
 import { getVerse } from '../core/modules.js';
@@ -68,29 +68,34 @@ export default function ReaderToolbar({ index, pane, module }) {
   );
 
   return (
-    <header className="toolbar">
+    <header className="toolbar topbar">
+      {/* Перевод — «таблетка» слева, место — по центру; действия — круглые кнопки справа */}
       <button className="tb tb-module" onClick={() => openSheet('modules', index)} aria-label={`Перевод: ${module?.name}. Сменить перевод`}>
         <span className="tb-module-name">{module?.name || '—'}</span>
+        <ChevronDown size={14} className="tb-chev" />
+      </button>
+      <button className="tb tb-ref" onClick={() => openSheet('nav', index)} aria-label={`${bookMeta(ref.book).name} ${ref.chapter}:${ref.verse}. Выбрать место`}>
+        <span className="tb-ref-text">{label}</span>
+        <ChevronDown size={16} className="tb-chev" />
+      </button>
+      <button className="tb tb-icon tb-hist" onClick={() => go(index, -1)} disabled={pane.hIndex <= 0} aria-label="Назад по истории" title="Назад">
+        <ArrowLeft size={21} />
+      </button>
+      {pane.hIndex < pane.history.length - 1 && (
+        <button className="tb tb-icon tb-hist" onClick={() => go(index, 1)} aria-label="Вперёд по истории" title="Вперёд">
+          <ArrowRight size={21} />
+        </button>
+      )}
+      <button className="tb tb-icon" onClick={() => openSheet('search', index)} aria-label="Поиск" title="Поиск">
+        <Search size={21} />
       </button>
       <button
-        className="tb tb-split"
+        className={`tb tb-icon tb-split ${split ? 'on' : ''}`}
         onClick={() => (split ? closeSplit() : openSplit())}
         aria-label={split ? 'Закрыть вторую панель' : 'Разделить экран'}
         title={split ? 'Закрыть вторую панель' : 'Разделить экран'}
       >
-        {split ? <X size={22} /> : <span className="approx">≈</span>}
-      </button>
-      <button className="tb tb-ref" onClick={() => openSheet('nav', index)} aria-label={`${bookMeta(ref.book).name} ${ref.chapter}:${ref.verse}. Выбрать место`}>
-        {label}
-      </button>
-      <button className="tb tb-icon" onClick={() => openSheet('search', index)} aria-label="Поиск">
-        <Search size={22} />
-      </button>
-      <button className="tb tb-icon tb-hist" onClick={() => go(index, -1)} disabled={pane.hIndex <= 0} aria-label="Назад по истории">
-        <HistoryArrow dir={-1} />
-      </button>
-      <button className="tb tb-icon tb-hist" onClick={() => go(index, 1)} disabled={pane.hIndex >= pane.history.length - 1} aria-label="Вперёд по истории">
-        <HistoryArrow dir={1} />
+        {split ? <X size={21} /> : <Columns2 size={21} />}
       </button>
       <div className="tb-menu-wrap" ref={menuRef}>
         <button

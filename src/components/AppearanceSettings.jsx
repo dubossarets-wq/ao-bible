@@ -4,7 +4,7 @@ import { RotateCcw } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { THEMES, FONTS, ensureFont } from '../core/settings.js';
-import { Segmented, Slider, Switch } from './ui.jsx';
+import { Segmented, Slider, Switch, Hint } from './ui.jsx';
 
 function ColorField({ id, label, value, onChange }) {
   return (
@@ -19,7 +19,8 @@ function ColorField({ id, label, value, onChange }) {
 }
 
 export default function AppearanceSettings({ onClose }) {
-  const { settings: s, setSettings: set, resetSettings, themeName } = useApp();
+  const { settings: s, setSettings: set, resetSettings, themeName, modules } = useApp();
+  const commentaries = modules.filter((m) => m.type === 'commentary' && m.enabled !== false);
   const colorsFromTheme = () => {
     const t = THEMES[themeName];
     set({ customColors: true, colors: { bg: t.bg, text: t.text, accent: t.accent, panel: t.panel } });
@@ -28,7 +29,6 @@ export default function AppearanceSettings({ onClose }) {
   return (
     <BottomSheet
       title="Оформление"
-      subtitle="Изменения видны сразу"
       onClose={onClose}
       initial={1}
       headerExtra={
@@ -117,6 +117,27 @@ export default function AppearanceSettings({ onClose }) {
           ]}
         />
       </section>
+
+      {commentaries.length > 0 && (
+        <section className="settings-group">
+          <h4>
+            Комментарии в тексте <Hint>Отмеченные подписываются после стиха. Остальные открываются долгим нажатием на стих → «Комментарии».</Hint>
+          </h4>
+          {commentaries.map((m) => (
+            <Switch
+              key={m.id}
+              id={`cm-${m.id}`}
+              checked={!s.inlineCommentaries || s.inlineCommentaries.includes(m.id)}
+              onChange={(on) => {
+                const cur = s.inlineCommentaries || commentaries.map((x) => x.id);
+                set({ inlineCommentaries: on ? [...new Set([...cur, m.id])] : cur.filter((x) => x !== m.id) });
+              }}
+              label={m.name}
+              hint={m.title}
+            />
+          ))}
+        </section>
+      )}
 
       <section className="settings-group">
         <h4>Свои цвета</h4>

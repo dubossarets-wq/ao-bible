@@ -299,11 +299,7 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
           })()}
         </>
       )}
-      {res && !current && !top && res.results.length > 0 && (
-        <p className="sheet-hint">
-          <Library size={14} /> Словари включаются и отключаются в библиотеке модулей.
-        </p>
-      )}
+
     </BottomSheet>
   );
 }

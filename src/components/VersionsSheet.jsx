@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Loader2, History, CheckCircle2, RotateCcw } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { BUILD, fetchVersions, switchToVersion, buildDate, autoUpdateEnabled, setAutoUpdate } from '../core/updates.js';
-import { Switch, Empty, ConfirmButton } from './ui.jsx';
+import { Switch, Empty, ConfirmButton, Hint } from './ui.jsx';
 import { listBackups, restoreBackup } from '../core/backup.js';
 
 export default function VersionsSheet({ onClose }) {
@@ -70,10 +70,11 @@ export default function VersionsSheet({ onClose }) {
           })}
         </ul>
       )}
-      <p className="field-hint">Книги, словари, закладки и настройки общие для всех версий и при обновлении не сбрасываются.</p>
       <section className="nav-group">
-        <h4>Резервные копии ваших данных</h4>
-        <p className="field-hint">Настройки, закладки, заметки и избранное сохраняются перед каждым обновлением (последние 5 копий).</p>
+        <h4>
+          Резервные копии ваших данных
+          <Hint>Настройки, закладки, заметки и избранное сохраняются перед каждым обновлением (последние 5 копий).</Hint>
+        </h4>
         {backups.length === 0 && <p className="field-hint">Копий пока нет — первая появится при следующем обновлении.</p>}
         {backups.length > 0 && (
           <ul className="versions backups">

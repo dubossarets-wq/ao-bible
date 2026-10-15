@@ -8,7 +8,7 @@ import { refsForVerse, textForRef } from '../core/crossrefs.js';
 import { formatRef, bookMeta } from '../core/books.js';
 import { getVerse } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
-import { Empty } from './ui.jsx';
+import { Empty, Hint } from './ui.jsx';
 
 export default function CrossReferencesSheet({ pane, payload, onClose }) {
   const { openInOther, panes, bibles } = useApp();
@@ -54,9 +54,10 @@ export default function CrossReferencesSheet({ pane, payload, onClose }) {
       {items && items.length === 0 && <Empty icon={Link2} title="Параллельных мест нет">Для этого стиха в установленных модулях нет ссылок.</Empty>}
       {items && items.length > 0 && (
         <>
-          <p className="sheet-hint">
-            <Columns2 size={14} /> Нажмите на место — оно откроется {pane === 0 ? 'во второй панели, а исходный текст останется в первой' : 'в этой панели; вернуться можно кнопкой «назад»'}.
-          </p>
+          <h4 className="sheet-h4">
+            Места · {items.length}
+            <Hint>Нажмите на место — оно откроется {pane === 0 ? 'во второй панели, а исходный текст останется в первой' : 'в этой панели; вернуться можно кнопкой «назад»'}.</Hint>
+          </h4>
           <ul className="xref-list">
             {items.map((it) => (
               <li key={it.osis}>
