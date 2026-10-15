@@ -22,7 +22,8 @@ const git = (args, cwd = root) => execFileSync('git', args, { cwd, encoding: 'ut
 const remote = STAGING ? 'https://github.com/dubossarets-wq/ao-bible-staging.git' : git(['remote', 'get-url', 'origin']);
 const name = git(['config', 'user.name']);
 const email = git(['config', 'user.email']);
-const notes = process.env.DEPLOY_NOTES || git(['log', '-1', '--format=%s']);
+// В основном приложении пометка «Тест:» из темы коммита людям не нужна
+const notes = process.env.DEPLOY_NOTES || git(['log', '-1', '--format=%s']).replace(STAGING ? /^$/ : /^Тест:\s*/, '');
 const { build, date, version } = JSON.parse(await readFile(path.join(dist, 'version.json'), 'utf8'));
 
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'aob-pages-'));
