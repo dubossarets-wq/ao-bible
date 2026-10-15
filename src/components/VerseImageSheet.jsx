@@ -34,7 +34,8 @@ function wrap(ctx, text, width) {
   return lines;
 }
 
-function draw(canvas, { bg, img, text, ref, format, scale }) {
+// pos — сдвиг текста от центра (в долях ширины и высоты), scale — размер текста относительно подобранного
+function draw(canvas, { bg, img, text, ref, format, scale, pos }) {
   const [W, H] = SIZES[format];
   canvas.width = W;
   canvas.height = H;
@@ -61,11 +62,11 @@ function draw(canvas, { bg, img, text, ref, format, scale }) {
   }
   const paper = !img && bg.tone === 'paper';
   const color = paper ? '#2d2418' : '#ffffff';
-  // Текст: подбираем размер, чтобы стих поместился
+  // Текст: подбираем размер, чтобы стих поместился, потом применяем размер, выбранный пальцами
   const pad = W * 0.11;
   const boxW = W - pad * 2;
   const boxH = H * (format === 'story' ? 0.55 : 0.62);
-  let fs = 74 * scale;
+  let fs = 74;
   let lines;
   for (;;) {
     ctx.font = `400 ${fs}px "PT Serif", Georgia, serif`;
@@ -73,26 +74,32 @@ function draw(canvas, { bg, img, text, ref, format, scale }) {
     if (lines.length * fs * 1.38 <= boxH || fs <= 26) break;
     fs -= 2;
   }
+  if (scale !== 1) {
+    fs = Math.max(14, fs * scale);
+    ctx.font = `400 ${fs}px "PT Serif", Georgia, serif`;
+    lines = wrap(ctx, `«${text}»`, boxW);
+  }
   const lh = fs * 1.38;
-  const refSize = Math.max(30, fs * 0.6);
+  const refSize = Math.max(18, fs * 0.6);
   const total = lines.length * lh + refSize * 2.2;
-  let y = (H - total) / 2 + fs;
+  const cx = W / 2 + (pos?.x || 0) * W;
+  let y = (H - total) / 2 + fs + (pos?.y || 0) * H;
   ctx.fillStyle = color;
   ctx.textAlign = 'center';
   ctx.shadowColor = paper ? 'transparent' : 'rgba(0,0,0,.35)';
   ctx.shadowBlur = paper ? 0 : 12;
   for (const l of lines) {
-    ctx.fillText(l, W / 2, y);
+    ctx.fillText(l, cx, y);
     y += lh;
   }
   // Короткая черта и ссылка
   y += refSize * 0.5;
   ctx.shadowBlur = 0;
   ctx.globalAlpha = 0.75;
-  ctx.fillRect(W / 2 - 40, y - refSize * 0.9, 80, 3);
+  ctx.fillRect(cx - 40, y - refSize * 0.9, 80, 3);
   ctx.globalAlpha = 1;
   ctx.font = `700 ${refSize}px "PT Sans", "Segoe UI", sans-serif`;
-  ctx.fillText(ref, W / 2, y + refSize * 0.5);
+  ctx.fillText(ref, cx, y + refSize * 0.5);
 }
 
 export default function VerseImageSheet({ payload, onClose }) {
@@ -105,6 +112,37 @@ export default function VerseImageSheet({ payload, onClose }) {
   const [text, setText] = useState(null);
   const [format, setFormat] = useState('post');
   const [scale, setScale] = useState(1);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  // Текст двигается одним пальцем, размер — двумя (разведите — крупнее, сведите — мельче)
+  const touch = useRef({ pts: new Map(), base: null });
+  const live = useRef({ scale: 1, pos: { x: 0, y: 0 } });
+  live.current = { scale, pos };
+  const onDown = (e) => {
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    touch.current.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    touch.current.base = null;
+  };
+  const onMove = (e) => {
+    const t = touch.current;
+    if (!t.pts.has(e.pointerId)) return;
+    t.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const r = e.currentTarget.getBoundingClientRect();
+    const pts = [...t.pts.values()];
+    const mid = pts.reduce((a, p) => ({ x: a.x + p.x / pts.length, y: a.y + p.y / pts.length }), { x: 0, y: 0 });
+    const d = pts.length > 1 ? Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) : 0;
+    if (!t.base || t.base.n !== pts.length) {
+      t.base = { n: pts.length, mid, d, scale: live.current.scale, pos: live.current.pos };
+      return;
+    }
+    const b = t.base;
+    const clamp = (v, m) => Math.max(-m, Math.min(m, v));
+    setPos({ x: clamp(b.pos.x + (mid.x - b.mid.x) / r.width, 0.45), y: clamp(b.pos.y + (mid.y - b.mid.y) / r.height, 0.45) });
+    if (pts.length > 1 && b.d > 0) setScale(Math.max(0.4, Math.min(2.2, +(b.scale * (d / b.d)).toFixed(2))));
+  };
+  const onUp = (e) => {
+    touch.current.pts.delete(e.pointerId);
+    touch.current.base = null;
+  };
   const [ready, setReady] = useState(false);
   const ref = selectionLabel(refs, true);
 
@@ -137,8 +175,8 @@ export default function VerseImageSheet({ payload, onClose }) {
 
   useEffect(() => {
     if (!canvas.current || text == null || !bgId || (photo && !img)) return;
-    draw(canvas.current, { bg, img: photo ? img : null, text, ref, format, scale });
-  }, [text, bgId, img, format, scale, ready]);
+    draw(canvas.current, { bg, img: photo ? img : null, text, ref, format, scale, pos });
+  }, [text, bgId, img, format, scale, pos, ready]);
 
   const blob = () => new Promise((res) => canvas.current.toBlob(res, 'image/jpeg', 0.9));
   const fileName = `${ref.replace(/[:\s]+/g, '_')}.jpg`;
@@ -167,7 +205,7 @@ export default function VerseImageSheet({ payload, onClose }) {
   return (
     <BottomSheet title="Картинка со стихом" subtitle={ref} onClose={onClose} initial={2}>
       <div className={`vimg-preview ${format}`}>
-        {text == null || !bgId ? <Loader2 className="spin" /> : <canvas ref={canvas} aria-label={`Картинка: ${ref}`} />}
+        {text == null || !bgId ? <Loader2 className="spin" /> : <canvas ref={canvas} aria-label={`Картинка: ${ref}. Двигайте текст пальцем, размер — двумя пальцами`} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} />}
       </div>
       <div className="vimg-bgs" role="listbox" aria-label="Фон">
         {photos.map((p) => (
@@ -197,12 +235,18 @@ export default function VerseImageSheet({ payload, onClose }) {
           ['story', 'История'],
         ]}
       />
+      <p className="vimg-tip">Текст можно передвинуть пальцем, а размер изменить двумя пальцами.</p>
       <div className="vimg-size">
         <span className="field-label">Размер текста</span>
-        <button className="icon-btn" onClick={() => setScale((v) => Math.max(0.6, +(v - 0.1).toFixed(1)))} aria-label="Мельче">
+        {(scale !== 1 || pos.x || pos.y) && (
+          <button className="link-btn" onClick={() => (setScale(1), setPos({ x: 0, y: 0 }))}>
+            как было
+          </button>
+        )}
+        <button className="icon-btn" onClick={() => setScale((v) => Math.max(0.4, +(v - 0.1).toFixed(2)))} aria-label="Мельче">
           <Minus size={18} />
         </button>
-        <button className="icon-btn" onClick={() => setScale((v) => Math.min(1.5, +(v + 0.1).toFixed(1)))} aria-label="Крупнее">
+        <button className="icon-btn" onClick={() => setScale((v) => Math.min(2.2, +(v + 0.1).toFixed(2)))} aria-label="Крупнее">
           <Plus size={18} />
         </button>
       </div>

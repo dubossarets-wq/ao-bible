@@ -14,8 +14,9 @@ import { bookMeta } from '../core/books.js';
 import { readingUnits, unitDone, readingDone } from '../core/plans.js';
 import { usePlan, markUnits } from '../core/planStore.js';
 import { logChapter, minSeconds } from '../core/readLog.js';
-import { Chapter, marksFor, selectedIn, LONG_PRESS_MS } from './ChapterView.jsx';
+import { Chapter, marksFor, selectedIn, afterProps, LONG_PRESS_MS } from './ChapterView.jsx';
 import { usePinchFont } from './usePinchFont.js';
+import { sermonWith } from '../core/sermons.js';
 
 const STRIP = 50; // высота закреплённой строки плана с запасом
 
@@ -44,7 +45,7 @@ function nextAfter(r, module, books) {
   return nb ? { ref: { book: nb.id, chapter: 1, verse: 1 }, label: `${full(nb.id)} 1` } : null;
 }
 
-export default function PlanView({ index, pane, module, selection, onSelect }) {
+export default function PlanView({ index, pane, module, selection, onSelect, selActions }) {
   const { settings, openSheet, openPopover, closePopover, toggleFavorite, popover, sheet, reportPosition, navigate, marks, toast, modules, exitPlan, settlePlan, openPlanDay } = useApp();
   const { uid, day } = pane.plan;
   const plan = usePlan(uid);
@@ -289,6 +290,7 @@ export default function PlanView({ index, pane, module, selection, onSelect }) {
     }
     if (act === 'xref') return openSheet('xrefs', index, { ref: vref, moduleId: module.id });
     if (act === 'note') return openSheet('note', index, { refs: [vref], moduleId: module.id });
+    if (act === 'sermon') return openSheet('sermons', index, { open: sermonWith(vref)?.id || null });
     if (act === 'comment') return openSheet('commentary', index, { ref: vref, moduleId: e.target.closest('[data-m]').dataset.m });
     if (act === 'verse') return openSheet('verse', index, { ref: vref, text: plainText(text), moduleId: module.id });
     const w = e.target.closest('.w');
@@ -442,6 +444,7 @@ export default function PlanView({ index, pane, module, selection, onSelect }) {
                         idp={`p${i}-${k}-`}
                         noBookTitle
                         noChapterTitle={units.length === 1}
+                        {...afterProps(selActions, u.book, u.chapter, u.from, u.to)}
                       />
                     </div>
                   );

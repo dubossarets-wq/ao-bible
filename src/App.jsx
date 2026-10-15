@@ -9,6 +9,7 @@ import Bootstrap from './components/Bootstrap.jsx';
 import WordPopover from './components/WordPopover.jsx';
 import AudioBar from './components/AudioBar.jsx';
 import { fitsTranslation, detachFollow } from './core/audio.js';
+import { useSermons } from './core/sermons.js';
 import { useUpdates, applyUpdate } from './core/updates.js';
 import { IS_STAGING } from './core/channel.js';
 import { Toasts } from './components/ui.jsx';
@@ -323,7 +324,8 @@ export default function App() {
     });
   });
 
-  // Отметки в тексте: «Книга.глава» → { стих: 'fbn' } (f — любимый стих, b — закладка, n — заметка)
+  const sermons = useSermons();
+  // Отметки в тексте: «Книга.глава» → { стих: 'fbns' } (f — любимый стих, b — закладка, n — заметка, s — в проповеди)
   const marks = useMemo(() => {
     const m = new Map();
     const add = (book, c, v, flag) => {
@@ -338,12 +340,15 @@ export default function App() {
       const [b, c, v] = k.split('.');
       add(b, +c, +v, 'n');
     });
+    for (const s of sermons)
+      for (const b of s.blocks)
+        if (b.type === 'verse') for (let v = b.verse; v <= (b.to || b.verse); v++) if (!m.get(`${b.book}.${b.chapter}`)?.[v]?.includes('s')) add(b.book, b.chapter, v, 's');
     Object.entries(highlights).forEach(([k, color]) => {
       const [b, c, v] = k.split('.');
       add(b, +c, +v, color); // цифра — цвет выделения
     });
     return m;
-  }, [favorites, bookmarks, notes, highlights]);
+  }, [favorites, bookmarks, notes, highlights, sermons]);
 
   const setHighlight = useEvent((refs, color) => {
     setHighlights((h) => {

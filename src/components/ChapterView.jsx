@@ -14,6 +14,7 @@ import { verseHtml, wordAt, plainText } from '../core/verseMarkup.js';
 import { wasClosedOnWord, isDoubleTap, pulseFavorite } from '../core/tapState.js';
 import { logChapter, minSeconds } from '../core/readLog.js';
 import { creditChapter } from '../core/planStore.js';
+import { sermonWith } from '../core/sermons.js';
 import { formatRef } from '../core/books.js';
 import { usePinchFont } from './usePinchFont.js';
 
@@ -31,7 +32,7 @@ export function highlightRegex(query) {
 
 // from/to — показать только часть главы (отрывок плана), idp — приставка к id стихов (на странице плана
 // одна и та же глава может встретиться дважды), noBookTitle/noChapterTitle — без заголовков (их заменяет заголовок отрывка)
-export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, xrefs, counts, comments, opts, hlRe, flashVerse, isPsalm, selected, marks, from = 1, to = null, idp = '', noBookTitle = false, noChapterTitle = false }) {
+export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, xrefs, counts, comments, opts, hlRe, flashVerse, isPsalm, selected, marks, from = 1, to = null, idp = '', noBookTitle = false, noChapterTitle = false, afterVerse = null, afterNode = null }) {
   const sel = selected ? new Set(selected.split(',').map(Number)) : null;
   const mk = marks ? Object.fromEntries(marks.split(',').map((x) => x.split(':'))) : {};
   return (
@@ -61,6 +62,16 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
                   </button>
                 )}
                 {mk[v]?.includes('b') && <span className="vmark bm" title="Закладка" aria-label="Закладка" />}
+                {mk[v]?.includes('s') && (
+                  <button className="vmark sermon-mark" data-act="sermon" title="Есть в проповеди — открыть" aria-label="Стих есть в проповеди. Открыть проповедь">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M15 12h-5" />
+                      <path d="M15 8h-5" />
+                      <path d="M19 17V5a2 2 0 0 0-2-2H4" />
+                      <path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3" />
+                    </svg>
+                  </button>
+                )}
                 {mk[v]?.includes('f') && (
                   <span className="vmark fav-heart" title="Любимый стих" aria-label="Любимый стих">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -91,6 +102,7 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
                     </button>
                   ))}
               </p>
+              {afterVerse === v && afterNode}
             </React.Fragment>
           );
         })}
@@ -107,6 +119,10 @@ export function marksFor(marks, bookId, c) {
   return row ? Object.entries(row).map(([v, f]) => `${v}:${f}`).join(',') : null;
 }
 
+// Кнопки под последним выделенным стихом — только в его главе (остальные главы не перерисовываются)
+export const afterProps = (sa, bookId, c, from = 1, to = null) =>
+  sa && sa.last.book === bookId && sa.last.chapter === c && sa.last.verse >= from && (!to || sa.last.verse <= to) ? { afterVerse: sa.last.verse, afterNode: sa.node } : null;
+
 // Строка номеров выделенных стихов главы («5,6») — примитив, чтобы memo главы не сбрасывался зря
 export function selectedIn(selection, bookId, c) {
   if (!selection?.size) return null;
@@ -117,7 +133,7 @@ export function selectedIn(selection, bookId, c) {
 }
 
 // selection — Set ключей «Книга.глава.стих»; onSelect(ref, 'start' | 'toggle') — выделение стихов
-export default function ChapterView({ index, pane, module, onScrollDirection, selection, onSelect }) {
+export default function ChapterView({ index, pane, module, onScrollDirection, selection, onSelect, selActions }) {
   const { settings, openSheet, openPopover, closePopover, popover, reportPosition, navigate, sheet, modules, marks, toast, toggleFavorite } = useApp();
   const scroller = useRef(null);
   usePinchFont(scroller);
@@ -383,6 +399,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     }
     if (act === 'xref') return openSheet('xrefs', index, { ref: vref, moduleId: module.id });
     if (act === 'note') return openSheet('note', index, { refs: [vref], moduleId: module.id });
+    if (act === 'sermon') return openSheet('sermons', index, { open: sermonWith(vref)?.id || null });
     if (act === 'comment') return openSheet('commentary', index, { ref: vref, moduleId: e.target.closest('[data-m]').dataset.m });
     if (act === 'verse') return openSheet('verse', index, { ref: vref, text: plainText(text), moduleId: module.id });
     const w = e.target.closest('.w');
@@ -536,6 +553,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
                 flashVerse={flash && flash[0] === book.id && +flash[1] === c ? +flash[2] : null}
                 marks={marksFor(marks, book.id, c)}
                 selected={selectedIn(selection, book.id, c)}
+                {...afterProps(selActions, book.id, c)}
               />
             ))}
             {range.end === total && (

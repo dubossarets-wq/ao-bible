@@ -58,19 +58,24 @@ function ListenFab({ index, module, pane }) {
   );
 }
 
-// Выделен стих — снизу кнопка «Слушать» с первого выделенного стиха
-// и «В проповедь»: выбор проповеди или новая, стихи добавляются сами
-function ListenSelected({ index, module, selection, onDone }) {
+// Выделен стих — прямо под ним: главная кнопка «Слушать» (с первого выделенного стиха)
+// и «В проповедь» (выбор проповеди или новая, стихи добавляются сами)
+function SelectionInline({ index, module, refs, onDone }) {
   const { openSheet } = useApp();
-  const audio = useAudio();
-  const refs = sortedRefs(selection);
   const first = refs[0];
-  if (!first) return null;
-  const playing = audio.active && audio.playing;
   return (
-    <div className="float-pill listen-pill">
+    <div className="sel-inline">
       <button
         className="btn primary"
+        onClick={() => {
+          listenFrom(index, module.id, first);
+          onDone();
+        }}
+      >
+        <Headphones size={18} /> Слушать с {formatRef(first)}
+      </button>
+      <button
+        className="btn"
         onClick={() => {
           openSheet('sermon-add', index, { refs, moduleId: module.id });
           onDone();
@@ -78,18 +83,6 @@ function ListenSelected({ index, module, selection, onDone }) {
       >
         <ScrollText size={17} /> В проповедь
       </button>
-      {!playing && (
-        <button
-          className="btn listen-sel"
-          onClick={() => {
-            listenFrom(index, module.id, first);
-            onDone();
-          }}
-          aria-label={`Слушать с ${formatRef(first)}`}
-        >
-          <Headphones size={17} /> Слушать
-        </button>
-      )}
     </div>
   );
 }
@@ -160,6 +153,9 @@ export default function BibleReader({ index }) {
 
   if (!pane) return null;
   if (pane.kind === 'map') return <MapPane pane={pane} />;
+  // Кнопки под последним выделенным стихом
+  const selRefs = selection.size ? sortedRefs(selection) : null;
+  const selActions = selRefs ? { last: selRefs[selRefs.length - 1], node: <SelectionInline index={index} module={module} refs={selRefs} onDone={() => setSelection(new Set())} /> } : null;
   return (
     <section className={`reader ${settings.focusMode && barHidden && !selection.size ? 'bar-hidden' : ''}`} aria-label={index === 0 ? 'Основная панель' : 'Вторая панель'}>
       {selection.size ? (
@@ -169,7 +165,7 @@ export default function BibleReader({ index }) {
       )}
       {pane.plan ? <PlanProgress uid={pane.plan.uid} day={pane.plan.day} /> : <ReadingProgress module={module} index={index} fallback={pane.ref} />}
       {pane.plan ? (
-        <PlanView index={index} pane={pane} module={module} selection={selection} onSelect={onSelect} />
+        <PlanView index={index} pane={pane} module={module} selection={selection} onSelect={onSelect} selActions={selActions} />
       ) : (
         <ChapterView
           index={index}
@@ -177,15 +173,12 @@ export default function BibleReader({ index }) {
           module={module}
           selection={selection}
           onSelect={onSelect}
+          selActions={selActions}
           onScrollDirection={(down) => settings.focusMode && setBarHidden(down)}
         />
       )}
       {!pane.plan && pane.lastPlan && !selection.size && <PlanReturn index={index} lastPlan={pane.lastPlan} />}
-      {selection.size > 0 ? (
-        <ListenSelected index={index} module={module} selection={selection} onDone={() => setSelection(new Set())} />
-      ) : (
-        <ListenFab index={index} module={module} pane={pane} />
-      )}
+      {!selection.size && <ListenFab index={index} module={module} pane={pane} />}
     </section>
   );
 }

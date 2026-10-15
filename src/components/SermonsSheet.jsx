@@ -2,14 +2,14 @@
 // крупный текст проповеди для чтения на служении, экран при этом не гаснет.
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowDown, ArrowUp, Trash2, Plus, Presentation, Share2, ScrollText, X, Minus, Type, CalendarDays, Copy } from 'lucide-react';
+import { Trash2, Plus, Presentation, Share2, ScrollText, X, Minus, Type, Copy, GripVertical } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { ConfirmButton, Empty } from './ui.jsx';
 import { parseHumanRef } from '../core/books.js';
 import { getVerse } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
-import { useSermons, createSermon, deleteSermon, renameSermon, setSermonDate, addVerses, addTextBlock, updateBlock, removeBlock, moveBlock, blockRef, blockRefFull, sermonText } from '../core/sermons.js';
+import { useSermons, createSermon, deleteSermon, renameSermon, addVerses, addTextBlock, updateBlock, removeBlock, moveBlock, blockRef, blockRefFull, sermonText } from '../core/sermons.js';
 import { load, save } from '../core/storage.js';
 
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
@@ -21,9 +21,9 @@ function AutoText({ value, onChange, placeholder, autoFocus }) {
     const el = ref.current;
     if (!el) return;
     el.style.height = 'auto';
-    el.style.height = `${el.scrollHeight + 2}px`;
+    el.style.height = `${el.scrollHeight}px`;
   }, [value]);
-  return <textarea ref={ref} className="sermon-text-input" rows={2} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} autoFocus={autoFocus} />;
+  return <textarea ref={ref} className="sermon-text-input" rows={1} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} autoFocus={autoFocus} />;
 }
 
 // «Кафедра»: проповедь крупно, во весь экран, экран не гаснет
@@ -124,15 +124,84 @@ function Editor({ sermon, pane, moduleId, onBackToList }) {
   };
   const verses = sermon.blocks.filter((b) => b.type === 'verse').length;
 
+  // Перетаскивание: зажать блок (стих или текст) на полсекунды — он «поднимается» и едет за пальцем,
+  // остальные расступаются. Движение раньше времени — это прокрутка, не перетаскивание.
+  const list = useRef(null);
+  const drag = useRef(null);
+  const scrollBox = () => list.current?.closest('.sheet-body');
+  const dragDown = (e) => {
+    if (e.button > 0 || e.target.closest('textarea, input, button')) return;
+    const li = e.target.closest('li[data-id]');
+    if (!li) return;
+    const d = { id: li.dataset.id, li, x: e.clientX, y: e.clientY, pid: e.pointerId, on: false };
+    d.timer = setTimeout(() => {
+      d.on = true;
+      d.startY = d.y;
+      d.scroll0 = scrollBox()?.scrollTop || 0;
+      li.setPointerCapture?.(d.pid);
+      li.classList.add('dragging');
+      navigator.vibrate?.(12);
+    }, 420);
+    drag.current = d;
+  };
+  const dragMove = (e) => {
+    const d = drag.current;
+    if (!d) return;
+    if (!d.on) {
+      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 8) {
+        clearTimeout(d.timer);
+        drag.current = null;
+      }
+      return;
+    }
+    e.preventDefault();
+    // У краёв окна — прокручиваем
+    const box = scrollBox();
+    if (box) {
+      const r = box.getBoundingClientRect();
+      if (e.clientY < r.top + 60) box.scrollTop -= 10;
+      else if (e.clientY > r.bottom - 60) box.scrollTop += 10;
+    }
+    const scrolled = (box?.scrollTop || 0) - d.scroll0;
+    let dy = e.clientY - d.startY + scrolled;
+    const items = [...list.current.children];
+    const idx = items.indexOf(d.li);
+    const gap = 10;
+    const next = items[idx + 1];
+    const prev = items[idx - 1];
+    if (next && dy > next.offsetHeight / 2 + gap / 2) {
+      moveBlock(sermon.id, idx, 1);
+      d.startY += next.offsetHeight + gap;
+      dy -= next.offsetHeight + gap;
+    } else if (prev && dy < -(prev.offsetHeight / 2 + gap / 2)) {
+      moveBlock(sermon.id, idx, -1);
+      d.startY -= prev.offsetHeight + gap;
+      dy += prev.offsetHeight + gap;
+    }
+    d.li.style.transform = `translateY(${dy}px)`;
+  };
+  const dragEnd = () => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d) return;
+    clearTimeout(d.timer);
+    if (!d.on) return;
+    d.li.classList.remove('dragging');
+    d.li.style.transform = '';
+  };
+  // Пока блок перетаскивают, страница под пальцем не должна прокручиваться
+  useEffect(() => {
+    const el = list.current;
+    if (!el) return;
+    const stop = (e) => drag.current?.on && e.preventDefault();
+    el.addEventListener('touchmove', stop, { passive: false });
+    return () => el.removeEventListener('touchmove', stop);
+  }, []);
+
   return (
     <>
       <div className="sermon-head">
         <input className="sermon-title-input" value={sermon.title} onChange={(e) => renameSermon(sermon.id, e.target.value)} aria-label="Название проповеди" placeholder="Название проповеди" />
-        <label className="sermon-date">
-          <CalendarDays size={16} />
-          <input type="date" value={sermon.date || ''} onChange={(e) => setSermonDate(sermon.id, e.target.value)} aria-label="Дата служения" />
-          {!sermon.date && <span className="muted">дата служения</span>}
-        </label>
         <div className="sermon-actions">
           <button className="btn primary" onClick={() => setPulpit(true)} disabled={!sermon.blocks.length}>
             <Presentation size={17} /> Кафедра
@@ -149,14 +218,14 @@ function Editor({ sermon, pane, moduleId, onBackToList }) {
             <strong>Как добавить стих:</strong> в тексте Библии зажмите стих пальцем — он выделится — и нажмите внизу «В проповедь». Или введите ссылку ниже.
           </p>
           <p>
-            <strong>Свой текст</strong> — кнопка «Текст»: вступление, пояснения, примеры, вывод.
+            <strong>Свой текст</strong> — кнопка «Текст»: вступление, пояснения, примеры, вывод. Порядок меняется перетаскиванием: зажмите стих или текст и ведите.
           </p>
         </div>
       )}
 
-      <ol className="sermon-blocks">
+      <ol className="sermon-blocks" ref={list} onPointerDown={dragDown} onPointerMove={dragMove} onPointerUp={dragEnd} onPointerCancel={dragEnd}>
         {sermon.blocks.map((b, i) => (
-          <li key={b.id} className={`sermon-block ${b.type}`}>
+          <li key={b.id} data-id={b.id} className={`sermon-block ${b.type}`}>
             {b.type === 'verse' ? (
               <>
                 <button
@@ -175,15 +244,16 @@ function Editor({ sermon, pane, moduleId, onBackToList }) {
               <AutoText value={b.text} onChange={(text) => updateBlock(sermon.id, b.id, { text })} placeholder="Ваш текст: мысль, пояснение, пример…" autoFocus={fresh === b.id} />
             )}
             <div className="sermon-block-tools">
-              <button className="icon-btn subtle" onClick={() => moveBlock(sermon.id, i, -1)} disabled={i === 0} aria-label="Выше">
-                <ArrowUp size={17} />
-              </button>
-              <button className="icon-btn subtle" onClick={() => moveBlock(sermon.id, i, 1)} disabled={i === sermon.blocks.length - 1} aria-label="Ниже">
-                <ArrowDown size={17} />
+              <span className="sermon-grip" title="Зажмите, чтобы перетащить" aria-hidden="true">
+                <GripVertical size={17} />
+              </span>
+              <button className="link-btn sermon-add-after" onClick={() => setFresh(addTextBlock(sermon.id, i - 1))}>
+                + текст выше
               </button>
               <button className="link-btn sermon-add-after" onClick={() => setFresh(addTextBlock(sermon.id, i))}>
                 + текст ниже
               </button>
+              <span className="sermon-tools-gap" />
               <ConfirmButton className="icon-btn subtle" confirmText="Удалить" onConfirm={() => removeBlock(sermon.id, b.id)} aria-label="Удалить">
                 <Trash2 size={16} />
               </ConfirmButton>

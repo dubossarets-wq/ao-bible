@@ -811,10 +811,11 @@ html, body, .app { touch-action: manipulation; }
 .sermon-pick-add { color: var(--accent); }
 .sermon-pick-row:hover { background: color-mix(in srgb, var(--accent) 5%, transparent); }
 .sermon-new { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
-.sermon-done { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 6px 0 4px; }
-.sermon-done > svg { color: #2f9a5f; }
-.sermon-done p { margin: 0 0 6px; font-size: 1rem; }
-.sermon-done .pref-btns { width: 100%; }
+.sermon-done { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 10px 0 4px; }
+.sermon-done-mark { width: 68px; height: 68px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, #2f9a5f 14%, var(--panel)); color: #2f9a5f; box-shadow: 0 0 0 6px color-mix(in srgb, #2f9a5f 6%, transparent); animation: pop .25s ease-out; }
+.sermon-done p { margin: 2px 0 8px; font-size: 1.02rem; line-height: 1.45; }
+.sermon-done .pref-btns { width: 100%; flex-direction: column; }
+.sermon-done .pref-btns .btn { width: 100%; min-width: 0; white-space: nowrap; padding: 12px 14px; font-size: 1rem; }
 .sermon-head { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
 .sermon-title-input { font: inherit; font-size: 1.35rem; font-weight: 700; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--text); padding: 4px 0 6px; border-radius: 0; }
 .sermon-title-input:focus { outline: none; border-bottom-color: var(--accent); }
@@ -831,11 +832,11 @@ html, body, .app { touch-action: manipulation; }
 .sermon-block.verse { border-left: 4px solid var(--accent); }
 .sermon-ref { border: 0; background: none; padding: 0; font: inherit; font-weight: 700; color: var(--accent); cursor: pointer; font-size: .95rem; }
 .sermon-verse-text { margin: 4px 0 2px; font-family: var(--font-text); font-size: 1.05rem; line-height: 1.5; }
-.sermon-text-input { width: 100%; resize: none; border: 0; background: none; color: var(--text); font: inherit; font-size: 1rem; line-height: 1.5; padding: 2px 0; min-height: 3em; }
+.sermon-text-input { display: block; width: 100%; box-sizing: border-box; resize: none; overflow: hidden; border: 0; background: none; color: var(--text); font: inherit; font-size: 1rem; line-height: 1.5; padding: 0; margin: 2px 0 0; min-height: 1.5em; }
 .sermon-text-input:focus { outline: none; }
 .sermon-block.text:focus-within { border-color: var(--accent); }
 .sermon-block-tools { display: flex; align-items: center; gap: 2px; border-top: 1px dashed var(--line); margin-top: 6px; padding-top: 2px; }
-.sermon-add-after { margin-left: 8px; margin-right: auto; font-size: .86rem; text-decoration: none; }
+
 .sermon-add { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
 .sermon-add > .btn { align-self: flex-start; }
 .sermon-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 16px 0 4px; font-size: .82rem; color: var(--muted); }
@@ -876,3 +877,37 @@ html, body, .app { touch-action: manipulation; }
 .help-steps li { counter-increment: step; position: relative; padding-left: 40px; font-size: 1.02rem; line-height: 1.55; }
 .help-steps li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 14%, var(--bg)); color: var(--accent); font-weight: 700; font-size: .9rem; }
 .help-go { width: 100%; margin-top: 20px; padding: 12px 14px; font-size: 1rem; }
+
+/* Кнопки под выделенным стихом: «Слушать» — главная, «В проповедь» — рядом */
+.sel-inline { display: flex; flex-wrap: wrap; gap: 8px; margin: .2em 0 1em; font-family: var(--font-ui); font-size: 1rem; line-height: 1.2; text-indent: 0; animation: pop .18s ease-out; }
+.sel-inline .btn { padding: 10px 14px; font-size: .98rem; }
+.sel-inline .btn.primary { flex: 1 1 auto; }
+.sel-inline .btn:not(.primary) { background: var(--panel); }
+
+/* Проповедь: перетаскивание блоков */
+.sermon-blocks { touch-action: pan-y; }
+.sermon-block { position: relative; transition: box-shadow .2s, transform .15s; -webkit-user-select: none; user-select: none; }
+.sermon-block textarea { -webkit-user-select: text; user-select: text; }
+.sermon-block.dragging { z-index: 5; transition: box-shadow .2s; box-shadow: 0 14px 34px rgba(0,0,0,.22); border-color: var(--accent); background: var(--panel); cursor: grabbing; }
+.sermon-grip { display: inline-grid; place-items: center; width: 30px; height: 30px; color: var(--muted); cursor: grab; }
+.sermon-add-after { margin-left: 6px; font-size: .86rem; text-decoration: none; }
+.sermon-tools-gap { flex: 1; }
+
+/* Стих есть в проповеди: значок-свиток в начале стиха, нажатие открывает проповедь */
+.sermon-mark { display: inline-grid; place-items: center; width: 1.05em; height: 1.05em; padding: 0; margin-right: .25em; border: 0; border-radius: 4px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); vertical-align: .02em; cursor: pointer; }
+.sermon-mark svg { width: .72em; height: .72em; }
+.text-col.book-mode .sermon-mark { display: none; }
+
+/* Кнопка «скачать книгу» в проигрывателе: круг прогресса во время загрузки */
+.audio-btn.dl { position: relative; }
+.audio-btn.dl.ok { color: #2f9a5f; }
+.audio-btn.dl .dl-ring { position: absolute; inset: 6px; }
+.audio-btn.dl .dl-ring circle { fill: none; stroke-width: 2.5; }
+.audio-btn.dl .dl-ring .bg { stroke: color-mix(in srgb, var(--muted) 30%, transparent); }
+.audio-btn.dl .dl-ring .fg { stroke: var(--accent); transition: stroke-dashoffset .3s; transform: rotate(-90deg); transform-origin: center; }
+.audio-dl-note { padding: 8px 14px; font-size: .84rem; border-bottom: 1px solid var(--line); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-family: var(--font-ui); }
+.audio-dl-note.ok { color: #2f9a5f; }
+
+.vimg-preview canvas { touch-action: none; cursor: grab; }
+.vimg-preview canvas:active { cursor: grabbing; }
+.vimg-tip { margin: 0 0 8px; text-align: center; font-size: .84rem; color: var(--muted); }

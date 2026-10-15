@@ -54,7 +54,7 @@ export function addTextBlock(id, afterIndex = null) {
   const b = { id: uid(), type: 'text', text: '' };
   touch(id, (s) => {
     const blocks = [...s.blocks];
-    blocks.splice(afterIndex == null ? blocks.length : afterIndex + 1, 0, b);
+    blocks.splice(afterIndex == null ? blocks.length : Math.max(0, afterIndex + 1), 0, b);
     return { ...s, blocks };
   });
   return b.id;
@@ -69,6 +69,13 @@ export function moveBlock(id, index, dir) {
     [blocks[index], blocks[j]] = [blocks[j], blocks[index]];
     return { ...s, blocks };
   });
+}
+
+// Проповедь, в которой есть этот стих (самая недавно изменённая)
+export function sermonWith(ref) {
+  return [...sermons]
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .find((s) => s.blocks.some((b) => b.type === 'verse' && b.book === ref.book && b.chapter === ref.chapter && ref.verse >= b.verse && ref.verse <= (b.to || b.verse)));
 }
 
 export const blockRef = (b) => `${bookMeta(b.book).short.replace(/\.$/, '')} ${b.chapter}:${b.verse}${b.to ? `–${b.to}` : ''}`;

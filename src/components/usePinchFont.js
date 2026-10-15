@@ -7,23 +7,44 @@ import { useApp } from '../App.jsx';
 export const FONT_MIN = 13;
 export const FONT_MAX = 40;
 
+// Одна плашка с размером на всё приложение: показывается во время жеста и всегда прячется после него
+let badge = null;
+let hideTimer = 0;
+function showBadge(text) {
+  clearTimeout(hideTimer);
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.className = 'pinch-badge';
+    badge.setAttribute('aria-hidden', 'true');
+  }
+  if (!badge.isConnected) document.body.appendChild(badge);
+  badge.classList.remove('out');
+  badge.textContent = text;
+  // На всякий случай: если конец жеста потерялся, плашка всё равно спрячется
+  hideTimer = setTimeout(hideBadge, 1800);
+}
+function hideBadge() {
+  if (!badge) return;
+  badge.classList.add('out');
+  clearTimeout(hideTimer);
+  hideTimer = setTimeout(() => badge?.remove(), 450);
+}
+
 export function usePinchFont(scroller) {
   const { settings, setSettings } = useApp();
   useEffect(() => {
     const el = scroller.current;
     if (!el) return;
-    let g = null; // { d, fs, cur, anchor, top, badge }
+    let g = null; // { d, fs, cur, anchor, top }
     const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
     const onStart = (e) => {
       if (e.touches.length !== 2) return;
       const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
       const my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
       const anchor = document.elementFromPoint(mx, my)?.closest('.verse') || el.querySelector('.verse');
-      const badge = document.createElement('div');
-      badge.className = 'pinch-badge';
-      badge.textContent = `${settings.fontSize} px`;
-      document.body.appendChild(badge);
-      g = { d: dist(e.touches), fs: settings.fontSize, cur: settings.fontSize, anchor, top: anchor?.getBoundingClientRect().top ?? 0, badge };
+      const fs = g?.cur ?? settings.fontSize; // пальцы поставили заново — продолжаем с того же размера
+      g = { d: dist(e.touches), fs, cur: fs, anchor, top: anchor?.getBoundingClientRect().top ?? 0 };
+      showBadge(`${fs} px`);
     };
     const onMove = (e) => {
       if (!g || e.touches.length !== 2) return;
@@ -32,16 +53,15 @@ export function usePinchFont(scroller) {
       if (fs === g.cur) return;
       g.cur = fs;
       document.documentElement.style.setProperty('--fs', `${fs}px`);
-      g.badge.textContent = `${fs} px`;
+      showBadge(`${fs} px`);
       if (g.anchor) el.scrollTop += g.anchor.getBoundingClientRect().top - g.top;
     };
     const onEnd = (e) => {
       if (!g || e.touches.length >= 2) return;
-      const { cur, fs, badge } = g;
+      const { cur } = g;
       g = null;
-      setTimeout(() => badge.remove(), 500);
-      badge.classList.add('out');
-      if (cur !== fs) setSettings({ fontSize: cur });
+      hideBadge();
+      if (cur !== settings.fontSize) setSettings({ fontSize: cur });
     };
     // Safari: свой жест увеличения страницы — глушим, размер меняем сами
     const noGesture = (e) => e.preventDefault();
@@ -58,7 +78,7 @@ export function usePinchFont(scroller) {
       el.removeEventListener('touchcancel', onEnd);
       el.removeEventListener('gesturestart', noGesture);
       el.removeEventListener('gesturechange', noGesture);
-      g?.badge.remove();
+      if (g) hideBadge();
     };
   }, [settings.fontSize]);
 }

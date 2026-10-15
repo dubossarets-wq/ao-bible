@@ -41,21 +41,42 @@ SIZE, THUMB = (1080, 1350), (160, 200)
 MAX_BYTES = 220 * 1024
 
 # id, файл на Commons, название, горизонтальный центр кадра (0..1), тон (dark — белый текст
-# читается и так; light — приложение затемнит сильнее)
+# читается и так; light — приложение затемнит сильнее), [доля высоты исходника в кадре — чтобы
+# увести из кадра лишнее, например катер на Галилейском море]
 IMAGES = [
     ("01", "Mediteranian sea at sunrise.jpg", "Рассвет над морем", 0.66, "dark"),
-    ("02", "Sea of Galilee at sunset DSF0254.jpg", "Галилейское море на закате", 0.5, "dark"),
+    ("02", "Sea of Galilee at sunset DSF0254.jpg", "Галилейское море на закате", 0.226, "dark", 0.85),
     ("03", "View of the Negev from Masada at sunrise DSF2801.jpg", "Пустыня у Масады на рассвете", 0.4, "dark"),
     ("04", "Har 'Arif Makhtesh 041014.jpg", "Пустыня Негев", 0.5, "light"),
     ("05", "Olive tree Testour.jpg", "Оливковое дерево", 0.38, "light"),
-    ("06", "Barley field, Ehrenbach, cloud.jpg", "Ячменное поле вечером", 0.55, "dark"),
+    ("06", "Barley field, Ehrenbach, cloud.jpg", "Ячменное поле вечером", 0.55, "light"),
     ("07", "Milky Way and starry night sky (26972689115).jpg", "Звёздное небо", 0.66, "dark"),
     ("08", "Foggy forest hillside.jpg", "Лес в тумане", 0.5, "light"),
     ("09", "Sunrise on Lake McDonald (5431843828).jpg", "Снежные горы над озером", 0.45, "light"),
-    ("10", "Sunrise on Yellowstone Lake (Flat Mountain Arm) (32985162453).jpg", "Заря над озером", 0.5, "dark"),
+    ("10", "Sunrise on Yellowstone Lake (Flat Mountain Arm) (32985162453).jpg", "Заря над озером", 0.5, "light"),
     ("11", "Sea sky and clouds, Ibiza, Spain.jpg", "Море и облака", 0.5, "light"),
-    ("12", "Bank of pink clouds over Gåseberg 2.jpg", "Облака на закате", 0.55, "dark"),
+    ("12", "Bank of pink clouds over Gåseberg 2.jpg", "Облака на закате", 0.55, "light"),
 ]
+
+
+# Пятна от пыли на матрице в однотонном небе: id -> [(x, y, радиус) в долях ширины/высоты исходника]
+SPOTS = {"05": [(0.2787, 0.3310, 0.032), (0.3256, 0.2014, 0.028)]}
+
+
+def heal_spots(im, spots):
+    """Закрашивает пятно средним из двух соседних по горизонтали участков неба с мягким краем."""
+    from PIL import ImageChops, ImageDraw
+    w, h = im.size
+    for fx, fy, fr in spots:
+        x, y, r = round(fx * w), round(fy * h), round(fr * h)
+        box = (x - r, y - r, x + r, y + r)
+        left = im.crop((x - 4 * r, y - r, x - 2 * r, y + r))
+        right = im.crop((x + 2 * r, y - r, x + 4 * r, y + r))
+        patch = ImageChops.add(left, right, scale=2.0)
+        mask = Image.new("L", (2 * r, 2 * r), 0)
+        ImageDraw.Draw(mask).ellipse((r // 4, r // 4, 2 * r - r // 4, 2 * r - r // 4), fill=255)
+        im.paste(patch, box, mask.filter(ImageFilter.GaussianBlur(r / 6)))
+    return im
 
 
 def http_get(url, tries=6):
@@ -68,7 +89,7 @@ def http_get(url, tries=6):
             if e.code not in (429, 500, 502, 503, 504) or i == tries - 1:
                 raise
             wait = e.headers.get("Retry-After", "")
-            time.sleep(int(wait) if wait.isdigit() else 20 * (i + 1))
+            time.sleep(min(int(wait), 120) if wait.isdigit() else 20 * (i + 1))
 
 
 def strip_html(s):
@@ -81,7 +102,7 @@ def fetch_meta(names):
     titles = ["File:" + n for n in names]
     q = urllib.parse.urlencode({
         "action": "query", "prop": "imageinfo", "titles": "|".join(titles), "format": "json",
-        "iiprop": "url|size|sha1|extmetadata",
+        "iiprop": "url|size|sha1|extmetadata", "iiurlwidth": 3840,
         "iiextmetadatafilter": "LicenseShortName|License|Artist|Credit|UsageTerms",
     })
     data = json.loads(http_get(API + "?" + q))
@@ -97,7 +118,7 @@ def fetch_meta(names):
             "license": em.get("LicenseShortName", {}).get("value", ""),
             "license_code": em.get("License", {}).get("value", ""),
             "author": strip_html(em.get("Artist", {}).get("value", "")),
-            "url": ii["url"], "page": ii["descriptionurl"], "sha1": ii["sha1"],
+            "url": ii["url"], "thumb": ii.get("thumburl") or ii["url"], "page": ii["descriptionurl"], "sha1": ii["sha1"],
             "width": ii["width"], "height": ii["height"],
         }
     return out
@@ -114,8 +135,12 @@ def to_srgb(im):
     return im.convert("RGB")
 
 
-def crop_45(im, fx):
+def crop_45(im, fx, zoom=1.0):
     w, h = im.size
+    if zoom < 1:
+        ch = round(h * zoom)
+        top = (h - ch) // 2
+        im, h = im.crop((0, top, w, top + ch)), ch
     tw = round(h * 4 / 5)
     if tw <= w:
         left = min(max(round(w * fx - tw / 2), 0), w - tw)
@@ -168,20 +193,23 @@ def main():
     os.makedirs(SRC_DIR, exist_ok=True)
     os.makedirs(OUT_DIR, exist_ok=True)
     index = []
-    for iid, name, title, fx, tone in IMAGES:
+    for iid, name, title, fx, tone, *rest in IMAGES:
         m = meta[name]
-        ext = os.path.splitext(m["url"])[1].lower() or ".jpg"
-        src = os.path.join(SRC_DIR, f"{iid}{ext}")
+        src = os.path.join(SRC_DIR, f"{iid}.jpg")
         if not os.path.exists(src) or os.path.getsize(src) == 0:
             print(f"  скачиваю {name} …")
-            blob = http_get(m["url"])
+            # уменьшенная копия стандартной ширины 3840 (или оригинал, если он меньше): оригиналы
+            # upload.wikimedia.org отдаёт с жёстким ограничением частоты
+            blob = http_get(m["thumb"])
             with open(src, "wb") as f:
                 f.write(blob)
             time.sleep(15)  # upload.wikimedia.org строго ограничивает скачивание оригиналов
         with Image.open(src) as im:
             im.load()
             im = to_srgb(ImageOps.exif_transpose(im))
-        frame = crop_45(im, fx)
+        if iid in SPOTS:
+            im = heal_spots(im, SPOTS[iid])
+        frame = crop_45(im, fx, *rest)
         big = frame.resize(SIZE, Image.LANCZOS)
         q, size = save_jpeg(big, os.path.join(OUT_DIR, f"{iid}.jpg"), 80, MAX_BYTES)
         _, tsize = save_jpeg(frame.resize(THUMB, Image.LANCZOS), os.path.join(OUT_DIR, f"{iid}-t.jpg"), 70)
