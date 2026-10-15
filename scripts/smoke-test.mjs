@@ -232,7 +232,7 @@ async function run(label, viewport, isMobile) {
   check(`${label}: есть обновление — точка и пункт меню`, upd.includes('Обновить приложение') && upd.includes('новая версия'), upd);
   await page.click('.menu-item:has-text("Версии приложения")');
   await page.waitForSelector('.version', { timeout: 10000 });
-  const vers = await page.$$eval('.version', (els) => els.map((e) => e.textContent.replace(/\s+/g, ' ').trim()));
+  const vers = await page.$$eval('ul.versions:not(.backups) .version', (els) => els.map((e) => e.textContent.replace(/\s+/g, ' ').trim()));
   check(`${label}: список версий с датами`, vers.length === 3 && vers[0].includes('Тестовая новая версия') && vers[0].includes('последняя') && vers[1].includes('установлена') && vers[2].includes('Откатиться'), vers.map((v) => v.slice(0, 60)).join(' | '));
   await page.screenshot({ path: `${shots}/${label}-7d-versions.png` });
   // Архивная версия на сайте лежит в versions/<метка>/ — здесь подставляем заглушку
@@ -422,6 +422,37 @@ async function run(label, viewport, isMobile) {
   const ref4 = await page.textContent('.tb-ref');
   check(`${label}: восстановление после перезагрузки`, bg2 === 'rgb(22, 22, 23)', `${bg2}, ${ref4}`);
   await page.screenshot({ path: `${shots}/${label}-9-dark.png` });
+
+  // Обновление не сбивает данные пользователя; перед ним делается резервная копия, из которой можно восстановиться
+  const userData = () => page.evaluate(() => {
+    const st = JSON.parse(localStorage.getItem('aob.settings') || '{}');
+    return { theme: st.theme, fontSize: st.fontSize, bookmarks: JSON.parse(localStorage.getItem('aob.bookmarks') || '[]').length, notes: Object.keys(JSON.parse(localStorage.getItem('aob.notes') || '{}')).length, favorites: JSON.parse(localStorage.getItem('aob.favorites') || '[]').length };
+  });
+  await page.evaluate(() => { const st = JSON.parse(localStorage.getItem('aob.settings') || '{}'); st.fontSize = 23; localStorage.setItem('aob.settings', JSON.stringify(st)); });
+  await page.reload();
+  await page.waitForSelector('.verse', { timeout: 30000 });
+  await page.waitForTimeout(400);
+  const beforeUpd = await userData();
+  await page.evaluate(() => localStorage.setItem('aob.lastBuild', '20200101-000000')); // как будто до этого стояла старая версия
+  await page.reload();
+  await page.waitForSelector('.verse', { timeout: 30000 });
+  await page.waitForTimeout(600);
+  const afterUpd = await userData();
+  const nBackups = await page.evaluate(() => JSON.parse(localStorage.getItem('aob.backups') || '[]').length);
+  check(`${label}: данные пользователя переживают обновление`, JSON.stringify(beforeUpd) === JSON.stringify(afterUpd) && afterUpd.fontSize === 23 && afterUpd.bookmarks > 0 && afterUpd.notes > 0 && nBackups >= 1, `${JSON.stringify(afterUpd)}, копий: ${nBackups}`);
+  // Что-то «сбилось» — восстанавливаем из копии
+  await page.evaluate(() => { localStorage.setItem('aob.settings', JSON.stringify({ fontSize: 13 })); localStorage.setItem('aob.bookmarks', '[]'); });
+  await page.reload();
+  await page.waitForSelector('.verse', { timeout: 30000 });
+  await page.click('.pane-slot.first .tb-more');
+  await page.click('.menu-item:has-text("Версии приложения")');
+  await page.locator('.version button:has-text("Восстановить эту копию")').first().click();
+  await page.locator('.version button:has-text("Восстановить")').first().click();
+  await page.waitForLoadState('load');
+  await page.waitForSelector('.verse', { timeout: 30000 });
+  await page.waitForTimeout(500);
+  const restored = await userData();
+  check(`${label}: восстановление из резервной копии`, restored.fontSize === 23 && restored.bookmarks === beforeUpd.bookmarks && restored.notes === beforeUpd.notes, JSON.stringify(restored));
 
   check(`${label}: ошибки в консоли`, errors.length === 0, errors.slice(0, 5).join(' | '));
   await ctx.close();

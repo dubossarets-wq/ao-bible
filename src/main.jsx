@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
 import { bootVersionGate } from './core/updates.js';
+import { bootBackup } from './core/backup.js';
 import './styles.css';
 
 // Динамическая высота мобильного браузера и клавиатура: --vvh = высота видимой области
@@ -31,4 +32,6 @@ if (location.search.includes('v=')) {
 }
 
 // Приложение не обновляется само: если выбрана другая версия, открываем её из архива версий
+// Резервная копия данных пользователя при первом запуске новой версии — до того, как код их прочитает
+bootBackup();
 if (!bootVersionGate()) createRoot(document.getElementById('root')).render(<App />);

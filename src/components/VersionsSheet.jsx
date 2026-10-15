@@ -1,16 +1,18 @@
 // «Версии приложения»: список всех опубликованных версий с датой, временем и описанием.
 // Можно обновиться до последней или откатиться на любую прежнюю. Автообновление выключено по умолчанию.
 import React, { useEffect, useState } from 'react';
-import { Loader2, History, CheckCircle2 } from 'lucide-react';
+import { Loader2, History, CheckCircle2, RotateCcw } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { BUILD, fetchVersions, switchToVersion, buildDate, autoUpdateEnabled, setAutoUpdate } from '../core/updates.js';
-import { Switch, Empty } from './ui.jsx';
+import { Switch, Empty, ConfirmButton } from './ui.jsx';
+import { listBackups, restoreBackup } from '../core/backup.js';
 
 export default function VersionsSheet({ onClose }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(null);
   const [auto, setAuto] = useState(autoUpdateEnabled());
+  const [backups] = useState(listBackups);
 
   useEffect(() => {
     fetchVersions().then(setData, () => setError('Не удалось загрузить список версий. Проверьте подключение к интернету.'));
@@ -68,7 +70,29 @@ export default function VersionsSheet({ onClose }) {
           })}
         </ul>
       )}
-      <p className="field-hint">Книги, словари, закладки и настройки общие для всех версий и при переключении не теряются.</p>
+      <p className="field-hint">Книги, словари, закладки и настройки общие для всех версий и при обновлении не сбрасываются.</p>
+      <section className="nav-group">
+        <h4>Резервные копии ваших данных</h4>
+        <p className="field-hint">Настройки, закладки, заметки и избранное сохраняются перед каждым обновлением (последние 5 копий).</p>
+        {backups.length === 0 && <p className="field-hint">Копий пока нет — первая появится при следующем обновлении.</p>}
+        {backups.length > 0 && (
+          <ul className="versions backups">
+            {backups.map((b) => (
+              <li key={b.at} className="version">
+                <div className="version-head">
+                  <span className="version-date">{new Date(b.at).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                <p className="version-notes">
+                  {b.reason} · закладок {b.bookmarks}, заметок {b.notes}, в избранном {b.favorites}
+                </p>
+                <ConfirmButton className="btn small" confirmText="Восстановить" onConfirm={() => restoreBackup(b.at)}>
+                  <RotateCcw size={14} /> Восстановить эту копию
+                </ConfirmButton>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </BottomSheet>
   );
 }

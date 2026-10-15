@@ -5,6 +5,7 @@
 // корня с более новой сборкой оно перенаправляет на сохранённую версию. О новой версии сообщает точка на ⋮,
 // обновление и откат — вручную, в «Версиях приложения». Включается и автообновление (aob.autoUpdate).
 import { useCallback, useEffect, useState } from 'react';
+import { snapshot } from './backup.js';
 
 export const BUILD = typeof __BUILD__ !== 'undefined' ? __BUILD__ : 'dev';
 export const IS_PWA_BUILD = typeof __PWA__ !== 'undefined' && __PWA__;
@@ -133,6 +134,7 @@ export function useUpdates() {
 // Перейти на версию: закрепляем её и открываем (последняя — из корня, остальные — из архива).
 // Модули, закладки и настройки общие для всех версий (IndexedDB и localStorage того же сайта).
 export async function switchToVersion(build, latest) {
+  snapshot(`перед переходом на версию ${build}`);
   ls.set(K_ACTIVE, build);
   // Откат на старую версию выключает автообновление — иначе приложение сразу вернуло бы последнюю
   if (build !== latest) setAutoUpdate(false);
