@@ -505,3 +505,8 @@ button.row-act:hover { background: color-mix(in srgb, var(--accent) 12%, transpa
 .split.columns .divider::before { inset: 0 -10px; }
 .divider-grip { width: 72px; height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--bar-text) 60%, transparent); }
 .split.columns .divider-grip { width: 6px; height: 72px; }
+/* Двухстрочный пункт меню: надпись и под ней место со стихом */
+.menu-item-2 { align-items: flex-start; }
+.menu-item-2 svg { margin-top: 2px; }
+.menu-2 { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.menu-2-sub { font-size: .82rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 230px; }

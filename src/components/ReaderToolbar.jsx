@@ -3,6 +3,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Search, X, MoreVertical, Library, Palette, Bookmark, BookmarkCheck, Star, Info, Eye, EyeOff, Columns2, Rows2 } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { bookMeta } from '../core/books.js';
+import { getVerse } from '../core/modules.js';
+import { plainText } from '../core/verseMarkup.js';
 import { RefreshCw, History, Map as MapIcon, PlayCircle, Link2 } from 'lucide-react';
 import { IS_PWA_BUILD, applyUpdate } from '../core/updates.js';
 import { useLivePosition } from '../core/livePosition.js';
@@ -103,10 +105,30 @@ export default function ReaderToolbar({ index, pane, module }) {
         </button>
         {menu && (
           <div className="menu" role="menu">
-            {item(isBookmarked(ref) ? BookmarkCheck : Bookmark, isBookmarked(ref) ? 'Убрать закладку' : 'Закладка на это место', () => toggleBookmark(ref))}
+            {item(isBookmarked(ref) ? BookmarkCheck : Bookmark, isBookmarked(ref) ? 'Убрать закладку' : 'Закладка на это место', async () => {
+              const v = isBookmarked(ref) ? null : await getVerse(module.id, ref);
+              toggleBookmark(ref, v ? plainText(v).slice(0, 160) : '');
+            })}
             {/* Самая новая закладка — первая в списке */}
-            {bookmarks.length > 0 &&
-              item(PlayCircle, 'Продолжить с последней закладки', () => navigate(index, bookmarks[0]), `${bookMeta(bookmarks[0].book).short} ${bookmarks[0].chapter}:${bookmarks[0].verse}`)}
+            {bookmarks.length > 0 && (
+              <button
+                role="menuitem"
+                className="menu-item menu-item-2"
+                onClick={() => {
+                  setMenu(false);
+                  navigate(index, bookmarks[0]);
+                }}
+              >
+                <PlayCircle size={18} />
+                <span className="menu-2">
+                  <span>К последней закладке</span>
+                  <span className="menu-2-sub">
+                    {bookMeta(bookmarks[0].book).short} {bookmarks[0].chapter}:{bookmarks[0].verse}
+                    {bookmarks[0].text ? ` · ${bookmarks[0].text}` : ''}
+                  </span>
+                </span>
+              </button>
+            )}
             {item(Star, 'Закладки, заметки, избранное', () => openSheet('bookmarks', index))}
             <div className="menu-sep" />
             {item(Library, 'Библиотека модулей', () => openSheet('library', index))}
