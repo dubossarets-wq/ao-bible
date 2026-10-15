@@ -911,3 +911,24 @@ html, body, .app { touch-action: manipulation; }
 .vimg-preview canvas { touch-action: none; cursor: grab; }
 .vimg-preview canvas:active { cursor: grabbing; }
 .vimg-tip { margin: 0 0 8px; text-align: center; font-size: .84rem; color: var(--muted); }
+
+/* Интерактивная инструкция: затемнение, подсветка нужного места, карточка шага */
+.help-intro { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 12px; font-size: .95rem; line-height: 1.45; color: var(--text); }
+.help-intro svg { flex: none; color: var(--accent); margin-top: 2px; }
+.tour { position: fixed; inset: 0; z-index: 95; pointer-events: none; }
+.tour-dim { position: fixed; background: rgba(10, 10, 12, .62); pointer-events: auto; }
+.tour-ring { position: fixed; border-radius: 12px; box-shadow: 0 0 0 3px var(--accent), 0 0 0 7px color-mix(in srgb, var(--accent) 35%, transparent); pointer-events: none; animation: tour-pulse 1.4s ease-in-out infinite; transition: left .2s, top .2s, width .2s, height .2s; }
+@keyframes tour-pulse { 50% { box-shadow: 0 0 0 3px var(--accent), 0 0 0 13px color-mix(in srgb, var(--accent) 10%, transparent); } }
+.tour-card { position: fixed; left: 12px; right: 12px; max-width: 520px; margin: 0 auto; pointer-events: auto; background: var(--panel); color: var(--text); border-radius: calc(var(--radius) + 6px); box-shadow: 0 16px 40px rgba(0,0,0,.35); padding: 12px 14px 14px; font-family: var(--font-ui); animation: pop .2s ease-out; }
+.tour-card.bottom { bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); }
+.tour-card.top { top: calc(env(safe-area-inset-top, 0px) + 12px); }
+.tour-head { display: flex; align-items: center; gap: 8px; font-size: .8rem; font-weight: 600; color: var(--muted); }
+.tour-head span { flex: 1; }
+.tour-text { margin: 4px 0 10px; font-size: 1.08rem; line-height: 1.5; }
+.tour-dots { display: flex; gap: 6px; margin-bottom: 12px; }
+.tour-dots i { width: 8px; height: 8px; border-radius: 4px; background: var(--line); transition: width .2s, background .2s; }
+.tour-dots i.done { background: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.tour-dots i.on { width: 22px; background: var(--accent); }
+.tour-btns { display: flex; gap: 8px; }
+.tour-btns .btn { padding: 12px 14px; font-size: 1rem; }
+.tour-btns .btn.primary { flex: 1; }

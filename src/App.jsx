@@ -8,6 +8,7 @@ import SheetHost from './components/SheetHost.jsx';
 import Bootstrap from './components/Bootstrap.jsx';
 import WordPopover from './components/WordPopover.jsx';
 import AudioBar from './components/AudioBar.jsx';
+import TourOverlay from './components/TourOverlay.jsx';
 import { fitsTranslation, detachFollow } from './core/audio.js';
 import { useSermons } from './core/sermons.js';
 import { useUpdates, applyUpdate } from './core/updates.js';
@@ -438,6 +439,7 @@ export default function App() {
         <SheetHost />
         <WordPopover />
         <AudioBar />
+        <TourOverlay />
         <Toasts items={toasts} />
         {IS_STAGING && (
           <div className="staging-badge" aria-label="Тестовое приложение">
