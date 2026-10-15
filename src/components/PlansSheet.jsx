@@ -77,7 +77,6 @@ function ActivePlan({ plan, onChange, onRemove, read }) {
       </div>
       <button className={`btn ${dayDone ? '' : 'primary'} plan-read`} onClick={() => read(plan, day, dayDone || firstLeft < 0 ? 0 : firstLeft)}>
         <BookOpen size={17} /> {dayDone ? 'Перечитать' : partDone ? 'Продолжить чтение' : 'Читать'}
-        {!dayDone && <span className="plan-read-sub">{rs.length > 1 ? `все ${rs.length} отрывка на одной странице` : 'отрывок дня'}</span>}
       </button>
     </div>
   );

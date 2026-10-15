@@ -34,12 +34,13 @@ function nextAfter(r, module, books) {
   const data = books?.[u.book];
   if (!data) return null;
   const len = (data.chapters[u.chapter - 1] || []).length;
-  const short = bookMeta(u.book).short.replace(/\.$/, '');
-  if (u.to && u.to < len) return { ref: { book: u.book, chapter: u.chapter, verse: u.to + 1 }, label: `${short} ${u.chapter}:${u.to + 1}` };
-  if (u.chapter < data.chapters.length) return { ref: { book: u.book, chapter: u.chapter + 1, verse: 1 }, label: `${short} ${u.chapter + 1}` };
+  // Название книги полностью — так понятнее, куда ведёт кнопка
+  const full = (id) => module.books.find((b) => b.id === id)?.name || bookMeta(id).name;
+  if (u.to && u.to < len) return { ref: { book: u.book, chapter: u.chapter, verse: u.to + 1 }, label: `${full(u.book)} ${u.chapter}:${u.to + 1}` };
+  if (u.chapter < data.chapters.length) return { ref: { book: u.book, chapter: u.chapter + 1, verse: 1 }, label: `${full(u.book)} ${u.chapter + 1}` };
   const i = module.books.findIndex((b) => b.id === u.book);
   const nb = i >= 0 ? module.books[i + 1] : null;
-  return nb ? { ref: { book: nb.id, chapter: 1, verse: 1 }, label: `${bookMeta(nb.id).short.replace(/\.$/, '')} 1` } : null;
+  return nb ? { ref: { book: nb.id, chapter: 1, verse: 1 }, label: `${full(nb.id)} 1` } : null;
 }
 
 export default function PlanView({ index, pane, module, selection, onSelect }) {
@@ -438,19 +439,21 @@ export default function PlanView({ index, pane, module, selection, onSelect }) {
                     </button>
                   ) : allDone ? (
                     <div className="plan-finish">
-                      <PartyPopper size={22} />
-                      <div>
+                      <div className="plan-finish-row">
+                        <PartyPopper size={22} />
                         <strong>План на сегодня выполнен</strong>
-                        <span>Прочитано {n} из {n}. Следующее чтение — завтра.</span>
+                        <button className="btn primary" onClick={() => exitPlan(index)}>
+                          Готово
+                        </button>
+                      </div>
+                      <div className="plan-finish-sub">
+                        Прочитано {n} из {n}
                         {day < plan.readings.length - 1 && (
                           <button className="link-btn" onClick={() => openPlanDay(index, uid, day + 1)}>
                             Читать день {day + 2} сейчас
                           </button>
                         )}
                       </div>
-                      <button className="btn primary" onClick={() => exitPlan(index)}>
-                        Готово
-                      </button>
                     </div>
                   ) : (
                     <div className="plan-left">
@@ -472,7 +475,7 @@ export default function PlanView({ index, pane, module, selection, onSelect }) {
                       <span className="plan-offplan-main">
                         Читать дальше: {next.label} <ChevronRight size={15} />
                       </span>
-                      <span className="plan-offplan-sub">не входит в план · к плану можно вернуться кнопкой внизу</span>
+                      <span className="plan-offplan-sub">не входит в план</span>
                     </button>
                   )}
                 </div>

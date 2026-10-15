@@ -1,6 +1,6 @@
 // Полноценная панель чтения: своя навигация, свой перевод, свои словари и параллельные места.
 // Долгое нажатие на стих включает режим выделения: вместо верхней панели — панель действий.
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useApp } from '../App.jsx';
 import ReaderToolbar from './ReaderToolbar.jsx';
 import SelectionBar, { sortedRefs } from './SelectionBar.jsx';
@@ -26,6 +26,35 @@ function PlanProgress({ uid, day }) {
     <div className="read-progress plan" role="progressbar" aria-label={label} title={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
       <span style={{ width: `${pct}%` }} />
     </div>
+  );
+}
+
+// Всегда под рукой: маленькая кнопка «Слушать с этого места» в правом нижнем углу.
+// Пока текст прокручивают, она почти прозрачная (класс ставится напрямую, без перерисовки панели).
+function ListenFab({ index, module, pane }) {
+  const audio = useAudio();
+  const ref = useLivePosition(index, pane.ref);
+  const btn = useRef(null);
+  useEffect(() => {
+    const reader = btn.current?.closest('.reader');
+    if (!reader) return;
+    let t = 0;
+    const onScroll = () => {
+      btn.current?.classList.add('dim');
+      clearTimeout(t);
+      t = setTimeout(() => btn.current?.classList.remove('dim'), 900);
+    };
+    reader.addEventListener('scroll', onScroll, { capture: true, passive: true });
+    return () => {
+      clearTimeout(t);
+      reader.removeEventListener('scroll', onScroll, { capture: true });
+    };
+  }, [audio.active]);
+  if (audio.active) return null;
+  return (
+    <button ref={btn} className="listen-fab" onClick={() => listenFrom(index, module.id, ref)} aria-label={`Слушать с этого места: ${formatRef(ref)}`} title={`Слушать с ${formatRef(ref)}`}>
+      <Headphones size={20} />
+    </button>
   );
 }
 
@@ -136,7 +165,11 @@ export default function BibleReader({ index }) {
         />
       )}
       {!pane.plan && pane.lastPlan && !selection.size && <PlanReturn index={index} lastPlan={pane.lastPlan} />}
-      {selection.size > 0 && <ListenSelected index={index} module={module} selection={selection} onDone={() => setSelection(new Set())} />}
+      {selection.size > 0 ? (
+        <ListenSelected index={index} module={module} selection={selection} onDone={() => setSelection(new Set())} />
+      ) : (
+        <ListenFab index={index} module={module} pane={pane} />
+      )}
     </section>
   );
 }

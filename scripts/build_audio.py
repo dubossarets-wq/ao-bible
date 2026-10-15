@@ -49,6 +49,7 @@ DATA = ROOT / "data-src" / "audio"
 PYLIB = ROOT / ".pylib-audio"
 ALIGN_VERSION = 13  # меняется — кеш выравнивания пересчитывается
 RST_ALIGN_VERSION = 10  # то же для Hexapla (последние правки касались только пропусков в записи — у синтеза их нет)
+WWJD_ALIGN_VERSION = 12  # то же для записей wwjdru
 STAR_LOGP = float(os.environ.get("AOB_STAR_LOGP", "-0.05"))  # log p «звёздочки» на кадр
 MIN_SCORE = 0.15  # средняя вероятность букв стиха ниже — стих в записи не найден (пропущен/сжат)
 UA = "AO-Bible-audio-builder/1.0 (+https://github.com/)"
@@ -724,9 +725,10 @@ def build_kjv(args):
                     break
                 vv.append(x)
             # время стихов должно расти вместе с номером; ненайденные стихи (оценка < MIN_SCORE) — без времени
-            n_all, all_vs = len(kjv[ck.split(".")[0]][int(ck.split(".")[1]) - 1]), [x[1] for x in vv]
+            n_all, all_vs = len(kjv[ck.split(".")[0]][int(ck.split(".")[1]) - 1]), None
             vv = [x for k, x in enumerate(vv) if (k == 0 or x[1] > vv[k - 1][1]) and x[4] >= MIN_SCORE]
-            if len(vv) < 0.8 * n_all:
+            all_vs = list(range(1, n_all + 1))
+            if len(vv) < 0.7 * n_all:
                 dropped.append(ck)
                 continue
             al_map = {x[1]: (x[2], x[3], x[4]) for x in vv}
@@ -865,7 +867,7 @@ def build_wwjd(args):
         cur_book = bid
         nch = len(rst[bid])
         cands = ww_candidates(bid, c, nch)
-        key = hashlib.sha1(json.dumps([ALIGN_VERSION, name, [rst[bid][x - 1] for x in cands]],
+        key = hashlib.sha1(json.dumps([WWJD_ALIGN_VERSION, name, [rst[bid][x - 1] for x in cands]],
                                       ensure_ascii=False).encode()).hexdigest()[:12]
         cache = base / "align" / f"{name}.{key}.json"
         if cache.exists():
