@@ -45,7 +45,7 @@ export default function WordPopover() {
     if (!popover) return;
     const onKey = (e) => e.key === 'Escape' && closePopover();
     const onDown = (e) => {
-      if (box.current?.contains(e.target)) return;
+      if (box.current?.contains(e.target) || e.target.closest?.('.tour')) return;
       const w = e.target.closest?.('.w.active');
       if (w) markClosedOnWord(w);
       closePopover();

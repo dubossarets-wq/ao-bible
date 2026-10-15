@@ -66,7 +66,7 @@ export default function SelectionBar({ index, module, selection, onDone }) {
 
   useEffect(() => {
     if (!more) return;
-    const off = (e) => !moreRef.current?.contains(e.target) && setMore(false);
+    const off = (e) => !moreRef.current?.contains(e.target) && !e.target.closest?.('.tour') && setMore(false);
     document.addEventListener('pointerdown', off);
     return () => document.removeEventListener('pointerdown', off);
   }, [more]);

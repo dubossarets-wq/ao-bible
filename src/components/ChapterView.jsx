@@ -204,7 +204,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     const onDown = (e) => {
       const w = activeWord.current;
       swallowTap.current = false;
-      if (!w || w.contains(e.target) || e.target.closest?.('.word-pop, .sheet')) return;
+      if (!w || w.contains(e.target) || e.target.closest?.('.word-pop, .sheet, .tour')) return;
       w.classList.remove('active');
       activeWord.current = null;
       swallowTap.current = true;

@@ -32,8 +32,8 @@ export const TOURS = [
     id: 'read', icon: BookOpen, title: 'Перейти к книге, главе, стиху', group: 'Основное',
     steps: [
       { text: 'Нажмите сюда — откроется список книг Библии.', target: () => $(P1 + '.tb-ref'), next: () => click($(P1 + '.tb-ref')) },
-      { text: 'Книги разделены по цветам: Пятикнижие, пророки, Евангелия… Нажмите на книгу, потом на главу.', target: () => $('.sheet .book-cat'), before: (api) => !$('.sheet .book-grid') && api.openSheet('nav') },
-      { text: 'Или впишите ссылку сюда, например «Ин 3:16», и нажмите стрелку.', target: () => $('#ref-input'), before: (api) => !$('#ref-input') && api.openSheet('nav') },
+      { text: 'Книги разделены по цветам: Пятикнижие, пророки, Евангелия… Нажмите на книгу, потом на главу и стих.', target: () => $('.sheet .num-grid') || $('.sheet .book-cat'), before: (api) => !$('.sheet .book-grid') && api.openSheet('nav') },
+      { text: 'Или впишите ссылку сюда, например «Ин 3:16», и нажмите стрелку.', target: () => $('.sheet .ref-form'), before: (api) => !$('#ref-input') && api.openSheet('nav') },
       { text: 'Стрелка «назад» возвращает к месту, где вы были до перехода.', target: () => $(P1 + '.tb-hist'), before: (api) => api.closeSheet() },
     ],
   },
@@ -41,8 +41,18 @@ export const TOURS = [
     id: 'word', icon: MousePointerClick, title: 'Значение слова', group: 'Основное',
     steps: [
       { text: 'Нажмите на любое слово в тексте.', target: () => firstVisible(P1 + '.verse .w'), next: () => click(firstVisible(P1 + '.verse .w')), until: () => $('.word-pop') },
-      { text: 'Появились словари с этим словом. Нажмите на словарь — откроется статья.', target: () => $('.word-pop'), before: () => !$('.word-pop') && click(firstVisible(P1 + '.verse .w')) },
-      { text: 'Чтобы убрать выделение слова, нажмите в любое другое место.', target: null },
+      {
+        text: 'Появились словари с этим словом. Нажмите на словарь — откроется статья.',
+        target: () => $('.word-pop') || $('.sheet'),
+        before: () => !$('.word-pop') && !$('.sheet') && click(firstVisible(P1 + '.verse .w')),
+        next: () => click([...document.querySelectorAll('.word-pop button')].find((b) => !b.textContent.includes('Карта'))),
+        until: () => $('.sheet') || $('.map-pane'),
+      },
+      {
+        text: 'Это статья словаря (или карта, если выбрали место). Закрыть — крестиком вверху справа.',
+        target: () => $('.sheet') || $('.map-pane'),
+      },
+      { text: 'Чтобы снять выделение слова, нажмите в любое другое место.', target: null, before: (api) => (api.reset(), document.querySelector('.map-pane [aria-label*="Закрыть"]')?.click()) },
     ],
   },
   {
@@ -58,8 +68,14 @@ export const TOURS = [
   {
     id: 'xref', icon: Link2, title: 'Параллельные места', group: 'Основное',
     steps: [
-      { text: 'Значок с числом после стиха — сколько параллельных мест. Нажмите, чтобы их прочитать.', target: () => firstVisible(P1 + '.xr'), next: () => click(firstVisible(P1 + '.xr')) },
-      { text: 'Здесь места, где говорится о том же. Нажмите на любое, чтобы перейти.', target: () => $('.sheet') },
+      { text: 'Значок с числом после стиха — сколько параллельных мест. Нажмите на него.', target: () => firstVisible(P1 + '.xr'), next: () => click(firstVisible(P1 + '.xr')), until: () => $('.sheet') },
+      {
+        text: 'Это места Библии, где говорится о том же. Нажмите на любое — оно откроется во второй половине экрана.',
+        target: () => $('.sheet'),
+        before: () => !$('.sheet') && click(firstVisible(P1 + '.xr')),
+        until: () => !$('.sheet') && $('.pane-slot.second'),
+      },
+      { text: 'Место открылось внизу (или справа). Закрыть вторую половину — крестиком вверху.', target: () => ($('.pane-slot.second') ? $(P1 + '.tb-split') : $('.sheet')) },
     ],
   },
   {
@@ -89,9 +105,15 @@ export const TOURS = [
     id: 'sermons', icon: ScrollText, title: 'Проповеди', group: 'Мои записи',
     steps: [
       { text: 'Читая, зажмите понравившийся стих.', target: verse, next: selectVerse, until: () => $('.sel-inline') },
-      { text: 'Нажмите «В проповедь» — выберите проповедь или впишите название новой. Стих добавится сам.', target: () => byText(P1 + '.sel-inline .btn', 'В проповедь'), before: selectVerse },
+      { text: 'Нажмите «В проповедь».', target: () => byText(P1 + '.sel-inline .btn', 'В проповедь'), before: selectVerse, next: () => click(byText(P1 + '.sel-inline .btn', 'В проповедь')), until: () => $('.sheet #sermon-title') },
+      {
+        text: 'Впишите название новой проповеди и нажмите «Создать» — или выберите проповедь из списка. Стих добавится сам.',
+        target: () => $('.sheet'),
+        until: () => $('.sermon-done'),
+      },
+      { text: 'Стих добавлен. «Открыть проповедь» — посмотреть её, «Читать дальше» — вернуться к чтению.', target: () => $('.sheet') },
       { text: 'Все проповеди — в меню ⋮ → «Проповеди».', target: menuItem('Проповеди'), before: (api) => (api.reset(), setTimeout(openMenu, 150)), next: (api) => api.openSheet('sermons') },
-      { text: 'В проповеди: «Текст» — своя мысль, порядок меняется перетаскиванием, «Кафедра» — крупно для служения.', target: () => $('.sheet'), before: (api) => !$('.sheet') && api.openSheet('sermons') },
+      { text: 'В проповеди: «Текст» — своя мысль; порядок меняется перетаскиванием (зажмите блок); «Кафедра» — крупно для служения.', target: () => $('.sheet'), before: (api) => !$('.sheet') && api.openSheet('sermons') },
     ],
   },
   {

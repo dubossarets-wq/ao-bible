@@ -39,9 +39,12 @@ export default function SermonAddSheet({ pane, payload, onClose }) {
     return (
       <BottomSheet title="Добавлено" onClose={onClose} initial={1}>
         <div className="sermon-done">
-          <span className="sermon-done-mark" aria-hidden="true">
-            <Check size={34} strokeWidth={2.6} />
-          </span>
+          {/* Галочка — по центру свободного места, надпись и кнопки — внизу окна */}
+          <div className="sermon-done-top">
+            <span className="sermon-done-mark" aria-hidden="true">
+              <Check size={34} strokeWidth={2.6} />
+            </span>
+          </div>
           <p>
             <strong>{label}</strong> — в проповеди «{done.title}».
           </p>

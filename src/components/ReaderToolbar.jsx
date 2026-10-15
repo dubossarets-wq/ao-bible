@@ -44,7 +44,7 @@ export default function ReaderToolbar({ index, pane, module }) {
 
   useEffect(() => {
     if (!menu) return;
-    const off = (e) => !menuRef.current?.contains(e.target) && setMenu(false);
+    const off = (e) => !menuRef.current?.contains(e.target) && !e.target.closest?.('.tour') && setMenu(false);
     const esc = (e) => e.key === 'Escape' && setMenu(false);
     document.addEventListener('pointerdown', off);
     document.addEventListener('keydown', esc);

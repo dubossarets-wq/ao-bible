@@ -83,7 +83,7 @@ button:disabled { cursor: default; opacity: .4; }
 @container (max-width: 340px) {
   .tb-hist { display: none; }
 }
-.menu { position: absolute; right: 6px; top: calc(100% + 6px); min-width: 260px; max-width: calc(100vw - 24px); background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 14px 40px rgba(0,0,0,.22); padding: 6px; z-index: 20; animation: pop .14s ease-out; }
+.menu { position: absolute; right: 6px; top: calc(100% + 16px); min-width: 260px; max-width: calc(100vw - 24px); background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 14px 40px rgba(0,0,0,.22); padding: 6px; z-index: 20; animation: pop .14s ease-out; }
 @keyframes pop { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
 .menu-item { width: 100%; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 0; background: none; border-radius: calc(var(--radius) * .6); text-align: left; font-size: .98rem; }
 .menu-item:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
@@ -512,7 +512,7 @@ button.row-act:hover { background: color-mix(in srgb, var(--accent) 12%, transpa
 /* Меню поверх всего окна: панель с открытым меню поднимается над соседней */
 .pane-slot { position: relative; z-index: 1; }
 .pane-slot:has(.menu) { z-index: 30; }
-.menu { max-height: calc(var(--vvh, 100dvh) - var(--bar-h) - var(--sat) - 24px); overflow-y: auto; overscroll-behavior: contain; }
+.menu { max-height: calc(var(--vvh, 100dvh) - var(--bar-h) - var(--sat) - 34px); overflow-y: auto; overscroll-behavior: contain; }
 
 /* Разделитель панелей: толще и с увеличенной зоной захвата */
 .split.rows .divider { flex-basis: 18px; }
@@ -917,19 +917,45 @@ html, body, .app { touch-action: manipulation; }
 .help-intro { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 12px; font-size: .95rem; line-height: 1.45; color: var(--text); }
 .help-intro svg { flex: none; color: var(--accent); margin-top: 2px; }
 .tour { position: fixed; inset: 0; z-index: 95; pointer-events: none; }
-.tour-dim { position: fixed; background: rgba(10, 10, 12, .62); pointer-events: auto; }
-.tour-ring { position: fixed; border-radius: 12px; box-shadow: 0 0 0 3px var(--accent), 0 0 0 7px color-mix(in srgb, var(--accent) 35%, transparent); pointer-events: none; animation: tour-pulse 1.4s ease-in-out infinite; transition: left .2s, top .2s, width .2s, height .2s; }
+/* Затемнение не мешает нажимать: учиться можно прямо на программе */
+.tour-dim { position: fixed; background: rgba(10, 10, 12, .5); pointer-events: none; }
+.tour-ring { position: fixed; border-radius: 12px; box-shadow: 0 0 0 3px var(--accent), 0 0 0 7px color-mix(in srgb, var(--accent) 35%, transparent); pointer-events: none; animation: tour-pulse 1.4s ease-in-out infinite; transition: opacity .2s; will-change: transform, width, height; }
 @keyframes tour-pulse { 50% { box-shadow: 0 0 0 3px var(--accent), 0 0 0 13px color-mix(in srgb, var(--accent) 10%, transparent); } }
-.tour-card { position: fixed; left: 12px; right: 12px; max-width: 520px; margin: 0 auto; pointer-events: auto; background: var(--panel); color: var(--text); border-radius: calc(var(--radius) + 6px); box-shadow: 0 16px 40px rgba(0,0,0,.35); padding: 12px 14px 14px; font-family: var(--font-ui); animation: pop .2s ease-out; }
-.tour-card.bottom { bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); }
-.tour-card.top { top: calc(env(safe-area-inset-top, 0px) + 12px); }
-.tour-head { display: flex; align-items: center; gap: 8px; font-size: .8rem; font-weight: 600; color: var(--muted); }
-.tour-head span { flex: 1; }
-.tour-text { margin: 4px 0 10px; font-size: 1.08rem; line-height: 1.5; }
-.tour-dots { display: flex; gap: 6px; margin-bottom: 12px; }
+.tour-bubble { position: fixed; left: 12px; right: 12px; top: 0; max-width: 520px; margin: 0 auto; pointer-events: auto; background: var(--panel); color: var(--text); border-radius: calc(var(--radius) + 4px); box-shadow: 0 12px 34px rgba(0,0,0,.32); padding: 10px 14px 12px; font-family: var(--font-ui); will-change: transform; }
+.tour-arrow { position: absolute; width: 14px; height: 14px; background: inherit; transform: rotate(45deg); border-radius: 2px; display: none; }
+.tour-arrow.up { top: -6px; }
+.tour-arrow.down { bottom: -6px; }
+.tour-ctrl { position: fixed; left: 12px; right: 12px; max-width: 520px; margin: 0 auto; pointer-events: auto; background: var(--panel); border-radius: calc(var(--radius) + 6px); box-shadow: 0 12px 34px rgba(0,0,0,.32); padding: 10px 12px 12px; font-family: var(--font-ui); }
+.tour-ctrl.bottom { bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); }
+.tour-ctrl.top { top: calc(var(--sat, 0px) + 10px); }
+.tour-close { margin-left: auto; margin-top: -4px; margin-bottom: -4px; }
+.tour-head { font-size: .78rem; font-weight: 600; color: var(--muted); }
+.tour-text { margin: 3px 0 0; font-size: 1.08rem; line-height: 1.5; }
+.tour-dots { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; min-height: 28px; }
 .tour-dots i { width: 8px; height: 8px; border-radius: 4px; background: var(--line); transition: width .2s, background .2s; }
 .tour-dots i.done { background: color-mix(in srgb, var(--accent) 45%, var(--line)); }
 .tour-dots i.on { width: 22px; background: var(--accent); }
 .tour-btns { display: flex; gap: 8px; }
 .tour-btns .btn { padding: 12px 14px; font-size: 1rem; }
 .tour-btns .btn.primary { flex: 1; }
+
+/* «Добавлено»: галочка по центру свободного места, надпись и кнопки внизу */
+.sermon-done { flex: 1; padding: 0; gap: 12px; }
+.sermon-done-top { flex: 1; display: grid; place-items: center; min-height: 110px; }
+.sermon-done p { margin: 0; }
+
+/* Проповедь: одинаковые небольшие отступы */
+.sermon-blocks { gap: 8px; }
+.sermon-block { padding: 10px 12px 6px; border: 1px solid var(--line); }
+.sermon-block.verse { border-left: 1px solid var(--line); box-shadow: inset 3px 0 0 var(--accent); }
+.sermon-ref { display: block; margin: 0 0 4px; }
+.sermon-verse-text { margin: 0; }
+.sermon-text-input { margin: 0; }
+.sermon-block-tools { gap: 14px; margin-top: 8px; padding-top: 4px; }
+.sermon-grip { width: 22px; height: 30px; margin-left: -4px; justify-content: start; }
+.sermon-add-after { margin-left: 0; }
+.sermon-block-tools .icon-btn { margin-right: -6px; }
+.sermon-add { margin-top: 8px; gap: 8px; }
+.sermon-foot { margin: 8px 0 0; }
+.sermon-head { margin-bottom: 8px; }
+.sermon-hint { margin-bottom: 8px; }
