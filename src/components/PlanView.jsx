@@ -12,7 +12,7 @@ import { wordAt, plainText } from '../core/verseMarkup.js';
 import { wasClosedOnWord, isDoubleTap, pulseFavorite } from '../core/tapState.js';
 import { bookMeta } from '../core/books.js';
 import { readingUnits, unitDone, readingDone } from '../core/plans.js';
-import { usePlan, markUnits } from '../core/planStore.js';
+import { usePlan, markUnits, creditChapter } from '../core/planStore.js';
 import { logChapter, minSeconds } from '../core/readLog.js';
 import { Chapter, marksFor, selectedIn, afterProps, LONG_PRESS_MS } from './ChapterView.jsx';
 import { usePinchFont } from './usePinchFont.js';
@@ -153,7 +153,7 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
     const timer = setInterval(() => {
       const el = scroller.current;
       const p = planRef.current;
-      if (!el || !p || document.visibilityState !== 'visible') return;
+      if (!el || !p || document.visibilityState !== 'visible' || document.querySelector('.sheet')) return;
       const top = el.scrollTop + STRIP;
       const bottom = el.scrollTop + el.clientHeight;
       const hits = [];
@@ -171,7 +171,7 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
         if (d.end && d.t >= minSeconds(vs.length)) hits.push(u);
       });
       if (!hits.length) return;
-      hits.filter((u) => u.dataset.whole).forEach((u) => logChapter(u.dataset.b, +u.dataset.c));
+      hits.filter((u) => u.dataset.whole).forEach((u) => (logChapter(u.dataset.b, +u.dataset.c), creditChapter(u.dataset.b, +u.dataset.c)));
       const finished = markUnits(uid, day, hits.map((u) => u.dataset.u));
       if (finished) toast('План на сегодня выполнен 🎉');
       else {

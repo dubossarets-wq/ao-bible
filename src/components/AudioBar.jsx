@@ -151,7 +151,7 @@ export default function AudioBar() {
             </span>
           )}
         </div>
-        {a.ref && a.source !== 'tts' && a.source !== 'none' && <DownloadButton audioId={a.source} book={a.ref.book} onNote={setNote} />}
+        {a.ref && a.source !== 'tts' && a.source !== 'none' && <DownloadButton key={`${a.source}|${a.ref.book}`} audioId={a.source} book={a.ref.book} onNote={setNote} />}
         <button className={`audio-btn ${opts ? 'on' : ''}`} onClick={() => setOpts((v) => !v)} aria-label="Настройки чтения вслух" aria-expanded={opts}>
           <SlidersHorizontal size={19} />
         </button>

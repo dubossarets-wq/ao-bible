@@ -100,7 +100,7 @@ function OfflineList() {
   const [list, setList] = useState(listOffline);
   const items = Object.entries(list);
   if (!items.length)
-    return <p className="pref-note">Пока ничего не скачано. Чтобы слушать без интернета: включите прослушивание, нажмите в проигрывателе кнопку настроек (с ползунками) и «Скачать».</p>;
+    return <p className="pref-note">Пока ничего не скачано. Чтобы слушать без интернета: включите прослушивание и нажмите в проигрывателе кнопку со стрелкой вниз.</p>;
   const total = items.reduce((a, [, v]) => a + (v.bytes || 0), 0);
   return (
     <>
@@ -144,9 +144,10 @@ export default function PrefsSheet({ pane, onClose }) {
   const check = async () => {
     if (updates.available) return applyUpdate();
     setChecking(true);
-    const found = await updates.check();
+    const r = await updates.check();
     setChecking(false);
-    if (!found) toast(updates.error ? `Не удалось проверить: ${updates.error}` : 'У вас последняя версия');
+    if (r.error) toast(`Не удалось проверить: ${r.error}`, 'error');
+    else if (!r.available) toast('У вас последняя версия');
   };
 
   return (

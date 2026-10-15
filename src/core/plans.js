@@ -68,6 +68,10 @@ export function calendarIndex(date = new Date()) {
 }
 
 const day0 = (d) => {
+  if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+    const [y, m, dd] = d.split('-').map(Number);
+    return new Date(y, m - 1, dd);
+  }
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);
   return x;
@@ -96,7 +100,7 @@ export const planToday = (plan) => (plan.calendar ? calendarIndex() : todayIndex
 // Пропущенные дни до сегодняшнего (с начала плана)
 export function behindDays(plan) {
   const today = planToday(plan);
-  const from = plan.calendar ? Math.min(today, calendarIndex(new Date(plan.start))) : 0;
+  const from = plan.calendar ? Math.min(today, calendarIndex(day0(plan.start))) : 0;
   const out = [];
   for (let i = from; i < today; i++) if (!plan.done?.[i]) out.push(i);
   return out;

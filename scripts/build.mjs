@@ -156,13 +156,17 @@ ${FONTS}
   // (gz-версии, которые и загружает приложение). Тексты уже лежат в IndexedDB, так что офлайн работает.
   const shell = ['./', 'index.html', 'manifest.webmanifest', 'modules/catalog.json', 'icons/icon.svg', 'icons/icon-192.png', 'icons/apple-touch-icon.png'];
   await writeFile(path.join(dir, 'version.json'), JSON.stringify({ version: VERSION, build: BUILD, date: BUILT_AT.toISOString() }));
-  const sw = `const CACHE = 'aob-${BUILD}';
+  // Имя кэша оболочки — со своим префиксом канала: тест и основное приложение живут на одном домене
+  const shellPrefix = STAGING ? 'aobs-shell-' : 'aob-shell-';
+  const sw = `const CACHE = '${shellPrefix}${BUILD}';
+const PREFIX = '${shellPrefix}';
 const SHELL = ${JSON.stringify(shell)};
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', (e) => {
-  e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+  // Удаляем только свои прежние оболочки (и старые имена без префикса); скачанные аудиокниги (*-audio-*) не трогаем
+  e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE && (k.startsWith(PREFIX) || /^aob-\\d{8}-\\d{6}$/.test(k))).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
 });
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);

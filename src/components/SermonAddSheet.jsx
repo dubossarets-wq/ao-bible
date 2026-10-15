@@ -7,6 +7,7 @@ import { getVerse } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
 import { useSermons, createSermon, addVerses } from '../core/sermons.js';
 import { selectionLabel } from './SelectionBar.jsx';
+import { places } from './SermonsSheet.jsx';
 
 export default function SermonAddSheet({ pane, payload, onClose }) {
   const { openSheet } = useApp();
@@ -83,7 +84,7 @@ export default function SermonAddSheet({ pane, payload, onClose }) {
                 <span>
                   {s.title}
                   <small>
-                    {s.blocks.filter((b) => b.type === 'verse').length} мест
+                    {places(s.blocks.filter((b) => b.type === 'verse').length)}
                     {s.date ? ` · ${new Date(s.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}` : ''}
                   </small>
                 </span>

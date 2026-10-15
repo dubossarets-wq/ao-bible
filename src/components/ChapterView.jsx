@@ -172,7 +172,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       pending.current = { type: 'nav', c, v: ref.verse };
       setBook({ id: ref.book, data, meta });
       setRange({ start: Math.max(1, c - 1), end: Math.min(total, c + 1) });
-    });
+    }).catch(() => alive && setError('Не удалось прочитать книгу из памяти телефона. Закройте приложение и откройте снова.'));
     return () => {
       alive = false;
     };
@@ -299,7 +299,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     if (!book) return;
     const timer = setInterval(() => {
       const el = scroller.current;
-      if (!el || document.visibilityState !== 'visible') return;
+      if (!el || document.visibilityState !== 'visible' || document.querySelector('.sheet')) return;
       const top = el.scrollTop;
       const bottom = top + el.clientHeight;
       for (const ch of el.querySelectorAll('.chapter')) {

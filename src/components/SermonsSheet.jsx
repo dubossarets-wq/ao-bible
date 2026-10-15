@@ -12,6 +12,8 @@ import { plainText } from '../core/verseMarkup.js';
 import { useSermons, createSermon, deleteSermon, renameSermon, addVerses, addTextBlock, updateBlock, removeBlock, moveBlock, blockRef, blockRefFull, sermonText } from '../core/sermons.js';
 import { load, save } from '../core/storage.js';
 
+// «1 место», «2 места», «5 мест»
+export const places = (n) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? 'место' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? 'места' : 'мест'}`;
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
 
 // Поле текста, которое растёт по мере набора
@@ -32,9 +34,12 @@ function Pulpit({ sermon, onClose }) {
   useEffect(() => save('pulpitSize', size), [size]);
   useEffect(() => {
     let lock = null;
+    let alive = true;
     const req = async () => {
       try {
-        lock = await navigator.wakeLock?.request('screen');
+        const l = await navigator.wakeLock?.request('screen');
+        if (!alive) l?.release?.();
+        else lock = l;
       } catch {
         /* браузер не умеет держать экран — просто читаем */
       }
@@ -45,6 +50,7 @@ function Pulpit({ sermon, onClose }) {
     const onKey = (e) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
     return () => {
+      alive = false;
       lock?.release?.();
       document.removeEventListener('visibilitychange', onVis);
       window.removeEventListener('keydown', onKey);
@@ -98,12 +104,17 @@ function Editor({ sermon, pane, moduleId, onBackToList }) {
     e.preventDefault();
     const r = parseHumanRef(ref);
     if (!r) return setRefErr('Не понял ссылку. Пример: «Ин 3:16» или «Пс 22:1-4».');
-    const to = r.verseEnd || r.end?.verse || null;
+    // «Ин 3» — вся глава; «Ин 3:16-18» — стихи; «Ин 3:16–4:2» — через главу
+    const wholeChapter = !/\d\s*[:.,]\s*\d|\d\s+\d/.test(ref.replace(/^\s*\d\s*/, ''));
+    const endCh = r.end?.chapter || r.chapter;
+    const endV = r.end?.verse || r.verseEnd || (wholeChapter ? 999 : r.verse);
     const items = [];
-    for (let v = r.verse; v <= (to || r.verse); v++) {
-      const t = await getVerse(moduleId, { book: r.book, chapter: r.chapter, verse: v });
-      if (t == null) break;
-      items.push({ book: r.book, chapter: r.chapter, verse: v, text: plainText(t) });
+    for (let c = r.chapter; c <= endCh && items.length < 400; c++) {
+      for (let v = c === r.chapter ? r.verse : 1; c < endCh || v <= endV; v++) {
+        const t = await getVerse(moduleId, { book: r.book, chapter: c, verse: v });
+        if (t == null) break;
+        items.push({ book: r.book, chapter: c, verse: v, text: plainText(t) });
+      }
     }
     if (!items.length) return setRefErr('Такого места нет в выбранном переводе.');
     addVerses(sermon.id, items, moduleId);
@@ -254,7 +265,7 @@ function Editor({ sermon, pane, moduleId, onBackToList }) {
                 + текст ниже
               </button>
               <span className="sermon-tools-gap" />
-              <ConfirmButton className="icon-btn subtle" confirmText="Удалить" onConfirm={() => removeBlock(sermon.id, b.id)} aria-label="Удалить">
+              <ConfirmButton className="icon-btn subtle" confirmText="Удалить" onConfirm={() => removeBlock(sermon.id, b.id)} aria-label={b.type === 'verse' ? 'Удалить стих из проповеди' : 'Удалить текст'}>
                 <Trash2 size={16} />
               </ConfirmButton>
             </div>
@@ -275,7 +286,7 @@ function Editor({ sermon, pane, moduleId, onBackToList }) {
         {refErr && <p className="error-text small">{refErr}</p>}
       </div>
       <p className="sermon-foot">
-        {verses} мест Писания · сохраняется само
+        {places(verses)} Писания · сохраняется само
         <ConfirmButton
           className="link-btn danger"
           confirmText="Удалить проповедь?"
@@ -330,7 +341,7 @@ export default function SermonsSheet({ pane, payload, onClose }) {
                   <span>
                     {s.title}
                     <small>
-                      {s.blocks.filter((b) => b.type === 'verse').length} мест
+                      {places(s.blocks.filter((b) => b.type === 'verse').length)}
                       {s.date ? ` · ${fmtDate(s.date)}` : ` · изменена ${new Date(s.updatedAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}`}
                     </small>
                   </span>

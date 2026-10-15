@@ -2,11 +2,12 @@
 // настройки. Нужен, чтобы перенести всё на другой телефон или сохранить на всякий случай.
 // Модули (переводы, словари) в файл не входят — их можно заново скачать в библиотеке.
 import { P } from './channel.js';
-import { SERVICE, snapshot } from './backup.js';
+import { SERVICE, snapshot, replaceAll } from './backup.js';
 
 const FORMAT = 'aob-userdata';
 // Резервные копии внутри приложения в файл не кладём — они только раздувают его
-const SKIP = new Set([...SERVICE, P + 'backups']);
+// и сведения, привязанные к этому телефону: какие книги скачаны для прослушивания, какие аудиокниги уже ставились
+const SKIP = new Set([...SERVICE, P + 'backups', P + 'offlineAudio', P + 'autoAudio']);
 
 export function exportData() {
   const data = {};
@@ -55,9 +56,10 @@ export async function readDataFile(file) {
 // Восстановление: сначала копия текущих данных (её можно вернуть в «Версиях приложения»), потом замена
 export function importData(json) {
   snapshot('перед восстановлением из файла');
-  for (const k of Object.keys(localStorage)) if (k.startsWith(P) && !SKIP.has(k)) localStorage.removeItem(k);
-  for (const [k, v] of Object.entries(json.data)) if (typeof v === 'string' && !SKIP.has(P + k)) localStorage.setItem(P + k, v);
-  location.reload();
+  // Сведения этого телефона (скачанные книги) сохраняем как есть
+  const keep = [...SKIP].filter((k) => !SERVICE.has(k) && k !== P + 'backups' && localStorage.getItem(k) != null).map((k) => [k, localStorage.getItem(k)]);
+  const incoming = Object.entries(json.data).filter(([k, v]) => typeof v === 'string' && !SKIP.has(P + k)).map(([k, v]) => [P + k, v]);
+  replaceAll([...incoming, ...keep]);
 }
 
 // Сохранить файл: на телефоне — через «Поделиться» (Файлы, облако, мессенджер), на компьютере — скачиванием

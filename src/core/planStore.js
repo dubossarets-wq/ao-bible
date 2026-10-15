@@ -5,9 +5,25 @@ import { useSyncExternalStore } from 'react';
 import { load, save } from './storage.js';
 import { dayUnits, planToday, behindDays } from './plans.js';
 
+// Календарный план (день плана = день года) в новом году начинается заново: отметки прошлого года
+// не должны считаться прочитанными в этом. Год плана хранится в plan.year.
+function newYear(list) {
+  const y = new Date().getFullYear();
+  let changed = false;
+  const out = list.map((p) => {
+    if (!p.calendar) return p;
+    const py = p.year || +String(p.start || '').slice(0, 4) || y;
+    if (py === y) return p.year ? p : ((changed = true), { ...p, year: y });
+    changed = true;
+    return { ...p, year: y, start: `${y}-01-01`, done: {}, parts: {}, history: { ...p.history, [py]: Object.keys(p.done || {}).length } };
+  });
+  return changed ? out : list;
+}
 const read = () => {
   const v = load('plans', []);
-  return Array.isArray(v) ? v : [];
+  const list = Array.isArray(v) ? newYear(v) : [];
+  if (Array.isArray(v) && list !== v) save('plans', list);
+  return list;
 };
 let plans = read();
 const subs = new Set();

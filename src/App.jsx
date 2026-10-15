@@ -9,7 +9,7 @@ import Bootstrap from './components/Bootstrap.jsx';
 import WordPopover from './components/WordPopover.jsx';
 import AudioBar from './components/AudioBar.jsx';
 import TourOverlay from './components/TourOverlay.jsx';
-import { fitsTranslation, detachFollow } from './core/audio.js';
+import { fitsTranslation, detachFollow, audioState } from './core/audio.js';
 import { useSermons } from './core/sermons.js';
 import { useUpdates, applyUpdate } from './core/updates.js';
 import { IS_STAGING } from './core/channel.js';
@@ -87,6 +87,7 @@ export default function App() {
   // но не посреди открытого окна (например, недописанной заметки) — ждём, пока его закроют
   useEffect(() => {
     if (!updates.available || !(updates.auto || updates.forced) || sheet) return;
+    if (!updates.forced && audioState().active && audioState().playing) return; // дослушают — обновимся при следующей проверке
     toast(updates.forced ? 'Экстренное обновление…' : 'Обновляюсь до новой версии…');
     const t = setTimeout(() => applyUpdate(), 600);
     return () => clearTimeout(t);
@@ -124,8 +125,21 @@ export default function App() {
   // Уже установленные обновляются сами, когда в каталоге появилась новая версия.
   // Каждая ставится один раз: если человек её удалил, сама она больше не вернётся.
   const bibleIds = bibles.map((b) => b.id).join();
+  const [online, setOnline] = useState(navigator.onLine);
   useEffect(() => {
-    if (!modules || !bibleIds || !navigator.onLine) return;
+    const on = () => setOnline(navigator.onLine);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', on);
+    return () => (window.removeEventListener('online', on), window.removeEventListener('offline', on));
+  }, []);
+  // Память браузера переполнена — предупреждаем: иначе правки молча не сохранились бы
+  useEffect(() => {
+    const full = () => toast('Память приложения заполнена — последние изменения могут не сохраниться. Сохраните данные в файл: Настройки → «Мои данные».', 'error');
+    window.addEventListener('aob-storage-full', full);
+    return () => window.removeEventListener('aob-storage-full', full);
+  }, [toast]);
+  useEffect(() => {
+    if (!modules || !bibleIds || !online) return;
     let alive = true;
     repo
       .fetchCatalog()
@@ -164,7 +178,7 @@ export default function App() {
     return () => {
       alive = false;
     };
-  }, [bibleIds, !!modules]);
+  }, [bibleIds, !!modules, online]);
 
   // Если модуль панели удалён — переключаем на основной/первый доступный перевод.
   useEffect(() => {
@@ -204,7 +218,10 @@ export default function App() {
 
   // Открыть день плана одной страницей; at — номер отрывка, к которому прокрутить
   const openPlanDay = useEvent((i, uid, day, at = 0) =>
-    updatePane(i, (p) => ({ ...p, plan: { uid, day, at, t: Date.now() }, lastPlan: null, nav: p.nav + 1, flash: null, highlight: null }))
+    updatePane(i, (p) => {
+      const history = p.plan ? p.history : [...p.history.slice(0, p.hIndex + 1), p.ref].slice(-100);
+      return { ...p, history, hIndex: history.length - 1, plan: { uid, day, at, t: Date.now() }, lastPlan: null, nav: p.nav + 1, flash: null, highlight: null };
+    })
   );
   const returnToPlan = useEvent((i) =>
     updatePane(i, (p) => (p.lastPlan ? { ...p, plan: { ...p.lastPlan, t: Date.now() }, lastPlan: null, nav: p.nav + 1, flash: null, highlight: null } : p))

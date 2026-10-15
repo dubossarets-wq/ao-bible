@@ -1,5 +1,6 @@
 // Репозиторий модулей: установка, удаление, ленивая загрузка книг и словарей, каталог.
 // Интерфейс не знает, где лежат данные: всё идёт через эти функции.
+import { load, save } from './storage.js';
 import * as db from './db.js';
 import { normalize, bytesToJson, ModuleError } from './schema.js';
 
@@ -91,6 +92,13 @@ async function removeData(id) {
 }
 
 export async function removeModule(id) {
+  const meta = (await listModules()).find((m) => m.id === id);
+  if (meta?.type === 'audio') {
+    const tried = load('autoAudio', []);
+    if (!tried.includes(id)) save('autoAudio', [...tried, id]);
+    const { listOffline, removeBook } = await import('./offlineAudio.js');
+    for (const k of Object.keys(listOffline())) if (k.startsWith(`${id}|`)) await removeBook(id, k.split('|')[1]).catch(() => {});
+  }
   await removeData(id);
   await db.del(db.STORES.modules, id);
   modulesCache = (await listModules()).filter((m) => m.id !== id);

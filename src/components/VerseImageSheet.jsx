@@ -143,7 +143,7 @@ export default function VerseImageSheet({ payload, onClose }) {
     touch.current.pts.delete(e.pointerId);
     touch.current.base = null;
   };
-  const [ready, setReady] = useState(false);
+  const [fontsReady, setReady] = useState(false);
   const ref = selectionLabel(refs, true);
 
   useEffect(() => {
@@ -165,29 +165,42 @@ export default function VerseImageSheet({ payload, onClose }) {
   const bg = photo || GRADIENTS.find((g) => g.id === bgId) || GRADIENTS[0];
 
   // Фото грузим заранее, чтобы холст рисовался сразу
+  const [imgFailed, setImgFailed] = useState(false);
   useEffect(() => {
-    if (!photo) return setImg(null);
+    setImg(null);
+    setImgFailed(false);
+    if (!photo) return;
+    let alive = true;
     const im = new Image();
-    im.onload = () => setImg(im);
-    im.onerror = () => setImg(null);
+    im.onload = () => alive && setImg(im);
+    im.onerror = () => alive && setImgFailed(true);
     im.src = `images/verse-bg/${photo.file}`;
+    return () => {
+      alive = false;
+    };
   }, [photo?.id]);
+  const ready = useRef(null); // готовая картинка (JPEG) для «Поделиться»
 
   useEffect(() => {
-    if (!canvas.current || text == null || !bgId || (photo && !img)) return;
-    draw(canvas.current, { bg, img: photo ? img : null, text, ref, format, scale, pos });
-  }, [text, bgId, img, format, scale, pos, ready]);
+    if (!canvas.current || text == null || !bgId || (photo && !img && !imgFailed)) return;
+    // Фото не загрузилось — тот же текст на спокойном градиенте
+    draw(canvas.current, { bg: photo && imgFailed ? GRADIENTS[0] : bg, img: photo && !imgFailed ? img : null, text, ref, format, scale, pos });
+    ready.current = null;
+    const c = canvas.current;
+    const t = setTimeout(() => c.toBlob((b) => (ready.current = b), 'image/jpeg', 0.9), 150);
+    return () => clearTimeout(t);
+  }, [text, bgId, img, imgFailed, format, scale, pos, fontsReady]);
 
   const blob = () => new Promise((res) => canvas.current.toBlob(res, 'image/jpeg', 0.9));
   const fileName = `${ref.replace(/[:\s]+/g, '_')}.jpg`;
   const share = async () => {
-    const b = await blob();
+    const b = ready.current || (await blob());
     const file = new File([b], fileName, { type: 'image/jpeg' });
     if (navigator.canShare?.({ files: [file] })) {
       try {
         await navigator.share({ files: [file], title: ref });
-      } catch {
-        /* отменили */
+      } catch (e) {
+        if (e?.name !== 'AbortError') save(b); // не вышло поделиться — хотя бы сохранить
       }
     } else save(b);
   };

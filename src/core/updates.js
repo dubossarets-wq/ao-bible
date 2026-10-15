@@ -101,17 +101,17 @@ export function useUpdates() {
   const [state, setState] = useState({ available: false, checking: false, latest: null, error: null, forced: false });
 
   const check = useCallback(async () => {
-    if (!IS_PWA_BUILD) return false;
+    if (!IS_PWA_BUILD) return { available: false };
     setState((s) => ({ ...s, checking: true, error: null }));
     try {
       const { latest, minBuild } = await fetchVersions();
       const available = !!latest && latest !== BUILD && latest > BUILD;
       const forced = !!minBuild && BUILD < minBuild && available;
       setState({ available, checking: false, latest, error: null, forced, auto: autoUpdateEnabled() });
-      return available;
+      return { available };
     } catch {
       setState((s) => ({ ...s, checking: false, error: 'Нет связи с сервером' }));
-      return false;
+      return { available: false, error: 'Нет связи с сервером' };
     }
   }, []);
 

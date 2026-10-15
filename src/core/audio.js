@@ -229,7 +229,7 @@ async function playRecorded(ref) {
       set({ loading: false, playing: false, error: 'Для этой главы нет аудиозаписи.', offerTts: true });
       return;
     }
-    timing = { key, module: state.source, verses: ch.verses, url: ch.url, start: ch.start ?? null, end: ch.end ?? null };
+    const next = { key, module: state.source, verses: ch.verses, url: ch.url, start: ch.start ?? null, end: ch.end ?? null };
     if (!el) {
       el = new Audio();
       el.preload = 'auto';
@@ -240,23 +240,29 @@ async function playRecorded(ref) {
       el.addEventListener('error', () => set({ loading: false, playing: false, error: 'Запись не загрузилась. Проверьте интернет.' }));
     }
     if (loadedUrl !== ch.url) {
-      loadedUrl = ch.url;
       const src = await playableUrl(ch.url); // скачанная книга — из памяти телефона
-      if (my !== gen) return;
+      if (my !== gen) {
+        if (src.startsWith('blob:')) URL.revokeObjectURL(src);
+        return; // пока ждали, нажали другое — эту запись не ставим
+      }
       if (blobUrl) URL.revokeObjectURL(blobUrl);
       blobUrl = src.startsWith('blob:') ? src : null;
       el.src = src;
+      loadedUrl = ch.url;
     }
+    timing = next;
   }
   // С первого стиха — с начала главы (объявление «Глава …»), иначе — с начала стиха
   const start = ref.verse === 1 && timing.start != null ? timing.start : timing.verses.find((x) => x[0] === ref.verse)?.[1] ?? timing.start ?? 0;
   el.playbackRate = state.rate;
-  try {
-    el.currentTime = start;
-  } catch {
-    /* метаданные ещё не загружены — выставим после загрузки */
-    el.addEventListener('loadedmetadata', () => (el.currentTime = start), { once: true });
-  }
+  // Пока длительность файла неизвестна, перемотка может не сработать (Safari) — ставим место после загрузки
+  if (el.readyState >= 1) {
+    try {
+      el.currentTime = start;
+    } catch {
+      /* перемотка не удалась */
+    }
+  } else el.addEventListener('loadedmetadata', () => my === gen && (el.currentTime = start), { once: true });
   el.play().then(
     () => set({ loading: false }),
     (e) => set({ loading: false, playing: false, error: playError(e) })

@@ -4,10 +4,13 @@
 // Модули в IndexedDB при обновлениях не трогаются и в копию не входят.
 import { P } from './channel.js';
 import { BUILD } from './updates.js';
+import { freezeStorage } from './storage.js';
 
 const K_BACKUPS = P + 'backups';
 const K_LAST = P + 'lastBuild';
 const MAX = 5;
+// Копии не должны съедать место под сами данные: все вместе — не больше ~1,5 млн символов
+const BUDGET = 1_500_000;
 // Служебные ключи версий — не копируем и не восстанавливаем, чтобы восстановление не откатывало приложение
 export const SERVICE = new Set([K_BACKUPS, K_LAST, P + 'activeBuild', P + 'autoUpdate2', P + 'knownBuilds', P + 'notifiedBuild', P + 'lateStarter', P + 'bootstrapped']);
 
@@ -28,6 +31,7 @@ export function snapshot(reason) {
     }
     if (!Object.keys(data).length) return;
     let list = [{ at: Date.now(), build: BUILD, reason, data }, ...read()].slice(0, MAX);
+    while (list.length > 1 && JSON.stringify(list).length > BUDGET) list = list.slice(0, list.length - 1);
     // Если места мало — оставляем меньше копий, но хотя бы одну
     while (list.length) {
       try {
@@ -71,8 +75,29 @@ export function restoreBackup(at) {
   const b = read().find((x) => x.at === at);
   if (!b) return false;
   snapshot('перед восстановлением из копии');
-  for (const k of Object.keys(localStorage)) if (k.startsWith(P) && !SERVICE.has(k)) localStorage.removeItem(k);
-  for (const [k, v] of Object.entries(b.data)) localStorage.setItem(k, v);
+  return replaceAll(Object.entries(b.data));
+}
+
+// Заменить данные человека целиком; если запись оборвалась (нет места) — вернуть, как было
+export function replaceAll(entries) {
+  const before = {};
+  for (const k of Object.keys(localStorage)) if (k.startsWith(P) && !SERVICE.has(k)) before[k] = localStorage.getItem(k);
+  freezeStorage();
+  try {
+    for (const k of Object.keys(before)) localStorage.removeItem(k);
+    for (const [k, v] of entries) localStorage.setItem(k, v);
+  } catch {
+    for (const k of Object.keys(localStorage)) if (k.startsWith(P) && !SERVICE.has(k)) localStorage.removeItem(k);
+    for (const [k, v] of Object.entries(before)) {
+      try {
+        localStorage.setItem(k, v);
+      } catch {
+        /* вернули, что смогли */
+      }
+    }
+    location.reload();
+    return false;
+  }
   location.reload();
   return true;
 }

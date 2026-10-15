@@ -7,7 +7,7 @@ import { useApp } from '../App.jsx';
 import { usePlans } from '../core/planStore.js';
 import { readStats } from '../core/readLog.js';
 import { bookMeta } from '../core/books.js';
-import { fetchPlanIndex, fetchPlan, makeCustomPlan, SCOPES, parseReading, planToday, behindDays, readingDone, isoDate } from '../core/plans.js';
+import { fetchPlanIndex, fetchPlan, makeCustomPlan, SCOPES, parseReading, planToday, behindDays, readingDone, localDate } from '../core/plans.js';
 import { ConfirmButton, Empty, Segmented, Hint } from './ui.jsx';
 
 function ActivePlan({ plan, onChange, onRemove, read }) {
@@ -24,9 +24,12 @@ function ActivePlan({ plan, onChange, onRemove, read }) {
   const firstLeft = flags.findIndex((f) => !f);
   const toggle = (i) => {
     const next = { ...done };
-    if (next[i]) delete next[i];
-    else next[i] = Date.now();
-    onChange({ ...plan, done: next });
+    const parts = { ...plan.parts };
+    if (next[i]) {
+      delete next[i];
+      delete parts[i]; // снимаем и отметки отрывков — иначе день уже не закроется сам
+    } else next[i] = Date.now();
+    onChange({ ...plan, done: next, parts });
   };
   return (
     <div className="plan-card">
@@ -153,7 +156,7 @@ export default function PlansSheet({ pane, onClose }) {
     navigate(pane, { book, chapter: +c, verse: 1 });
   };
   const add = (plan) => {
-    setPlans((ps) => [{ ...plan, uid: Date.now().toString(36), start: isoDate(), done: {} }, ...ps]);
+    setPlans((ps) => [{ ...plan, uid: Date.now().toString(36), start: localDate(), done: {}, ...(plan.calendar ? { year: new Date().getFullYear() } : {}) }, ...ps]);
     toast(`План «${plan.name}» начат — нажмите «Читать»`);
   };
   const start = async (meta) => {
@@ -170,9 +173,15 @@ export default function PlansSheet({ pane, onClose }) {
   const startCustom = async () => {
     const n = Math.max(7, Math.min(730, +days || 90));
     setBusy('custom');
-    const readings = await makeCustomPlan(SCOPES[scope].books(), n);
-    add({ planId: 'custom', name: `${SCOPES[scope].label} за ${n} дн.`, readings });
-    setBusy(null);
+    try {
+      const readings = await makeCustomPlan(SCOPES[scope].books(), n);
+      // Глав меньше, чем дней (Евангелия за 730 дней) — дней столько, сколько глав
+      add({ planId: 'custom', name: `${SCOPES[scope].label} за ${readings.length} дн.`, readings });
+    } catch (e) {
+      toast(e.message || 'Не удалось составить план', 'error');
+    } finally {
+      setBusy(null);
+    }
   };
 
   return (

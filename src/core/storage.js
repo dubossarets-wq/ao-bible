@@ -14,11 +14,32 @@ export function load(key, fallback) {
   }
 }
 
+// Идёт восстановление данных (из файла или копии) — до перезагрузки ничего не записываем, чтобы не затереть
+let frozen = false;
+export const freezeStorage = () => (frozen = true);
+
 export function save(key, value) {
+  if (frozen) return;
+  const raw = JSON.stringify(value);
   try {
-    localStorage.setItem(PREFIX + key, JSON.stringify(value));
+    localStorage.setItem(PREFIX + key, raw);
   } catch {
-    /* хранилище недоступно — работаем без сохранения */
+    // Места нет: сначала жертвуем самыми старыми резервными копиями — данные человека важнее
+    try {
+      const list = JSON.parse(localStorage.getItem(PREFIX + 'backups') || '[]');
+      for (let n = list.length - 1; n >= 0; n--) {
+        localStorage.setItem(PREFIX + 'backups', JSON.stringify(list.slice(0, n)));
+        try {
+          localStorage.setItem(PREFIX + key, raw);
+          return;
+        } catch {
+          /* мало — убираем ещё одну копию */
+        }
+      }
+    } catch {
+      /* хранилище недоступно */
+    }
+    window.dispatchEvent(new CustomEvent('aob-storage-full'));
   }
 }
 

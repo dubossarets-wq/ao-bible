@@ -13,6 +13,13 @@ function syncViewport() {
   const kb = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
   document.documentElement.style.setProperty('--vvh', `${h}px`);
   document.documentElement.style.setProperty('--kb', `${kb}px`);
+  // Клавиатура открыта — нижние панели (проигрыватель, плавающие кнопки) прячутся, кнопки урока встают над ней
+  const open = kb > 100;
+  const was = document.documentElement.classList.contains('kb-open');
+  document.documentElement.classList.toggle('kb-open', open);
+  const el = document.activeElement;
+  // Окно уменьшается плавно — подкручиваем сразу и ещё раз, когда оно встало на место
+  if (open && !was && el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) for (const ms of [60, 350]) setTimeout(() => document.activeElement === el && el.scrollIntoView({ block: 'center' }), ms);
 }
 window.visualViewport?.addEventListener('scroll', syncViewport);
 syncViewport();

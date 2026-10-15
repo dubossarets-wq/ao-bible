@@ -334,7 +334,7 @@ mark { background: var(--hl); color: inherit; border-radius: 2px; padding: 0 1px
 .bootstrap-icon { color: var(--accent); }
 
 /* Уведомления */
-.toasts { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 20px); z-index: 60; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; width: min(420px, calc(100% - 32px)); }
+.toasts { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(max(var(--kb, 0px), env(safe-area-inset-bottom, 0px)) + 20px); z-index: 60; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; width: min(420px, calc(100% - 32px)); }
 .toast { background: var(--bar); color: var(--bar-text); padding: 10px 16px; border-radius: 999px; font-size: .9rem; box-shadow: 0 8px 24px rgba(0,0,0,.2); animation: toast .22s ease-out; text-align: center; }
 .toast.error { background: var(--danger); color: #fff; border-radius: 14px; }
 @keyframes toast { from { opacity: 0; transform: translateY(8px); } }
@@ -932,7 +932,7 @@ html, body, .app { touch-action: manipulation; }
 .tour-arrow.up { top: -6px; }
 .tour-arrow.down { bottom: -6px; }
 .tour-ctrl { position: fixed; left: 12px; right: 12px; max-width: 520px; margin: 0 auto; pointer-events: auto; background: var(--panel); border-radius: calc(var(--radius) + 6px); box-shadow: 0 12px 34px rgba(0,0,0,.32); padding: 10px 12px 12px; font-family: var(--font-ui); }
-.tour-ctrl.bottom { bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); }
+.tour-ctrl.bottom { bottom: calc(max(var(--kb, 0px), env(safe-area-inset-bottom, 0px)) + 12px); }
 .tour-ctrl.top { top: calc(var(--sat, 0px) + 10px); }
 .tour-close { margin-left: auto; margin-top: -4px; margin-bottom: -4px; }
 .tour-head { font-size: .78rem; font-weight: 600; color: var(--muted); }
@@ -965,3 +965,12 @@ html, body, .app { touch-action: manipulation; }
 .sermon-foot { margin: 8px 0 0; }
 .sermon-head { margin-bottom: 8px; }
 .sermon-hint { margin-bottom: 8px; }
+
+/* Открыта клавиатура: прячем то, что прибито к низу экрана и оказалось бы под ней или поверх набираемого;
+   кнопки урока встают над клавиатурой компактной строкой, облачко с текстом — до конца набора */
+html.kb-open .audio-bar, html.kb-open .listen-fab, html.kb-open .plan-return, html.kb-open .float-pill { display: none; }
+html.kb-open .tour-bubble { display: none; }
+html.kb-open .tour-ctrl { padding: 8px 10px; }
+html.kb-open .tour-ctrl .tour-dots { display: none; }
+html.kb-open .tour-btns .btn { padding: 9px 12px; }
+html.kb-open .tour-ctrl.top { top: auto; bottom: calc(var(--kb, 0px) + 8px); }

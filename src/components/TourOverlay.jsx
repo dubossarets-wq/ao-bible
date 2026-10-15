@@ -77,7 +77,9 @@ export default function TourOverlay() {
       const { dt, db, dl, dr, ring, bubble, arrow, ctrl } = els.current;
       if (!dt || !bubble || !ctrl) return (raf = requestAnimationFrame(loop));
       const W = innerWidth;
-      const H = innerHeight;
+      // Видимая часть экрана: при открытой клавиатуре она меньше (iOS не сжимает страницу, клавиатура её перекрывает)
+      const vv = window.visualViewport;
+      const H = vv ? vv.offsetTop + vv.height : innerHeight;
       const el = step.target ? step.target() || document.querySelector('.sheet') : null;
       let goal;
       if (el) {
