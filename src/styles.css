@@ -724,3 +724,5 @@ mark.diff { background: color-mix(in srgb, #f2a65a 38%, transparent); border-rad
 .listen-fab:hover, .listen-fab:focus-visible { opacity: 1; }
 .listen-fab:active { transform: scale(.92); }
 .listen-fab.dim { opacity: .18; }
+/* На странице плана после последнего отрывка не нужен большой отступ — только место под кнопку «Слушать» */
+.plan-view .text-col { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 76px); }
