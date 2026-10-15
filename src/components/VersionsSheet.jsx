@@ -1,7 +1,8 @@
 // «Версии приложения»: список всех опубликованных версий с датой, временем и описанием.
 // Можно обновиться до последней или откатиться на любую прежнюю. Автообновление выключено по умолчанию.
 import React, { useEffect, useState } from 'react';
-import { Loader2, History, CheckCircle2, RotateCcw } from 'lucide-react';
+import { Loader2, History, CheckCircle2, RotateCcw, RefreshCw } from 'lucide-react';
+import { useApp } from '../App.jsx';
 import BottomSheet from './BottomSheet.jsx';
 import { BUILD, fetchVersions, switchToVersion, buildDate, autoUpdateEnabled, setAutoUpdate } from '../core/updates.js';
 import { Switch, Empty, ConfirmButton, Hint } from './ui.jsx';
@@ -14,9 +15,33 @@ export default function VersionsSheet({ onClose }) {
   const [auto, setAuto] = useState(autoUpdateEnabled());
   const [backups] = useState(listBackups);
 
+  const { toast } = useApp();
+  const [checking, setChecking] = useState(false);
+  const load = () => fetchVersions().then(setData, () => setError('Не удалось загрузить список версий. Проверьте подключение к интернету.'));
   useEffect(() => {
-    fetchVersions().then(setData, () => setError('Не удалось загрузить список версий. Проверьте подключение к интернету.'));
+    load();
   }, []);
+
+  // Кнопка «обновить» рядом с крестиком: свежий список версий; есть новее установленной — сразу обновляемся
+  const refresh = async () => {
+    if (checking) return;
+    setChecking(true);
+    setError(null);
+    try {
+      const d = await fetchVersions();
+      setData(d);
+      if (d.latest && d.latest > BUILD) {
+        toast('Есть новая версия — обновляюсь…');
+        setTimeout(() => switchToVersion(d.latest, d.latest), 500);
+        return;
+      }
+      toast('У вас последняя версия');
+    } catch {
+      setError('Не удалось проверить обновления. Проверьте подключение к интернету.');
+    } finally {
+      setChecking(false);
+    }
+  };
 
   const go = (build) => {
     setBusy(build);
@@ -24,7 +49,17 @@ export default function VersionsSheet({ onClose }) {
   };
 
   return (
-    <BottomSheet title="Версии приложения" subtitle={`Сейчас: ${buildDate(BUILD)}`} onClose={onClose} initial={1}>
+    <BottomSheet
+      title="Версии приложения"
+      subtitle={`Сейчас: ${buildDate(BUILD)}`}
+      onClose={onClose}
+      initial={1}
+      headerExtra={
+        <button className="icon-btn" onClick={refresh} aria-label="Проверить обновления" title="Проверить обновления" disabled={checking}>
+          <RefreshCw size={20} className={checking ? 'spin' : ''} />
+        </button>
+      }
+    >
       <Switch
         id="auto-update"
         checked={auto}
