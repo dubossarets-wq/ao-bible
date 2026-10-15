@@ -155,11 +155,22 @@ async function run(label, viewport, isMobile) {
 
   // Поиск
   await page.click('.tb-icon[aria-label="Поиск"]');
+  // Ссылка через пробел — карточка перехода с текстом стиха
+  await page.fill('#search-input', 'Ин 3 6');
+  await page.waitForSelector('.ref-hit', { timeout: 5000 });
+  const hit = await page.textContent('.ref-hit');
+  check(`${label}: поиск понимает «Ин 3 6»`, hit.includes('От Иоанна 3:6') && hit.includes('Рожденное от плоти'), hit.slice(0, 70));
+  // Слова — результаты появляются по мере ввода, без Enter, в порядке книг Библии
   await page.fill('#search-input', 'возлюбил Бог мир');
-  await page.keyboard.press('Enter');
   await page.waitForFunction(() => !document.querySelector('.progress') && document.querySelectorAll('.result-row').length > 0, null, { timeout: 30000 });
   const res = await page.$$eval('.result-row .xref-ref', (e) => e.map((x) => x.textContent));
   check(`${label}: поиск`, res.some((r) => r.includes('Ин. 3:16')), res.join(', '));
+  const live = await page.fill('#search-input', 'Вифлеем').then(() => page.waitForFunction(() => !document.querySelector('.progress') && document.querySelectorAll('.result-row').length > 20, null, { timeout: 30000 }));
+  const order = await page.$$eval('.result-row .xref-ref', (e) => e.map((x) => x.textContent));
+  const firstBooks = [...new Set(order.map((r) => r.split(' ')[0]))];
+  check(`${label}: живой поиск в порядке Библии`, firstBooks[0] === 'Быт.' && firstBooks.indexOf('Мф.') > firstBooks.indexOf('Мих.'), firstBooks.join(' '));
+  await page.fill('#search-input', 'возлюбил Бог мир');
+  await page.waitForFunction(() => !document.querySelector('.progress') && [...document.querySelectorAll('.result-row .xref-ref')].some((e) => e.textContent.includes('Ин. 3:16')), null, { timeout: 30000 });
   await page.screenshot({ path: `${shots}/${label}-6-search.png` });
   await page.click('.result-row');
   await page.waitForTimeout(800);

@@ -1,8 +1,9 @@
 // Небольшие пользовательские данные (настройки, закладки, история) — в localStorage.
 // Все обращения обёрнуты: в приватном режиме хранилище может бросать исключения.
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { P } from './channel.js';
 
-const PREFIX = 'aob.';
+const PREFIX = P; // 'aob.' у основного приложения, 'aobs.' у тестового
 
 export function load(key, fallback) {
   try {

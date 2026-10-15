@@ -510,3 +510,9 @@ button.row-act:hover { background: color-mix(in srgb, var(--accent) 12%, transpa
 .menu-item-2 svg { margin-top: 2px; }
 .menu-2 { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
 .menu-2-sub { font-size: .82rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 230px; }
+/* Поиск: карточка перехода по ссылке («Ин 3 6») */
+.ref-hit { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: var(--radius); background: color-mix(in srgb, var(--accent) 7%, var(--bg)); }
+.ref-hit-title { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--accent); }
+
+/* Метка тестового приложения — чтобы не перепутать с основным */
+.staging-badge { position: fixed; left: calc(env(safe-area-inset-left, 0px) + 8px); bottom: calc(env(safe-area-inset-bottom, 0px) + 8px); z-index: 55; pointer-events: none; padding: 2px 8px; border-radius: 6px; background: #e0533d; color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .12em; opacity: .85; }

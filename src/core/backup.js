@@ -2,13 +2,14 @@
 // Копия делается при первом запуске новой версии (ещё до того, как новый код что-либо прочитает)
 // и перед переходом на другую версию. Хранятся последние 5 копий; восстановить — в «Версиях приложения».
 // Модули в IndexedDB при обновлениях не трогаются и в копию не входят.
+import { P } from './channel.js';
 import { BUILD } from './updates.js';
 
-const K_BACKUPS = 'aob.backups';
-const K_LAST = 'aob.lastBuild';
+const K_BACKUPS = P + 'backups';
+const K_LAST = P + 'lastBuild';
 const MAX = 5;
 // Служебные ключи версий — не копируем и не восстанавливаем, чтобы восстановление не откатывало приложение
-const SERVICE = new Set([K_BACKUPS, K_LAST, 'aob.activeBuild', 'aob.autoUpdate2', 'aob.knownBuilds', 'aob.notifiedBuild', 'aob.lateStarter', 'aob.bootstrapped']);
+const SERVICE = new Set([K_BACKUPS, K_LAST, P + 'activeBuild', P + 'autoUpdate2', P + 'knownBuilds', P + 'notifiedBuild', P + 'lateStarter', P + 'bootstrapped']);
 
 function read() {
   try {
@@ -23,7 +24,7 @@ export function snapshot(reason) {
     const data = {};
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (k && k.startsWith('aob.') && !SERVICE.has(k)) data[k] = localStorage.getItem(k);
+      if (k && k.startsWith(P) && !SERVICE.has(k)) data[k] = localStorage.getItem(k);
     }
     if (!Object.keys(data).length) return;
     let list = [{ at: Date.now(), build: BUILD, reason, data }, ...read()].slice(0, MAX);
@@ -62,7 +63,7 @@ export function listBackups() {
         return 0;
       }
     };
-    return { at: b.at, build: b.build, reason: b.reason, bookmarks: count('aob.bookmarks'), notes: count('aob.notes'), favorites: count('aob.favorites') };
+    return { at: b.at, build: b.build, reason: b.reason, bookmarks: count(P + 'bookmarks'), notes: count(P + 'notes'), favorites: count(P + 'favorites') };
   });
 }
 
@@ -70,7 +71,7 @@ export function restoreBackup(at) {
   const b = read().find((x) => x.at === at);
   if (!b) return false;
   snapshot('перед восстановлением из копии');
-  for (const k of Object.keys(localStorage)) if (k.startsWith('aob.') && !SERVICE.has(k)) localStorage.removeItem(k);
+  for (const k of Object.keys(localStorage)) if (k.startsWith(P) && !SERVICE.has(k)) localStorage.removeItem(k);
   for (const [k, v] of Object.entries(b.data)) localStorage.setItem(k, v);
   location.reload();
   return true;

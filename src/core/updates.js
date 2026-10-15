@@ -4,17 +4,18 @@
 // Приложение запоминает выбранную версию (aob.activeBuild) и само на новую НЕ переходит: при запуске
 // корня с более новой сборкой оно перенаправляет на сохранённую версию. О новой версии сообщает точка на ⋮,
 // обновление и откат — вручную, в «Версиях приложения». Включается и автообновление (aob.autoUpdate).
+import { P } from './channel.js';
 import { useCallback, useEffect, useState } from 'react';
 import { snapshot } from './backup.js';
 
 export const BUILD = typeof __BUILD__ !== 'undefined' ? __BUILD__ : 'dev';
 export const IS_PWA_BUILD = typeof __PWA__ !== 'undefined' && __PWA__;
 
-const K_ACTIVE = 'aob.activeBuild';
+const K_ACTIVE = P + 'activeBuild';
 // Новый ключ: автообновление включено у всех по умолчанию, прежний выбор «выкл» не переносится
-const K_AUTO = 'aob.autoUpdate2';
-const K_KNOWN = 'aob.knownBuilds';
-const K_HOPS = 'aob.versionHops';
+const K_AUTO = P + 'autoUpdate2';
+const K_KNOWN = P + 'knownBuilds';
+const K_HOPS = P + 'versionHops';
 
 const ls = {
   get: (k) => {

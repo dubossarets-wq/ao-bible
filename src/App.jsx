@@ -8,6 +8,7 @@ import SheetHost from './components/SheetHost.jsx';
 import Bootstrap from './components/Bootstrap.jsx';
 import WordPopover from './components/WordPopover.jsx';
 import { useUpdates, applyUpdate } from './core/updates.js';
+import { IS_STAGING } from './core/channel.js';
 import { Toasts } from './components/ui.jsx';
 
 const AppCtx = createContext(null);
@@ -313,6 +314,11 @@ export default function App() {
         <SheetHost />
         <WordPopover />
         <Toasts items={toasts} />
+        {IS_STAGING && (
+          <div className="staging-badge" aria-label="Тестовое приложение">
+            ТЕСТ
+          </div>
+        )}
       </div>
     </AppCtx.Provider>
   );

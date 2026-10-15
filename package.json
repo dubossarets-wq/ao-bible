@@ -8,8 +8,9 @@
     "data": "python -I scripts/build_data.py && python -I scripts/build_dc.py && python -I scripts/build_places.py && python -I scripts/build_extra.py",
     "build": "node scripts/build.mjs",
     "dev": "node scripts/build.mjs --dev",
-    "deploy": "npm run build && node scripts/deploy.mjs",
-    "local-modules": "python -I scripts/build_tigran.py"
+    "deploy": "node scripts/release.mjs prod",
+    "local-modules": "python -I scripts/build_tigran.py",
+    "deploy:staging": "node scripts/release.mjs staging"
   },
   "dependencies": {
     "lucide-react": "0.468.0",

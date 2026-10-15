@@ -1,7 +1,7 @@
 // Минимальная обёртка над IndexedDB. Если хранилище недоступно (приватный режим,
 // запрет сайта, превью), работает в памяти — приложение остаётся рабочим до перезагрузки.
 
-const DB_NAME = 'ao-bible';
+import { DB_NAME } from './channel.js';
 const DB_VERSION = 1;
 export const STORES = {
   modules: 'modules', // метаданные модулей (keyPath: id)

@@ -14,10 +14,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const dist = path.join(root, 'dist/pwa');
+// AOB_CHANNEL=staging — тестовое приложение: своя сборка и свой репозиторий/сайт
+const STAGING = process.env.AOB_CHANNEL === 'staging';
+const dist = path.join(root, STAGING ? 'dist/pwa-staging' : 'dist/pwa');
 const git = (args, cwd = root) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 
-const remote = git(['remote', 'get-url', 'origin']);
+const remote = STAGING ? 'https://github.com/dubossarets-wq/ao-bible-staging.git' : git(['remote', 'get-url', 'origin']);
 const name = git(['config', 'user.name']);
 const email = git(['config', 'user.email']);
 const notes = process.env.DEPLOY_NOTES || git(['log', '-1', '--format=%s']);
@@ -57,4 +59,4 @@ git(['add', '-A'], tmp);
 git(['commit', '-q', '-m', `Версия ${build}: ${notes}`], tmp);
 git(['push', '-q', ...(fresh ? ['-f'] : []), remote, 'gh-pages'], tmp);
 await rm(tmp, { recursive: true, force: true });
-console.log(`Опубликовано: ${build} — ${notes} (всего версий: ${list.versions.length})${list.minBuild === build ? ' · ЭКСТРЕННОЕ' : ''}`);
+console.log(`${STAGING ? 'ТЕСТ' : 'ОСНОВНОЕ'} — опубликовано: ${build} — ${notes} (всего версий: ${list.versions.length})${list.minBuild === build ? ' · ЭКСТРЕННОЕ' : ''}`);

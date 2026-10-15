@@ -5,6 +5,8 @@ import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { search, queryRegex } from '../core/search.js';
 import { parseHumanRef, formatRef, bookMeta } from '../core/books.js';
+import { getVerse } from '../core/modules.js';
+import { plainText } from '../core/verseMarkup.js';
 import { usePersistentState } from '../core/storage.js';
 import { Segmented, Switch, Progress } from './ui.jsx';
 
@@ -44,25 +46,26 @@ export default function SearchPanel({ pane, onClose }) {
     return () => abort.current?.abort();
   }, []);
 
-  const run = async (q = query) => {
-    q = q.trim();
-    if (!q) return;
-    const ref = parseHumanRef(q);
-    if (ref && module.books.some((b) => b.id === ref.book) && /\d/.test(q)) {
-      onClose();
-      navigate(pane, ref);
-      return;
-    }
-    if (q.length < 2) return;
+  // Поиск по мере ввода: короткая пауза после нажатия клавиши, прежний поиск отменяется.
+  // Ссылка («Ин 3 6», «Быт 1:1») вместо поиска показывает карточку перехода с текстом стиха.
+  const [refHit, setRefHit] = useState(null);
+  const stop = () => {
+    abort.current?.abort();
+    setResults(null);
+    setProgress(null);
+    setRan('');
+  };
+
+  const runSearch = async (q) => {
     abort.current?.abort();
     const ctrl = new AbortController();
     abort.current = ctrl;
-    setHistory((h) => [q, ...h.filter((x) => x !== q)].slice(0, 15));
     setResults([]);
     setShown(PAGE);
     setRan(q);
     setProgress({ p: 0, label: 'Поиск…' });
     const acc = [];
+    // Книги перебираются по порядку перевода — результаты идут в порядке Библии
     await search({
       moduleId: module.id,
       query: q,
@@ -71,17 +74,55 @@ export default function SearchPanel({ pane, onClose }) {
       wholeWord,
       signal: ctrl.signal,
       onResult: (batch) => {
+        if (ctrl.signal.aborted) return;
         acc.push(...batch);
         setResults([...acc]);
       },
-      onProgress: (v, b) => setProgress({ p: v, label: `${bookMeta(b.id).name}` }),
+      onProgress: (v, b) => !ctrl.signal.aborted && setProgress({ p: v, label: `${bookMeta(b.id).name}` }),
     });
     if (!ctrl.signal.aborted) setProgress(null);
+  };
+
+  useEffect(() => {
+    const q = query.trim();
+    const t = setTimeout(
+      async () => {
+        const r = /\d/.test(q) ? parseHumanRef(q) : null;
+        if (r && module.books.some((b) => b.id === r.book)) {
+          stop();
+          const v = await getVerse(module.id, r);
+          setRefHit({ ref: r, text: v ? plainText(v) : null });
+          return;
+        }
+        setRefHit(null);
+        if (q.length < 2) return stop();
+        runSearch(q);
+      },
+      q.length < 4 ? 350 : 220
+    );
+    return () => clearTimeout(t);
+  }, [query, scope, wholeWord, module.id]);
+
+  const remember = (q) => q && setHistory((h) => [q, ...h.filter((x) => x !== q)].slice(0, 15));
+
+  const goRef = (r) => {
+    remember(query.trim());
+    onClose();
+    navigate(pane, r);
+  };
+
+  const run = (q = query) => {
+    q = q.trim();
+    if (!q) return;
+    if (refHit && q === query.trim()) return goRef(refHit.ref);
+    if (q !== query) setQuery(q);
+    remember(q);
   };
 
   const re = useMemo(() => (ran ? queryRegex(ran, { wholeWord }) : null), [ran, wholeWord]);
 
   const open = (r) => {
+    remember(ran);
     onClose();
     navigate(pane, r, { highlight: ran });
   };
@@ -133,9 +174,17 @@ export default function SearchPanel({ pane, onClose }) {
       />
       <Switch id="search-whole" checked={wholeWord} onChange={setWholeWord} label="Только целые слова" hint="Иначе «свет» найдёт и «светильник»" />
 
+      {refHit && (
+        <button className="ref-hit" onClick={() => goRef(refHit.ref)}>
+          <span className="ref-hit-title">
+            <CornerDownLeft size={15} /> Перейти: {formatRef(refHit.ref, { full: true })}
+          </span>
+          {refHit.text ? <span className="xref-text">{refHit.text}</span> : <span className="muted">В переводе {module.name} нет такого стиха.</span>}
+        </button>
+      )}
       {progress && <Progress value={progress.p} label={progress.label} />}
 
-      {results === null && history.length > 0 && (
+      {results === null && !refHit && history.length > 0 && (
         <section className="nav-group">
           <h4>Недавние запросы</h4>
           <div className="chips">

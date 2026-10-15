@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#38363a"/>
+  <path d="M256 150c-38-26-92-34-150-26v236c58-8 112 0 150 26z" fill="#f6f5f2"/>
+  <path d="M256 150c38-26 92-34 150-26v236c-58-8-112 0-150 26z" fill="#e9e4d8"/>
+  <path d="M300 128v120l26-18 26 18V122c-18 0-36 2-52 6z" fill="#c9893f"/>
+  <path d="M146 200h76M146 236h76M146 272h76M290 284h76M290 320h60" stroke="#b9b2a3" stroke-width="10" stroke-linecap="round"/>
+<rect x="0" y="378" width="512" height="96" fill="#e0533d"/><text x="256" y="446" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="66" fill="#fff" letter-spacing="6">ТЕСТ</text></svg>

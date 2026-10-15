@@ -10,6 +10,11 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dev = process.argv.includes('--dev');
+// Канал: основное приложение или тестовое (AOB_CHANNEL=staging) — своё имя, иконка, папка и данные
+const STAGING = process.env.AOB_CHANNEL === 'staging';
+const CHANNEL = STAGING ? 'staging' : 'prod';
+const APP_NAME = STAGING ? 'AO Bible Тест' : 'AO Bible';
+const SHORT_NAME = STAGING ? 'AOB Тест' : 'AO Bible';
 const VERSION = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8')).version;
 // Метка сборки: приложение сравнивает её с version.json на сервере, чтобы показать «есть обновление»
 // Метка сборки = дата и время по UTC (20261013-181500); по ней же называется папка версии versions/<метка>/
@@ -27,7 +32,7 @@ async function bundle(pwa) {
     target: ['es2020', 'safari15'],
     jsx: 'automatic',
     loader: { '.json': 'json' },
-    define: { 'process.env.NODE_ENV': '"production"', __PWA__: String(pwa), __BUILD__: JSON.stringify(BUILD) },
+    define: { 'process.env.NODE_ENV': '"production"', __PWA__: String(pwa), __BUILD__: JSON.stringify(BUILD), __CHANNEL__: JSON.stringify(CHANNEL) },
     legalComments: 'none',
   });
   const js = res.outputFiles.find((f) => f.path.endsWith('.js')).text.replace(/<\/script/gi, '<\\/script');
@@ -59,10 +64,12 @@ const isPublished = (src) => {
   return catalogIds.has(rel[0].replace(/\.json(\.gz)?$/, ''));
 };
 const out = path.join(root, 'dist');
-await rm(out, { recursive: true, force: true });
+const PWA_DIR = STAGING ? 'pwa-staging' : 'pwa';
+await rm(path.join(out, PWA_DIR), { recursive: true, force: true });
+await rm(path.join(out, 'artifact'), { recursive: true, force: true });
 
-// --- Artifact ---
-{
+// --- Artifact (Claude) — больше не публикуется; собрать можно явно: AOB_ARTIFACT=1 ---
+if (process.env.AOB_ARTIFACT === '1' && !STAGING) {
   const { js, css } = await bundle(false);
   const dir = path.join(out, 'artifact');
   await mkdir(dir, { recursive: true });
@@ -83,21 +90,21 @@ ${FONTS}
 // --- PWA ---
 {
   const { js, css } = await bundle(true);
-  const dir = path.join(out, 'pwa');
+  const dir = path.join(out, PWA_DIR);
   await mkdir(dir, { recursive: true });
   const html = `<!doctype html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>AO Bible</title>
+<title>${APP_NAME}</title>
 <meta name="description" content="Чтение и изучение Библии: переводы, словари Стронга, параллельные места, две панели.">
 <meta name="theme-color" content="#38363a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <!-- Сплошная чёрная строка состояния: без прозрачности iOS не размывает панель под часами -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="apple-mobile-web-app-title" content="AO Bible">
+<meta name="apple-mobile-web-app-title" content="${SHORT_NAME}">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -114,13 +121,14 @@ ${FONTS}
   await writeFile(path.join(dir, 'index.html'), html);
   await cp(path.join(root, 'public/modules'), path.join(dir, 'modules'), { recursive: true, filter: isPublished });
   await writeFile(path.join(dir, 'modules/catalog.json'), publishedCatalog(false));
-  if (existsSync(path.join(root, 'public/icons'))) await cp(path.join(root, 'public/icons'), path.join(dir, 'icons'), { recursive: true });
+  const iconsSrc = path.join(root, STAGING && existsSync(path.join(root, 'public/icons-staging')) ? 'public/icons-staging' : 'public/icons');
+  if (existsSync(iconsSrc)) await cp(iconsSrc, path.join(dir, 'icons'), { recursive: true });
   await writeFile(
     path.join(dir, 'manifest.webmanifest'),
     JSON.stringify(
       {
-        name: 'AO Bible',
-        short_name: 'AO Bible',
+        name: APP_NAME,
+        short_name: SHORT_NAME,
         description: 'Чтение и изучение Библии: переводы, словари Стронга, параллельные места',
         lang: 'ru',
         start_url: './',
@@ -172,9 +180,12 @@ self.addEventListener('fetch', (e) => {
 });
 `;
   await writeFile(path.join(dir, 'sw.js'), sw);
-  console.log(`pwa: index.html ${(html.length / 1024).toFixed(0)} КБ`);
+  console.log(`${PWA_DIR} (${CHANNEL}): index.html ${(html.length / 1024).toFixed(0)} КБ`);
 }
 
 let total = 0;
-for (const f of await readdir(path.join(out, 'artifact/modules'))) total += (await stat(path.join(out, 'artifact/modules', f))).size;
+for (const f of await readdir(path.join(out, PWA_DIR, 'modules'))) {
+  const st = await stat(path.join(out, PWA_DIR, 'modules', f));
+  if (st.isFile()) total += st.size;
+}
 console.log(`modules: ${(total / 1048576).toFixed(1)} МБ`);

@@ -68,7 +68,8 @@ export function findBookId(text) {
 
 // «Ин 3:16», «1 Кор 13:4-7», «Пс 22» → { book, chapter, verse, verseEnd }
 export function parseHumanRef(input) {
-  const m = input.trim().match(/^((?:[1-4]\s*)?[^\d\s:.,][^\d:,]*?)\.?\s*(\d+)(?:\s*[:.,]\s*(\d+)(?:\s*[-–]\s*(\d+))?)?\s*$/i);
+  // Глава и стих через двоеточие, точку, запятую или просто пробел: «Ин 3:6», «Ин 3 6», «Быт 1.1»
+  const m = input.trim().match(/^((?:[1-4]\s*)?[^\d\s:.,][^\d:,]*?)\.?\s*(\d+)(?:(?:\s*[:.,]\s*|\s+)(\d+)(?:\s*[-–]\s*(\d+))?)?\s*$/i);
   if (!m) return null;
   const book = findBookId(m[1]);
   if (!book) return null;
