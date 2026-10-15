@@ -1,4 +1,4 @@
-const CACHE = 'aob-20261015-045634';
+const CACHE = 'aob-20261015-050425';
 const SHELL = ["./","index.html","manifest.webmanifest","modules/catalog.json","icons/icon.svg","icons/icon-192.png","icons/apple-touch-icon.png"];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
