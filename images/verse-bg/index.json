@@ -1,0 +1,124 @@
+{
+ "images": [
+  {
+   "id": "01",
+   "file": "01.jpg",
+   "thumb": "01-t.jpg",
+   "title": "Рассвет над морем",
+   "author": "Houzgouz76zof8of",
+   "license": "CC0",
+   "source": "https://commons.wikimedia.org/wiki/File:Mediteranian_sea_at_sunrise.jpg",
+   "tone": "dark"
+  },
+  {
+   "id": "02",
+   "file": "02.jpg",
+   "thumb": "02-t.jpg",
+   "title": "Галилейское море на закате",
+   "author": "Levi Meir Clancy",
+   "license": "CC0",
+   "source": "https://commons.wikimedia.org/wiki/File:Sea_of_Galilee_at_sunset_DSF0254.jpg",
+   "tone": "dark"
+  },
+  {
+   "id": "03",
+   "file": "03.jpg",
+   "thumb": "03-t.jpg",
+   "title": "Пустыня у Масады на рассвете",
+   "author": "Levi Meir Clancy",
+   "license": "CC0",
+   "source": "https://commons.wikimedia.org/wiki/File:View_of_the_Negev_from_Masada_at_sunrise_DSF2801.jpg",
+   "tone": "dark"
+  },
+  {
+   "id": "04",
+   "file": "04.jpg",
+   "thumb": "04-t.jpg",
+   "title": "Пустыня Негев",
+   "author": "Wilson44691",
+   "license": "CC0",
+   "source": "https://commons.wikimedia.org/wiki/File:Har_%27Arif_Makhtesh_041014.jpg",
+   "tone": "light"
+  },
+  {
+   "id": "05",
+   "file": "05.jpg",
+   "thumb": "05-t.jpg",
+   "title": "Оливковое дерево",
+   "author": "Smailtn",
+   "license": "CC0",
+   "source": "https://commons.wikimedia.org/wiki/File:Olive_tree_Testour.jpg",
+   "tone": "light"
+  },
+  {
+   "id": "06",
+   "file": "06.jpg",
+   "thumb": "06-t.jpg",
+   "title": "Ячменное поле вечером",
+   "author": "Gerda Arendt",
+   "license": "CC0",
+   "source": "https://commons.wikimedia.org/wiki/File:Barley_field,_Ehrenbach,_cloud.jpg",
+   "tone": "light"
+  },
+  {
+   "id": "07",
+   "file": "07.jpg",
+   "thumb": "07-t.jpg",
+   "title": "Звёздное небо",
+   "author": "NPS/Jacob W. Frank",
+   "license": "Public domain",
+   "source": "https://commons.wikimedia.org/wiki/File:Milky_Way_and_starry_night_sky_(26972689115).jpg",
+   "tone": "dark"
+  },
+  {
+   "id": "08",
+   "file": "08.jpg",
+   "thumb": "08-t.jpg",
+   "title": "Лес в тумане",
+   "author": "Mar Mkrtchyan",
+   "license": "CC0",
+   "source": "https://commons.wikimedia.org/wiki/File:Foggy_forest_hillside.jpg",
+   "tone": "light"
+  },
+  {
+   "id": "09",
+   "file": "09.jpg",
+   "thumb": "09-t.jpg",
+   "title": "Снежные горы над озером",
+   "author": "GlacierNPS",
+   "license": "Public domain",
+   "source": "https://commons.wikimedia.org/wiki/File:Sunrise_on_Lake_McDonald_(5431843828).jpg",
+   "tone": "light"
+  },
+  {
+   "id": "10",
+   "file": "10.jpg",
+   "thumb": "10-t.jpg",
+   "title": "Заря над озером",
+   "author": "Yellowstone National Park",
+   "license": "Public domain",
+   "source": "https://commons.wikimedia.org/wiki/File:Sunrise_on_Yellowstone_Lake_(Flat_Mountain_Arm)_(32985162453).jpg",
+   "tone": "light"
+  },
+  {
+   "id": "11",
+   "file": "11.jpg",
+   "thumb": "11-t.jpg",
+   "title": "Море и облака",
+   "author": "Joselodos",
+   "license": "CC0",
+   "source": "https://commons.wikimedia.org/wiki/File:Sea_sky_and_clouds,_Ibiza,_Spain.jpg",
+   "tone": "light"
+  },
+  {
+   "id": "12",
+   "file": "12.jpg",
+   "thumb": "12-t.jpg",
+   "title": "Облака на закате",
+   "author": "W.carter",
+   "license": "CC0",
+   "source": "https://commons.wikimedia.org/wiki/File:Bank_of_pink_clouds_over_G%C3%A5seberg_2.jpg",
+   "tone": "light"
+  }
+ ]
+}
