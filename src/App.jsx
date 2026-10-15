@@ -8,7 +8,7 @@ import SheetHost from './components/SheetHost.jsx';
 import Bootstrap from './components/Bootstrap.jsx';
 import WordPopover from './components/WordPopover.jsx';
 import AudioBar from './components/AudioBar.jsx';
-import { fitsTranslation } from './core/audio.js';
+import { fitsTranslation, detachFollow } from './core/audio.js';
 import { useUpdates, applyUpdate } from './core/updates.js';
 import { IS_STAGING } from './core/channel.js';
 import { Toasts } from './components/ui.jsx';
@@ -186,8 +186,10 @@ export default function App() {
   // planReturn — куда вернуться: { at } — к отрывку с этим номером.
   const leavePlan = (p, planReturn) => (p.plan ? { plan: null, lastPlan: { ...p.plan, at: null, ref: p.ref, ...planReturn } } : {});
 
-  const navigate = useEvent((i, ref, { highlight = null, flash = true, push = true, planReturn = null } = {}) => {
+  // audio: true — переход за чтецом; любой другой переход в панели, где звучит запись, отцепляет текст от чтеца
+  const navigate = useEvent((i, ref, { highlight = null, flash = true, push = true, planReturn = null, audio = false } = {}) => {
     const clean = { book: ref.book, chapter: ref.chapter, verse: ref.verse || 1 };
+    if (!audio) detachFollow(i);
     updatePane(i, (p) => {
       const history = p.history.slice(0, p.hIndex + 1);
       history[history.length - 1] = p.ref;
@@ -221,6 +223,7 @@ export default function App() {
   });
 
   const go = useEvent((i, dir) => {
+    detachFollow(i);
     updatePane(i, (p) => {
       const h = p.hIndex + dir;
       if (h < 0 || h >= p.history.length) return p;

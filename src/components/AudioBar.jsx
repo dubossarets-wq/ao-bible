@@ -1,7 +1,8 @@
 // Нижняя панель «аудиокниги»: ▶/⏸, предыдущий/следующий стих, текущее место, скорость, таймер сна.
 import React, { useEffect, useState } from 'react';
-import { Play, Pause, SkipBack, SkipForward, X, SlidersHorizontal, Loader2 } from 'lucide-react';
-import { useAudio, pauseAudio, resumeAudio, stopAudio, stepVerse, setRate, setSleep } from '../core/audio.js';
+import { Play, Pause, SkipBack, SkipForward, X, SlidersHorizontal, Loader2, CornerUpLeft } from 'lucide-react';
+import { useAudio, pauseAudio, resumeAudio, stopAudio, stepVerse, setRate, setSleep, resumeFollow } from '../core/audio.js';
+import { useApp } from '../App.jsx';
 import { formatRef } from '../core/books.js';
 import { Segmented } from './ui.jsx';
 
@@ -9,6 +10,7 @@ const RATES = [0.75, 1, 1.25, 1.5];
 
 export default function AudioBar() {
   const a = useAudio();
+  const { navigate } = useApp();
   const [opts, setOpts] = useState(false);
   const [, tick] = useState(0);
 
@@ -53,7 +55,14 @@ export default function AudioBar() {
           <SkipForward size={20} />
         </button>
         <div className="audio-info">
-          <span className="audio-ref">{a.ref ? formatRef(a.ref) : ''}</span>
+          {/* Человек ушёл в другое место — место чтения становится кнопкой «вернуться» */}
+          {a.ref && !a.follow ? (
+            <button className="audio-ref audio-back" onClick={() => (resumeFollow(), navigate(a.pane, a.ref, { flash: false, audio: true }))} title="Вернуться к месту, которое сейчас звучит">
+              <CornerUpLeft size={14} /> {formatRef(a.ref)}
+            </button>
+          ) : (
+            <span className="audio-ref">{a.ref ? formatRef(a.ref) : ''}</span>
+          )}
           {(a.error || left || a.sleep?.kind === 'chapter') && (
             <span className="audio-src">{a.error || (left ? `Сон через ${left} мин` : 'До конца главы')}</span>
           )}

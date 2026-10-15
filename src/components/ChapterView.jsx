@@ -438,10 +438,12 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     const r = audio.ref;
     const target = book?.id === r.book ? el.querySelector(`#v-${r.chapter}-${r.verse}`) : null;
     if (!target) {
+      // Человек ушёл читать другое место — запись играет, но текст за ней не тянем
+      if (!audio.follow) return clear();
       const key = `${r.book}.${r.chapter}`;
       if (audioNav.current !== key) {
         audioNav.current = key;
-        navigate(index, r, { push: false, flash: false });
+        navigate(index, r, { push: false, flash: false, audio: true });
       }
       return;
     }
@@ -451,11 +453,11 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       target.classList.add('speaking');
       speakingEl.current = target;
     }
-    if (Date.now() - userTouchAt.current > 4000) {
+    if (audio.follow && Date.now() - userTouchAt.current > 4000) {
       const top = target.offsetTop - el.scrollTop;
       if (top < 40 || top > el.clientHeight * 0.6) el.scrollTo({ top: target.offsetTop - el.clientHeight * 0.25, behavior: settings.animations ? 'smooth' : 'auto' });
     }
-  }, [audio.active, audio.ref, audio.pane, audio.moduleId, book, range, module.id]);
+  }, [audio.active, audio.ref, audio.pane, audio.moduleId, audio.follow, book, range, module.id]);
 
   const opts = useMemo(
     () => ({

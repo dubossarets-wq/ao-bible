@@ -13,6 +13,7 @@ let state = {
   active: false, playing: false, pane: 0, moduleId: null, ref: null, source: 'tts', rate: load('audioRate', 1),
   sleep: null, // { kind: 'min', until } | { kind: 'chapter', chapter }
   error: null, loading: false,
+  follow: true, // текст идёт за чтецом; человек ушёл читать другое место — false, запись играет дальше
 };
 const subs = new Set();
 const set = (patch) => {
@@ -52,10 +53,18 @@ export function showAudioMessage({ pane, moduleId, ref, error }) {
   set({ active: true, playing: false, pane, moduleId, ref: { ...ref }, source: 'none', error });
 }
 
+// Человек сам перешёл в другое место: текст больше не тянем за чтецом
+export function detachFollow(pane) {
+  if (state.active && state.follow && state.pane === pane) set({ follow: false });
+}
+export function resumeFollow() {
+  if (state.active && !state.follow) set({ follow: true });
+}
+
 export async function startAudio({ pane, moduleId, ref, source }) {
   stopEngines();
   const src = source || state.source || 'tts';
-  set({ active: true, pane, moduleId, ref: { ...ref }, source: src, error: null, playing: true });
+  set({ active: true, pane, moduleId, ref: { ...ref }, source: src, error: null, playing: true, follow: true });
   await playFrom(ref);
 }
 
@@ -81,6 +90,7 @@ export function stopAudio() {
 }
 
 export async function stepVerse(dir) {
+  resumeFollow();
   if (!state.ref) return;
   const next = await neighbourVerse(state.moduleId, state.ref, dir);
   if (!next) return;
