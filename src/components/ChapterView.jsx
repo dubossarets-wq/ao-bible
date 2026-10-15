@@ -10,6 +10,7 @@ import { commentaryIndex } from '../core/commentary.js';
 import { setLivePosition, clearLivePosition } from '../core/livePosition.js';
 import { setDriver, isDriver, onSync, emitSync } from '../core/scrollSync.js';
 import { verseHtml, wordAt, plainText } from '../core/verseMarkup.js';
+import { wasClosedOnWord } from '../core/tapState.js';
 
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -254,6 +255,9 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     press.current = null;
   };
   const onPointerDown = (e) => {
+    // Новое касание — новый жест: после долгого нажатия телефон может не прислать щелчок,
+    // и без этого следующее обычное нажатие (снять выделение) проглатывалось
+    suppressClick.current = false;
     setDriver(index);
     if (e.button > 0) return;
     const vref = verseRefOf(e.target);
@@ -303,6 +307,12 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     if (act === 'verse') return openSheet('verse', index, { ref: vref, text: plainText(text), moduleId: module.id });
     const w = e.target.closest('.w');
     if (w) {
+      // Повторное нажатие на выделенное слово — снимаем выделение, выборку не открываем
+      if (wasClosedOnWord(w) || (w === activeWord.current && !popover && !sheet)) {
+        w.classList.remove('active');
+        activeWord.current = null;
+        return;
+      }
       const token = wordAt(text, +w.dataset.i);
       if (!token) return;
       activeWord.current?.classList.remove('active');
