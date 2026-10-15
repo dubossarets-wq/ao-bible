@@ -19,6 +19,11 @@ import NoteSheet from './NoteSheet.jsx';
 import CollectSheet from './CollectSheet.jsx';
 import VerseGuide from './VerseGuide.jsx';
 import PlansSheet from './PlansSheet.jsx';
+import PrefsSheet from './PrefsSheet.jsx';
+import SermonsSheet from './SermonsSheet.jsx';
+import SermonAddSheet from './SermonAddSheet.jsx';
+import VerseImageSheet from './VerseImageSheet.jsx';
+import HelpSheet from './HelpSheet.jsx';
 
 const KINDS = {
   dict: DictionaryBottomSheet,
@@ -39,6 +44,11 @@ const KINDS = {
   collect: CollectSheet,
   guide: VerseGuide,
   plans: PlansSheet,
+  prefs: PrefsSheet,
+  sermons: SermonsSheet,
+  'sermon-add': SermonAddSheet,
+  'verse-image': VerseImageSheet,
+  help: HelpSheet,
 };
 
 export default function SheetHost() {

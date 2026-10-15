@@ -43,7 +43,7 @@ function usePrefersDark() {
 
 export default function App() {
   const [settings, setSettings] = usePersistentState('settings', DEFAULT_SETTINGS, migrateSettings);
-  const fullSettings = useMemo(() => ({ ...DEFAULT_SETTINGS, ...settings, colors: { ...DEFAULT_SETTINGS.colors, ...settings.colors } }), [settings]);
+  const fullSettings = useMemo(() => ({ ...DEFAULT_SETTINGS, ...settings, colors: { ...DEFAULT_SETTINGS.colors, ...settings.colors }, menu: { ...DEFAULT_SETTINGS.menu, ...settings.menu } }), [settings]);
   const prefersDark = usePrefersDark();
   const themeName = resolveTheme(fullSettings, prefersDark);
   useEffect(() => applySettings(fullSettings, themeName), [fullSettings, themeName]);

@@ -15,6 +15,7 @@ import { readingUnits, unitDone, readingDone } from '../core/plans.js';
 import { usePlan, markUnits } from '../core/planStore.js';
 import { logChapter, minSeconds } from '../core/readLog.js';
 import { Chapter, marksFor, selectedIn, LONG_PRESS_MS } from './ChapterView.jsx';
+import { usePinchFont } from './usePinchFont.js';
 
 const STRIP = 50; // высота закреплённой строки плана с запасом
 
@@ -49,6 +50,7 @@ export default function PlanView({ index, pane, module, selection, onSelect }) {
   const plan = usePlan(uid);
   const readings = plan?.readings[day] || [];
   const scroller = useRef(null);
+  usePinchFont(scroller);
   const [books, setBooks] = useState(null); // { id книги: данные }
   const [cur, setCur] = useState(0); // отрывок, который сейчас на экране
   const activeWord = useRef(null);

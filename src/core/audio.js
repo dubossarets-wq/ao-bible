@@ -6,6 +6,7 @@ import { useSyncExternalStore } from 'react';
 import { getBook, getPayload, listModules, getModule } from './modules.js';
 import { plainText } from './verseMarkup.js';
 import { load, save } from './storage.js';
+import { playableUrl } from './offlineAudio.js';
 
 const LANG = { ru: 'ru-RU', en: 'en-US', uk: 'uk-UA', cu: 'ru-RU', he: 'he-IL', grc: 'el-GR' };
 
@@ -29,6 +30,8 @@ export const audioState = () => state;
 
 let el = null; // HTMLAudioElement
 let timing = null; // { key, verses } текущей главы аудиомодуля
+let loadedUrl = null; // какая запись загружена в <audio> (исходный адрес)
+let blobUrl = null; // скачанная запись играет из памяти через blob:
 let sleepTimer = null;
 let gen = 0; // поколение воспроизведения: старые колбэки синтеза игнорируются
 
@@ -48,9 +51,10 @@ const sameText = (a, b) => new Set(['rst', 'rst-plus', 'rst-dc']).has(a) && new 
 
 // --- Управление --------------------------------------------------------------------------
 
-export function showAudioMessage({ pane, moduleId, ref, error }) {
+// offerTts — предложить ИИ-диктора (синтез речи), если записи нет
+export function showAudioMessage({ pane, moduleId, ref, error, offerTts = false }) {
   stopEngines();
-  set({ active: true, playing: false, pane, moduleId, ref: { ...ref }, source: 'none', error });
+  set({ active: true, playing: false, pane, moduleId, ref: { ...ref }, source: 'none', error, offerTts });
 }
 
 // Человек сам перешёл в другое место: текст больше не тянем за чтецом
@@ -64,7 +68,7 @@ export function resumeFollow() {
 export async function startAudio({ pane, moduleId, ref, source }) {
   stopEngines();
   const src = source || state.source || 'tts';
-  set({ active: true, pane, moduleId, ref: { ...ref }, source: src, error: null, playing: true, follow: true });
+  set({ active: true, pane, moduleId, ref: { ...ref }, source: src, error: null, offerTts: false, playing: true, follow: true });
   await playFrom(ref);
 }
 
@@ -222,7 +226,7 @@ async function playRecorded(ref) {
     const ch = p?.chapters?.[key];
     if (my !== gen) return;
     if (!ch) {
-      set({ loading: false, playing: false, error: 'Для этой главы нет записи в выбранной аудиокниге. Можно переключиться на синтез речи.' });
+      set({ loading: false, playing: false, error: 'Для этой главы нет аудиозаписи.', offerTts: true });
       return;
     }
     timing = { key, module: state.source, verses: ch.verses, url: ch.url, start: ch.start ?? null, end: ch.end ?? null };
@@ -235,7 +239,14 @@ async function playRecorded(ref) {
       el.addEventListener('playing', () => set({ loading: false }));
       el.addEventListener('error', () => set({ loading: false, playing: false, error: 'Запись не загрузилась. Проверьте интернет.' }));
     }
-    if (el.src !== ch.url) el.src = ch.url;
+    if (loadedUrl !== ch.url) {
+      loadedUrl = ch.url;
+      const src = await playableUrl(ch.url); // скачанная книга — из памяти телефона
+      if (my !== gen) return;
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+      blobUrl = src.startsWith('blob:') ? src : null;
+      el.src = src;
+    }
   }
   // С первого стиха — с начала главы (объявление «Глава …»), иначе — с начала стиха
   const start = ref.verse === 1 && timing.start != null ? timing.start : timing.verses.find((x) => x[0] === ref.verse)?.[1] ?? timing.start ?? 0;

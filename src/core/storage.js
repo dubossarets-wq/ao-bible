@@ -32,7 +32,14 @@ export function usePersistentState(key, initial, migrate) {
     return migrate ? migrate(stored) : stored;
   });
   const timer = useRef(null);
+  const first = useRef(true);
   useEffect(() => {
+    // При запуске не перезаписываем то, что только что прочитали: иначе изменение, сделанное за эти
+    // мгновения (другой вкладкой, восстановлением копии), затиралось бы прежним значением
+    if (first.current) {
+      first.current = false;
+      return;
+    }
     clearTimeout(timer.current);
     timer.current = setTimeout(() => save(key, value), 250);
     return () => clearTimeout(timer.current);

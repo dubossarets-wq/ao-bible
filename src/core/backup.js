@@ -9,7 +9,7 @@ const K_BACKUPS = P + 'backups';
 const K_LAST = P + 'lastBuild';
 const MAX = 5;
 // Служебные ключи версий — не копируем и не восстанавливаем, чтобы восстановление не откатывало приложение
-const SERVICE = new Set([K_BACKUPS, K_LAST, P + 'activeBuild', P + 'autoUpdate2', P + 'knownBuilds', P + 'notifiedBuild', P + 'lateStarter', P + 'bootstrapped']);
+export const SERVICE = new Set([K_BACKUPS, K_LAST, P + 'activeBuild', P + 'autoUpdate2', P + 'knownBuilds', P + 'notifiedBuild', P + 'lateStarter', P + 'bootstrapped']);
 
 function read() {
   try {

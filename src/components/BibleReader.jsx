@@ -13,7 +13,7 @@ import PlanView from './PlanView.jsx';
 import { useLivePosition } from '../core/livePosition.js';
 import { usePlan } from '../core/planStore.js';
 import { dayUnits, unitDone, readingDone } from '../core/plans.js';
-import { CornerUpLeft, X, Headphones } from 'lucide-react';
+import { CornerUpLeft, X, Headphones, ScrollText } from 'lucide-react';
 
 // В режиме плана полоса показывает, сколько отрывков дня уже прочитано
 function PlanProgress({ uid, day }) {
@@ -59,21 +59,37 @@ function ListenFab({ index, module, pane }) {
 }
 
 // Выделен стих — снизу кнопка «Слушать» с первого выделенного стиха
+// и «В проповедь»: выбор проповеди или новая, стихи добавляются сами
 function ListenSelected({ index, module, selection, onDone }) {
+  const { openSheet } = useApp();
   const audio = useAudio();
-  const first = sortedRefs(selection)[0];
-  if (!first || (audio.active && audio.playing)) return null;
+  const refs = sortedRefs(selection);
+  const first = refs[0];
+  if (!first) return null;
+  const playing = audio.active && audio.playing;
   return (
     <div className="float-pill listen-pill">
       <button
         className="btn primary"
         onClick={() => {
-          listenFrom(index, module.id, first);
+          openSheet('sermon-add', index, { refs, moduleId: module.id });
           onDone();
         }}
       >
-        <Headphones size={17} /> Слушать с {formatRef(first)}
+        <ScrollText size={17} /> В проповедь
       </button>
+      {!playing && (
+        <button
+          className="btn listen-sel"
+          onClick={() => {
+            listenFrom(index, module.id, first);
+            onDone();
+          }}
+          aria-label={`Слушать с ${formatRef(first)}`}
+        >
+          <Headphones size={17} /> Слушать
+        </button>
+      )}
     </div>
   );
 }

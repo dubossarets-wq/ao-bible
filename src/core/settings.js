@@ -49,7 +49,6 @@ export const DEFAULT_SETTINGS = {
   continuousVerses: false, // стихи сплошным абзацем
   customColors: false,
   colors: { bg: '#f6f5f2', text: '#1d1c1a', accent: '#9a6a2f', panel: '#ffffff' },
-  compactToolbar: false,
   animations: true,
   radius: 12,
   focusMode: false,
@@ -59,6 +58,9 @@ export const DEFAULT_SETTINGS = {
   bookMode: false, // режим «как книга»
   inlineCommentaries: null, // какие комментарии подписывать в тексте: null — все включённые, иначе список id
   primaryModule: 'rst-plus',
+  ttsFallback: false, // ИИ-диктор (синтез речи), когда к главе нет аудиозаписи
+  // Что показывать в меню ⋮ (остальное — в «Настройках»)
+  menu: { help: true, lastBookmark: true, sermons: true, plans: true, listen: true, maps: true, focus: false, book: false, split: true },
 };
 
 // Сохранённые настройки старых версий. v1 по умолчанию следовала теме системы,
@@ -96,7 +98,7 @@ export function applySettings(settings, themeName) {
     '--fs': `${settings.fontSize}px`, '--fw': settings.fontWeight, '--lh': settings.lineHeight,
     '--verse-gap': `${settings.verseSpacing}em`, '--measure': `${settings.textWidth}em`,
     '--align': settings.textAlign, '--chapter-size': `${settings.chapterTitleSize}em`,
-    '--radius': `${settings.radius}px`, '--bar-h': settings.compactToolbar ? '44px' : '54px',
+    '--radius': `${settings.radius}px`, '--bar-h': '54px',
   };
   for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, String(v));
   root.dataset.appTheme = themeName;

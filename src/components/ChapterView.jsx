@@ -15,6 +15,7 @@ import { wasClosedOnWord, isDoubleTap, pulseFavorite } from '../core/tapState.js
 import { logChapter, minSeconds } from '../core/readLog.js';
 import { creditChapter } from '../core/planStore.js';
 import { formatRef } from '../core/books.js';
+import { usePinchFont } from './usePinchFont.js';
 
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -119,6 +120,7 @@ export function selectedIn(selection, bookId, c) {
 export default function ChapterView({ index, pane, module, onScrollDirection, selection, onSelect }) {
   const { settings, openSheet, openPopover, closePopover, popover, reportPosition, navigate, sheet, modules, marks, toast, toggleFavorite } = useApp();
   const scroller = useRef(null);
+  usePinchFont(scroller);
   const [book, setBook] = useState(null); // { id, data, meta }
   const [range, setRange] = useState(null);
   const [counts, setCounts] = useState(null);

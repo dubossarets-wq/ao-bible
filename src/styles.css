@@ -731,8 +731,8 @@ mark.diff { background: color-mix(in srgb, #f2a65a 38%, transparent); border-rad
 .float-pill { position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); transform: translateX(-50%); z-index: 6; display: flex; background: var(--bar); color: var(--bar-text); border-radius: 999px; box-shadow: 0 8px 24px rgba(0,0,0,.25); font-family: var(--font-ui); animation: plan-ret .22s ease-out; max-width: calc(100% - 24px); }
 .float-pill-btn { display: inline-flex; align-items: center; gap: 8px; background: none; border: 0; color: inherit; font: inherit; font-weight: 600; font-size: .95rem; padding: 11px 20px; cursor: pointer; white-space: nowrap; }
 
-/* Двойное нажатие на стих — «в любимые», а не увеличение страницы (щипок по-прежнему работает) */
-.scroller { touch-action: manipulation; }
+/* Текст: двойное касание — «в любимые», а не увеличение; два пальца меняют размер шрифта (usePinchFont) */
+.scroller { touch-action: pan-y; }
 /* Внизу кнопка «Слушать» или «Вернуться к плану» — сообщения поднимаются над ней */
 .app:has(.float-pill, .plan-return) .toasts { bottom: calc(env(safe-area-inset-bottom, 0px) + 74px); }
 
@@ -745,8 +745,9 @@ mark.diff { background: color-mix(in srgb, #f2a65a 38%, transparent); border-rad
 .plan-view .text-col { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 76px); }
 
 /* «Слушать с …» при выделенном стихе — обычная основная кнопка, как «Читать» в планах */
-.listen-pill { background: none; box-shadow: none; border-radius: 0; width: min(360px, calc(100% - 32px)); max-width: none; }
-.listen-pill .btn { width: 100%; justify-content: center; padding: 12px 16px; font-size: 1rem; box-shadow: 0 8px 24px rgba(0,0,0,.22); }
+.listen-pill { background: none; box-shadow: none; border-radius: 0; width: min(420px, calc(100% - 32px)); max-width: none; gap: 8px; }
+.listen-pill .btn { flex: 1; justify-content: center; padding: 12px 14px; font-size: 1rem; box-shadow: 0 8px 24px rgba(0,0,0,.22); }
+.listen-pill .btn.listen-sel { flex: 0 1 auto; background: var(--panel); }
 
 .plan-seg-head { padding-bottom: 8px; }
 
@@ -768,3 +769,110 @@ mark.diff { background: color-mix(in srgb, #f2a65a 38%, transparent); border-rad
 
 /* Двойное касание нигде не увеличивает приложение (увеличение двумя пальцами остаётся) */
 html, body, .app { touch-action: manipulation; }
+
+/* Проигрыватель: предложение ИИ-диктора и скачивание книги */
+.audio-offer { padding: 14px 14px 10px; border-bottom: 1px solid var(--line); font-family: var(--font-ui); }
+.audio-offer p { margin: 0 0 10px; font-size: .92rem; line-height: 1.45; }
+.audio-offer strong { display: block; margin-bottom: 2px; }
+.audio-offer-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.audio-offer-btns .btn.primary { flex: 1; min-width: 200px; }
+.audio-offer small { display: block; margin-top: 8px; color: var(--muted); font-size: .76rem; }
+.audio-offline { display: flex; flex-direction: column; gap: 6px; padding-bottom: 6px; }
+.audio-offline .btn { align-self: flex-start; }
+.audio-dl { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: .88rem; }
+.audio-dl.ok { color: #2f9a5f; }
+.audio-dl .link-btn { font-size: .84rem; }
+
+/* Настройки: крупные понятные строки */
+.pref-list-main { display: flex; flex-direction: column; }
+.pref-row { display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 4px; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--text); text-align: left; font: inherit; cursor: pointer; }
+.pref-row:last-child { border-bottom: 0; }
+.pref-row > svg:first-child { flex: none; width: 38px; height: 38px; padding: 9px; border-radius: 11px; background: color-mix(in srgb, var(--accent) 12%, var(--bg)); color: var(--accent); }
+.pref-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 1.04rem; font-weight: 600; }
+.pref-row-text small { font-size: .84rem; font-weight: 400; color: var(--muted); }
+.pref-chev { flex: none; color: var(--muted); }
+.pref-row:hover { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+.pref-note { margin: 0 0 10px; font-size: .92rem; line-height: 1.5; color: var(--muted); }
+.pref-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.pref-btns .btn { flex: 1; min-width: 180px; padding: 11px 14px; }
+.pref-restore { margin-top: 14px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+.pref-restore p { margin: 0 0 8px; font-size: .92rem; }
+.pref-list { list-style: none; margin: 0; padding: 0; }
+.pref-list li { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.pref-list li span { flex: 1; }
+.pref-list small { display: block; color: var(--muted); font-size: .78rem; }
+
+/* ---------- Проповеди ---------- */
+.sermon-pick { display: flex; flex-direction: column; }
+.sermon-pick-row { display: flex; align-items: center; gap: 12px; padding: 12px 4px; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--text); text-align: left; font: inherit; cursor: pointer; }
+.sermon-pick-row > svg:first-child { flex: none; color: var(--accent); }
+.sermon-pick-row span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-weight: 600; font-size: 1rem; }
+.sermon-pick-row small { font-weight: 400; font-size: .82rem; color: var(--muted); }
+.sermon-pick-add { color: var(--accent); }
+.sermon-pick-row:hover { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+.sermon-new { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.sermon-done { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 6px 0 4px; }
+.sermon-done > svg { color: #2f9a5f; }
+.sermon-done p { margin: 0 0 6px; font-size: 1rem; }
+.sermon-done .pref-btns { width: 100%; }
+.sermon-head { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.sermon-title-input { font: inherit; font-size: 1.35rem; font-weight: 700; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--text); padding: 4px 0 6px; border-radius: 0; }
+.sermon-title-input:focus { outline: none; border-bottom-color: var(--accent); }
+.sermon-date { display: inline-flex; align-items: center; gap: 6px; font-size: .9rem; color: var(--muted); position: relative; align-self: flex-start; }
+.sermon-date input { font: inherit; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); padding: 4px 8px; }
+.sermon-date .muted { font-size: .82rem; }
+.sermon-actions { display: flex; gap: 8px; }
+.sermon-actions .btn { flex: 1; padding: 11px 12px; }
+.sermon-hint { padding: 12px 14px; border-radius: var(--radius); background: color-mix(in srgb, var(--accent) 8%, var(--bg)); font-size: .92rem; line-height: 1.5; margin-bottom: 12px; }
+.sermon-hint p { margin: 0 0 6px; }
+.sermon-hint p:last-child { margin: 0; }
+.sermon-blocks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.sermon-block { border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); padding: 10px 12px 6px; }
+.sermon-block.verse { border-left: 4px solid var(--accent); }
+.sermon-ref { border: 0; background: none; padding: 0; font: inherit; font-weight: 700; color: var(--accent); cursor: pointer; font-size: .95rem; }
+.sermon-verse-text { margin: 4px 0 2px; font-family: var(--font-text); font-size: 1.05rem; line-height: 1.5; }
+.sermon-text-input { width: 100%; resize: none; border: 0; background: none; color: var(--text); font: inherit; font-size: 1rem; line-height: 1.5; padding: 2px 0; min-height: 3em; }
+.sermon-text-input:focus { outline: none; }
+.sermon-block.text:focus-within { border-color: var(--accent); }
+.sermon-block-tools { display: flex; align-items: center; gap: 2px; border-top: 1px dashed var(--line); margin-top: 6px; padding-top: 2px; }
+.sermon-add-after { margin-left: 8px; margin-right: auto; font-size: .86rem; text-decoration: none; }
+.sermon-add { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.sermon-add > .btn { align-self: flex-start; }
+.sermon-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 16px 0 4px; font-size: .82rem; color: var(--muted); }
+.link-btn.danger { color: #c0392b; }
+
+/* «Кафедра» — проповедь крупно, во весь экран */
+.pulpit { position: fixed; inset: 0; z-index: 80; background: var(--bg); color: var(--text); display: flex; flex-direction: column; animation: pop .18s ease-out; }
+.pulpit-bar { display: flex; align-items: center; gap: 6px; padding: calc(env(safe-area-inset-top, 0px) + 6px) 10px 6px; border-bottom: 1px solid var(--line); background: var(--panel); font-family: var(--font-ui); }
+.pulpit-bar > svg { color: var(--muted); }
+.pulpit-title { flex: 1; min-width: 0; text-align: center; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pulpit-body { flex: 1; overflow-y: auto; padding: 24px max(20px, calc((100% - 46em) / 2)) calc(env(safe-area-inset-bottom, 0px) + 40vh); font-family: var(--font-text); line-height: 1.55; }
+.pulpit-body h1 { font-size: 1.5em; margin: 0 0 .2em; line-height: 1.2; }
+.pulpit-date { color: var(--muted); font-size: .7em; margin-bottom: 1.2em; font-family: var(--font-ui); }
+.pulpit-verse { margin: 1.1em 0; padding: .1em 0 .1em .8em; border-left: .18em solid var(--accent); }
+.pulpit-verse cite { display: block; font-style: normal; font-weight: 700; color: var(--accent); font-size: .78em; font-family: var(--font-ui); margin-bottom: .15em; }
+.pulpit-text { margin: 1em 0; white-space: pre-wrap; }
+.pulpit-end { margin-top: 2em; text-align: center; color: var(--muted); font-size: .8em; }
+
+/* Размер шрифта во время жеста двумя пальцами */
+.pinch-badge { position: fixed; left: 50%; top: 42%; transform: translate(-50%, -50%); z-index: 90; padding: 10px 18px; border-radius: 14px; background: color-mix(in srgb, var(--bar) 88%, transparent); color: var(--bar-text); font-family: var(--font-ui); font-size: 1.15rem; font-weight: 700; pointer-events: none; transition: opacity .4s; }
+.pinch-badge.out { opacity: 0; }
+
+/* Картинка со стихом */
+.vimg-preview { display: grid; place-items: center; margin: 0 auto 12px; width: min(100%, 340px); border-radius: var(--radius); overflow: hidden; background: var(--bg); box-shadow: 0 4px 18px rgba(0,0,0,.12); min-height: 200px; }
+.vimg-preview.story { width: min(100%, 250px); }
+.vimg-preview canvas { display: block; width: 100%; height: auto; }
+.vimg-bgs { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 10px; scrollbar-width: none; }
+.vimg-bgs::-webkit-scrollbar { display: none; }
+.vimg-bg { flex: none; width: 52px; height: 64px; border-radius: 10px; border: 2px solid transparent; padding: 0; overflow: hidden; cursor: pointer; background: var(--line); }
+.vimg-bg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.vimg-bg.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--panel) inset; }
+.vimg-size { display: flex; align-items: center; gap: 6px; margin: 10px 0; }
+.vimg-size .field-label { flex: 1; }
+.vimg-credit { margin: 10px 0 0; font-size: .74rem; color: var(--muted); }
+
+/* Инструкция */
+.help-steps { margin: 0; padding: 0; list-style: none; counter-reset: step; display: flex; flex-direction: column; gap: 12px; }
+.help-steps li { counter-increment: step; position: relative; padding-left: 40px; font-size: 1.02rem; line-height: 1.55; }
+.help-steps li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 14%, var(--bg)); color: var(--accent); font-weight: 700; font-size: .9rem; }
+.help-go { width: 100%; margin-top: 20px; padding: 12px 14px; font-size: 1rem; }

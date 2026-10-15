@@ -2,7 +2,7 @@
 // ✓ · ссылка и число стихов · параллельно в другом переводе · любимые · заметка · закладка · копировать · ⋯
 // В «⋯»: сравнить переводы, параллельные места, поделиться.
 import React, { useEffect, useRef, useState } from 'react';
-import { Check, Languages, BookCopy, Heart, Link2, Share2, Copy, NotebookPen, Bookmark, BookmarkCheck, MoreHorizontal, MessageSquareText, Headphones, Highlighter, FolderPlus, Eraser, Compass } from 'lucide-react';
+import { Check, Languages, BookCopy, Heart, Link2, Share2, Copy, NotebookPen, Bookmark, BookmarkCheck, MoreHorizontal, MessageSquareText, Headphones, Highlighter, FolderPlus, Eraser, Compass, ScrollText, Image as ImageIcon } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { getVerse } from '../core/modules.js';
 import { listenFrom } from '../core/listen.js';
@@ -201,12 +201,14 @@ export default function SelectionBar({ index, module, selection, onDone }) {
         {more && (
           <div className="menu" role="menu">
             {moreItem(Compass, 'Всё о стихе', () => openSheet('guide', index, { ref: first, moduleId: module.id }))}
+            {moreItem(ScrollText, 'В проповедь', () => openSheet('sermon-add', index, { refs, moduleId: module.id }))}
             {moreItem(FolderPlus, 'В подборку…', () => openSheet('collect', index, { refs, moduleId: module.id }))}
             {moreItem(Heart, fav ? 'Убрать из любимых' : 'В любимые', toggleFav)}
             {moreItem(BookCopy, 'Сравнить переводы', () => openSheet('compare', index, { refs, moduleId: module.id }))}
             {refs.length === 1 && moreItem(Link2, 'Параллельные места', () => openSheet('xrefs', index, { ref: first }))}
             {moreItem(Headphones, 'Слушать отсюда', () => (listenFrom(index, module.id, first), onDone()))}
             {moreItem(Copy, 'Копировать', copy)}
+            {moreItem(ImageIcon, 'Картинка со стихом', () => openSheet('verse-image', index, { refs, moduleId: module.id }))}
             {moreItem(Share2, 'Поделиться', share)}
           </div>
         )}

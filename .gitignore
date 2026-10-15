@@ -13,3 +13,6 @@ data-src/biblemap/report.txt
 # Скачанное аудио и инструменты выравнивания (агент по аудио)
 data-src/audio/
 .pylib-audio/
+# Исходники фонов «картинки со стихом» — пересобираются scripts/build_verse_bg.py
+data-src/verse-bg-src/
+.pylib-img/

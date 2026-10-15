@@ -186,7 +186,8 @@ async function run(label, viewport, isMobile) {
 
   // Долгое нажатие на стих → панель действий → тот же стих параллельно в другом переводе
   await page.click('.tb-more');
-  await page.click('.menu-item:has-text("Библиотека модулей")');
+  await page.click('.menu-item:has-text("Настройки")');
+  await page.click('.pref-row:has-text("Библиотека модулей")');
   await page.click('.tabs [role=tab]:has-text("Каталог")');
   const rstCard = page.locator('.mod-row').filter({ has: page.locator('.mod-name', { hasText: /^RST$/ }) });
   await page.screenshot({ path: `${shots}/${label}-7a-library.png` });
@@ -241,7 +242,9 @@ async function run(label, viewport, isMobile) {
   await page.click('.pane-slot.first .tb-more');
   const upd = await page.textContent('.menu .menu-item:has-text("Обновить приложение")');
   check(`${label}: есть обновление — точка и пункт меню`, upd.includes('Обновить приложение') && upd.includes('новая версия'), upd);
-  await page.click('.menu-item:has-text("Версии приложения")');
+  await page.click('.menu-item:has-text("Настройки")');
+  await page.click('.pref-row:has-text("Обновления")');
+  await page.click('.pref-row:has-text("Версии приложения")');
   await page.waitForSelector('.version', { timeout: 10000 });
   const vers = await page.$$eval('ul.versions:not(.backups) .version', (els) => els.map((e) => e.textContent.replace(/\s+/g, ' ').trim()));
   check(`${label}: список версий с датами`, vers.length === 3 && vers[0].includes('Тестовая новая версия') && vers[0].includes('последняя') && vers[1].includes('установлена') && vers[2].includes('Откатиться'), vers.map((v) => v.slice(0, 60)).join(' | '));
@@ -261,7 +264,8 @@ async function run(label, viewport, isMobile) {
 
   // Неканонические книги: модуль из каталога, переход к Товиту, звёздочка в навигаторе
   await page.click('.pane-slot.first .tb-more');
-  await page.click('.menu-item:has-text("Библиотека модулей")');
+  await page.click('.menu-item:has-text("Настройки")');
+  await page.click('.pref-row:has-text("Библиотека модулей")');
   await page.click('.tabs [role=tab]:has-text("Каталог")');
   const dcCard = page.locator('.mod-row').filter({ has: page.locator('.mod-name', { hasText: /^RST НК$/ }) });
   await dcCard.locator('.row-chev').click();
@@ -288,7 +292,8 @@ async function run(label, viewport, isMobile) {
   const local = path.join(root, 'local-modules/rst-bibles-org-uk.json.gz');
   if (await readFile(local).then(() => true, () => false)) {
     await page.click('.pane-slot.first .tb-more');
-    await page.click('.menu-item:has-text("Библиотека модулей")');
+    await page.click('.menu-item:has-text("Настройки")');
+  await page.click('.pref-row:has-text("Библиотека модулей")');
     await page.click('.tabs [role=tab]:has-text("Импорт")');
     await page.setInputFiles('#import-file', local);
     await page.locator('.mod-card button:has-text("Установить")').click({ timeout: 60000 });
@@ -322,7 +327,8 @@ async function run(label, viewport, isMobile) {
   const cmFile = path.join(shots, 'test-commentary.json');
   await writeFile(cmFile, JSON.stringify({ format: 'aob-module', formatVersion: 1, type: 'commentary', id: 'test-comm', name: 'Тест-к', title: 'Тестовый комментарий', license: 'тест', entries: { 'Josh.13.33': { title: 'О левитах', text: 'Удел левитов — Сам Господь.' } } }));
   await page.click('.pane-slot.first .tb-more');
-  await page.click('.menu-item:has-text("Библиотека модулей")');
+  await page.click('.menu-item:has-text("Настройки")');
+  await page.click('.pref-row:has-text("Библиотека модулей")');
   await page.click('.tabs [role=tab]:has-text("Импорт")');
   await page.setInputFiles('#import-file', cmFile);
   await page.locator('.mod-card button:has-text("Установить")').last().click({ timeout: 30000 });
@@ -461,7 +467,9 @@ async function run(label, viewport, isMobile) {
   await page.reload();
   await page.waitForSelector('.verse', { timeout: 30000 });
   await page.click('.pane-slot.first .tb-more');
-  await page.click('.menu-item:has-text("Версии приложения")');
+  await page.click('.menu-item:has-text("Настройки")');
+  await page.click('.pref-row:has-text("Обновления")');
+  await page.click('.pref-row:has-text("Версии приложения")');
   await page.locator('.version button:has-text("Восстановить эту копию")').first().click();
   await page.locator('.version button:has-text("Восстановить")').first().click();
   await page.waitForLoadState('load');

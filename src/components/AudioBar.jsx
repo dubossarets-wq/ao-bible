@@ -1,16 +1,62 @@
-// Нижняя панель «аудиокниги»: ▶/⏸, предыдущий/следующий стих, текущее место, скорость, таймер сна.
+// Нижняя панель «аудиокниги»: ▶/⏸, предыдущий/следующий стих, текущее место, скорость, таймер сна,
+// скачивание книги для прослушивания без интернета. Нет записи — предложение включить ИИ-диктора.
 import React, { useEffect, useState } from 'react';
-import { Play, Pause, SkipBack, SkipForward, X, SlidersHorizontal, Loader2, CornerUpLeft } from 'lucide-react';
-import { useAudio, pauseAudio, resumeAudio, stopAudio, stepVerse, setRate, setSleep, resumeFollow } from '../core/audio.js';
+import { Play, Pause, SkipBack, SkipForward, X, SlidersHorizontal, Loader2, CornerUpLeft, Download, Check, Sparkles } from 'lucide-react';
+import { useAudio, pauseAudio, resumeAudio, stopAudio, stepVerse, setRate, setSleep, resumeFollow, startAudio } from '../core/audio.js';
+import { downloadBook, isBookOffline, removeBook } from '../core/offlineAudio.js';
 import { useApp } from '../App.jsx';
-import { formatRef } from '../core/books.js';
+import { formatRef, bookMeta } from '../core/books.js';
 import { Segmented } from './ui.jsx';
 
 const RATES = [0.75, 1, 1.25, 1.5];
+const mb = (b) => `${(b / 1048576).toFixed(b < 10485760 ? 1 : 0)} МБ`;
+
+// Скачать звучащую книгу, чтобы слушать без интернета
+function OfflineBook({ audioId, book }) {
+  const [offline, setOffline] = useState(() => isBookOffline(audioId, book));
+  const [prog, setProg] = useState(null); // { done, total, bytes }
+  const [err, setErr] = useState(null);
+  useEffect(() => setOffline(isBookOffline(audioId, book)), [audioId, book]);
+  const name = bookMeta(book).name;
+  const start = async () => {
+    setErr(null);
+    setProg({ done: 0, total: 0, bytes: 0 });
+    try {
+      await downloadBook(audioId, book, { onProgress: (done, total, bytes) => setProg({ done, total, bytes }) });
+      setOffline(true);
+    } catch (e) {
+      setErr(e.message);
+    } finally {
+      setProg(null);
+    }
+  };
+  return (
+    <div className="audio-offline">
+      <span className="field-label">Без интернета</span>
+      {prog ? (
+        <div className="audio-dl">
+          <Loader2 size={16} className="spin" /> Скачиваю «{name}»: {prog.done} из {prog.total || '…'} · {mb(prog.bytes)}
+        </div>
+      ) : offline ? (
+        <div className="audio-dl ok">
+          <Check size={16} /> «{name}» есть в телефоне — слушается без интернета
+          <button className="link-btn" onClick={() => removeBook(audioId, book).then(() => setOffline(false))}>
+            удалить
+          </button>
+        </div>
+      ) : (
+        <button className="btn" onClick={start}>
+          <Download size={16} /> Скачать «{name}»
+        </button>
+      )}
+      {err && <p className="error-text small">{err}</p>}
+    </div>
+  );
+}
 
 export default function AudioBar() {
   const a = useAudio();
-  const { navigate } = useApp();
+  const { navigate, setSettings } = useApp();
   const [opts, setOpts] = useState(false);
   const [, tick] = useState(0);
 
@@ -26,6 +72,29 @@ export default function AudioBar() {
 
   return (
     <div className="audio-bar" role="region" aria-label="Аудиокнига">
+      {/* Записи нет — предлагаем ИИ-диктора */}
+      {a.offerTts && !a.playing && (
+        <div className="audio-offer">
+          <p>
+            <strong>{a.error || 'Для этой главы нет аудиозаписи.'}</strong> Включить ИИ-диктора? Он прочитает текст синтезированным голосом — не так живо, как чтец.
+          </p>
+          <div className="audio-offer-btns">
+            <button
+              className="btn primary"
+              onClick={() => {
+                setSettings({ ttsFallback: true });
+                startAudio({ pane: a.pane, moduleId: a.moduleId, ref: a.ref, source: 'tts' });
+              }}
+            >
+              <Sparkles size={16} /> Включить ИИ-диктора
+            </button>
+            <button className="btn" onClick={stopAudio}>
+              Не нужно
+            </button>
+          </div>
+          <small>Выключить можно в «Настройках», раздел «Аудио».</small>
+        </div>
+      )}
       {opts && (
         <div className="audio-opts">
           <Segmented id="audio-rate" label="Скорость" value={a.rate} onChange={setRate} options={RATES.map((r) => [r, `${r}×`])} />
@@ -42,6 +111,7 @@ export default function AudioBar() {
               ['chapter', 'Конец главы'],
             ]}
           />
+          {a.ref && a.source !== 'tts' && a.source !== 'none' && <OfflineBook audioId={a.source} book={a.ref.book} />}
         </div>
       )}
       <div className="audio-main">
@@ -63,8 +133,10 @@ export default function AudioBar() {
           ) : (
             <span className="audio-ref">{a.ref ? formatRef(a.ref) : ''}</span>
           )}
-          {(a.error || left || a.sleep?.kind === 'chapter') && (
-            <span className="audio-src">{a.error || (left ? `Сон через ${left} мин` : 'До конца главы')}</span>
+          {((a.error && !a.offerTts) || left || a.sleep?.kind === 'chapter' || a.source === 'tts') && (
+            <span className="audio-src">
+              {a.error && !a.offerTts ? a.error : [a.source === 'tts' && 'ИИ-диктор', left ? `сон через ${left} мин` : a.sleep?.kind === 'chapter' && 'до конца главы'].filter(Boolean).join(' · ')}
+            </span>
           )}
         </div>
         <button className={`audio-btn ${opts ? 'on' : ''}`} onClick={() => setOpts((v) => !v)} aria-label="Настройки чтения вслух" aria-expanded={opts}>

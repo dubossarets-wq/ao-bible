@@ -1,12 +1,12 @@
 // Верхняя панель по образцу мобильного приложения: перевод · разделение · ссылка · поиск · назад · вперёд · меню.
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, X, MoreVertical, ChevronDown, ArrowLeft, ArrowRight, Library, Palette, Bookmark, BookmarkCheck, Heart, Info, Eye, EyeOff, Columns2, Rows2 } from 'lucide-react';
+import { Search, X, MoreVertical, ChevronDown, ArrowLeft, ArrowRight, Palette, Bookmark, BookmarkCheck, Heart, Eye, EyeOff, Columns2, Rows2, ScrollText, Settings as SettingsIcon, BookOpenCheck } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { bookMeta } from '../core/books.js';
 import { getVerse } from '../core/modules.js';
 import { listenFrom } from '../core/listen.js';
 import { plainText } from '../core/verseMarkup.js';
-import { RefreshCw, History, Map as MapIcon, PlayCircle, Link2, Headphones, BookOpenText, CalendarCheck } from 'lucide-react';
+import { RefreshCw, Map as MapIcon, PlayCircle, Link2, Headphones, BookOpenText, CalendarCheck } from 'lucide-react';
 import { IS_PWA_BUILD, applyUpdate } from '../core/updates.js';
 import { useLivePosition } from '../core/livePosition.js';
 
@@ -34,7 +34,8 @@ function HistoryArrow({ dir }) {
 
 export default function ReaderToolbar({ index, pane, module }) {
   const app = useApp();
-  const { openSheet, go, panes, openSplit, closeSplit, settings, setSettings, isBookmarked, toggleBookmark, updates, toast, modules, bookmarks, navigate } = app;
+  const { openSheet, go, panes, openSplit, closeSplit, settings, setSettings, isBookmarked, toggleBookmark, updates, modules, bookmarks, navigate } = app;
+  const m = settings.menu;
   const [menu, setMenu] = useState(false);
   const menuRef = useRef(null);
   const split = !!panes[1];
@@ -116,7 +117,7 @@ export default function ReaderToolbar({ index, pane, module }) {
               toggleBookmark(ref, v ? plainText(v).slice(0, 160) : '');
             })}
             {/* Самая новая закладка — первая в списке */}
-            {bookmarks.length > 0 && (
+            {m.lastBookmark && bookmarks.length > 0 && (
               <button
                 role="menuitem"
                 className="menu-item menu-item-2"
@@ -136,43 +137,34 @@ export default function ReaderToolbar({ index, pane, module }) {
               </button>
             )}
             {item(Heart, 'Закладки, заметки, любимые стихи', () => openSheet('bookmarks', index))}
-            {item(CalendarCheck, 'Планы чтения', () => openSheet('plans', index))}
-            {item(Headphones, 'Слушать с этого места', () => listenFrom(index, module.id, ref))}
-            <div className="menu-sep" />
-            {item(Library, 'Библиотека модулей', () => openSheet('library', index))}
-            {modules.some((m) => m.type === 'maps') && item(MapIcon, 'Карты', () => openSheet('maps', index))}
-            {item(Palette, 'Оформление', () => openSheet('settings', index))}
-            {item(BookOpenText, 'Как книга', () => setSettings({ bookMode: !settings.bookMode }), settings.bookMode ? 'вкл' : 'выкл')}
-            {item(settings.focusMode ? EyeOff : Eye, 'Режим чтения', () => setSettings({ focusMode: !settings.focusMode }), settings.focusMode ? 'вкл' : 'выкл')}
-            {split &&
+            {m.sermons && item(ScrollText, 'Проповеди', () => openSheet('sermons', index))}
+            {m.plans && item(CalendarCheck, 'Планы чтения', () => openSheet('plans', index))}
+            {m.listen && item(Headphones, 'Слушать с этого места', () => listenFrom(index, module.id, ref))}
+            {m.maps && modules.some((x) => x.type === 'maps') && item(MapIcon, 'Карты', () => openSheet('maps', index))}
+            {/* Переключатели, которые человек сам вынес в меню (Настройки → «Меню ⋮») */}
+            {(m.focus || m.book || (m.split && split)) && <div className="menu-sep" />}
+            {m.focus && item(settings.focusMode ? EyeOff : Eye, 'Режим чтения', () => setSettings({ focusMode: !settings.focusMode }), settings.focusMode ? 'вкл' : 'выкл')}
+            {m.book && item(BookOpenText, 'Как книга', () => setSettings({ bookMode: !settings.bookMode, continuousVerses: false }), settings.bookMode ? 'вкл' : 'выкл')}
+            {m.split &&
+              split &&
               panes[1]?.kind !== 'map' &&
               item(Link2, 'Синхронная прокрутка', () => setSettings({ syncScroll: !settings.syncScroll }), settings.syncScroll ? 'вкл' : 'выкл')}
-            {split &&
+            {m.split &&
+              split &&
               item(settings.splitLayout === 'rows' ? Columns2 : Rows2, settings.splitLayout === 'rows' ? 'Панели рядом' : 'Панели друг над другом', () =>
                 setSettings({ splitLayout: settings.splitLayout === 'rows' ? 'columns' : 'rows' })
               )}
             <div className="menu-sep" />
-            {IS_PWA_BUILD && (
-              <>
-                <button
-                  role="menuitem"
-                  className={`menu-item ${updates.available ? 'update-item' : ''}`}
-                  onClick={async () => {
-                    if (updates.available) return applyUpdate();
-                    const found = await updates.check();
-                    if (found) return;
-                    setMenu(false);
-                    toast(updates.error ? `Не удалось проверить: ${updates.error}` : 'У вас последняя версия');
-                  }}
-                >
-                  <RefreshCw size={18} className={updates.checking ? 'spin' : ''} />
-                  <span>{updates.available ? 'Обновить приложение' : 'Проверить обновления'}</span>
-                  {updates.available && <span className="menu-extra badge-new">новая версия</span>}
-                </button>
-                {item(History, 'Версии приложения', () => openSheet('versions', index))}
-              </>
+            {IS_PWA_BUILD && updates.available && (
+              <button role="menuitem" className="menu-item update-item" onClick={() => applyUpdate()}>
+                <RefreshCw size={18} />
+                <span>Обновить приложение</span>
+                <span className="menu-extra badge-new">новая версия</span>
+              </button>
             )}
-            {item(Info, 'О приложении и источниках', () => openSheet('about', index))}
+            {item(Palette, 'Оформление', () => openSheet('settings', index))}
+            {item(SettingsIcon, 'Настройки', () => openSheet('prefs', index))}
+            {m.help && item(BookOpenCheck, 'Инструкция', () => openSheet('help', index))}
           </div>
         )}
       </div>

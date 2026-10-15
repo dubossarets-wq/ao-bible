@@ -124,6 +124,8 @@ ${FONTS}
   await writeFile(path.join(dir, 'modules/catalog.json'), publishedCatalog(false));
   // Планы чтения (готовые) — рядом с приложением
   if (existsSync(path.join(root, 'public/plans'))) await cp(path.join(root, 'public/plans'), path.join(dir, 'plans'), { recursive: true });
+  // Фоны для картинок со стихом (фото в общественном достоянии / CC0)
+  if (existsSync(path.join(root, 'public/images'))) await cp(path.join(root, 'public/images'), path.join(dir, 'images'), { recursive: true });
   const iconsSrc = path.join(root, STAGING && existsSync(path.join(root, 'public/icons-staging')) ? 'public/icons-staging' : 'public/icons');
   if (existsSync(iconsSrc)) await cp(iconsSrc, path.join(dir, 'icons'), { recursive: true });
   await writeFile(

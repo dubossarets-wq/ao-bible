@@ -19,6 +19,9 @@ function ColorField({ id, label, value, onChange }) {
   );
 }
 
+// Вид текста — один выбор вместо трёх переключателей (хранится в прежних полях, чтобы ничего не сбилось)
+export const textView = (s) => (s.bookMode ? 'book' : s.continuousVerses ? 'flow' : 'verses');
+
 export default function AppearanceSettings({ onClose }) {
   const { settings: s, setSettings: set, resetSettings, themeName, modules, hlLabels, setHlLabels } = useApp();
   const commentaries = modules.filter((m) => m.type === 'commentary' && m.enabled !== false);
@@ -59,6 +62,22 @@ export default function AppearanceSettings({ onClose }) {
       </section>
 
       <section className="settings-group">
+        <h4>
+          Вид текста <Hint>«По стихам» — каждый стих с новой строки. «Сплошной» — стихи подряд, с номерами. «Как книга» — абзацами по разделам, без номеров и кнопок, для долгого чтения.</Hint>
+        </h4>
+        <Segmented
+          id="set-view"
+          value={textView(s)}
+          onChange={(v) => set({ bookMode: v === 'book', continuousVerses: v === 'flow' })}
+          options={[
+            ['verses', 'По стихам'],
+            ['flow', 'Сплошной'],
+            ['book', 'Как книга'],
+          ]}
+        />
+      </section>
+
+      <section className="settings-group">
         <h4>Текст</h4>
         <label className="field" htmlFor="set-font">
           <span className="field-label">Шрифт</span>
@@ -77,7 +96,7 @@ export default function AppearanceSettings({ onClose }) {
             ))}
           </select>
         </label>
-        <Slider id="set-size" label="Размер шрифта" value={s.fontSize} min={13} max={32} step={1} onChange={(fontSize) => set({ fontSize })} format={(v) => `${v} px`} />
+        <Slider id="set-size" label="Размер шрифта" value={s.fontSize} min={13} max={40} step={1} onChange={(fontSize) => set({ fontSize })} format={(v) => `${v} px`} />
         <Slider id="set-weight" label="Толщина" value={s.fontWeight} min={300} max={700} step={100} onChange={(fontWeight) => set({ fontWeight })} format={(v) => ({ 300: 'тонкий', 400: 'обычный', 500: 'средний', 600: 'полужирный', 700: 'жирный' })[v]} />
         <Slider id="set-lh" label="Межстрочный интервал" value={s.lineHeight} min={1.1} max={2.2} step={0.05} onChange={(lineHeight) => set({ lineHeight })} format={(v) => v.toFixed(2)} />
         <Slider id="set-vgap" label="Расстояние между стихами" value={s.verseSpacing} min={0} max={1.6} step={0.05} onChange={(verseSpacing) => set({ verseSpacing })} format={(v) => `${v.toFixed(2)} em`} />
@@ -94,8 +113,6 @@ export default function AppearanceSettings({ onClose }) {
           ]}
         />
         <Switch id="set-vn" checked={s.showVerseNumbers} onChange={(showVerseNumbers) => set({ showVerseNumbers })} label="Номера стихов" />
-        <Switch id="set-book" checked={s.bookMode} onChange={(bookMode) => set({ bookMode })} label="Как книга" hint="Сплошной текст абзацами по разделам, без номеров стихов, кнопок и пометок — для долгого чтения" />
-        <Switch id="set-cont" checked={s.continuousVerses} onChange={(continuousVerses) => set({ continuousVerses })} label="Стихи сплошным текстом" hint="Без перевода строки после каждого стиха" />
         <Switch id="set-head" checked={s.showHeadings} onChange={(showHeadings) => set({ showHeadings })} label="Заголовки разделов" />
         <Switch id="set-strong" checked={s.showStrongs} onChange={(showStrongs) => set({ showStrongs })} label="Номера Стронга в тексте" hint="Только для размеченных переводов, например RST+" />
       </section>
@@ -103,7 +120,6 @@ export default function AppearanceSettings({ onClose }) {
       <section className="settings-group">
         <h4>Интерфейс</h4>
         <Switch id="set-xr" checked={s.showXrefButtons} onChange={(showXrefButtons) => set({ showXrefButtons })} label="Кнопки параллельных мест" />
-        <Switch id="set-compact" checked={s.compactToolbar} onChange={(compactToolbar) => set({ compactToolbar })} label="Компактная верхняя панель" />
         <Switch id="set-focus" checked={s.focusMode} onChange={(focusMode) => set({ focusMode })} label="Режим чтения" hint="Прячет кнопки в тексте, панель скрывается при прокрутке вниз" />
         <Switch id="set-anim" checked={s.animations} onChange={(animations) => set({ animations })} label="Анимации" />
         <Slider id="set-radius" label="Закругления" value={s.radius} min={0} max={24} step={1} onChange={(radius) => set({ radius })} format={(v) => `${v} px`} />
