@@ -45,6 +45,11 @@ const sameText = (a, b) => new Set(['rst', 'rst-plus', 'rst-dc']).has(a) && new 
 
 // --- Управление --------------------------------------------------------------------------
 
+export function showAudioMessage({ pane, moduleId, ref, error }) {
+  stopEngines();
+  set({ active: true, playing: false, pane, moduleId, ref: { ...ref }, source: 'none', error });
+}
+
 export async function startAudio({ pane, moduleId, ref, source }) {
   stopEngines();
   const src = source || state.source || 'tts';
@@ -166,6 +171,7 @@ async function playFrom(ref) {
   }
   set({ ref: { ...ref } });
   if (state.source === 'tts') return speakVerse(ref);
+  if (state.source === 'none') return set({ playing: false });
   return playRecorded(ref);
 }
 
@@ -207,7 +213,7 @@ async function playRecorded(ref) {
       set({ loading: false, playing: false, error: 'Для этой главы нет записи в выбранной аудиокниге. Можно переключиться на синтез речи.' });
       return;
     }
-    timing = { key, module: state.source, verses: ch.verses, url: ch.url };
+    timing = { key, module: state.source, verses: ch.verses, url: ch.url, start: ch.start ?? null, end: ch.end ?? null };
     if (!el) {
       el = new Audio();
       el.preload = 'auto';
@@ -219,7 +225,8 @@ async function playRecorded(ref) {
     }
     if (el.src !== ch.url) el.src = ch.url;
   }
-  const start = timing.verses.find((x) => x[0] === ref.verse)?.[1] ?? 0;
+  // С первого стиха — с начала главы (объявление «Глава …»), иначе — с начала стиха
+  const start = ref.verse === 1 && timing.start != null ? timing.start : timing.verses.find((x) => x[0] === ref.verse)?.[1] ?? timing.start ?? 0;
   el.playbackRate = state.rate;
   try {
     el.currentTime = start;
@@ -235,6 +242,8 @@ async function playRecorded(ref) {
 
 function onTime() {
   if (!timing || !el || state.source === 'tts') return;
+  // Глава кончилась внутри общего файла — переходим к следующей
+  if (timing.end != null && el.currentTime >= timing.end - 0.05) return chapterEnded();
   const t = el.currentTime + 0.05;
   let cur = null;
   for (const [v, s] of timing.verses) {
@@ -247,7 +256,37 @@ function onTime() {
   }
 }
 
+let advancing = false;
+async function chapterEnded() {
+  if (advancing || !state.playing || !state.ref) return;
+  advancing = true;
+  try {
+    const [b, c] = timing.key.split('.');
+    const book = await getBook(state.moduleId, b);
+    const lastVerse = (book?.chapters?.[+c - 1] || []).length;
+    const next = await neighbourVerse(state.moduleId, { book: b, chapter: +c, verse: lastVerse }, 1);
+    if (!next) return set({ playing: false });
+    if (state.sleep?.kind === 'chapter') {
+      el.pause();
+      return set({ playing: false, sleep: null });
+    }
+    // Следующая глава в том же файле и сразу за этой — просто продолжаем, без перемотки
+    const p = await getPayload(state.source);
+    const ch = p?.chapters?.[`${next.book}.${next.chapter}`];
+    if (ch && ch.url === timing.url && ch.start != null && Math.abs(ch.start - (timing.end ?? -9)) < 1) {
+      timing = { key: `${next.book}.${next.chapter}`, module: state.source, verses: ch.verses, url: ch.url, start: ch.start, end: ch.end ?? null };
+      set({ ref: next });
+      return;
+    }
+    el.pause();
+    await playFrom(next);
+  } finally {
+    advancing = false;
+  }
+}
+
 async function onEnded() {
+  if (timing?.end != null) return chapterEnded();
   if (!state.playing || !state.ref) return;
   const book = await getBook(state.moduleId, state.ref.book);
   const lastVerse = (book?.chapters?.[state.ref.chapter - 1] || []).length;

@@ -155,6 +155,10 @@ export default function SelectionBar({ index, module, selection, onDone }) {
       <button className="tb tb-icon" onClick={parallel} aria-label="Открыть параллельно в другом переводе" title="Параллельно в другом переводе">
         <Languages size={22} />
       </button>
+      {/* Комментарии — рядом с переводом */}
+      <button className="tb tb-icon" onClick={() => (openSheet('commentary', index, { ref: first }), onDone())} aria-label="Комментарии" title="Комментарии">
+        <MessageSquareText size={21} />
+      </button>
       <div className="hl-wrap" ref={paletteRef}>
         <button className={`tb tb-icon ${highlights[`${first.book}.${first.chapter}.${first.verse}`] ? 'on' : ''}`} onClick={() => setPalette((v) => !v)} aria-label="Выделить цветом" aria-expanded={palette} title="Выделить цветом">
           <Highlighter size={21} />
@@ -189,9 +193,6 @@ export default function SelectionBar({ index, module, selection, onDone }) {
       </button>
       <button className={`tb tb-icon ${bm ? 'on' : ''}`} onClick={toggleBm} aria-label={bm ? 'Убрать закладку' : 'Закладка: продолжить отсюда'} title={bm ? 'Убрать закладку' : 'Закладка «продолжить отсюда»'}>
         {bm ? <BookmarkCheck size={21} /> : <Bookmark size={21} />}
-      </button>
-      <button className="tb tb-icon" onClick={() => (openSheet('commentary', index, { ref: first }), onDone())} aria-label="Комментарии" title="Комментарии">
-        <MessageSquareText size={21} />
       </button>
       <div className="tb-menu-wrap" ref={moreRef}>
         <button className="tb tb-icon tb-more" onClick={() => setMore((m) => !m)} aria-haspopup="menu" aria-expanded={more} aria-label="Ещё действия">

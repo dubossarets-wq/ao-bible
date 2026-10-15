@@ -47,7 +47,10 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "public" / "modules"
 DATA = ROOT / "data-src" / "audio"
 PYLIB = ROOT / ".pylib-audio"
-ALIGN_VERSION = 3  # меняется — кеш выравнивания пересчитывается
+ALIGN_VERSION = 12  # меняется — кеш выравнивания пересчитывается
+RST_ALIGN_VERSION = 10  # то же для Hexapla (последние правки касались только пропусков в записи — у синтеза их нет)
+STAR_LOGP = float(os.environ.get("AOB_STAR_LOGP", "-0.05"))  # log p «звёздочки» на кадр
+MIN_SCORE = 0.15  # средняя вероятность букв стиха ниже — стих в записи не найден (пропущен/сжат)
 UA = "AO-Bible-audio-builder/1.0 (+https://github.com/)"
 
 # Протестантский порядок 66 книг (так нумерует Hexapla: 0 = Бытие … 65 = Откровение)
@@ -201,8 +204,18 @@ class Aligner:
         self.star = len(self.dict)  # своя колонка «*» с log p = 0
         log(f"  выравнивание: MMS_FA на {self.dev}")
 
-    def tokens(self, romanized):
-        return [self.dict[c] for c in romanized.replace(" ", "") if c in self.dict]
+    def tokens(self, text):
+        """Текст стиха → токены. Между предложениями и частями стиха (. ; : ! ? –) ставится «*»:
+        внутри стиха чтец может читать то, чего нет в нашем тексте (добавления по LXX у Hexapla),
+        и без звёздочки такая вставка «съедает» соседние слова."""
+        out = []
+        for part in re.split(r"[.;:!?–—()]+", plain(text)):
+            tk = [self.dict[c] for c in romanize(part).replace(" ", "") if c in self.dict]
+            if tk:
+                if out:
+                    out.append(self.star)
+                out += tk
+        return out
 
     def emission(self, wav, cache=None):
         import numpy as np
@@ -230,30 +243,53 @@ class Aligner:
     def _align(self, em, groups, f0, f1):
         """groups — списки токенов стихов. Возвращает [(кадр начала, кадр конца, средняя вероятность)]."""
         torch = self.torch
-        targets, idx = [self.star], []
-        for g in groups:
+        # Две «звёздочки»: по краям окна — бесплатная (вступление, начало следующей главы), между стихами и
+        # частями стиха — с небольшим штрафом за кадр, чтобы текст не «расползался» по похожей речи дальше
+        # (переписи, родословия, Числ 1 и 7: одинаковые формулы в соседних стихах).
+        edge, inner = self.star, self.star + 1
+        targets, idx = [edge], []
+        for k, g in enumerate(groups):
             idx.append((len(targets), len(targets) + len(g)))
-            targets += g
-            targets.append(self.star)
-        e = em[f0:f1].unsqueeze(0).to(self.dev)
+            targets += [inner if x == self.star else x for x in g]
+            targets.append(inner if k < len(groups) - 1 else edge)
+        e = em[f0:f1]
+        e = torch.cat([e[:, :self.star], torch.zeros(e.shape[0], 1), torch.full((e.shape[0], 1), STAR_LOGP)], 1)
+        e = e.unsqueeze(0).to(self.dev)
         t = torch.tensor([targets], dtype=torch.int32, device=self.dev)
         ali, sc = self.F.forced_align(e, t, blank=0)
         spans = self.F.merge_tokens(ali[0].cpu(), sc[0].exp().cpu())
         assert len(spans) == len(targets), (len(spans), len(targets))
-        res = []
+        res, gap = [], int(0.8 * self.FPS)
         for a, b in idx:
-            ss = spans[a:b]
-            res.append((f0 + ss[0].start, f0 + ss[-1].end, sum(s.score for s in ss) / len(ss)))
+            ss = [x for x in spans[a:b] if x.token < self.star]
+            # CTC может «растянуть» первую букву стиха на чужую речь перед ним (вступление, «Глава 1»):
+            # если после первой-второй буквы разрыв > 0,8 с, начало стиха — после него.
+            # То же для последних букв (конец стиха).
+            i0 = 0
+            for k in range(1, min(3, len(ss))):
+                if ss[k].start - ss[k - 1].end > gap:
+                    i0 = k
+            i1 = len(ss) - 1
+            for k in range(len(ss) - 1, max(0, len(ss) - 3), -1):
+                if ss[k].start - ss[k - 1].end > gap:
+                    i1 = k - 1
+            if i1 < i0:
+                i0, i1 = 0, len(ss) - 1
+            res.append((f0 + ss[i0].start, f0 + ss[i1].end, sum(s.score for s in ss) / len(ss)))
         return res
 
-    def align_stream(self, em, verses, first_margin_s=120, group_letters=2500):
+    def align_stream(self, em, verses, first_margin_s=120, group_letters=2500, max_gap_s=None):
         """verses — [(ключ, токены)] в порядке чтения. Выравнивает группами по ~group_letters букв,
-        окно каждой группы — от конца предыдущей. Возвращает {ключ: (t_начала, t_конца, оценка)}."""
+        окно каждой группы — от конца предыдущей. max_gap_s — для живого чтения: стих, начавшийся дальше
+        этого от конца предыдущего, считается «перескочившим» (чтец пропустил текст).
+        Возвращает {ключ: (t_начала, t_конца, оценка)}."""
         T = em.shape[0]
         total = sum(len(t) for _, t in verses)
         rate = max(total / T, 0.05)  # букв на кадр (оценка темпа)
-        res, pos, i, first = {}, 0, 0, True
-        while i < len(verses):
+        res = {}
+
+        def run(i, pos, first):
+            """Выравнивает группу стихов с i-го от кадра pos. Возвращает (j, результаты) или (j, None)."""
             j, n = i, 0
             while j < len(verses) and (n < group_letters or j == i):
                 n += len(verses[j][1])
@@ -263,20 +299,86 @@ class Aligner:
                 n = sum(len(t) for _, t in verses[i:j])
             margin = (first_margin_s if first else 30) * self.FPS
             span = int(n / rate * 1.5) + margin
-            for attempt in range(4):
+            need = n + sum(1 for _, t in verses[i:j] for a, b in zip(t, t[1:]) if a == b) + (j - i) + 1
+            if T - pos < need:
+                return j, None
+            best = None
+            for attempt in range(5):
                 f1 = min(T, pos + span)
-                need = n + sum(1 for _, t in verses[i:j] for a, b in zip(t, t[1:]) if a == b) + (j - i) + 1
                 if f1 - pos < need:
                     f1 = min(T, pos + need * 2)
                 r = self._align(em, [t for _, t in verses[i:j]], pos, f1)
-                if r[-1][1] < f1 - 3 * self.FPS or f1 >= T:
+                score = sum(x[2] for x in r) / len(r)
+                if best is None or score > best[0]:
+                    best = (score, r)
+                if f1 >= T or (r[-1][1] < f1 - 3 * self.FPS and score >= 0.6):
                     break
-                span *= 2  # текст упёрся в край окна — расширяем
-            for (k, _), x in zip(verses[i:j], r):
+                # текст упёрся в край окна или совпал плохо (в записи длинная вставка) — расширяем окно
+                span *= 3
+            return j, best[1]
+
+        def mean3(r, m=0):
+            x = [y[2] for y in r[m:m + 3]]
+            return sum(x) / len(x)
+
+        gap = max_gap_s * self.FPS if max_gap_s else None
+
+        def bad(r, m, pos=None, first=False):  # с m-го стиха текст и запись перестали совпадать
+            if r[m][2] < 0.35 and mean3(r, m) < 0.45:
+                return True
+            if gap:
+                prev_end = r[m - 1][1] if m else (None if first else pos)
+                return prev_end is not None and r[m][0] - prev_end > gap
+            return False
+
+        pos, i, first = 0, 0, True
+        while i < len(verses):
+            j, r = run(i, pos, first)
+            if r is None:  # записи не хватает на оставшийся текст — дальше не размечаем
+                log(f"  ! не хватило записи на {len(verses) - i} стихов, начиная с {verses[i][0]}")
+                break
+            if bad(r, 0, pos, first):
+                # Чтец пропустил кусок текста (так бывает: 2 Цар 19:17–35 у LibriVox нет) — ищем, через
+                # сколько стихов запись снова совпадает с текстом; пропущенные стихи остаются без времени
+                base = mean3(r)
+                for k in (1, 2, 3, 5, 8, 12, 18, 25, 35, 50, 70):
+                    if i + k >= len(verses):
+                        break
+                    j2, r2 = run(i + k, pos, first)
+                    if r2 is None:
+                        break
+                    if os.environ.get("AOB_DEBUG"):
+                        log(f"    пропуск {k}: {verses[i + k][0]} оценка {mean3(r2):.2f} (было {base:.2f})")
+                    if mean3(r2) >= 0.6 and mean3(r2) > base - 0.1 and not bad(r2, 0, pos, first):
+                        log(f"  ! в записи нет стихов {verses[i][0]} … {verses[i + k - 1][0]} ({k} шт.)")
+                        i, j, r = i + k, j2, r2
+                        break
+            # Конец последних стихов группы ничем не «закреплён»: их хвост может уехать на такие же слова
+            # дальше (Исх 14:22 и 14:29 оба кончаются «on their left»). Поэтому два последних стиха
+            # группы не принимаем, а выравниваем заново в начале следующей. Так же поступаем со стихами
+            # после места, где совпадение резко упало.
+            keep = j - i if j == len(verses) else max(1, j - i - 2)
+            cut = next((m for m in range(1, keep) if bad(r, m)), None)
+            if cut:
+                keep = cut
+            for (k, _), x in zip(verses[i:i + keep], r[:keep]):
                 res[k] = x
-            pos = r[-1][1] + 1
-            i, first = j, False
+            pos = r[keep - 1][1] + 1
+            i, first = i + keep, False
         return {k: (a / self.FPS, b / self.FPS, s) for k, (a, b, s) in res.items()}
+
+
+def fill_missing(found, all_verses):
+    """Стихам, которых нет в записи (чтец пропустил надписание псалма или стих), даём время следующего
+    найденного стиха: подсветка его просто «проскочит», а переход к нему начнёт с ближайшего места."""
+    t = dict(found)
+    out, nxt = [], None
+    for v in sorted(set(all_verses) | set(t), reverse=True):
+        if v in t:
+            nxt = t[v]
+        if nxt is not None:
+            out.append([v, nxt])
+    return out[::-1]
 
 
 def verse_starts(keys, al, lead=0.2):
@@ -328,7 +430,7 @@ def merge_catalog(entries):
 
 def rebuild_catalog():
     entries = []
-    for mid in ("audio-rst-hexapla", "audio-kjv-librivox"):
+    for mid in ("audio-rst-hexapla", "audio-kjv-librivox", "audio-rst-nt-wwjd", "audio-rst-ot-wwjd"):
         f = OUT / f"{mid}.json"
         if f.exists():
             data = f.read_bytes()
@@ -362,55 +464,106 @@ def hexapla_offsets(b, c0):
     return json.loads(p.read_text(encoding="utf-8"))["offsets"]
 
 
-def align_hexapla_chapter(al, bid, ch, b, mp3name, md5, verses_text):
-    """Наше выравнивание главы Hexapla (mp3 скачивается в data-src/audio/hexapla-synodal/mp3)."""
-    key = hashlib.sha1(json.dumps([ALIGN_VERSION, verses_text], ensure_ascii=False).encode()).hexdigest()[:12]
+def align_hexapla_chapter(al, bid, ch, mp3, verses_text):
+    """Наше выравнивание главы Hexapla (кешируется по тексту главы и версии алгоритма).
+    mp3 — путь к файлу или функция, которая его вернёт (скачивание — только если кеша нет)."""
+    key = hashlib.sha1(json.dumps([RST_ALIGN_VERSION, verses_text], ensure_ascii=False).encode()).hexdigest()[:12]
     cache = DATA / "hexapla-synodal" / "align" / f"{bid}.{ch}.{key}.json"
     if cache.exists():
         return json.loads(cache.read_text(encoding="utf-8"))
-    mp3 = http_get(f"https://archive.org/download/{HEX}/{mp3name}",
-                   DATA / "hexapla-synodal" / "mp3" / mp3name.replace("/", "_"), md5=md5)
+    if callable(mp3):
+        mp3 = mp3()
     wav = load_wav(mp3)
-    em = al.emission(wav, DATA / "hexapla-synodal" / "emis" / (mp3name.replace("/", "_") + ".npy"))
-    vs = [(i + 1, al.tokens(romanize(t))) for i, t in enumerate(verses_text)]
+    em = al.emission(wav)
+    vs = [(i + 1, al.tokens(t)) for i, t in enumerate(verses_text)]
     vs = [(k, t) for k, t in vs if t]
     r = al.align_stream(em, vs, first_margin_s=20)
-    res = {"verses": [[k, *r[k]] for k, _ in vs], "duration": len(wav) / 16000}
+    res = {"verses": [[k, *r[k]] for k, _ in vs if k in r], "duration": len(wav) / 16000}
     cache.parent.mkdir(parents=True, exist_ok=True)
     cache.write_text(json.dumps(res), encoding="utf-8")
     return res
 
 
+def hexapla_mp3(mp3name, md5):
+    return http_get(f"https://archive.org/download/{HEX}/{mp3name}",
+                    DATA / "hexapla-synodal" / "mp3" / mp3name.replace("/", "_"), md5=md5)
+
+
+def compare_hexapla(r, off):
+    """Расхождение нашей разметки с разметкой Hexapla: (медиана |Δ|, максимум |Δ|)."""
+    d = sorted(abs(v[1] - off[v[0] - 1] / 1000) for v in r["verses"] if v[0] <= len(off))
+    return (d[len(d) // 2], d[-1]) if d else (0, 0)
+
+
 def build_rst(args):
+    """Время стихов — наше выравнивание каждой главы; разметка Hexapla служит для сверки
+    (--sidecar: взять разметку Hexapla как есть там, где совпало число стихов, без выравнивания)."""
+    from concurrent.futures import ThreadPoolExecutor
     rst = load_bible("rst")
-    chapters, mism, al = {}, [], None
-    for bid, ch, b, mp3name, dur, md5 in hexapla_chapters():
-        texts = rst.get(bid, [])
-        if ch > len(texts):
-            continue  # Пс 151 — нет в rst.json
+    books = set(args.books.split(",")) if args.books else None
+    items = [x for x in hexapla_chapters() if x[1] <= len(rst.get(x[0], [])) and (not books or x[0] in books)]
+    chapters = {}
+    old = OUT / "audio-rst-hexapla.json"
+    if books and old.exists():
+        chapters = json.loads(old.read_text(encoding="utf-8"))["chapters"]
+    al = None if args.sidecar else Aligner()
+    pool = ThreadPoolExecutor(6)
+    futs = {}
+
+    def prefetch(i):
+        for j in range(i, min(i + 12, len(items))):
+            if j not in futs:
+                futs[j] = pool.submit(hexapla_mp3, items[j][3], items[j][5])
+
+    stats, low, t0 = [], [], time.time()
+    for i, (bid, ch, b, mp3name, dur, md5) in enumerate(items):
+        texts = rst[bid][ch - 1]
         off = hexapla_offsets(b, ch - 1)
         url = f"https://archive.org/download/{HEX}/{mp3name}"
-        if len(off) == len(texts[ch - 1]):
-            verses = [[i + 1, round(ms / 1000, 2)] for i, ms in enumerate(off)]
-        else:
-            mism.append(f"{bid}.{ch} ({len(off)}≠{len(texts[ch - 1])})")
-            if args.no_align:
+        if args.sidecar:
+            if len(off) != len(texts):
                 continue
-            al = al or Aligner()
-            r = align_hexapla_chapter(al, bid, ch, b, mp3name, md5, texts[ch - 1])
-            keys = [v[0] for v in r["verses"]]
-            starts = verse_starts(keys, {v[0]: v[1:] for v in r["verses"]})
-            verses = [[k, s] for k, s in zip(keys, starts)]
-            dur = round(r["duration"], 2)
+            verses = [[k + 1, round(ms / 1000, 2)] for k, ms in enumerate(off)]
+        else:
+            key = hashlib.sha1(json.dumps([RST_ALIGN_VERSION, texts], ensure_ascii=False).encode()).hexdigest()[:12]
+            if not (DATA / "hexapla-synodal" / "align" / f"{bid}.{ch}.{key}.json").exists():
+                prefetch(i)
+            fut = futs.pop(i, None)
+            r = align_hexapla_chapter(al, bid, ch, fut.result if fut else (lambda: hexapla_mp3(mp3name, md5)), texts)
+            good = [v for v in r["verses"] if v[3] >= MIN_SCORE]
+            if len(good) < 0.8 * len(texts):
+                log(f"  ! {bid}.{ch}: в записи не нашлось большей части стихов — глава пропущена")
+                continue
+            keys = [v[0] for v in good]
+            verses = fill_missing([[k, s] for k, s in zip(keys, verse_starts(keys, {v[0]: v[1:] for v in good}))],
+                                  [v[0] for v in r["verses"]])
+            dur = r["duration"]
+            if len(off) == len(texts):
+                stats.append((f"{bid}.{ch}", *compare_hexapla(r, off)))
+            low += [f"{bid}.{ch}:{v[0]}({v[3]:.2f})" for v in r["verses"] if v[3] < 0.3]
         chapters[f"{bid}.{ch}"] = {"url": url, "verses": verses, "duration": round(dur, 2) if dur else None}
-    log(f"  главы с несовпавшим числом стихов (выровнены заново): {', '.join(mism)}")
+        if (i + 1) % 100 == 0:
+            log(f"  {i + 1}/{len(items)} глав, {time.time() - t0:.0f} с")
+    pool.shutdown(cancel_futures=True)
+    if stats:
+        good = sum(1 for _, med, mx in stats if med < 0.5 and mx < 1.5)
+        log(f"  сверка с разметкой Hexapla: {good} из {len(stats)} глав совпали (медиана |Δ| < 0.5 с, макс < 1.5 с)")
+        worst = sorted(stats, key=lambda x: -x[1])[:15]
+        log("  наибольшие расхождения (глава, медиана/макс, с): "
+            + ", ".join(f"{k} {m:.1f}/{x:.1f}" for k, m, x in worst))
+        (DATA / "hexapla-synodal" / "compare.json").write_text(json.dumps(stats), encoding="utf-8")
+    if low:
+        log(f"  стихи с низкой уверенностью ({len(low)}): {' '.join(low[:30])}{' …' if len(low) > 30 else ''}")
+    order = {bk: i for i, bk in enumerate(PROT)}
+    chapters = dict(sorted(chapters.items(), key=lambda kv: (order[kv[0].split('.')[0]], int(kv[0].split('.')[1]))))
     mod = {
         "format": "aob-module", "formatVersion": 1, "type": "audio",
         "id": "audio-rst-hexapla", "name": "Аудио RST (синтез)",
         "title": "Синодальный перевод — синтезированное чтение (Hexapla)",
-        "description": "Вся Библия (66 книг) по главам. Чтение синтезировано (Fun-CosyVoice3, голос по образцу "
-                       "согласившегося диктора), не живой чтец. Время стихов — разметка Hexapla, сверенная с "
-                       "текстом; главы с добавлениями по LXX выровнены заново. Записи загружаются с archive.org.",
+        "description": "Вся Библия (66 книг), запись на каждую главу. Чтение синтезировано (Fun-CosyVoice3, голос "
+                       "по образцу согласившегося диктора) — это не живой чтец. Время стихов получено "
+                       "принудительным выравниванием текста RST с записью (MMS_FA) и сверено с разметкой Hexapla. "
+                       "Записи загружаются с archive.org.",
         "language": "ru", "version": "1.0 (archive.org, 2026-08)",
         "author": "Hexapla (синтез речи); перевод — Святейший Синод, 1876",
         "source": "https://archive.org/details/hexapla-audio-synodal-1876 (https://hexaplabible.com)",
@@ -431,13 +584,17 @@ def verify_rst(args):
         ch = int(ch)
         b, name, md5 = idx[(bid, ch)]
         t0 = time.time()
-        r = align_hexapla_chapter(al, bid, ch, b, name, md5, rst[bid][ch - 1])
+        r = align_hexapla_chapter(al, bid, ch, lambda: hexapla_mp3(name, md5), rst[bid][ch - 1])
         off = hexapla_offsets(b, ch - 1)
         diffs = [v[1] - off[v[0] - 1] / 1000 for v in r["verses"] if v[0] <= len(off)]
         ad = sorted(abs(d) for d in diffs)
         log(f"{ref}: {len(diffs)} стихов, длительность {r['duration']:.0f} с, {time.time()-t0:.1f} с; "
             f"|Δ| медиана {ad[len(ad)//2]:.2f} с, макс {ad[-1]:.2f} с, сдвиг ср. {sum(diffs)/len(diffs):+.2f} с; "
             f"оценка мин {min(v[3] for v in r['verses']):.2f}")
+        if args.show:
+            for v in r["verses"]:
+                h = off[v[0] - 1] / 1000 if v[0] <= len(off) else float("nan")
+                log(f"   {v[0]:3d}  наше {v[1]:8.2f}–{v[2]:8.2f} (оценка {v[3]:.2f})  Hexapla {h:8.2f}  Δ {v[1]-h:+.2f}")
 
 
 # --- KJV: LibriVox, Michael Armenta ---------------------------------------------------------------
@@ -446,39 +603,68 @@ LV_ITEM = "bible_kjv_complete_2001_librivox"
 
 
 def lv_sections():
-    """Разделы LibriVox → [(номер, mp3, [(OSIS, глава)…])]."""
+    """Разделы LibriVox → [(номер, mp3, книга, первая глава KJV, последняя глава KJV)]."""
     api = cached_json("https://librivox.org/api/feed/audiobooks?id=10501&format=json&extended=1",
                       DATA / "meta" / "librivox-10501.json")
     out = []
     for s in api["books"][0]["sections"]:
-        m = re.fullmatch(r"\s*(.+?)\s+Ch\.\s*(\d+)\s*(?:-\s*(\d+))?\s*", s["title"])
-        bid = EN_NAMES[m[1]]
-        a, b = int(m[2]), int(m[3] or m[2])
-        out.append((int(s["section_number"]), s["listen_url"].rsplit("/", 1)[1], [(bid, c) for c in range(a, b + 1)]))
+        m = re.fullmatch(r"\s*(.+?)\s+(?:Ch\.\s*)?(\d+)\s*(?:-\s*(\d+))?\s*", s["title"])
+        out.append((int(s["section_number"]), s["listen_url"].rsplit("/", 1)[1], EN_NAMES[m[1]], int(m[2]),
+                    int(m[3] or m[2])))
     return out
+
+
+def kjv_position():
+    """(книга, глава, стих) нашего kjv.json (синодальная нумерация) → (глава, стих) KJV — порядок чтения.
+    Таблица соответствия — из scripts/extra_lib.py (SWORD canon_synodal.h); без неё считаем нумерацию общей."""
+    try:
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import extra_lib
+        syn = extra_lib.synodal()
+        return lambda b, c, v: tuple(syn.to_kjv(b, c, v)[1:3])
+    except Exception as e:  # noqa: BLE001
+        log(f"  нет таблицы синодальной нумерации ({e}) — нумерация KJV считается совпадающей")
+        return lambda b, c, v: (c, v)
 
 
 def build_kjv(args):
     kjv = load_bible("kjv")
     _, files = ia_files(LV_ITEM)
-    books = args.books.split(",") if args.books else GOSPELS
+    books = PROT if args.books == "all" else (args.books.split(",") if args.books else GOSPELS)
     secs = lv_sections()
-    # Главы, разрезанные между файлами (Деян 10: конец 102-го и начало 103-го), не размечаем
-    seen = {}
-    for n, mp3, chs in secs:
-        for c in chs:
-            seen[c] = seen.get(c, 0) + 1
+    pos = kjv_position()
+    # Главы KJV, разрезанные между файлами (Деян 10 — конец 102-го и начало 103-го), не размечаем
+    cnt = {}
+    for n, mp3, bid, a, b in secs:
+        for c in range(a, b + 1):
+            cnt[(bid, c)] = cnt.get((bid, c), 0) + 1
+    split = {k for k, n in cnt.items() if n > 1}
+    # Поток стихов каждого файла в порядке чтения KJV
+    streams, owner = {}, {}
+    for n, mp3, bid, a, b in secs:
+        if bid not in books:
+            continue
+        vs = []
+        for c, chap in enumerate(kjv[bid], 1):
+            for v, t in enumerate(chap, 1):
+                kc, kv = pos(bid, c, v)
+                if a <= kc <= b and (bid, kc) not in split and t.strip():
+                    vs.append(((kc, kv, c, v), f"{bid}.{c}", v, t))
+        vs.sort(key=lambda x: x[0])
+        streams[mp3] = (n, bid, a, [(ck, v, t) for _, ck, v, t in vs])
+        for _, ck, v, t in vs:
+            owner.setdefault(ck, set()).add(mp3)
+    shared = {ck for ck, s in owner.items() if len(s) > 1}  # синодальная глава в двух файлах — пропускаем
+    if shared:
+        log(f"  главы на границе файлов (пропущены): {', '.join(sorted(shared))}")
     al, chapters = None, {}
     old = OUT / "audio-kjv-librivox.json"
     if old.exists():
-        chapters = json.loads(old.read_text(encoding="utf-8"))["chapters"]
-    for n, mp3, chs in secs:
-        chs = [c for c in chs if c[0] in books]
-        if not chs:
-            continue
-        whole = [c for c in chs if seen[c] == 1]
+        chapters = {k: v for k, v in json.loads(old.read_text(encoding="utf-8"))["chapters"].items()
+                    if k.split(".")[0] not in books}
+    tot_audio, tot_time = 0.0, 0.0
+    for mp3, (n, bid, a, texts) in streams.items():
         f = files[mp3]
-        texts = [(f"{b}.{c}", v + 1, t) for b, c in whole for v, t in enumerate(kjv[b][c - 1])]
         key = hashlib.sha1(json.dumps([ALIGN_VERSION, mp3, texts], ensure_ascii=False).encode()).hexdigest()[:12]
         cache = DATA / "librivox-kjv" / "align" / f"{mp3}.{key}.json"
         t0 = time.time()
@@ -490,48 +676,73 @@ def build_kjv(args):
                             md5=f.get("md5"))
             wav = load_wav(path)
             em = al.emission(wav, DATA / "librivox-kjv" / "emis" / f"{mp3}.npy")
-            vs = [((ck, v), al.tokens(romanize(t))) for ck, v, t in texts]
+            vs = [((ck, v), al.tokens(t)) for ck, v, t in texts]
             vs = [(k, t) for k, t in vs if t]
-            a = al.align_stream(em, vs)
-            r = {"duration": len(wav) / 16000, "verses": [[ck, v, *a[(ck, v)]] for (ck, v), _ in vs]}
+            # начало файла — объявление LibriVox; если первая глава разрезана, её начало тоже пропускаем
+            margin = 120 + (900 if (bid, a) in split else 0)
+            res = al.align_stream(em, vs, first_margin_s=margin, max_gap_s=30)
+            r = {"duration": len(wav) / 16000, "verses": [[ck, v, *res[(ck, v)]] for (ck, v), _ in vs if (ck, v) in res]}
             cache.parent.mkdir(parents=True, exist_ok=True)
             cache.write_text(json.dumps(r), encoding="utf-8")
+            tot_audio += r["duration"]
+            tot_time += time.time() - t0
             log(f"  {mp3}: {r['duration']/60:.0f} мин аудио, выравнивание {time.time()-t0:.0f} с")
         url = f"https://archive.org/download/{LV_ITEM}/{mp3}"
-        by_ch = {}
-        for ck, v, a, b, s in r["verses"]:
-            by_ch.setdefault(ck, []).append((v, a, b, s))
-        prev_end = None
-        for ck in [f"{b}.{c}" for b, c in whole]:
-            vv = by_ch.get(ck)
-            if not vv:
+        # главы в порядке чтения; у каждой берём первый непрерывный отрезок стихов
+        runs, order_ck = {}, []
+        for i, (ck, v, s0, e0, sc) in enumerate(r["verses"]):
+            if ck in shared:
                 continue
-            al_map = {v: (a, b, s) for v, a, b, s in vv}
-            starts = verse_starts([v for v, *_ in vv], al_map)
+            if ck not in runs:
+                runs[ck] = [[i, v, s0, e0, sc]]
+                order_ck.append(ck)
+            elif runs[ck][-1] is not None and runs[ck][-1][0] == i - 1:
+                runs[ck].append([i, v, s0, e0, sc])
+            else:
+                runs[ck].append(None)  # стих вне основного отрезка (напр. Рим 14:24–26 = KJV 16:25–27)
+        prev_end, dropped = None, []
+        for ck in order_ck:
+            vv = []
+            for x in runs[ck]:
+                if x is None:
+                    break
+                vv.append(x)
+            # время стихов должно расти вместе с номером; ненайденные стихи (оценка < MIN_SCORE) — без времени
+            n_all, all_vs = len(vv), [x[1] for x in vv]
+            vv = [x for k, x in enumerate(vv) if (k == 0 or x[1] > vv[k - 1][1]) and x[4] >= MIN_SCORE]
+            if len(vv) < 0.8 * n_all:
+                dropped.append(ck)
+                continue
+            al_map = {x[1]: (x[2], x[3], x[4]) for x in vv}
+            starts = verse_starts([x[1] for x in vv], al_map)
             first = starts[0]
-            start = max(0.0, first - 2.5) if prev_end is None else round(min(first, prev_end + 0.3), 2)
-            end = vv[-1][2] + 0.6
-            chapters[ck] = {"url": url, "verses": [[v, s] for (v, *_), s in zip(vv, starts)],
-                            "duration": round(r["duration"], 2), "start": round(start, 2), "end": round(end, 2)}
-            prev_end = vv[-1][2]
-        # конец главы не заходит за начало следующей
-        keys = [f"{b}.{c}" for b, c in whole if f"{b}.{c}" in chapters]
-        for k1, k2 in zip(keys, keys[1:]):
-            chapters[k1]["end"] = round(min(chapters[k1]["end"], chapters[k2]["start"]), 2)
-        low = [(ck, v, round(s, 2)) for ck, v, a, b, s in r["verses"] if s < 0.25]
+            start = max(0.0, first - 2.5) if prev_end is None else min(first, prev_end + 0.3)
+            chapters[ck] = {"url": url, "verses": fill_missing([[x[1], s] for x, s in zip(vv, starts)], all_vs),
+                            "duration": round(r["duration"], 2), "start": round(start, 2),
+                            "end": round(vv[-1][3] + 0.6, 2)}
+            prev_end = vv[-1][3]
+        if dropped:
+            log(f"  {mp3}: главы не размечены (в записи не нашлось большей части стихов): {', '.join(dropped)}")
+        for k1, k2 in zip(order_ck, order_ck[1:]):  # конец главы не заходит за начало следующей
+            if k1 in chapters and k2 in chapters:
+                chapters[k1]["end"] = round(min(chapters[k1]["end"], chapters[k2]["start"]), 2)
+        low = [f"{ck}:{v}({s:.2f})" for ck, v, a_, b_, s in r["verses"] if s < 0.3]
         if low:
-            log(f"  {mp3}: стихи с низкой уверенностью: {low[:12]}{' …' if len(low) > 12 else ''}")
+            log(f"  {mp3}: стихи с низкой уверенностью ({len(low)}): {' '.join(low[:15])}{' …' if len(low) > 15 else ''}")
+    if tot_audio:
+        log(f"  выровнено {tot_audio/3600:.1f} ч аудио за {tot_time/60:.1f} мин")
     order = {b: i for i, b in enumerate(PROT)}
     chapters = dict(sorted(chapters.items(), key=lambda kv: (order[kv[0].split('.')[0]], int(kv[0].split('.')[1]))))
     covered = sorted({k.split(".")[0] for k in chapters}, key=order.get)
+    what = "вся Библия" if len(covered) == 66 else "книги " + ", ".join(covered)
     mod = {
         "format": "aob-module", "formatVersion": 1, "type": "audio",
         "id": "audio-kjv-librivox", "name": "Аудио KJV",
         "title": "King James Version — LibriVox (чтец Michael Armenta)",
-        "description": "Живое чтение Библии короля Якова (LibriVox, один чтец на всю Библию). Размечены книги: "
-                       + ", ".join(covered) + ". В одном файле несколько глав: у каждой главы есть start/end "
-                       "(секунды от начала файла). Время стихов получено принудительным выравниванием текста "
-                       "(MMS_FA). Записи загружаются с archive.org.",
+        "description": f"Живое чтение Библии короля Якова (LibriVox, один чтец на всю Библию). Размечены: {what}. "
+                       "В одном файле записано несколько глав: у главы есть start/end — секунды от начала файла. "
+                       "Время стихов получено принудительным выравниванием текста KJV с записью (MMS_FA). "
+                       "Записи загружаются с archive.org.",
         "language": "en", "version": "1.0 (LibriVox 2020)",
         "author": "Michael Armenta (чтец); текст — KJV 1769",
         "source": "https://librivox.org/bible-complete-king-james-version/ (https://archive.org/details/"
@@ -543,16 +754,174 @@ def build_kjv(args):
     return write_module(mod)
 
 
+# --- Синодальный, живое чтение: wwjdru на archive.org ------------------------------------------------
+
+WWJD = {
+    "nt": {"item": "RU-NT-NonDrama", "id": "audio-rst-nt-wwjd", "name": "Аудио НЗ",
+           "title": "Новый Завет — живое чтение (без музыки)", "what": "Новый Завет"},
+    "ot": {"item": "Russian-NT-NonDrama", "id": "audio-rst-ot-wwjd", "name": "Аудио ВЗ",
+           "title": "Ветхий Завет — живое чтение (без музыки)", "what": "Ветхий Завет"},
+}
+WW_ALIAS = {"revelations": "Rev", "psalm": "Ps", "1king": "1Kgs", "2king": "2Kgs", "songofsolomon": "Song"}
+
+
+def ww_book(name, num):
+    key = (num + name).lower()
+    if key in WW_ALIAS:
+        return WW_ALIAS[key]
+    for en, osis in EN_NAMES.items():
+        if en.replace(" ", "").lower() == key:
+            return osis
+    raise KeyError(name)
+
+
+def ww_files(item):
+    """[(OSIS, глава в имени файла, имя mp3, md5)] в порядке книг и глав."""
+    _, files = ia_files(item)
+    out = []
+    for name, f in files.items():
+        m = re.fullmatch(r"(\d\d)(\d?)_?([A-Za-z]+?)_?(\d+)\.mp3", name)
+        if m:
+            out.append((ww_book(m[3], m[2]), int(m[4]), name, f.get("md5")))
+    order = {b: i for i, b in enumerate(PROT)}
+    return sorted(out, key=lambda x: (order[x[0]], x[1]))
+
+
+def ww_candidates(bid, c, nch):
+    """Синодальные главы, которые может содержать файл с номером c (сначала — самая вероятная)."""
+    cand = [c]
+    if bid == "Ps":  # нумерация в имени файла может быть еврейской (KJV): Пс 23 KJV = Пс 22 синод.
+        cand += [c - 1, c + 1]
+    elif bid in ("Joel", "Mal", "Num", "1Kgs", "Job", "Song", "Isa", "Dan", "Jonah", "Neh", "1Chr", "Exod"):
+        cand += [c - 1, c + 1]
+    return [x for x in dict.fromkeys(cand) if 1 <= x <= nch]
+
+
+def build_wwjd(args):
+    from concurrent.futures import ThreadPoolExecutor
+    cfg = WWJD[args.part]
+    item, mid = cfg["item"], cfg["id"]
+    rst = load_bible("rst")
+    items = ww_files(item)
+    if args.books:
+        items = [x for x in items if x[0] in args.books.split(",")]
+    base = DATA / f"wwjd-{args.part}"
+    old = OUT / f"{mid}.json"
+    chapters = json.loads(old.read_text(encoding="utf-8"))["chapters"] if old.exists() else {}
+    pool = ThreadPoolExecutor(6)
+    futs = {}
+
+    def mp3_path(it):
+        return http_get(f"https://archive.org/download/{item}/{it[2]}", base / "mp3" / it[2], md5=it[3])
+
+    def prefetch(i):
+        for k in range(i, min(i + 12, len(items))):
+            if k not in futs:
+                futs[k] = pool.submit(mp3_path, items[k])
+
+    al, t0, audio_s, align_s = None, time.time(), 0.0, 0.0
+    problems, cur_book, seen = [], None, {}
+    order = {b: i for i, b in enumerate(PROT)}
+
+    def save():
+        ch = dict(sorted(chapters.items(), key=lambda kv: (order[kv[0].split('.')[0]], int(kv[0].split('.')[1]))))
+        books = sorted({k.split(".")[0] for k in ch}, key=order.get)
+        mod = {
+            "format": "aob-module", "formatVersion": 1, "type": "audio",
+            "id": mid, "name": cfg["name"], "title": cfg["title"],
+            "description": f"{cfg['what']} в Синодальном переводе, живые чтецы, без музыки, запись на каждую главу. "
+                           "Записи выложены на archive.org пользователем wwjdru под лицензией CC BY-NC-SA 3.0; "
+                           "вероятно, это записи Faith Comes By Hearing. Время стихов получено принудительным "
+                           "выравниванием текста RST с записью (MMS_FA). Озвучены книги: " + ", ".join(books) + ".",
+            "language": "ru", "version": "1.0 (archive.org, 2010)",
+            "author": "wwjdru (sites.google.com/site/wwjdru)",
+            "source": f"https://archive.org/details/{item}",
+            "license": "CC BY-NC-SA 3.0 (по странице archive.org)",
+            "translation": "rst", "versification": "synodal",
+            "chapters": ch,
+        }
+        merge_catalog([write_module(mod)])
+
+    for i, it in enumerate(items):
+        bid, c, name, md5 = it
+        if cur_book and bid != cur_book:
+            save()
+        cur_book = bid
+        nch = len(rst[bid])
+        cands = ww_candidates(bid, c, nch)
+        key = hashlib.sha1(json.dumps([ALIGN_VERSION, name, [rst[bid][x - 1] for x in cands]],
+                                      ensure_ascii=False).encode()).hexdigest()[:12]
+        cache = base / "align" / f"{name}.{key}.json"
+        if cache.exists():
+            r = json.loads(cache.read_text(encoding="utf-8"))
+        else:
+            prefetch(i)
+            ta = time.time()
+            al = al or Aligner()
+            wav = load_wav(futs.pop(i).result())
+            em = al.emission(wav)
+            best = None
+            for sc in cands:
+                vs = [(v, al.tokens(t)) for v, t in enumerate(rst[bid][sc - 1], 1)]
+                vs = [(k, t) for k, t in vs if t]
+                a = al.align_stream(em, vs, first_margin_s=60, max_gap_s=30)
+                found = [k for k, _ in vs if k in a and a[k][2] >= MIN_SCORE]
+                score = sum(a[k][2] for k in found) / max(1, len(vs))  # пропущенные стихи тянут оценку вниз
+                if best is None or score > best[0]:
+                    best = (score, sc, a, [k for k, _ in vs])
+                if score >= 0.7:
+                    break
+            score, sc, a, keys = best
+            r = {"chapter": sc, "score": score, "duration": len(wav) / 16000, "all": keys,
+                 "verses": [[k, *a[k]] for k in keys if k in a]}
+            cache.parent.mkdir(parents=True, exist_ok=True)
+            cache.write_text(json.dumps(r), encoding="utf-8")
+            audio_s += r["duration"]
+            align_s += time.time() - ta
+        sc = r["chapter"]
+        good = [v for v in r["verses"] if v[3] >= MIN_SCORE]
+        if r["score"] < 0.45 or len(good) < 0.8 * len(r["all"]):
+            problems.append(f"{name}→{bid}.{sc} (оценка {r['score']:.2f}, найдено {len(good)}/{len(r['all'])})")
+            continue
+        if sc != c:
+            log(f"  {name}: это синодальная глава {bid}.{sc}")
+        miss = [v for v in r["all"] if v not in {g[0] for g in good}]
+        if miss:
+            log(f"  {bid}.{sc}: стихов нет в записи (или не найдены): {miss}")
+        keys = [v[0] for v in good]
+        starts = verse_starts(keys, {v[0]: v[1:] for v in good})
+        ck = f"{bid}.{sc}"
+        if ck in seen:
+            problems.append(f"{ck}: два файла ({seen[ck]} и {name}) — оставлен второй")
+        seen[ck] = name
+        chapters[ck] = {"url": f"https://archive.org/download/{item}/{name}",
+                        "verses": fill_missing([[k, s] for k, s in zip(keys, starts)], r["all"]),
+                        "duration": round(r["duration"], 2)}
+        if (i + 1) % 50 == 0:
+            log(f"  {i + 1}/{len(items)} файлов, {time.time() - t0:.0f} с")
+    pool.shutdown(cancel_futures=True)
+    if audio_s:
+        log(f"  выровнено {audio_s/3600:.1f} ч аудио за {align_s/60:.1f} мин")
+    if problems:
+        log(f"  не размечены ({len(problems)}): " + "; ".join(problems))
+    save()
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("rst")
-    p.add_argument("--no-align", action="store_true", help="не выравнивать главы с несовпавшим числом стихов")
+    p.add_argument("--sidecar", action="store_true", help="без выравнивания: разметка Hexapla как есть")
+    p.add_argument("--books", help="книги OSIS через запятую (по умолчанию все); прочие главы сохраняются")
     p = sub.add_parser("kjv")
-    p.add_argument("--books", help="книги OSIS через запятую (по умолчанию Matt,Mark,Luke,John); "
-                                   "ранее размеченные главы сохраняются")
+    p.add_argument("--books", help="книги OSIS через запятую или all (по умолчанию Matt,Mark,Luke,John); "
+                                   "ранее размеченные главы других книг сохраняются")
     p = sub.add_parser("verify-rst")
     p.add_argument("refs", nargs="+")
+    p.add_argument("--show", action="store_true", help="показать каждый стих")
+    p = sub.add_parser("wwjd")
+    p.add_argument("part", choices=["nt", "ot"], help="nt — Новый Завет, ot — Ветхий")
+    p.add_argument("--books", help="книги OSIS через запятую (по умолчанию все); прочие главы сохраняются")
     sub.add_parser("catalog")
     args = ap.parse_args()
     if args.cmd == "rst":
@@ -561,6 +930,8 @@ def main():
         merge_catalog([build_kjv(args)])
     elif args.cmd == "verify-rst":
         verify_rst(args)
+    elif args.cmd == "wwjd":
+        build_wwjd(args)
     else:
         rebuild_catalog()
 

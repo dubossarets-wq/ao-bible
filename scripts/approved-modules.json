@@ -33,6 +33,7 @@
   "bdb-glosses",
   "xrefs-openbible",
   "xrefs-tsk",
-  "bible-maps"
+  "bible-maps",
+  "audio-kjv-librivox"
  ]
 }

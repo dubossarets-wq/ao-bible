@@ -1,5 +1,6 @@
 // Общие мелкие элементы интерфейса.
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { CircleAlert } from 'lucide-react';
 
 export function Toasts({ items }) {
@@ -25,29 +26,60 @@ export function Progress({ value, label }) {
   );
 }
 
-// Пояснение к настройке: значок «!» в кружке рядом с названием, текст раскрывается по нажатию
+// Пояснение к настройке: значок «!» в кружке рядом с названием. Текст — во всплывающем облачке
+// поверх содержимого (ничего не сдвигает); закрывается повторным нажатием, нажатием мимо, прокруткой, Esc.
 export function Hint({ children, label = 'Пояснение' }) {
-  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState(null);
+  const btn = useRef(null);
+  const pop = useRef(null);
+  useEffect(() => {
+    if (!pos) return;
+    const openedAt = Date.now();
+    const close = (e) => {
+      if (e?.type === 'pointerdown' && (pop.current?.contains(e.target) || btn.current?.contains(e.target))) return;
+      // Сразу после открытия браузер может подкрутить окно к кнопке — эту прокрутку не считаем
+      if (e?.type === 'scroll' && Date.now() - openedAt < 300) return;
+      setPos(null);
+    };
+    const esc = (e) => e.key === 'Escape' && (e.stopPropagation(), setPos(null));
+    document.addEventListener('pointerdown', close, true);
+    document.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    window.addEventListener('keydown', esc, true);
+    return () => {
+      document.removeEventListener('pointerdown', close, true);
+      document.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+      window.removeEventListener('keydown', esc, true);
+    };
+  }, [pos]);
+  const toggle = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (pos) return setPos(null);
+    const r = btn.current.getBoundingClientRect();
+    const w = Math.min(280, window.innerWidth - 24);
+    const left = Math.max(12, Math.min(window.innerWidth - w - 12, r.left + r.width / 2 - w / 2));
+    const below = r.bottom + 160 < (window.visualViewport?.height || window.innerHeight);
+    setPos({ left, width: w, top: below ? r.bottom + 8 : null, bottom: below ? null : window.innerHeight - r.top + 8, arrow: r.left + r.width / 2 - left, below });
+  };
   return (
     <>
-      <button
-        type="button"
-        className={`hint-btn ${open ? 'on' : ''}`}
-        aria-label={label}
-        aria-expanded={open}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setOpen((o) => !o);
-        }}
-      >
+      <button ref={btn} type="button" className={`hint-btn ${pos ? 'on' : ''}`} aria-label={label} aria-expanded={!!pos} onClick={toggle}>
         <CircleAlert size={15} />
       </button>
-      {open && (
-        <span className="hint-pop" role="note">
-          {children}
-        </span>
-      )}
+      {pos &&
+        createPortal(
+          <span
+            ref={pop}
+            className={`hint-pop ${pos.below ? 'below' : 'above'}`}
+            role="tooltip"
+            style={{ left: pos.left, width: pos.width, top: pos.top ?? 'auto', bottom: pos.bottom ?? 'auto', '--arrow': `${pos.arrow}px` }}
+          >
+            {children}
+          </span>,
+          document.body
+        )}
     </>
   );
 }

@@ -520,8 +520,6 @@ button.row-act:hover { background: color-mix(in srgb, var(--accent) 12%, transpa
 /* Пояснение к настройке: «!» в кружке рядом с названием */
 .hint-btn { display: inline-grid; place-items: center; width: 24px; height: 24px; margin-left: 4px; vertical-align: -6px; border: 0; background: none; color: var(--muted); border-radius: 50%; padding: 0; }
 .hint-btn:hover, .hint-btn.on { color: var(--accent); }
-.hint-pop { display: block; margin-top: 4px; font-size: .82rem; font-weight: 400; line-height: 1.4; color: var(--muted); text-transform: none; letter-spacing: 0; }
-.nav-group h4 .hint-pop, .settings-group h4 .hint-pop { margin-top: 6px; }
 .sheet-h4 { margin: 0; font-size: .74rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); font-weight: 600; }
 
 .lang-chips { margin-top: -4px; }
@@ -632,3 +630,22 @@ mark.diff { background: color-mix(in srgb, #f2a65a 38%, transparent); border-rad
 .plan-offer { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .plan-offer-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 #plan-days { max-width: 110px; }
+
+/* В вертикальном окне поле поиска не растягивается по высоте (flex: 1 нужен только в строке с кнопкой) */
+.sheet-body > .input-wrap, .sheet-body > .chips, .sheet-body > .segmented, .sheet-body > .field { flex: none; }
+
+/* Облачко подсказки — поверх содержимого, ничего не сдвигает */
+.hint-pop { position: fixed; z-index: 70; padding: 10px 12px; border-radius: calc(var(--radius) * .8); background: var(--bar); color: var(--bar-text); font-family: var(--font-ui); font-size: .84rem; font-weight: 400; line-height: 1.45; text-transform: none; letter-spacing: 0; box-shadow: 0 10px 30px rgba(0,0,0,.25); animation: pop .14s ease-out; }
+.hint-pop::before { content: ""; position: absolute; left: calc(var(--arrow) - 7px); width: 14px; height: 14px; background: inherit; transform: rotate(45deg); border-radius: 2px; }
+.hint-pop.below::before { top: -5px; }
+.hint-pop.above::before { bottom: -5px; }
+
+/* Верхняя панель — снова тёмная (компоновка новая: «таблетка» перевода, круглые кнопки) */
+.toolbar { background: var(--bar); color: var(--bar-text); box-shadow: 0 1px 0 rgba(0,0,0,.25); }
+.toolbar .tb { color: var(--bar-text); }
+.toolbar .tb:hover:not(:disabled) { background: color-mix(in srgb, var(--bar-text) 12%, transparent); }
+.toolbar .tb:active:not(:disabled) { background: color-mix(in srgb, var(--bar-text) 20%, transparent); }
+.toolbar .tb-module { color: var(--bar-text); background: color-mix(in srgb, var(--bar-text) 14%, var(--bar)); }
+.toolbar .tb-icon.on { color: color-mix(in srgb, var(--accent) 55%, #fff); }
+.update-dot { box-shadow: 0 0 0 2px var(--bar); }
+.map-pane .tb-place { color: var(--bar-text); }

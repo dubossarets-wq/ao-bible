@@ -104,5 +104,5 @@ export function applySettings(settings, themeName) {
   root.classList.toggle('no-anim', !settings.animations);
   ensureFont(settings.fontFamily);
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', t.panel); // цвет строки состояния Android — как у верхней панели
+  if (meta) meta.setAttribute('content', t.bar); // цвет строки состояния Android — как у верхней панели
 }

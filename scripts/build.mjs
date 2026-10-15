@@ -102,8 +102,9 @@ ${FONTS}
 <meta name="theme-color" content="#38363a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- Сплошная чёрная строка состояния: без прозрачности iOS не размывает панель под часами -->
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<!-- Прозрачная строка состояния: тёмная верхняя панель уходит под часы, без чёрной полосы.
+     Под часами — сплошной цвет панели (html и body::before), так что размытие iOS с ним сливается. -->
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="${SHORT_NAME}">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">

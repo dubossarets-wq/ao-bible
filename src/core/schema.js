@@ -315,7 +315,8 @@ function normalizeAudio(json, warnings) {
       continue;
     }
     const verses = c.verses.filter((x) => Array.isArray(x) && x.length >= 2 && isFinite(x[0]) && isFinite(x[1])).map((x) => [+x[0], +x[1]]).sort((a, b) => a[1] - b[1]);
-    chapters[k] = { url: c.url, verses, duration: +c.duration || null };
+    // start/end — границы главы внутри файла, если в одном файле несколько глав
+    chapters[k] = { url: c.url, verses, duration: +c.duration || null, start: isFinite(c.start) ? +c.start : null, end: isFinite(c.end) ? +c.end : null };
   }
   if (bad) warnings.push(`Пропущено глав без адреса записи или разметки стихов: ${bad}.`);
   if (!Object.keys(chapters).length) throw new ModuleError('В аудиомодуле нет ни одной главы с записью и разметкой стихов.');
