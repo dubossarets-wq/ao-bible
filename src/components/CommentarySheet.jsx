@@ -5,8 +5,12 @@ import BottomSheet from './BottomSheet.jsx';
 import { commentaryFor } from '../core/commentary.js';
 import { formatRef } from '../core/books.js';
 import { Empty } from './ui.jsx';
+import { useApp } from '../App.jsx';
+import LinkedText from './LinkedText.jsx';
 
-export default function CommentarySheet({ payload, onClose }) {
+export default function CommentarySheet({ pane, payload, onClose }) {
+  const { openInOther } = useApp();
+  const go = (r) => (onClose(), openInOther(pane, r));
   const { ref, moduleId } = payload;
   const [res, setRes] = useState(null);
   const [sel, setSel] = useState(moduleId || null);
@@ -42,7 +46,9 @@ export default function CommentarySheet({ payload, onClose }) {
             {formatRef(it.ref, { full: true })}
             {it.title ? ` · ${it.title}` : ''}
           </h4>
-          <p className="prewrap commentary-text">{it.text}</p>
+          <p className="prewrap commentary-text">
+            <LinkedText text={it.text} onOpen={go} />
+          </p>
         </article>
       ))}
       {cur && <p className="source-note">{[cur.module.name, cur.module.author, cur.module.license].filter(Boolean).join(' · ')}</p>}

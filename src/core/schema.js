@@ -9,6 +9,7 @@ export const MODULE_TYPES = {
   dictionary: 'Словарь',
   maps: 'Карты',
   crossrefs: 'Параллельные места',
+  audio: 'Аудиокнига',
 };
 
 // Разделы библиотеки (множественное число) в порядке показа
@@ -17,6 +18,7 @@ export const MODULE_SECTIONS = [
   ['commentary', 'Комментарии'],
   ['dictionary', 'Словари'],
   ['maps', 'Карты'],
+  ['audio', 'Аудиокниги'],
   ['crossrefs', 'Параллельные места'],
 ];
 
@@ -120,6 +122,7 @@ export function normalize(json, { fileName = '' } = {}) {
   else if (type === 'crossrefs') data = normalizeCrossrefs(json, warnings);
   else if (type === 'commentary') data = normalizeCommentary(json, warnings);
   else if (type === 'maps') data = normalizeMaps(json, warnings);
+  else if (type === 'audio') data = normalizeAudio(json, warnings);
   else throw new ModuleError(`Неизвестный тип модуля «${type}». Допустимы: bible, commentary, dictionary, maps, crossrefs.`);
 
   if (type === 'bible') {
@@ -137,6 +140,11 @@ export function normalize(json, { fileName = '' } = {}) {
   if (type === 'crossrefs') meta.stats = { verses: Object.keys(data.refs).length };
   if (type === 'commentary') meta.stats = { entries: Object.keys(data.entries).length };
   if (type === 'maps') meta.stats = { maps: data.maps.length, places: data.places.length };
+  if (type === 'audio') {
+    meta.stats = { chapters: Object.keys(data.chapters).length };
+    meta.translation = src.translation || null;
+    meta.chapterKeys = Object.keys(data.chapters); // какие главы озвучены — чтобы не грузить модуль ради проверки
+  }
   return { meta, data, warnings };
 }
 
@@ -293,6 +301,25 @@ export function placeStems(name) {
   let words = name.toLowerCase().replace(/ё/g, 'е').split(/[\s\-–(),]+/).filter((w) => w.length >= 3);
   words = words.filter((w) => !skip.includes(w)).length ? words.filter((w) => !skip.includes(w)) : words;
   return [...new Set(words.map((w) => w.slice(0, Math.max(3, Math.min(w.length - 2, 5)))))];
+}
+
+// Аудиокнига: chapters {"John.3": {url, verses: [[стих, секунда], …], duration}} — времена начала стихов
+function normalizeAudio(json, warnings) {
+  if (!isObj(json.chapters)) throw new ModuleError('В аудиомодуле нет поля "chapters" вида {"John.3": {url, verses}}.');
+  const chapters = {};
+  let bad = 0;
+  for (const [k, c] of Object.entries(json.chapters)) {
+    const ok = /^[1-4]?[A-Za-z]+\.\d+$/.test(k) && isObj(c) && typeof c.url === 'string' && /^https?:|^[\w./-]+\.(mp3|m4a|ogg|opus|aac|wav)$/i.test(c.url) && Array.isArray(c.verses) && c.verses.length;
+    if (!ok) {
+      bad++;
+      continue;
+    }
+    const verses = c.verses.filter((x) => Array.isArray(x) && x.length >= 2 && isFinite(x[0]) && isFinite(x[1])).map((x) => [+x[0], +x[1]]).sort((a, b) => a[1] - b[1]);
+    chapters[k] = { url: c.url, verses, duration: +c.duration || null };
+  }
+  if (bad) warnings.push(`Пропущено глав без адреса записи или разметки стихов: ${bad}.`);
+  if (!Object.keys(chapters).length) throw new ModuleError('В аудиомодуле нет ни одной главы с записью и разметкой стихов.');
+  return { chapters };
 }
 
 function normalizeCrossrefs(json) {

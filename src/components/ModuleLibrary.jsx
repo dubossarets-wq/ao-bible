@@ -6,6 +6,7 @@ import {
   Download, RefreshCw, Trash2, Star, CheckCircle2, Ban, Globe, BookOpen, BookText, Link2, ChevronDown,
   MessageSquareText, Map as MapIcon, Loader2,
   Search,
+  Headphones,
 } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import ModuleImporter from './ModuleImporter.jsx';
@@ -15,14 +16,15 @@ import { MODULE_TYPES, MODULE_SECTIONS } from '../core/schema.js';
 import { isPersistent } from '../core/db.js';
 import { ConfirmButton, Empty, Hint, fmtSize } from './ui.jsx';
 
-export const TYPE_ICON = { bible: BookOpen, commentary: MessageSquareText, dictionary: BookText, maps: MapIcon, crossrefs: Link2 };
+export const TYPE_ICON = { bible: BookOpen, commentary: MessageSquareText, dictionary: BookText, maps: MapIcon, crossrefs: Link2, audio: Headphones };
 
 function statsText(m) {
   const s = m.stats;
   if (!s) return null;
   if (m.type === 'bible') return `${s.books} кн., ${s.verses?.toLocaleString('ru-RU')} стихов`;
   if (m.type === 'dictionary' || m.type === 'commentary') return `${s.entries?.toLocaleString('ru-RU')} статей`;
-  if (m.type === 'maps') return `${s.maps} карт`;
+  if (m.type === 'maps') return s.places ? `${s.places} мест` : `${s.maps} карт`;
+  if (m.type === 'audio') return `${s.chapters} глав`;
   return `ссылки для ${s.verses?.toLocaleString('ru-RU')} стихов`;
 }
 

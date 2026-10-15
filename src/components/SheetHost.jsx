@@ -16,6 +16,9 @@ import VersionsSheet from './VersionsSheet.jsx';
 import CommentarySheet from './CommentarySheet.jsx';
 import MapsSheet from './MapsSheet.jsx';
 import NoteSheet from './NoteSheet.jsx';
+import CollectSheet from './CollectSheet.jsx';
+import VerseGuide from './VerseGuide.jsx';
+import PlansSheet from './PlansSheet.jsx';
 
 const KINDS = {
   dict: DictionaryBottomSheet,
@@ -33,6 +36,9 @@ const KINDS = {
   commentary: CommentarySheet,
   maps: MapsSheet,
   note: NoteSheet,
+  collect: CollectSheet,
+  guide: VerseGuide,
+  plans: PlansSheet,
 };
 
 export default function SheetHost() {

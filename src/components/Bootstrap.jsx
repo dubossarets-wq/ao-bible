@@ -13,6 +13,8 @@ export default function Bootstrap() {
   const started = useRef(false);
 
   const run = async () => {
+    // Первую установку делает только этот экран — автодоустановка в App её не дублирует
+    save('lateStarter', repo.LATE_STARTER);
     setState({ phase: 'run', label: 'Подключаю каталог…', p: 0 });
     try {
       const catalog = await repo.fetchCatalog();

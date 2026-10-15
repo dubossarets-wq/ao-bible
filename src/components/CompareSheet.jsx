@@ -6,6 +6,18 @@ import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { selectionLabel, selectionText } from './SelectionBar.jsx';
 import { Empty } from './ui.jsx';
+import { diffWords } from '../core/diff.js';
+
+// Текст перевода с подсветкой слов, которыми он отличается от открытого перевода
+function Diffed({ base, text }) {
+  const { parts, ratio } = diffWords(base, text);
+  return (
+    <>
+      {parts.map((p, i) => (p.diff ? <mark key={i} className="diff">{p.text}</mark> : <React.Fragment key={i}>{p.text}</React.Fragment>))}
+      <span className="diff-ratio">{ratio < 0.005 ? 'совпадает' : `отличается на ${Math.round(ratio * 100)}%`}</span>
+    </>
+  );
+}
 
 export default function CompareSheet({ pane, payload, onClose }) {
   const { bibles, openParallel, openSheet } = useApp();
@@ -68,7 +80,15 @@ export default function CompareSheet({ pane, payload, onClose }) {
                   </button>
                 )}
               </div>
-              <p className="compare-text">{texts[b.id] || <span className="muted">В этом переводе нет такого места.</span>}</p>
+              <p className="compare-text">
+                {!texts[b.id] ? (
+                  <span className="muted">В этом переводе нет такого места.</span>
+                ) : b.id !== moduleId && current && texts[moduleId] && (b.language || 'ru') === (current.language || 'ru') ? (
+                  <Diffed base={texts[moduleId]} text={texts[b.id]} />
+                ) : (
+                  texts[b.id]
+                )}
+              </p>
             </li>
           ))}
         </ul>

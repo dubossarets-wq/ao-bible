@@ -4,8 +4,9 @@ import { Search, X, MoreVertical, ChevronDown, ArrowLeft, ArrowRight, Library, P
 import { useApp } from '../App.jsx';
 import { bookMeta } from '../core/books.js';
 import { getVerse } from '../core/modules.js';
+import { listenFrom } from '../core/listen.js';
 import { plainText } from '../core/verseMarkup.js';
-import { RefreshCw, History, Map as MapIcon, PlayCircle, Link2 } from 'lucide-react';
+import { RefreshCw, History, Map as MapIcon, PlayCircle, Link2, Headphones, BookOpenText, CalendarCheck } from 'lucide-react';
 import { IS_PWA_BUILD, applyUpdate } from '../core/updates.js';
 import { useLivePosition } from '../core/livePosition.js';
 
@@ -135,10 +136,13 @@ export default function ReaderToolbar({ index, pane, module }) {
               </button>
             )}
             {item(Star, 'Закладки, заметки, избранное', () => openSheet('bookmarks', index))}
+            {item(CalendarCheck, 'Планы чтения', () => openSheet('plans', index))}
+            {item(Headphones, 'Слушать с этого места', () => listenFrom(index, module.id, ref))}
             <div className="menu-sep" />
             {item(Library, 'Библиотека модулей', () => openSheet('library', index))}
             {modules.some((m) => m.type === 'maps') && item(MapIcon, 'Карты', () => openSheet('maps', index))}
             {item(Palette, 'Оформление', () => openSheet('settings', index))}
+            {item(BookOpenText, 'Как книга', () => setSettings({ bookMode: !settings.bookMode }), settings.bookMode ? 'вкл' : 'выкл')}
             {item(settings.focusMode ? EyeOff : Eye, 'Режим чтения', () => setSettings({ focusMode: !settings.focusMode }), settings.focusMode ? 'вкл' : 'выкл')}
             {split &&
               panes[1]?.kind !== 'map' &&

@@ -6,19 +6,23 @@ import { plainText } from './verseMarkup.js';
 
 let countIndex = null; // Map `${book}.${c}.${v}` -> число ссылок (для бейджа у стиха)
 let countIndexKey = '';
+let countGen = 0; // запоминаем только результат самого свежего запроса
 
 export async function crossrefCounts() {
   const mods = (await listModules()).filter((m) => m.type === 'crossrefs' && m.enabled !== false);
   const key = mods.map((m) => m.id + m.updatedAt).join(',');
   if (countIndex && key === countIndexKey) return countIndex;
+  const my = ++countGen;
   const map = new Map();
   for (const m of mods) {
     const p = await getPayload(m.id);
     if (!p?.refs) continue;
     for (const [k, v] of Object.entries(p.refs)) map.set(k, (map.get(k) || 0) + v.length);
   }
-  countIndex = map;
-  countIndexKey = key;
+  if (my === countGen) {
+    countIndex = map;
+    countIndexKey = key;
+  }
   return map;
 }
 

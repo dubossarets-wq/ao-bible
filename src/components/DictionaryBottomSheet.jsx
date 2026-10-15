@@ -8,6 +8,8 @@ import { lookupWord, lookupStrong } from '../core/lexicon.js';
 import { describeMorph } from '../core/morph.js';
 import { formatRef, parseOsisRef, bookMeta } from '../core/books.js';
 import { Empty } from './ui.jsx';
+import LinkedText from './LinkedText.jsx';
+import WordStats from './WordStats.jsx';
 
 const KIND_LABEL = { strongs: 'по номерам Стронга', words: 'по словам' };
 
@@ -96,6 +98,7 @@ function StrongEntry({ num, entry, module, mapping, onOpenStrong, onOpenRef }) {
           <p>{entry.kjv}</p>
         </section>
       )}
+      <WordStats num={num} onOpenRef={onOpenRef} />
       {entry.renderings && (
         <section>
           <h4>Как переведено в синодальном тексте · {entry.count} употр.</h4>
@@ -278,7 +281,9 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
                 <h3 className="entry-word">{f.entry.word || f.key}</h3>
                 {f.match === 'stem' && <p className="warn small">Найдено по основе слова «{token.text}» — проверьте, что это та же лексема.</p>}
                 {f.entry.original && <div className="orig">{f.entry.original}</div>}
-                <p className="prewrap">{f.entry.text || f.entry.definition}</p>
+                <p className="prewrap">
+                  <LinkedText text={f.entry.text || f.entry.definition} onOpen={openRef} />
+                </p>
                 {f.entry.refs?.length > 0 && (
                   <div className="chips">
                     {f.entry.refs.map((r) => {

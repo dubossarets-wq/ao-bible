@@ -56,6 +56,7 @@ export const DEFAULT_SETTINGS = {
   splitLayout: 'auto', // auto | rows | columns
   splitRatio: 0.5,
   syncScroll: true, // синхронная прокрутка двух панелей
+  bookMode: false, // режим «как книга»
   inlineCommentaries: null, // какие комментарии подписывать в тексте: null — все включённые, иначе список id
   primaryModule: 'rst-plus',
 };

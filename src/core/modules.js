@@ -18,16 +18,21 @@ function emit() {
   listeners.forEach((fn) => fn(modulesCache));
 }
 
+// Список читается из базы один раз: одновременные первые вызовы ждут одно и то же чтение.
+// Иначе позднее завершившееся чтение могло затереть уже обновлённый список (модуль «пропадал» до перезапуска).
+let modulesLoading = null;
 export async function listModules() {
-  if (!modulesCache) {
-    try {
-      modulesCache = await db.getAll(db.STORES.modules);
-    } catch {
-      modulesCache = [];
-    }
-    modulesCache.sort((a, b) => (a.installedAt || 0) - (b.installedAt || 0));
+  if (modulesCache) return modulesCache;
+  if (!modulesLoading) {
+    modulesLoading = db
+      .getAll(db.STORES.modules)
+      .catch(() => [])
+      .then((list) => {
+        if (!modulesCache) modulesCache = [...list].sort((a, b) => (a.installedAt || 0) - (b.installedAt || 0));
+        return modulesCache;
+      });
   }
-  return modulesCache;
+  return modulesLoading;
 }
 
 export async function getModule(id) {
@@ -38,9 +43,10 @@ export async function updateModuleMeta(id, patch) {
   const list = await listModules();
   const m = list.find((x) => x.id === id);
   if (!m) return;
-  Object.assign(m, patch);
-  await db.put(db.STORES.modules, m);
-  modulesCache = [...list];
+  const updated = { ...m, ...patch };
+  await db.put(db.STORES.modules, updated);
+  // Берём текущий список (а не копию до await): параллельная установка могла его изменить
+  modulesCache = (await listModules()).map((x) => (x.id === id ? updated : x));
   emit();
 }
 
@@ -70,7 +76,8 @@ export async function installNormalized({ meta, data }, { origin = 'file', catal
     await db.put(db.STORES.payload, data, meta.id);
   }
   await db.put(db.STORES.modules, record);
-  modulesCache = [...list.filter((m) => m.id !== meta.id), record];
+  // Текущий список, а не копия на начало установки — иначе одновременные установки затирают друг друга
+  modulesCache = [...(await listModules()).filter((m) => m.id !== meta.id), record];
   emit();
   onProgress?.(1, 'Готово');
   return record;

@@ -10,3 +10,6 @@ local-modules/
 # Скачанные исходники дополнительных модулей (~430 МБ) — пересобираются scripts/build_extra.py
 data-src/extra/
 data-src/biblemap/report.txt
+# Скачанное аудио и инструменты выравнивания (агент по аудио)
+data-src/audio/
+.pylib-audio/

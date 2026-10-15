@@ -1,6 +1,10 @@
-// Расшифровка морфологических кодов Стронга (TVM) для иврита.
-// Таблица соответствий взята из сетки FHL (ctb.fhl.net/heb.html): породы × формы.
-// Для кодов, которых нет в таблице (в том числе греческих), показываем сам код без догадок.
+// Расшифровка морфологических кодов на русском:
+//  • коды Стронга TVM для иврита (RST+, например TH8804) — по сетке FHL (ctb.fhl.net/heb.html);
+//  • коды Робинсона для греческого (модуль byz-rp2018, например V-PAI-1S) и коды OSHB для иврита
+//    и арамейского (модуль oshb, например HC/Vqw3ms) — по таблицам morphData.json
+//    (перенос эталонного разбора scripts/morph_check.py).
+// Для неизвестных кодов показываем сам код без догадок.
+import DATA from './morphData.json';
 
 const FORMS = ['перфект', 'имперфект', 'повелительное наклонение', 'инфинитив', 'действительное причастие', 'страдательное причастие', 'причастие'];
 const GRID = {
@@ -23,14 +27,107 @@ const GRID = {
   'Хитпалпель (Hithpalpel)': [null, 8698, null, null, null, null, null],
   'Шафель (Shaphel)': [8806, null, null, null, null, null, null],
 };
+const TVM = new Map();
+for (const [stem, codes] of Object.entries(GRID)) codes.forEach((c, i) => c && TVM.set(c, `${stem}, ${FORMS[i]}`));
 
-const TABLE = new Map();
-for (const [stem, codes] of Object.entries(GRID)) codes.forEach((c, i) => c && TABLE.set(c, `${stem}, ${FORMS[i]}`));
+// --- Робинсон / OSHB ---------------------------------------------------------------------
+
+function slotTable(section, name, lang) {
+  const byLang = section.slotsByLanguage || {};
+  if (name in byLang) return byLang[name][lang] || {};
+  return section.slots[name] || {};
+}
+
+function matchForm(section, form, body, lang) {
+  const ph = section.placeholder;
+  let pos = 0;
+  const out = [];
+  for (const name of form.slots) {
+    if (pos === body.length) {
+      if (section.allowShort) break;
+      return null;
+    }
+    if (name === '-') {
+      if (body[pos] !== '-') return null;
+      pos++;
+      continue;
+    }
+    if (ph && body[pos] === ph) {
+      out.push([name, ph, null]);
+      pos++;
+      continue;
+    }
+    const table = slotTable(section, name, lang);
+    let key = null;
+    for (let n = Math.min(4, body.length - pos); n > 0; n--) {
+      if (body.slice(pos, pos + n) in table) {
+        key = body.slice(pos, pos + n);
+        break;
+      }
+    }
+    if (key == null) return null;
+    out.push([name, key, table[key]]);
+    pos += key.length;
+  }
+  if (pos !== body.length) return null;
+  for (const [name, allowed] of Object.entries(form.when || {})) {
+    const got = out.find(([n]) => n === name)?.[1];
+    if (got != null && got !== ph && !allowed.includes(got)) return null;
+  }
+  return out;
+}
+
+function parseBody(section, posCode, body, lang) {
+  const info = section.pos[posCode];
+  if (!info) return { pos: posCode, error: true };
+  for (const form of info.forms) {
+    const slots = matchForm(section, form, body, lang);
+    if (slots) return { pos: posCode, posInfo: info, slots };
+  }
+  return { pos: posCode, posInfo: info, error: true };
+}
+
+function parseGreek(code) {
+  const g = DATA.greek;
+  const parts = code.split(g.separator);
+  const suffixes = [];
+  while (parts.length > 1 && parts[parts.length - 1] in g.suffixes) suffixes.unshift(parts.pop());
+  const seg = parseBody(g, parts[0], parts.slice(1).join(g.separator));
+  seg.suffixes = suffixes.map((s) => [s, g.suffixes[s]]);
+  return [seg];
+}
+
+function parseHebrew(code) {
+  const h = DATA.hebrew;
+  const lang = code[0];
+  if (!(lang in h.languages)) return null;
+  return code
+    .slice(1)
+    .split(h.segmentSeparator)
+    .map((s) => {
+      const seg = s ? parseBody(h, s[0], s.slice(1), lang) : { pos: '', error: true };
+      seg.suffixes = [];
+      return seg;
+    });
+}
+
+function describeParsed(segs, key = 'ru') {
+  if (!segs || segs.some((s) => s.error)) return null;
+  return segs
+    .map((s) => [s.posInfo[key], ...s.slots.filter(([, , v]) => v).map(([, , v]) => v[key]), ...s.suffixes.map(([, v]) => v[key])].join(', '))
+    .join(' + ');
+}
 
 export function describeMorph(code) {
-  const m = /^T?([HG])(\d+)$/.exec(code);
-  if (!m) return { code, text: null };
-  const n = +m[2];
-  if (m[1] === 'H' && TABLE.has(n)) return { code, text: TABLE.get(n) };
-  return { code, text: null };
+  const tvm = /^T?([HG])(\d+)$/.exec(code);
+  if (tvm) {
+    const n = +tvm[2];
+    return { code, text: tvm[1] === 'H' && TVM.has(n) ? TVM.get(n) : null };
+  }
+  try {
+    const hebrew = /^[HA][A-Za-z0-9/]*$/.test(code) && !code.includes('-') && !(code in DATA.greek.pos);
+    return { code, text: describeParsed(hebrew ? parseHebrew(code) : parseGreek(code)) };
+  } catch {
+    return { code, text: null };
+  }
 }

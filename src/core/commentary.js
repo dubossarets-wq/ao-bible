@@ -5,11 +5,13 @@ import { parseOsisRef } from './books.js';
 
 let index = null;
 let indexKey = '';
+let indexGen = 0;
 
 export async function commentaryIndex() {
   const mods = (await listModules()).filter((m) => m.type === 'commentary' && m.enabled !== false);
   const key = mods.map((m) => m.id + m.updatedAt).join(',');
   if (index && key === indexKey) return index;
+  const my = ++indexGen;
   const map = new Map(); // `${book}.${c}.${v}` -> [{ id, name }]
   for (const m of mods) {
     const p = await getPayload(m.id);
@@ -22,8 +24,10 @@ export async function commentaryIndex() {
       map.set(vk, list);
     }
   }
-  index = map;
-  indexKey = key;
+  if (my === indexGen) {
+    index = map;
+    indexKey = key;
+  }
   return map;
 }
 

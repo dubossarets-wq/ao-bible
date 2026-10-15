@@ -387,7 +387,12 @@ async function run(label, viewport, isMobile) {
   await press('#v-13-32 .vt');
   await page.click('[aria-label="Закладка: продолжить отсюда"]');
   await press('#v-13-32 .vt');
-  await page.click('[aria-label="В избранное"]');
+  // На узком экране звёздочка — в «⋯»
+  if (await page.locator('.selection-bar [aria-label="В избранное"]').isVisible()) await page.click('.selection-bar [aria-label="В избранное"]');
+  else {
+    await page.click('[aria-label="Ещё действия"]');
+    await page.click('.menu-item:has-text("В избранное")');
+  }
   await page.waitForTimeout(400);
   const marksOk = await page.evaluate(() => ({ note: !!document.querySelector('#v-13-33 .note-tag'), bm: !!document.querySelector('#v-13-32 .vmark.bm'), fav: document.querySelector('#v-13-32').classList.contains('fav') && !!document.querySelector('#v-13-32 .fav-star') }));
   check(`${label}: заметка, закладка и избранное видны в тексте`, marksOk.note && marksOk.bm && marksOk.fav, JSON.stringify(marksOk));

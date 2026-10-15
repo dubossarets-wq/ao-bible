@@ -5,9 +5,11 @@ import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { selectionLabel, selectionText } from './SelectionBar.jsx';
 import { ConfirmButton } from './ui.jsx';
+import LinkedText from './LinkedText.jsx';
+import { hasRefs } from '../core/refLinks.js';
 
-export default function NoteSheet({ payload, onClose }) {
-  const { notes, setNote, toast } = useApp();
+export default function NoteSheet({ pane, payload, onClose }) {
+  const { notes, setNote, toast, openInOther } = useApp();
   const refs = payload.refs;
   const first = refs[0];
   const key = `${first.book}.${first.chapter}.${first.verse}`;
@@ -61,6 +63,18 @@ export default function NoteSheet({ payload, onClose }) {
         rows={7}
         onKeyDown={(e) => (e.metaKey || e.ctrlKey) && e.key === 'Enter' && save()}
       />
+      {hasRefs(text) && (
+        <p className="note-preview">
+          <LinkedText
+            text={text}
+            onOpen={(r) => {
+              setNote(first, text, label);
+              onClose();
+              openInOther(pane, r);
+            }}
+          />
+        </p>
+      )}
       {existing && <p className="field-hint">Создана {new Date(existing.at).toLocaleString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>}
     </BottomSheet>
   );

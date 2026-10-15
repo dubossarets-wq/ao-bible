@@ -2,9 +2,11 @@
 // ✓ · ссылка и число стихов · параллельно в другом переводе · избранное · заметка · закладка · копировать · ⋯
 // В «⋯»: сравнить переводы, параллельные места, поделиться.
 import React, { useEffect, useRef, useState } from 'react';
-import { Check, Languages, BookCopy, Star, Link2, Share2, Copy, NotebookPen, Bookmark, BookmarkCheck, MoreHorizontal, MessageSquareText } from 'lucide-react';
+import { Check, Languages, BookCopy, Star, Link2, Share2, Copy, NotebookPen, Bookmark, BookmarkCheck, MoreHorizontal, MessageSquareText, Headphones, Highlighter, FolderPlus, Eraser, Compass } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { getVerse } from '../core/modules.js';
+import { listenFrom } from '../core/listen.js';
+import { HL_COLORS, hlLabel } from '../core/highlights.js';
 import { plainText } from '../core/verseMarkup.js';
 import { bookMeta, formatRef, BOOKS } from '../core/books.js';
 
@@ -44,7 +46,9 @@ export async function selectionText(moduleId, refs) {
 }
 
 export default function SelectionBar({ index, module, selection, onDone }) {
-  const { openSheet, toast, bibles, openParallel, isFavorite, toggleFavorite, isBookmarked, toggleBookmark, notes } = useApp();
+  const { openSheet, toast, bibles, openParallel, isFavorite, toggleFavorite, isBookmarked, toggleBookmark, notes, highlights, setHighlight, hlLabels } = useApp();
+  const [palette, setPalette] = useState(false);
+  const paletteRef = useRef(null);
   const [more, setMore] = useState(false);
   const moreRef = useRef(null);
   const refs = sortedRefs(selection);
@@ -52,6 +56,13 @@ export default function SelectionBar({ index, module, selection, onDone }) {
   const others = bibles.filter((b) => b.id !== module.id);
   const first = refs[0];
   const hasNote = !!notes[`${first.book}.${first.chapter}.${first.verse}`];
+
+  useEffect(() => {
+    if (!palette) return;
+    const off = (e) => !paletteRef.current?.contains(e.target) && setPalette(false);
+    document.addEventListener('pointerdown', off);
+    return () => document.removeEventListener('pointerdown', off);
+  }, [palette]);
 
   useEffect(() => {
     if (!more) return;
@@ -122,6 +133,7 @@ export default function SelectionBar({ index, module, selection, onDone }) {
       onClick={() => {
         setMore(false);
         fn();
+        onDone(); // действие выполнено — выделение снимается
       }}
     >
       <Icon size={18} />
@@ -143,16 +155,42 @@ export default function SelectionBar({ index, module, selection, onDone }) {
       <button className="tb tb-icon" onClick={parallel} aria-label="Открыть параллельно в другом переводе" title="Параллельно в другом переводе">
         <Languages size={22} />
       </button>
-      <button className={`tb tb-icon ${fav ? 'on' : ''}`} onClick={toggleFav} aria-label={fav ? 'Убрать из избранного' : 'В избранное'} title="Избранное">
+      <div className="hl-wrap" ref={paletteRef}>
+        <button className={`tb tb-icon ${highlights[`${first.book}.${first.chapter}.${first.verse}`] ? 'on' : ''}`} onClick={() => setPalette((v) => !v)} aria-label="Выделить цветом" aria-expanded={palette} title="Выделить цветом">
+          <Highlighter size={21} />
+        </button>
+        {palette && (
+          <div className="hl-palette" role="menu" aria-label="Цвет выделения">
+            {HL_COLORS.map((c) => (
+              <button
+                key={c.id}
+                role="menuitem"
+                className={`hl-dot ${highlights[`${first.book}.${first.chapter}.${first.verse}`] === c.id ? 'on' : ''}`}
+                style={{ background: c.css }}
+                aria-label={hlLabel(c.id, hlLabels)}
+                title={hlLabel(c.id, hlLabels)}
+                onClick={() => {
+                  setHighlight(refs, c.id);
+                  onDone();
+                }}
+              />
+            ))}
+            <button role="menuitem" className="hl-dot clear" aria-label="Убрать выделение" title="Убрать выделение" onClick={() => (setHighlight(refs, null), onDone())}>
+              <Eraser size={15} />
+            </button>
+          </div>
+        )}
+      </div>
+      <button className={`tb tb-icon tb-opt ${fav ? 'on' : ''}`} onClick={toggleFav} aria-label={fav ? 'Убрать из избранного' : 'В избранное'} title="Избранное">
         <Star size={21} fill={fav ? 'currentColor' : 'none'} />
       </button>
-      <button className={`tb tb-icon ${hasNote ? 'on' : ''}`} onClick={() => openSheet('note', index, { refs, moduleId: module.id })} aria-label={hasNote ? 'Открыть заметку' : 'Добавить заметку'} title="Заметка">
+      <button className={`tb tb-icon ${hasNote ? 'on' : ''}`} onClick={() => (openSheet('note', index, { refs, moduleId: module.id }), onDone())} aria-label={hasNote ? 'Открыть заметку' : 'Добавить заметку'} title="Заметка">
         <NotebookPen size={21} />
       </button>
       <button className={`tb tb-icon ${bm ? 'on' : ''}`} onClick={toggleBm} aria-label={bm ? 'Убрать закладку' : 'Закладка: продолжить отсюда'} title={bm ? 'Убрать закладку' : 'Закладка «продолжить отсюда»'}>
         {bm ? <BookmarkCheck size={21} /> : <Bookmark size={21} />}
       </button>
-      <button className="tb tb-icon" onClick={() => openSheet('commentary', index, { ref: first })} aria-label="Комментарии" title="Комментарии">
+      <button className="tb tb-icon" onClick={() => (openSheet('commentary', index, { ref: first }), onDone())} aria-label="Комментарии" title="Комментарии">
         <MessageSquareText size={21} />
       </button>
       <div className="tb-menu-wrap" ref={moreRef}>
@@ -161,8 +199,12 @@ export default function SelectionBar({ index, module, selection, onDone }) {
         </button>
         {more && (
           <div className="menu" role="menu">
+            {moreItem(Compass, 'Всё о стихе', () => openSheet('guide', index, { ref: first, moduleId: module.id }))}
+            {moreItem(FolderPlus, 'В подборку…', () => openSheet('collect', index, { refs, moduleId: module.id }))}
+            {moreItem(Star, fav ? 'Убрать из избранного' : 'В избранное', toggleFav)}
             {moreItem(BookCopy, 'Сравнить переводы', () => openSheet('compare', index, { refs, moduleId: module.id }))}
             {refs.length === 1 && moreItem(Link2, 'Параллельные места', () => openSheet('xrefs', index, { ref: first }))}
+            {moreItem(Headphones, 'Слушать отсюда', () => (listenFrom(index, module.id, first), onDone()))}
             {moreItem(Copy, 'Копировать', copy)}
             {moreItem(Share2, 'Поделиться', share)}
           </div>

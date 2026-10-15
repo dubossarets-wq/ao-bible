@@ -9,6 +9,7 @@ import { crossrefCounts } from '../core/crossrefs.js';
 import { commentaryIndex } from '../core/commentary.js';
 import { setLivePosition, clearLivePosition } from '../core/livePosition.js';
 import { setDriver, isDriver, onSync, emitSync } from '../core/scrollSync.js';
+import { useAudio } from '../core/audio.js';
 import { verseHtml, wordAt, plainText } from '../core/verseMarkup.js';
 import { wasClosedOnWord } from '../core/tapState.js';
 
@@ -41,7 +42,7 @@ const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, x
             <React.Fragment key={v}>
               {heading && <h3 className="section-title">{heading}</h3>}
               <p
-                className={`verse${flashVerse === v ? ' flash' : ''}${sel?.has(v) ? ' selected' : ''}${mk[v]?.includes('f') ? ' fav' : ''}`}
+                className={`verse${flashVerse === v ? ' flash' : ''}${sel?.has(v) ? ' selected' : ''}${mk[v]?.includes('f') ? ' fav' : ''}${/[1-6]/.test(mk[v] || '') ? ` hl-${mk[v].match(/[1-6]/)[0]}` : ''}`}
                 data-c={c}
                 data-v={v}
                 id={`v-${c}-${v}`}
@@ -152,6 +153,9 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
   }, [module.id, pane.nav]);
 
   useLayoutEffect(() => {
+    // Текст сменился (переход, подгрузка глав) — старые координаты стихов недействительны.
+    // Сбрасываем сразу, до первой прокрутки: иначе место в шапке и в истории бралось бы из прежней книги.
+    positions.current = null;
     const el = scroller.current;
     const p = pending.current;
     if (!el || !p || !range) return;
@@ -258,6 +262,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     press.current = null;
   };
   const onPointerDown = (e) => {
+    userTouchAt.current = Date.now();
     // Новое касание — новый жест: после долгого нажатия телефон может не прислать щелчок,
     // и без этого следующее обычное нажатие (снять выделение) проглатывалось
     suppressClick.current = false;
@@ -356,16 +361,51 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     [index, book, module, settings.syncScroll]
   );
 
+  // Чтение вслух: подсвечиваем текущий стих и ведём за ним текст (если человек сам не листает)
+  const audio = useAudio();
+  const userTouchAt = useRef(0);
+  const speakingEl = useRef(null);
+  const audioNav = useRef(null);
+  useEffect(() => {
+    const el = scroller.current;
+    const clear = () => {
+      speakingEl.current?.classList.remove('speaking');
+      speakingEl.current = null;
+    };
+    if (!audio.active || audio.pane !== index || !audio.ref || !el || audio.moduleId !== module.id) return clear();
+    const r = audio.ref;
+    const target = book?.id === r.book ? el.querySelector(`#v-${r.chapter}-${r.verse}`) : null;
+    if (!target) {
+      const key = `${r.book}.${r.chapter}`;
+      if (audioNav.current !== key) {
+        audioNav.current = key;
+        navigate(index, r, { push: false, flash: false });
+      }
+      return;
+    }
+    audioNav.current = null;
+    if (speakingEl.current !== target) {
+      clear();
+      target.classList.add('speaking');
+      speakingEl.current = target;
+    }
+    if (Date.now() - userTouchAt.current > 4000) {
+      const top = target.offsetTop - el.scrollTop;
+      if (top < 40 || top > el.clientHeight * 0.6) el.scrollTo({ top: target.offsetTop - el.clientHeight * 0.25, behavior: settings.animations ? 'smooth' : 'auto' });
+    }
+  }, [audio.active, audio.ref, audio.pane, audio.moduleId, book, range, module.id]);
+
   const opts = useMemo(
     () => ({
-      showVerseNumbers: settings.showVerseNumbers,
-      showStrongs: settings.showStrongs && module.features?.strongs,
+      // Режим «как книга»: сплошной текст абзацами по разделам, без номеров, кнопок и пометок
+      showVerseNumbers: settings.showVerseNumbers && !settings.bookMode,
+      showStrongs: settings.showStrongs && module.features?.strongs && !settings.bookMode,
       showHeadings: settings.showHeadings,
-      showXref: settings.showXrefButtons && !settings.focusMode,
-      inlineComments: settings.inlineCommentaries, // null — все включённые комментарии
-      continuous: settings.continuousVerses,
+      showXref: settings.showXrefButtons && !settings.focusMode && !settings.bookMode,
+      inlineComments: settings.bookMode ? [] : settings.inlineCommentaries, // null — все включённые комментарии
+      continuous: settings.continuousVerses || settings.bookMode,
     }),
-    [settings.showVerseNumbers, settings.showStrongs, settings.showHeadings, settings.showXrefButtons, settings.focusMode, settings.continuousVerses, settings.inlineCommentaries, module]
+    [settings.showVerseNumbers, settings.showStrongs, settings.showHeadings, settings.showXrefButtons, settings.focusMode, settings.continuousVerses, settings.inlineCommentaries, settings.bookMode, module]
   );
   const hlRe = useMemo(() => highlightRegex(pane.highlight), [pane.highlight]);
   const flash = pane.flash ? pane.flash.split('.') : null;
@@ -384,14 +424,14 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       }}
       onClick={onClick}
       onPointerDown={onPointerDown}
-      onWheel={() => setDriver(index)}
-      onTouchStart={() => setDriver(index)}
+      onWheel={() => (setDriver(index), (userTouchAt.current = Date.now()))}
+      onTouchStart={() => (setDriver(index), (userTouchAt.current = Date.now()))}
       onPointerMove={onPointerMove}
       onPointerUp={cancelPress}
       onPointerCancel={cancelPress}
       onContextMenu={onContextMenu}
     >
-      <div className="text-col" dir={module.language === 'he' ? 'rtl' : undefined} lang={module.language || undefined}>
+      <div className={`text-col${settings.bookMode ? ' book-mode' : ''}`} dir={module.language === 'he' ? 'rtl' : undefined} lang={module.language || undefined}>
         {error && <div className="notice error-text">{error}</div>}
         {!error && (!book || !range) && (
           <div className="loading">

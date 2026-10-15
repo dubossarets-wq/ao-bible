@@ -5,6 +5,7 @@ import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { THEMES, FONTS, ensureFont } from '../core/settings.js';
 import { Segmented, Slider, Switch, Hint } from './ui.jsx';
+import { HL_COLORS } from '../core/highlights.js';
 
 function ColorField({ id, label, value, onChange }) {
   return (
@@ -19,7 +20,7 @@ function ColorField({ id, label, value, onChange }) {
 }
 
 export default function AppearanceSettings({ onClose }) {
-  const { settings: s, setSettings: set, resetSettings, themeName, modules } = useApp();
+  const { settings: s, setSettings: set, resetSettings, themeName, modules, hlLabels, setHlLabels } = useApp();
   const commentaries = modules.filter((m) => m.type === 'commentary' && m.enabled !== false);
   const colorsFromTheme = () => {
     const t = THEMES[themeName];
@@ -93,6 +94,7 @@ export default function AppearanceSettings({ onClose }) {
           ]}
         />
         <Switch id="set-vn" checked={s.showVerseNumbers} onChange={(showVerseNumbers) => set({ showVerseNumbers })} label="Номера стихов" />
+        <Switch id="set-book" checked={s.bookMode} onChange={(bookMode) => set({ bookMode })} label="Как книга" hint="Сплошной текст абзацами по разделам, без номеров стихов, кнопок и пометок — для долгого чтения" />
         <Switch id="set-cont" checked={s.continuousVerses} onChange={(continuousVerses) => set({ continuousVerses })} label="Стихи сплошным текстом" hint="Без перевода строки после каждого стиха" />
         <Switch id="set-head" checked={s.showHeadings} onChange={(showHeadings) => set({ showHeadings })} label="Заголовки разделов" />
         <Switch id="set-strong" checked={s.showStrongs} onChange={(showStrongs) => set({ showStrongs })} label="Номера Стронга в тексте" hint="Только для размеченных переводов, например RST+" />
@@ -138,6 +140,20 @@ export default function AppearanceSettings({ onClose }) {
           ))}
         </section>
       )}
+
+      <section className="settings-group">
+        <h4>
+          Цвета выделений <Hint>Подпишите цвета — например, «Обетования», «Вопросы». Подписи видны в палитре и в списке выделений.</Hint>
+        </h4>
+        <div className="hl-labels">
+          {HL_COLORS.map((c) => (
+            <label key={c.id} className="hl-label-row" htmlFor={`hl-${c.id}`}>
+              <span className="hl-swatch" style={{ background: c.css }} />
+              <input id={`hl-${c.id}`} value={hlLabels[c.id] || ''} placeholder={c.name} onChange={(e) => setHlLabels((l) => ({ ...l, [c.id]: e.target.value }))} autoComplete="off" />
+            </label>
+          ))}
+        </div>
+      </section>
 
       <section className="settings-group">
         <h4>Свои цвета</h4>

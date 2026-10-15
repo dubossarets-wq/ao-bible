@@ -6,11 +6,13 @@ import { normalizeWord } from './verseMarkup.js';
 
 let cache = null;
 let cacheKey = '';
+let cacheGen = 0;
 
 async function index() {
   const mods = (await listModules()).filter((m) => m.type === 'maps' && m.enabled !== false);
   const key = mods.map((m) => m.id + m.updatedAt).join(',');
   if (cache && key === cacheKey) return cache;
+  const my = ++cacheGen;
   const byVerse = new Map(); // «Josh.14.15» -> [place]
   for (const m of mods) {
     const p = await getPayload(m.id);
@@ -23,9 +25,12 @@ async function index() {
       }
     }
   }
-  cache = { byVerse };
-  cacheKey = key;
-  return cache;
+  const result = { byVerse };
+  if (my === cacheGen) {
+    cache = result;
+    cacheKey = key;
+  }
+  return result;
 }
 
 export async function placesForWord(token, ref) {

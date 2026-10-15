@@ -7,6 +7,7 @@ import SplitScreenReader from './components/SplitScreenReader.jsx';
 import SheetHost from './components/SheetHost.jsx';
 import Bootstrap from './components/Bootstrap.jsx';
 import WordPopover from './components/WordPopover.jsx';
+import AudioBar from './components/AudioBar.jsx';
 import { useUpdates, applyUpdate } from './core/updates.js';
 import { IS_STAGING } from './core/channel.js';
 import { Toasts } from './components/ui.jsx';
@@ -65,6 +66,11 @@ export default function App() {
   const [favorites, setFavorites] = usePersistentState('favorites', []);
   // Заметки к стихам: { 'Josh.14.15': { text, label, at, updated } } — label хранит выделение («Нав. 14:15–16»)
   const [notes, setNotes] = usePersistentState('notes', {});
+  // Цветные выделения { 'Josh.14.15': '2' } и подписи цветов { '2': 'Обетования' }
+  const [highlights, setHighlights] = usePersistentState('highlights', {});
+  const [hlLabels, setHlLabels] = usePersistentState('highlightLabels', {});
+  // Подборки стихов: [{ id, name, at, items: [{ book, chapter, verse, text, at }] }]
+  const [collections, setCollections] = usePersistentState('collections', []);
 
   const updates = useUpdates();
 
@@ -264,8 +270,41 @@ export default function App() {
       const [b, c, v] = k.split('.');
       add(b, +c, +v, 'n');
     });
+    Object.entries(highlights).forEach(([k, color]) => {
+      const [b, c, v] = k.split('.');
+      add(b, +c, +v, color); // цифра — цвет выделения
+    });
     return m;
-  }, [favorites, bookmarks, notes]);
+  }, [favorites, bookmarks, notes, highlights]);
+
+  const setHighlight = useEvent((refs, color) => {
+    setHighlights((h) => {
+      const next = { ...h };
+      for (const r of refs) {
+        const k = `${r.book}.${r.chapter}.${r.verse}`;
+        if (color) next[k] = color;
+        else delete next[k];
+      }
+      return next;
+    });
+  });
+
+  const addToCollection = useEvent((collectionId, items, newName) => {
+    setCollections((cs) => {
+      let list = cs;
+      let id = collectionId;
+      if (!id) {
+        id = Date.now().toString(36);
+        list = [{ id, name: newName || 'Подборка', at: Date.now(), items: [] }, ...cs];
+      }
+      return list.map((c) => {
+        if (c.id !== id) return c;
+        const have = new Set(c.items.map((x) => `${x.book}.${x.chapter}.${x.verse}`));
+        const add = items.filter((x) => !have.has(`${x.book}.${x.chapter}.${x.verse}`)).map((x) => ({ ...x, at: Date.now() }));
+        return { ...c, items: [...c.items, ...add] };
+      });
+    });
+  });
 
   const ctx = {
     settings: fullSettings,
@@ -304,6 +343,13 @@ export default function App() {
     notes,
     setNote,
     marks,
+    highlights,
+    setHighlight,
+    hlLabels,
+    setHlLabels,
+    collections,
+    setCollections,
+    addToCollection,
   };
 
   const ready = modules !== null && bibles.length > 0;
@@ -313,6 +359,7 @@ export default function App() {
         {modules === null ? null : ready ? <SplitScreenReader /> : <Bootstrap />}
         <SheetHost />
         <WordPopover />
+        <AudioBar />
         <Toasts items={toasts} />
         {IS_STAGING && (
           <div className="staging-badge" aria-label="Тестовое приложение">

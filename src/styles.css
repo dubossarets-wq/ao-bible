@@ -548,3 +548,87 @@ button.row-act:hover { background: color-mix(in srgb, var(--accent) 12%, transpa
   .toolbar .tb-module { font-size: .88rem; padding: 0 8px 0 10px; }
 }
 @container (max-width: 360px) { .toolbar .tb-chev { display: none; } }
+
+/* ---------- Чтение вслух ---------- */
+.verse.speaking { background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: -10px 0 0 color-mix(in srgb, var(--accent) 14%, transparent), 10px 0 0 color-mix(in srgb, var(--accent) 14%, transparent); border-radius: 4px; transition: background .25s; }
+.audio-bar { position: fixed; left: calc(env(safe-area-inset-left, 0px) + 8px); right: calc(env(safe-area-inset-right, 0px) + 8px); bottom: calc(env(safe-area-inset-bottom, 0px) + 8px); z-index: 35; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: calc(var(--radius) + 4px); box-shadow: 0 10px 34px rgba(0,0,0,.2); max-width: 640px; margin: 0 auto; animation: up .25s ease-out; }
+.audio-main { display: flex; align-items: center; gap: 2px; padding: 6px; }
+.audio-btn { flex: none; width: 40px; height: 40px; display: grid; place-items: center; border: 0; background: none; border-radius: 50%; color: var(--text); }
+.audio-btn:hover, .audio-btn.on { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
+.audio-btn.play { width: 46px; height: 46px; background: var(--accent); color: #fff; }
+.audio-btn.play:hover { background: var(--accent); filter: brightness(1.06); color: #fff; }
+.audio-info { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 0 6px; }
+.audio-ref { font-weight: 700; font-size: .95rem; }
+.audio-src { font-size: .78rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.audio-opts { display: flex; flex-direction: column; gap: 10px; padding: 12px 12px 4px; border-bottom: 1px solid var(--line); }
+.audio-opt-row { display: flex; flex-direction: column; gap: 6px; }
+
+/* ---------- Цветные выделения стихов ---------- */
+.verse[class*=" hl-"] { border-radius: 4px; box-shadow: -6px 0 0 var(--hlc), 6px 0 0 var(--hlc); background: var(--hlc); }
+.verse.hl-1 { --hlc: color-mix(in srgb, #f3d36b 45%, transparent); }
+.verse.hl-2 { --hlc: color-mix(in srgb, #7fc4ec 42%, transparent); }
+.verse.hl-3 { --hlc: color-mix(in srgb, #7ccfa4 42%, transparent); }
+.verse.hl-4 { --hlc: color-mix(in srgb, #f2a65a 42%, transparent); }
+.verse.hl-5 { --hlc: color-mix(in srgb, #e79ac0 42%, transparent); }
+.verse.hl-6 { --hlc: color-mix(in srgb, #b7a3e3 45%, transparent); }
+.verse.selected[class*=" hl-"] { background: var(--panel); }
+.hl-palette { position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); display: flex; gap: 8px; padding: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 14px 40px rgba(0,0,0,.22); z-index: 20; animation: pop .14s ease-out; }
+.hl-dot { width: 32px; height: 32px; border-radius: 50%; border: 2px solid transparent; padding: 0; display: grid; place-items: center; color: var(--text); }
+.hl-dot.on { border-color: var(--text); }
+.hl-dot.clear { background: none; border: 1px dashed var(--muted); color: var(--muted); }
+.hl-swatch { display: inline-block; width: 14px; height: 14px; border-radius: 50%; flex: none; }
+.hl-wrap { position: relative; display: flex; }
+.hl-labels { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.hl-label-row { display: flex; align-items: center; gap: 8px; }
+.hl-label-row input { padding: 7px 10px; }
+
+/* Ссылки на стихи в тексте заметок, комментариев и статей */
+.ref-link { font: inherit; color: var(--accent); background: none; border: 0; padding: 0; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; cursor: pointer; }
+.note-preview { margin: 0; padding: 10px 12px; border-radius: calc(var(--radius) * .75); background: var(--bg); border: 1px dashed var(--line); line-height: 1.5; white-space: pre-wrap; font-family: var(--font-text); }
+
+/* Статистика слова */
+.word-stats { display: flex; flex-direction: column; gap: 8px; }
+.word-stats h4 { display: flex; align-items: center; gap: 6px; }
+.stat-bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.stat-bars li { display: grid; grid-template-columns: 56px 1fr auto; gap: 8px; align-items: center; font-size: .85rem; }
+.sb-name { color: var(--muted); }
+.sb-bar { height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--accent) var(--w), color-mix(in srgb, var(--muted) 14%, transparent) var(--w)); }
+.loading.small { padding: 6px 0; justify-content: flex-start; font-size: .85rem; }
+
+/* Сравнение переводов: слова, которыми перевод отличается */
+mark.diff { background: color-mix(in srgb, #f2a65a 38%, transparent); border-radius: 3px; padding: 0 1px; }
+.diff-ratio { display: block; margin-top: 4px; font-family: var(--font-ui); font-size: .78rem; color: var(--muted); }
+
+/* «Всё о стихе» */
+.guide-sec { display: flex; flex-direction: column; gap: 6px; }
+.guide-sec h4 { margin: 4px 0 0; font-size: .74rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.guide-sec p { margin: 0; display: flex; align-items: center; gap: 6px; }
+.guide-card { text-align: left; border: 1px solid var(--line); background: var(--bg); border-radius: calc(var(--radius) * .75); padding: 8px 10px; font-family: var(--font-text); line-height: 1.45; font-size: .95rem; white-space: pre-wrap; }
+.guide-card:hover { border-color: var(--accent); }
+.guide-words { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.guide-word { width: 100%; display: flex; flex-direction: column; gap: 1px; text-align: left; border: 1px solid var(--line); background: var(--bg); border-radius: calc(var(--radius) * .75); padding: 6px 9px; }
+.guide-word:hover { border-color: var(--accent); }
+.gw-ru { font-weight: 700; }
+.gw-orig { font-size: 1.15rem; }
+.gw-orig.hebrew { font-family: var(--font-hebrew); text-align: right; }
+.gw-orig.greek { font-family: var(--font-greek); }
+.gw-meta { font-size: .75rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Режим «как книга» */
+.text-col.book-mode .verses.continuous { text-indent: 1.4em; }
+.text-col.book-mode .section-title { text-indent: 0; margin-top: 1.4em; }
+.text-col.book-mode .vmark, .text-col.book-mode .note-tag, .text-col.book-mode .cm { display: none; }
+.text-col.book-mode .verse.fav { background: none; box-shadow: none; }
+.text-col.book-mode .chapter-title { font-size: calc(var(--chapter-size) * .7); text-align: center; margin: 1.4em 0 .6em; }
+
+/* Планы чтения */
+.plan-card { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+.plan-head { display: flex; align-items: center; gap: 4px 10px; flex-wrap: wrap; }
+.plan-name { font-weight: 700; }
+.plan-meta { color: var(--muted); font-size: .82rem; flex: 1; min-width: 0; }
+.plan-day { display: flex; align-items: center; gap: 4px; }
+.plan-day-label { flex: 1; font-weight: 600; font-size: .9rem; text-align: center; }
+.chip.done { opacity: .6; text-decoration: line-through; }
+.plan-offer { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.plan-offer-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+#plan-days { max-width: 110px; }
