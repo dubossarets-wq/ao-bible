@@ -34,6 +34,8 @@
   "xrefs-openbible",
   "xrefs-tsk",
   "bible-maps",
-  "audio-kjv-librivox"
+  "audio-kjv-librivox",
+  "audio-rst-nt-wwjd",
+  "audio-rst-ot-wwjd"
  ]
 }

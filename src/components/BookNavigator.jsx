@@ -4,6 +4,7 @@ import { CornerDownLeft } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { parseHumanRef, testamentOf, bookMeta } from '../core/books.js';
+import { groupByCategory, categoryOf } from '../core/bookCategories.js';
 
 export default function BookNavigator({ pane, onClose }) {
   const { panes, bibles, navigate } = useApp();
@@ -45,7 +46,13 @@ export default function BookNavigator({ pane, onClose }) {
   const back = chapter ? () => setChapter(null) : book ? () => setBook(null) : null;
 
   return (
-    <BottomSheet title={title} subtitle={selBook ? (chapter ? 'Выберите стих' : 'Выберите главу') : module.title || module.name} onClose={onClose} onBack={back} initial={2}>
+    <BottomSheet
+      title={title}
+      subtitle={selBook ? `${categoryOf(selBook.id).name} · ${chapter ? 'выберите стих' : 'выберите главу'}` : module.title || module.name}
+      onClose={onClose}
+      onBack={back}
+      initial={2}
+    >
       {!book && (
         <>
           <form className="ref-form" onSubmit={submit}>
@@ -61,23 +68,33 @@ export default function BookNavigator({ pane, onClose }) {
           {groups.map(([label, list]) => (
             <section key={label} className="nav-group">
               <h4>{label}</h4>
-              <div className="book-grid">
-                {list.map((b) => (
-                  <button key={b.id} className={`book-cell ${p.ref.book === b.id ? 'on' : ''}`} onClick={() => setBook(b.id)} title={b.name}>
-                    <span className="bc-short">
-                      {b.short.replace(/\.$/, '')}
-                      {bookMeta(b.id).dc && <sup className="bc-dc" title="Неканоническая книга">*</sup>}
-                    </span>
-                    <span className="bc-name">{b.name}</span>
-                  </button>
-                ))}
-              </div>
+              {/* Разделы (Пятикнижие, пророки, Евангелия…) — каждый своим спокойным цветом */}
+              {groupByCategory(list).map((cat) => (
+                <div key={cat.id} className="book-cat" style={{ '--c': cat.color }}>
+                  <div className="book-cat-head">
+                    <i aria-hidden="true" />
+                    {cat.name}
+                    <span>{cat.list.length}</span>
+                  </div>
+                  <div className="book-grid">
+                    {cat.list.map((b) => (
+                      <button key={b.id} className={`book-cell ${p.ref.book === b.id ? 'on' : ''}`} onClick={() => setBook(b.id)} title={`${b.name} · ${cat.name}`}>
+                        <span className="bc-short">
+                          {b.short.replace(/\.$/, '')}
+                          {bookMeta(b.id).dc && <sup className="bc-dc" title="Неканоническая книга">*</sup>}
+                        </span>
+                        <span className="bc-name">{b.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </section>
           ))}
         </>
       )}
       {selBook && !chapter && (
-        <div className="num-grid">
+        <div className="num-grid" style={{ '--c': categoryOf(selBook.id).color }}>
           {selBook.verses.map((_, i) => (
             <button key={i} className={p.ref.book === book && p.ref.chapter === i + 1 ? 'on' : ''} onClick={() => setChapter(i + 1)}>
               {i + 1}
@@ -90,7 +107,7 @@ export default function BookNavigator({ pane, onClose }) {
           <button className="btn wide" onClick={() => go({ book, chapter, verse: 1 })}>
             Читать главу {chapter} с начала
           </button>
-          <div className="num-grid">
+          <div className="num-grid" style={{ '--c': categoryOf(selBook.id).color }}>
             {Array.from({ length: selBook.verses[chapter - 1] }, (_, i) => (
               <button key={i} onClick={() => go({ book, chapter, verse: i + 1 })}>
                 {i + 1}

@@ -119,6 +119,7 @@ export default function App() {
   }, [modules, bibles.length]);
 
   // Аудиокниги ставятся вместе с переводом: к каждому установленному переводу — его записи из каталога.
+  // Уже установленные обновляются сами, когда в каталоге появилась новая версия.
   // Каждая ставится один раз: если человек её удалил, сама она больше не вернётся.
   const bibleIds = bibles.map((b) => b.id).join();
   useEffect(() => {
@@ -131,16 +132,30 @@ export default function App() {
         const todo = cat.filter(
           (e) => e.type === 'audio' && !e.unavailable && !tried.includes(e.id) && !modules.some((m) => m.id === e.id) && bibles.some((b) => fitsTranslation(e.translation, b.id))
         );
+        // Уже стоящие аудиокниги обновляем сами, без вопросов: они маленькие, а в новой версии — новые главы и точнее разметка
+        const stale = cat.filter((e) => {
+          const m = e.type === 'audio' && modules.find((x) => x.id === e.id);
+          return m && m.origin === 'catalog' && !e.unavailable && (m.catalogVersion !== e.version || (e.size && m.size !== e.size));
+        });
+        for (const e of stale) {
+          if (!alive) return;
+          await repo.installFromCatalog(e).catch(() => {});
+        }
+        const added = [];
         for (const e of todo) {
           if (!alive) return;
           save('autoAudio', [...load('autoAudio', []), e.id]);
           try {
             await repo.installFromCatalog(e);
-            const bible = bibles.find((b) => fitsTranslation(e.translation, b.id));
-            toast(`Подключена аудиокнига «${e.name}»${bible ? ` к переводу ${bible.name}` : ''}`);
+            added.push(e);
           } catch {
             save('autoAudio', load('autoAudio', []).filter((x) => x !== e.id)); // не вышло — попробуем в следующий раз
           }
+        }
+        // Одно сообщение на все подключённые записи
+        if (added.length) {
+          const names = [...new Set(added.map((e) => bibles.find((b) => fitsTranslation(e.translation, b.id))?.name).filter(Boolean))];
+          toast(`Подключены аудиокниги${names.length ? ` к переводу ${names.join(', ')}` : ''} — нажмите 🎧 внизу, чтобы слушать`);
         }
       })
       .catch(() => {});

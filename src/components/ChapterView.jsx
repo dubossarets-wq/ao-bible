@@ -178,6 +178,19 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     }
   }, [range, book]);
 
+  // Любое касание мимо выделенного слова (другой стих, панель, пустое место) снимает выделение.
+  // Выборка словарей и открытая статья — не «мимо»: там выделение показывает, о каком слове речь.
+  useEffect(() => {
+    const onDown = (e) => {
+      const w = activeWord.current;
+      if (!w || w.contains(e.target) || e.target.closest?.('.word-pop, .sheet')) return;
+      w.classList.remove('active');
+      activeWord.current = null;
+    };
+    document.addEventListener('pointerdown', onDown, true);
+    return () => document.removeEventListener('pointerdown', onDown, true);
+  }, []);
+
   // Снимаем подсветку слова, когда закрыты и выборка словарей, и окно статьи
   useEffect(() => {
     if (!sheet && !popover && activeWord.current) {

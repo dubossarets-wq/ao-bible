@@ -810,7 +810,7 @@ def ww_candidates(bid, c, nch):
     cand = [c]
     if bid == "Ps":  # нумерация в имени файла может быть еврейской (KJV): Пс 23 KJV = Пс 22 синод.
         cand += [c - 1, c + 1]
-    elif bid in ("Joel", "Mal", "Num", "1Kgs", "Job", "Song", "Isa", "Dan", "Jonah", "Neh", "1Chr", "Exod"):
+    elif bid in ("Joel", "Mal", "Num", "1Kgs", "Job", "Song", "Isa", "Dan", "Jonah", "Exod"):
         cand += [c - 1, c + 1]
     return [x for x in dict.fromkeys(cand) if 1 <= x <= nch]
 
@@ -867,6 +867,9 @@ def build_wwjd(args):
         cur_book = bid
         nch = len(rst[bid])
         cands = ww_candidates(bid, c, nch)
+        if not cands:
+            problems.append(f"{name}: лишний файл (в {bid} всего {nch} глав)")
+            continue
         key = hashlib.sha1(json.dumps([WWJD_ALIGN_VERSION, name, [rst[bid][x - 1] for x in cands]],
                                       ensure_ascii=False).encode()).hexdigest()[:12]
         cache = base / "align" / f"{name}.{key}.json"
