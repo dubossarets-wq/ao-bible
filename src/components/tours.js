@@ -32,8 +32,8 @@ export const TOURS = [
     id: 'read', icon: BookOpen, title: 'Перейти к книге, главе, стиху', group: 'Основное',
     steps: [
       { text: 'Нажмите сюда — откроется список книг Библии.', target: () => $(P1 + '.tb-ref'), next: () => click($(P1 + '.tb-ref')) },
-      { text: 'Книги разделены по цветам: Пятикнижие, пророки, Евангелия… Нажмите на книгу, потом на главу и стих.', target: () => $('.sheet .num-grid') || $('.sheet .book-cat'), before: (api) => !$('.sheet .book-grid') && api.openSheet('nav') },
-      { text: 'Или впишите ссылку сюда, например «Ин 3:16», и нажмите стрелку.', target: () => $('.sheet .ref-form'), before: (api) => !$('#ref-input') && api.openSheet('nav') },
+      { text: 'Книги разделены по цветам: Пятикнижие, пророки, Евангелия… Нажмите на книгу, потом на главу и стих.', target: () => $('.sheet .num-grid') || $('.sheet .book-cat'), before: (api) => !$('.sheet .book-grid') && !$('.sheet .num-grid') && api.openSheet('nav'), until: () => !$('.sheet') },
+      { text: 'Или впишите ссылку сюда, например «Ин 3:16», и нажмите стрелку.', target: () => $('.sheet .ref-form'), before: (api) => !$('#ref-input') && api.openSheet('nav'), until: () => !$('.sheet') },
       { text: 'Стрелка «назад» возвращает к месту, где вы были до перехода.', target: () => $(P1 + '.tb-hist'), before: (api) => api.closeSheet() },
     ],
   },
@@ -51,6 +51,7 @@ export const TOURS = [
       {
         text: 'Это статья словаря (или карта, если выбрали место). Закрыть — крестиком вверху справа.',
         target: () => $('.sheet') || $('.map-pane'),
+        until: () => !$('.sheet') && !$('.map-pane'),
       },
       { text: 'Чтобы снять выделение слова, нажмите в любое другое место.', target: null, before: (api) => (api.reset(), document.querySelector('.map-pane [aria-label*="Закрыть"]')?.click()) },
     ],
@@ -61,7 +62,7 @@ export const TOURS = [
       { text: 'Зажмите стих пальцем на полсекунды — он выделится.', target: verse, next: selectVerse, until: () => $('.selection-bar') },
       { text: 'Вверху — действия: другой перевод рядом, комментарии, цвет, заметка, закладка. «⋯» — ещё.', target: () => $(P1 + '.selection-bar'), before: selectVerse },
       { text: 'Под стихом — «Слушать» и «В проповедь».', target: () => $(P1 + '.sel-inline'), before: selectVerse },
-      { text: 'Галочка слева вверху — закончить выделение.', target: () => $(P1 + '.selection-bar .tb') },
+      { text: 'Галочка слева вверху — закончить выделение. Нажмите её.', target: () => $(P1 + '.selection-bar .tb'), until: () => !$('.selection-bar') },
       { text: 'Совет: двойное быстрое касание стиха делает его любимым (сердечко).', target: null, before: (api) => api.reset() },
     ],
   },
@@ -75,21 +76,21 @@ export const TOURS = [
         before: () => !$('.sheet') && click(firstVisible(P1 + '.xr')),
         until: () => !$('.sheet') && $('.pane-slot.second'),
       },
-      { text: 'Место открылось внизу (или справа). Закрыть вторую половину — крестиком вверху.', target: () => ($('.pane-slot.second') ? $(P1 + '.tb-split') : $('.sheet')) },
+      { text: 'Место открылось внизу (или справа). Закрыть вторую половину — крестиком вверху.', target: () => ($('.pane-slot.second') ? $(P1 + '.tb-split') : $('.sheet')), until: () => !$('.pane-slot.second') && !$('.sheet') },
     ],
   },
   {
     id: 'split', icon: Columns2, title: 'Два перевода рядом', group: 'Основное',
     steps: [
-      { text: 'Эта кнопка делит экран на две части — в каждой свой перевод.', target: () => $(P1 + '.tb-split'), next: () => !$('.pane-slot.second') && click($(P1 + '.tb-split')) },
+      { text: 'Эта кнопка делит экран на две части — в каждой свой перевод. Нажмите её.', target: () => $(P1 + '.tb-split'), next: () => !$('.pane-slot.second') && click($(P1 + '.tb-split')), until: () => $('.pane-slot.second') },
       { text: 'Перевод в каждой части меняется кнопкой с названием перевода.', target: () => $('.pane-slot.second .tb-module') || $(P1 + '.tb-module') },
-      { text: 'Крестик на месте той же кнопки закрывает вторую часть.', target: () => $(P1 + '.tb-split') },
+      { text: 'Крестик на месте той же кнопки закрывает вторую часть.', target: () => $(P1 + '.tb-split'), until: () => !$('.pane-slot.second') },
     ],
   },
   {
     id: 'search', icon: Search, title: 'Поиск', group: 'Основное',
     steps: [
-      { text: 'Нажмите на лупу.', target: () => $(P1 + '[aria-label="Поиск"]'), next: (api) => api.openSheet('search') },
+      { text: 'Нажмите на лупу.', target: () => $(P1 + '[aria-label="Поиск"]'), next: (api) => api.openSheet('search'), until: () => $('.sheet input') },
       { text: 'Введите слово — места появятся сразу. Можно ввести и ссылку: «Ин 3:16».', target: () => $('.sheet input'), before: (api) => !$('.sheet input') && api.openSheet('search') },
     ],
   },
@@ -111,7 +112,7 @@ export const TOURS = [
         target: () => $('.sheet'),
         until: () => $('.sermon-done'),
       },
-      { text: 'Стих добавлен. «Открыть проповедь» — посмотреть её, «Читать дальше» — вернуться к чтению.', target: () => $('.sheet') },
+      { text: 'Стих добавлен. «Открыть проповедь» — посмотреть её, «Читать дальше» — вернуться к чтению.', target: () => $('.sheet'), until: () => !$('.sermon-done') },
       { text: 'Все проповеди — в меню ⋮ → «Проповеди».', target: menuItem('Проповеди'), before: (api) => (api.reset(), setTimeout(openMenu, 150)), next: (api) => api.openSheet('sermons') },
       { text: 'В проповеди: «Текст» — своя мысль; порядок меняется перетаскиванием (зажмите блок); «Кафедра» — крупно для служения.', target: () => $('.sheet'), before: (api) => !$('.sheet') && api.openSheet('sermons') },
     ],
@@ -128,7 +129,7 @@ export const TOURS = [
     steps: [
       { text: 'Нажмите кнопку с наушниками — чтец начнёт с места, где вы читаете.', target: () => $(P1 + '.listen-fab'), next: () => click($(P1 + '.listen-fab')), until: () => $('.audio-bar') },
       { text: 'Это проигрыватель: пауза, стих назад и вперёд. Кнопка со стрелкой вниз — скачать книгу, чтобы слушать без интернета.', target: () => $('.audio-bar'), before: () => !$('.audio-bar') && click($(P1 + '.listen-fab')) },
-      { text: 'Кнопка с ползунками — скорость и таймер сна. Крестик закрывает проигрыватель.', target: () => $('[aria-label="Настройки чтения вслух"]') },
+      { text: 'Кнопка с ползунками — скорость и таймер сна. Крестик закрывает проигрыватель.', target: () => $('.audio-bar') },
     ],
   },
   {

@@ -66,7 +66,8 @@ export default function TourOverlay() {
   useEffect(() => {
     if (!step) return;
     const myKey = `${t.id}:${t.step}`;
-    const wasDone = !!step.until?.();
+    // Шаг «выполнен», когда условие стало верным после того, как было неверным (то, что уже было до шага, не в счёт)
+    let armed = !step.until?.();
     let scrolled = false;
     let raf = 0;
     let frame = 0;
@@ -130,7 +131,11 @@ export default function TourOverlay() {
         arrow.style.left = `${Math.max(18, Math.min(br.width - 30, (n.l + n.r) / 2 - br.left - 6))}px`;
         arrow.className = `tour-arrow ${arrowSide}`;
       } else arrow.style.display = 'none';
-      if (frame % 10 === 0 && !wasDone && step.until?.()) return advanceRef.current(false, myKey);
+      if (frame % 10 === 0 && step.until) {
+        const done = !!step.until();
+        if (!armed && !done) armed = true;
+        else if (armed && done) return advanceRef.current(false, myKey);
+      }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
