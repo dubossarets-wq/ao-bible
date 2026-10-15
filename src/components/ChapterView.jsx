@@ -178,14 +178,18 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     }
   }, [range, book]);
 
-  // Любое касание мимо выделенного слова (другой стих, панель, пустое место) снимает выделение.
+  // Любое касание мимо выделенного слова (другой стих, другое слово, панель, пустое место) только снимает
+  // выделение: это касание больше ничего не делает — новое слово не выделяется, выборка не открывается.
   // Выборка словарей и открытая статья — не «мимо»: там выделение показывает, о каком слове речь.
+  const swallowTap = useRef(false);
   useEffect(() => {
     const onDown = (e) => {
       const w = activeWord.current;
+      swallowTap.current = false;
       if (!w || w.contains(e.target) || e.target.closest?.('.word-pop, .sheet')) return;
       w.classList.remove('active');
       activeWord.current = null;
+      swallowTap.current = true;
     };
     document.addEventListener('pointerdown', onDown, true);
     return () => document.removeEventListener('pointerdown', onDown, true);
@@ -352,6 +356,10 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
   const onClick = (e) => {
     if (suppressClick.current) {
       suppressClick.current = false;
+      return;
+    }
+    if (swallowTap.current) {
+      swallowTap.current = false;
       return;
     }
     const verseEl = e.target.closest('.verse');

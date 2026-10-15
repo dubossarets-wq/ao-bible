@@ -346,6 +346,10 @@ mark { background: var(--hl); color: inherit; border-radius: 2px; padding: 0 1px
 /* Метка выделения — в поле слева от текста, не поверх букв */
 .verse.selected::before { content: ""; position: absolute; left: -11px; top: 0; bottom: 0; width: 3px; border-radius: 2px; background: var(--accent); }
 .verses.continuous .verse.selected { box-shadow: none; background: color-mix(in srgb, var(--accent) 16%, var(--panel)); }
+/* Сплошной текст: подложки (звучит, любимый, цвет, выделение) — ровно по словам стиха, без выступов на соседние стихи и за край строки */
+.verses.continuous .verse.speaking, .verses.continuous .verse.fav, .verses.continuous .verse[class*=" hl-"], .verses.continuous .verse.selected { box-shadow: none !important; border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.verses.continuous .verse.fav { background: color-mix(in srgb, var(--love) 9%, transparent); }
+.verses.continuous .verse::before { display: none; }
 .scroller.selecting .w { cursor: default; }
 @media (hover: hover) { .scroller.selecting .w:hover { background: none; } .scroller.selecting .verse:not(.selected):hover { background: color-mix(in srgb, var(--accent) 6%, transparent); } }
 .selection-bar { animation: barIn .16s ease-out; }
@@ -761,3 +765,6 @@ mark.diff { background: color-mix(in srgb, #f2a65a 38%, transparent); border-rad
 
 /* В проигрывателе: вернуться к месту, которое сейчас звучит */
 .audio-back { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; border: 0; background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); border-radius: 999px; padding: 3px 9px 3px 7px; cursor: pointer; font: inherit; font-weight: 700; font-size: .9rem; }
+
+/* Двойное касание нигде не увеличивает приложение (увеличение двумя пальцами остаётся) */
+html, body, .app { touch-action: manipulation; }

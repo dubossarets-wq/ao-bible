@@ -187,14 +187,18 @@ export default function PlanView({ index, pane, module, selection, onSelect }) {
     if (chip && row) row.scrollTo({ left: chip.offsetLeft - row.offsetLeft - row.clientWidth / 2 + chip.offsetWidth / 2, behavior: 'smooth' });
   }, [cur, books]);
 
-  // Любое касание мимо выделенного слова (другой стих, панель, пустое место) снимает выделение.
+  // Любое касание мимо выделенного слова (другой стих, другое слово, панель, пустое место) только снимает
+  // выделение: это касание больше ничего не делает — новое слово не выделяется, выборка не открывается.
   // Выборка словарей и открытая статья — не «мимо»: там выделение показывает, о каком слове речь.
+  const swallowTap = useRef(false);
   useEffect(() => {
     const onDown = (e) => {
       const w = activeWord.current;
+      swallowTap.current = false;
       if (!w || w.contains(e.target) || e.target.closest?.('.word-pop, .sheet')) return;
       w.classList.remove('active');
       activeWord.current = null;
+      swallowTap.current = true;
     };
     document.addEventListener('pointerdown', onDown, true);
     return () => document.removeEventListener('pointerdown', onDown, true);
@@ -262,6 +266,10 @@ export default function PlanView({ index, pane, module, selection, onSelect }) {
   const onClick = (e) => {
     if (suppressClick.current) {
       suppressClick.current = false;
+      return;
+    }
+    if (swallowTap.current) {
+      swallowTap.current = false;
       return;
     }
     const vref = verseRefOf(e.target);
