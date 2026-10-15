@@ -1,5 +1,5 @@
 // Общие мелкие элементы интерфейса.
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CircleAlert } from 'lucide-react';
 
@@ -84,9 +84,59 @@ export function Hint({ children, label = 'Пояснение' }) {
   );
 }
 
+// Бегунок переключателя можно тянуть пальцем или мышью (по всей строке): он едет за пальцем,
+// а когда отпускают — встаёт в ближайшее положение. Вертикальная прокрутка не мешает: тянем, только если движение вбок.
+const THUMB = 18; // ход бегунка, px
+export function useSwipeToggle(checked, onChange) {
+  const st = useRef(null);
+  const dragged = useRef(false);
+  const end = () => {
+    const s = st.current;
+    st.current = null;
+    if (!s?.drag) return;
+    dragged.current = true;
+    setTimeout(() => (dragged.current = false), 400);
+    s.track.classList.remove('dragging');
+    s.track.style.removeProperty('--thumb');
+    const next = s.pos > THUMB / 2;
+    if (next !== !!checked) onChange(next);
+  };
+  return {
+    onPointerDown: (e) => {
+      if (e.button > 0) return;
+      const track = e.currentTarget.querySelector('.switch');
+      st.current = track ? { x: e.clientX, y: e.clientY, id: e.pointerId, el: e.currentTarget, track, drag: false, pos: checked ? THUMB : 0 } : null;
+    },
+    onPointerMove: (e) => {
+      const s = st.current;
+      if (!s) return;
+      const dx = e.clientX - s.x;
+      if (!s.drag) {
+        if (Math.abs(dx) < 5) return;
+        if (Math.abs(e.clientY - s.y) > Math.abs(dx)) return void (st.current = null);
+        s.drag = true;
+        s.el.setPointerCapture?.(s.id);
+        s.track.classList.add('dragging');
+      }
+      s.pos = Math.max(0, Math.min(THUMB, (checked ? THUMB : 0) + dx));
+      s.track.style.setProperty('--thumb', `${s.pos}px`);
+    },
+    onPointerUp: end,
+    onPointerCancel: end,
+    // После перетаскивания щелчок не должен переключать ещё раз
+    onClickCapture: (e) => {
+      if (!dragged.current) return;
+      dragged.current = false;
+      e.preventDefault();
+      e.stopPropagation();
+    },
+  };
+}
+
 export function Switch({ id, checked, onChange, label, hint }) {
+  const swipe = useSwipeToggle(checked, onChange);
   return (
-    <label className="field switch-field" htmlFor={id}>
+    <label className="field switch-field" htmlFor={id} {...swipe}>
       <span className="field-text">
         <span className="field-label">
           {label}
@@ -99,7 +149,51 @@ export function Switch({ id, checked, onChange, label, hint }) {
   );
 }
 
+// Выбор из нескольких вариантов: подложка плавно переезжает к выбранному;
+// можно провести пальцем по вариантам — подложка едет следом, выбор — там, где отпустили.
 export function Segmented({ value, options, onChange, label, id }) {
+  const box = useRef(null);
+  const [preview, setPreview] = useState(null);
+  const [pill, setPill] = useState(null);
+  const [, remeasure] = useState(0);
+  const shown = preview ?? value;
+  const idx = options.findIndex(([v]) => v === shown);
+  useLayoutEffect(() => {
+    const b = box.current?.querySelector(`button[data-i="${idx}"]`);
+    const next = b ? { left: b.offsetLeft, top: b.offsetTop, width: b.offsetWidth, height: b.offsetHeight } : null;
+    setPill((cur) => (cur && next && cur.left === next.left && cur.top === next.top && cur.width === next.width && cur.height === next.height ? cur : next));
+  });
+  useEffect(() => {
+    if (!box.current) return;
+    const ro = new ResizeObserver(() => remeasure((x) => x + 1));
+    ro.observe(box.current);
+    return () => ro.disconnect();
+  }, []);
+  // Первое появление — без анимации, дальше подложка ездит
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const t = requestAnimationFrame(() => setReady(true));
+    return () => cancelAnimationFrame(t);
+  }, []);
+
+  const drag = useRef(null);
+  const dragged = useRef(false);
+  const pick = (e) => {
+    const b = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('button[data-i]');
+    if (b && box.current?.contains(b)) setPreview(options[+b.dataset.i][0]);
+  };
+  const end = () => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d?.active) return;
+    dragged.current = true;
+    setTimeout(() => (dragged.current = false), 400);
+    box.current?.classList.remove('dragging');
+    setPreview((p) => {
+      if (p != null && p !== value) onChange(p);
+      return null;
+    });
+  };
   return (
     <div className="field seg-field" role="group" aria-labelledby={id}>
       {label && (
@@ -107,9 +201,38 @@ export function Segmented({ value, options, onChange, label, id }) {
           {label}
         </span>
       )}
-      <div className="segmented">
-        {options.map(([v, l]) => (
-          <button key={v} type="button" className={v === value ? 'on' : ''} aria-pressed={v === value} onClick={() => onChange(v)}>
+      <div
+        className={`segmented${ready ? ' ready' : ''}`}
+        ref={box}
+        onPointerDown={(e) => {
+          if (e.button > 0) return;
+          drag.current = { x: e.clientX, y: e.clientY, id: e.pointerId, active: false };
+        }}
+        onPointerMove={(e) => {
+          const d = drag.current;
+          if (!d) return;
+          if (!d.active) {
+            const dx = e.clientX - d.x;
+            if (Math.abs(dx) < 6) return;
+            if (Math.abs(e.clientY - d.y) > Math.abs(dx)) return void (drag.current = null);
+            d.active = true;
+            box.current.setPointerCapture?.(d.id);
+            box.current.classList.add('dragging');
+          }
+          pick(e);
+        }}
+        onPointerUp={end}
+        onPointerCancel={end}
+        onClickCapture={(e) => {
+          if (!dragged.current) return;
+          dragged.current = false;
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+      >
+        {pill && <span className="seg-pill" aria-hidden="true" style={{ transform: `translate(${pill.left}px, ${pill.top}px)`, width: pill.width, height: pill.height }} />}
+        {options.map(([v, l], i) => (
+          <button key={v} data-i={i} type="button" className={v === shown ? 'on' : ''} aria-pressed={v === value} onClick={() => onChange(v)}>
             {l}
           </button>
         ))}

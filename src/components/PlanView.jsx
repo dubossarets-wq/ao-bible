@@ -446,14 +446,11 @@ export default function PlanView({ index, pane, module, selection, onSelect }) {
                           Готово
                         </button>
                       </div>
-                      <div className="plan-finish-sub">
-                        Прочитано {n} из {n}
-                        {day < plan.readings.length - 1 && (
-                          <button className="link-btn" onClick={() => openPlanDay(index, uid, day + 1)}>
-                            Читать день {day + 2} сейчас
-                          </button>
-                        )}
-                      </div>
+                      {day < plan.readings.length - 1 && (
+                        <button className="btn plan-next-day" onClick={() => openPlanDay(index, uid, day + 1)}>
+                          Читать день {day + 2} <ChevronRight size={16} />
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <div className="plan-left">

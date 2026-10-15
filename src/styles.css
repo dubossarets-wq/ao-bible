@@ -175,15 +175,23 @@ input:focus, select:focus { border-color: var(--accent); outline: none; box-shad
 .switch-field { flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; padding: 2px 0; }
 .field-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .switch-field input { position: absolute; opacity: 0; pointer-events: none; }
-.switch { flex: none; width: 44px; height: 26px; border-radius: 13px; background: color-mix(in srgb, var(--muted) 40%, transparent); position: relative; transition: background .2s; }
-.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .2s; }
-.switch-field input:checked + .switch { background: var(--accent); }
-.switch-field input:checked + .switch::after { transform: translateX(18px); }
+/* Переключатель: бегунок едет с лёгкой пружиной, при нажатии чуть вытягивается, его можно тянуть пальцем */
+.switch-field, .row-switch { touch-action: pan-y; -webkit-tap-highlight-color: transparent; }
+.switch { --thumb: 0px; --tw: 20px; flex: none; width: 44px; height: 26px; border-radius: 13px; background: color-mix(in srgb, var(--muted) 40%, transparent); position: relative; transition: background .28s ease; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: var(--tw); height: 20px; border-radius: 10px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25), 0 2px 6px rgba(0,0,0,.08); transform: translateX(var(--thumb)); transition: transform .38s cubic-bezier(.3, 1.45, .5, 1), width .22s ease, margin .22s ease; }
+.switch-field input:checked + .switch, .row-switch input:checked + .switch { --thumb: 18px; background: var(--accent); }
+.switch-field:active .switch, .row-switch:active .switch, .switch.dragging { --tw: 25px; }
+.switch-field input:checked + .switch::after, .row-switch input:checked + .switch::after { margin-left: calc(20px - var(--tw)); }
+.switch.dragging::after { transition: width .22s ease; margin-left: calc(var(--thumb) * -.2778); }
 .switch-field input:focus-visible + .switch { outline: 2px solid var(--accent); outline-offset: 2px; }
 input[type="range"] { width: 100%; accent-color: var(--accent); }
-.segmented { display: flex; background: color-mix(in srgb, var(--muted) 14%, transparent); border-radius: calc(var(--radius) * .75); padding: 3px; gap: 2px; flex-wrap: wrap; }
-.segmented button { flex: 1 1 auto; border: 0; background: none; padding: 7px 8px; border-radius: calc(var(--radius) * .6); font-size: .88rem; white-space: nowrap; }
-.segmented button.on { background: var(--panel); box-shadow: 0 1px 3px rgba(0,0,0,.14); font-weight: 600; color: var(--accent); }
+/* Выбор из вариантов: подложка (.seg-pill) переезжает к выбранному, можно вести пальцем */
+.segmented { display: flex; background: color-mix(in srgb, var(--muted) 14%, transparent); border-radius: calc(var(--radius) * .75); padding: 3px; gap: 2px; flex-wrap: wrap; position: relative; touch-action: pan-y; -webkit-tap-highlight-color: transparent; }
+.segmented button { flex: 1 1 auto; border: 0; background: none; padding: 7px 8px; border-radius: calc(var(--radius) * .6); font-size: .88rem; white-space: nowrap; position: relative; z-index: 1; transition: color .2s; }
+.segmented button.on { font-weight: 600; color: var(--accent); }
+.seg-pill { position: absolute; left: 0; top: 0; border-radius: calc(var(--radius) * .6); background: var(--panel); box-shadow: 0 1px 3px rgba(0,0,0,.14); pointer-events: none; }
+.segmented.ready .seg-pill { transition: transform .36s cubic-bezier(.3, 1.25, .5, 1), width .3s ease, height .3s ease; }
+.segmented.dragging .seg-pill { transition: transform .18s ease-out, width .18s ease-out, height .18s ease-out; }
 .inline-switch { display: inline-flex; align-items: center; gap: 6px; font-size: .88rem; cursor: pointer; }
 .inline-switch input { accent-color: var(--accent); width: 17px; height: 17px; }
 .inline-switch.push { margin-left: auto; }
@@ -430,8 +438,6 @@ button.row-act:hover { background: color-mix(in srgb, var(--accent) 12%, transpa
 .row-pct { font-size: .78rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .row-switch { flex: none; display: grid; place-items: center; width: 56px; height: 44px; cursor: pointer; position: relative; }
 .row-switch input { position: absolute; opacity: 0; pointer-events: none; }
-.row-switch input:checked + .switch { background: var(--accent); }
-.row-switch input:checked + .switch::after { transform: translateX(18px); }
 .row-switch input:focus-visible + .switch { outline: 2px solid var(--accent); outline-offset: 2px; }
 .row-chev { flex: none; width: 40px; height: 44px; display: grid; place-items: center; border: 0; background: none; color: var(--muted); margin-right: 4px; }
 .row-chev svg { transition: transform .2s; }
@@ -668,13 +674,20 @@ mark.diff { background: color-mix(in srgb, #f2a65a 38%, transparent); border-rad
 .read-stats .chip small { font-size: .72rem; }
 
 /* Страница «план на день» */
-.plan-strip { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 12px; min-height: 44px; background: color-mix(in srgb, var(--panel) 94%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); font-family: var(--font-ui); }
-.plan-strip-day { flex: none; font-size: .8rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
-.plan-strip-chips { flex: 1; min-width: 0; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 0; }
+.plan-strip { position: sticky; top: 0; z-index: 5; display: flex; align-items: stretch; gap: 4px; padding: 0 4px 0 14px; height: 42px; background: color-mix(in srgb, var(--bg) 92%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); font-family: var(--font-ui); }
+.plan-strip-day { flex: none; align-self: center; font-size: .72rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.plan-strip > .icon-btn { align-self: center; }
+/* Отрывки — как вкладки: текущий жирный с полоской снизу, прочитанные приглушены с галочкой.
+   Края строки плавно затухают, а не обрываются; отступы по краям — чтобы крайние отрывки в покое были видны целиком */
+.plan-strip-chips { flex: 1; min-width: 0; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; padding: 0 18px; margin-left: 6px; -webkit-mask-image: linear-gradient(90deg, transparent, #000 22px, #000 calc(100% - 22px), transparent); mask-image: linear-gradient(90deg, transparent, #000 22px, #000 calc(100% - 22px), transparent); }
 .plan-strip-chips::-webkit-scrollbar { display: none; }
-.plan-strip-chips .chip { flex: none; padding: 4px 10px; font-size: .82rem; }
-.plan-strip-chips .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
-.plan-strip-chips .chip.on svg { color: #fff; }
+.plan-strip-chips .chip { flex: none; position: relative; gap: 4px; padding: 0 9px; border: 0; border-radius: 0; background: none; font-size: .88rem; font-weight: 500; color: var(--text); transition: color .2s; }
+.plan-strip-chips .chip:hover { color: var(--accent); }
+.plan-strip-chips .chip.done { color: var(--muted); background: none; }
+.plan-strip-chips .chip.done svg { color: var(--accent); }
+.plan-strip-chips .chip.on { color: var(--text); font-weight: 700; }
+.plan-strip-chips .chip::after { content: ""; position: absolute; left: 9px; right: 9px; bottom: 0; height: 2.5px; border-radius: 2px 2px 0 0; background: var(--accent); transform: scaleX(0); transition: transform .28s cubic-bezier(.3, 1.3, .5, 1); }
+.plan-strip-chips .chip.on::after { transform: scaleX(1); }
 .plan-intro { font-family: var(--font-ui); padding: 14px 0 4px; }
 .plan-intro-name { font-weight: 700; font-size: 1.05rem; }
 .plan-intro-meta { color: var(--muted); font-size: .86rem; margin-top: 2px; }
@@ -694,8 +707,8 @@ mark.diff { background: color-mix(in srgb, #f2a65a 38%, transparent); border-rad
 .plan-finish-row { display: flex; align-items: center; gap: 10px; color: #2f9a5f; }
 .plan-finish-row strong { flex: 1; min-width: 0; color: var(--text); font-size: 1rem; line-height: 1.3; }
 .plan-finish-row .btn { flex: none; }
-.plan-finish-sub { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; padding-left: 32px; font-size: .84rem; color: var(--muted); }
-.plan-finish-sub .link-btn { font-size: .84rem; }
+.plan-finish { gap: 10px; }
+.plan-next-day { justify-content: center; padding: 9px 14px; background: none; color: var(--text); font-weight: 500; }
 .plan-left { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: .86rem; color: var(--muted); }
 .plan-offplan { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 10px 12px; border: 1px dashed var(--line); border-radius: calc(var(--radius) * .8); background: none; color: var(--text); cursor: pointer; font: inherit; }
 .plan-offplan:hover { border-color: var(--accent); }
@@ -726,3 +739,9 @@ mark.diff { background: color-mix(in srgb, #f2a65a 38%, transparent); border-rad
 .listen-fab.dim { opacity: .18; }
 /* На странице плана после последнего отрывка не нужен большой отступ — только место под кнопку «Слушать» */
 .plan-view .text-col { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 76px); }
+
+/* «Слушать с …» при выделенном стихе — обычная основная кнопка, как «Читать» в планах */
+.listen-pill { background: none; box-shadow: none; border-radius: 0; width: min(360px, calc(100% - 32px)); max-width: none; }
+.listen-pill .btn { width: 100%; justify-content: center; padding: 12px 16px; font-size: 1rem; box-shadow: 0 8px 24px rgba(0,0,0,.22); }
+
+.plan-seg-head { padding-bottom: 8px; }

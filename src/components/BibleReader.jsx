@@ -66,7 +66,7 @@ function ListenSelected({ index, module, selection, onDone }) {
   return (
     <div className="float-pill listen-pill">
       <button
-        className="float-pill-btn"
+        className="btn primary"
         onClick={() => {
           listenFrom(index, module.id, first);
           onDone();

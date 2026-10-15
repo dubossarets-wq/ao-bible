@@ -14,7 +14,7 @@ import { useApp } from '../App.jsx';
 import * as repo from '../core/modules.js';
 import { MODULE_TYPES, MODULE_SECTIONS } from '../core/schema.js';
 import { isPersistent } from '../core/db.js';
-import { ConfirmButton, Empty, Hint, fmtSize } from './ui.jsx';
+import { ConfirmButton, Empty, Hint, fmtSize, useSwipeToggle } from './ui.jsx';
 
 export const TYPE_ICON = { bible: BookOpen, commentary: MessageSquareText, dictionary: BookText, maps: MapIcon, crossrefs: Link2, audio: Headphones };
 
@@ -87,6 +87,8 @@ function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle })
   const updatable = installed && cat && !cat.unavailable && cat.version && installed.catalogVersion && cat.version !== installed.catalogVersion;
   const toggleable = installed && installed.type !== 'bible';
   const on = installed?.enabled !== false;
+  const toggleOn = (v) => repo.updateModuleMeta(installed.id, { enabled: v });
+  const swipe = useSwipeToggle(on, toggleOn);
   const pct = busy ? Math.round((busy.p || 0) * 100) : 0;
 
   let action;
@@ -122,8 +124,8 @@ function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle })
     );
   else if (mode === 'installed' && toggleable)
     action = (
-      <label className="row-switch" title={on ? 'Включён' : 'Отключён'}>
-        <input type="checkbox" checked={on} onChange={(e) => repo.updateModuleMeta(installed.id, { enabled: e.target.checked })} aria-label={`${m.name}: ${on ? 'включён' : 'отключён'}`} />
+      <label className="row-switch" title={on ? 'Включён' : 'Отключён'} {...swipe}>
+        <input type="checkbox" checked={on} onChange={(e) => toggleOn(e.target.checked)} aria-label={`${m.name}: ${on ? 'включён' : 'отключён'}`} />
         <span className="switch" aria-hidden="true" />
       </label>
     );
