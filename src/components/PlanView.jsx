@@ -7,6 +7,7 @@ import { useApp } from '../App.jsx';
 import { getBook } from '../core/modules.js';
 import { crossrefCounts } from '../core/crossrefs.js';
 import { commentaryIndex } from '../core/commentary.js';
+import { illustrationIndex } from '../core/illustrations.js';
 import { setLivePosition, clearLivePosition } from '../core/livePosition.js';
 import { wordAt, plainText } from '../core/verseMarkup.js';
 import { wasClosedOnWord, isDoubleTap, pulseFavorite } from '../core/tapState.js';
@@ -61,6 +62,7 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
 
   const [counts, setCounts] = useState(null);
   const [comments, setComments] = useState(null);
+  const [illus, setIllus] = useState(null);
   useEffect(() => {
     crossrefCounts().then(setCounts);
     commentaryIndex().then((m) => setComments(m.size ? m : null));
@@ -77,6 +79,7 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
       Promise.all(bookIds.map((b) => (module.books.some((x) => x.id === b) ? getBook(module.id, b) : null))),
       crossrefCounts().then(setCounts),
       commentaryIndex().then((m) => setComments(m.size ? m : null)),
+      illustrationIndex().then((m) => setIllus(m.size ? m : null)),
     ]).then(([list]) => {
       if (alive) setBooks(Object.fromEntries(bookIds.map((b, i) => [b, list[i]])));
     });
@@ -317,6 +320,7 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
     if (act === 'note') return openSheet('note', index, { refs: [vref], moduleId: module.id });
     if (act === 'sermon') return openSheet('sermons', index, { open: sermonWith(vref)?.id || null });
     if (act === 'comment') return openSheet('commentary', index, { ref: vref, moduleId: e.target.closest('[data-m]').dataset.m });
+    if (act === 'illus') return openSheet('illus', index, { ref: vref, items: illus?.get(`${vref.book}.${vref.chapter}.${vref.verse}`) || [] });
     if (act === 'verse') return openSheet('verse', index, { ref: vref, text: plainText(text), moduleId: module.id });
     const w = e.target.closest('.w');
     if (!w) return;
@@ -349,8 +353,9 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
       showXref: settings.showXrefButtons && !settings.focusMode && !settings.bookMode,
       inlineComments: settings.bookMode ? [] : settings.inlineCommentaries,
       continuous: settings.continuousVerses || settings.bookMode,
+      showIllus: settings.showIllustrations !== false && !settings.bookMode,
     }),
-    [settings.showVerseNumbers, settings.showStrongs, settings.showHeadings, settings.showXrefButtons, settings.focusMode, settings.continuousVerses, settings.inlineCommentaries, settings.bookMode, module]
+    [settings.showVerseNumbers, settings.showStrongs, settings.showHeadings, settings.showXrefButtons, settings.focusMode, settings.continuousVerses, settings.inlineCommentaries, settings.bookMode, settings.showIllustrations, module]
   );
 
   if (!plan || !readings.length)
@@ -458,6 +463,7 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
                         xrefs={data.xrefs}
                         counts={counts}
                         comments={comments}
+                        illus={illus}
                         opts={opts}
                         hlRe={null}
                         isPsalm={u.book === 'Ps'}

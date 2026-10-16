@@ -7,6 +7,7 @@ import { useApp } from '../App.jsx';
 import { getBook } from '../core/modules.js';
 import { crossrefCounts } from '../core/crossrefs.js';
 import { commentaryIndex } from '../core/commentary.js';
+import { illustrationIndex } from '../core/illustrations.js';
 import { setLivePosition, clearLivePosition } from '../core/livePosition.js';
 import { setDriver, isDriver, onSync, emitSync } from '../core/scrollSync.js';
 import { useAudio } from '../core/audio.js';
@@ -33,7 +34,7 @@ export function highlightRegex(query) {
 
 // from/to — показать только часть главы (отрывок плана), idp — приставка к id стихов (на странице плана
 // одна и та же глава может встретиться дважды), noBookTitle/noChapterTitle — без заголовков (их заменяет заголовок отрывка)
-export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, xrefs, counts, comments, opts, hlRe, flashVerse, isPsalm, selected, marks, from = 1, to = null, idp = '', noBookTitle = false, noChapterTitle = false, afterVerse = null, afterNode = null }) {
+export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, xrefs, counts, comments, illus, opts, hlRe, flashVerse, isPsalm, selected, marks, from = 1, to = null, idp = '', noBookTitle = false, noChapterTitle = false, afterVerse = null, afterNode = null }) {
   const sel = selected ? new Set(selected.split(',').map(Number)) : null;
   const mk = marks ? Object.fromEntries(marks.split(',').map((x) => x.split(':'))) : {};
   return (
@@ -94,6 +95,16 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
                     [⇅&nbsp;{n}]
                   </button>
                 )}
+                {opts.showIllus && illus?.has(`${bookId}.${c}.${v}`) && (
+                  <button className="il" data-act="illus" aria-label="Иллюстрация к стиху" title="Иллюстрация">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <circle cx="9" cy="9" r="2" />
+                      <path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" />
+                    </svg>
+                    {illus.get(`${bookId}.${c}.${v}`).length > 1 && <span>2</span>}
+                  </button>
+                )}
                 {comments
                   ?.get(`${bookId}.${c}.${v}`)
                   ?.filter((cm) => !opts.inlineComments || opts.inlineComments.includes(cm.id))
@@ -150,9 +161,11 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
 
   // Счётчики параллельных мест (пересчитываются при включении/выключении модулей)
   const [comments, setComments] = useState(null);
+  const [illus, setIllus] = useState(null);
   useEffect(() => {
     crossrefCounts().then(setCounts);
     commentaryIndex().then((m) => setComments(m.size ? m : null));
+    illustrationIndex().then((m) => setIllus(m.size ? m : null));
   }, [modules]);
 
   // Навигация: загрузить книгу и прокрутить к стиху
@@ -426,6 +439,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     if (act === 'note') return openSheet('note', index, { refs: [vref], moduleId: module.id });
     if (act === 'sermon') return openSheet('sermons', index, { open: sermonWith(vref)?.id || null });
     if (act === 'comment') return openSheet('commentary', index, { ref: vref, moduleId: e.target.closest('[data-m]').dataset.m });
+    if (act === 'illus') return openSheet('illus', index, { ref: vref, items: illus?.get(`${vref.book}.${vref.chapter}.${vref.verse}`) || [] });
     if (act === 'verse') return openSheet('verse', index, { ref: vref, text: plainText(text), moduleId: module.id });
     const w = e.target.closest('.w');
     if (w) {
@@ -520,8 +534,9 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       showXref: settings.showXrefButtons && !settings.focusMode && !settings.bookMode,
       inlineComments: settings.bookMode ? [] : settings.inlineCommentaries, // null — все включённые комментарии
       continuous: settings.continuousVerses || settings.bookMode,
+      showIllus: settings.showIllustrations !== false && !settings.bookMode,
     }),
-    [settings.showVerseNumbers, settings.showStrongs, settings.showHeadings, settings.showXrefButtons, settings.focusMode, settings.continuousVerses, settings.inlineCommentaries, settings.bookMode, module]
+    [settings.showVerseNumbers, settings.showStrongs, settings.showHeadings, settings.showXrefButtons, settings.focusMode, settings.continuousVerses, settings.inlineCommentaries, settings.bookMode, settings.showIllustrations, module]
   );
   const hlRe = useMemo(() => highlightRegex(pane.highlight), [pane.highlight]);
   const flash = pane.flash ? pane.flash.split('.') : null;
@@ -572,6 +587,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
                 xrefs={book.data.xrefs}
                 counts={counts}
                 comments={comments}
+                illus={illus}
                 opts={opts}
                 hlRe={hlRe}
                 isPsalm={book.id === 'Ps'}

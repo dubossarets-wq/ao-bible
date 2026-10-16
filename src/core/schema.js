@@ -10,6 +10,7 @@ export const MODULE_TYPES = {
   maps: 'Карты',
   crossrefs: 'Параллельные места',
   audio: 'Аудиокнига',
+  illustrations: 'Иллюстрации',
 };
 
 // Разделы библиотеки (множественное число) в порядке показа
@@ -18,6 +19,7 @@ export const MODULE_SECTIONS = [
   ['commentary', 'Комментарии'],
   ['dictionary', 'Словари'],
   ['maps', 'Карты'],
+  ['illustrations', 'Иллюстрации'],
   ['audio', 'Аудиокниги'],
   ['crossrefs', 'Параллельные места'],
 ];
@@ -123,6 +125,7 @@ export function normalize(json, { fileName = '' } = {}) {
   else if (type === 'commentary') data = normalizeCommentary(json, warnings);
   else if (type === 'maps') data = normalizeMaps(json, warnings);
   else if (type === 'audio') data = normalizeAudio(json, warnings);
+  else if (type === 'illustrations') data = normalizeIllustrations(json, warnings);
   else throw new ModuleError(`Неизвестный тип модуля «${type}». Допустимы: bible, commentary, dictionary, maps, crossrefs.`);
 
   if (type === 'bible') {
@@ -140,6 +143,7 @@ export function normalize(json, { fileName = '' } = {}) {
   if (type === 'crossrefs') meta.stats = { verses: Object.keys(data.refs).length };
   if (type === 'commentary') meta.stats = { entries: Object.keys(data.entries).length };
   if (type === 'maps') meta.stats = { maps: data.maps.length, places: data.places.length };
+  if (type === 'illustrations') meta.stats = { verses: Object.keys(data.entries).length, images: Object.values(data.entries).reduce((n, l) => n + l.length, 0) };
   if (type === 'audio') {
     meta.stats = { chapters: Object.keys(data.chapters).length };
     meta.translation = src.translation || null;
@@ -301,6 +305,28 @@ export function placeStems(name) {
   let words = name.toLowerCase().replace(/ё/g, 'е').split(/[\s\-–(),]+/).filter((w) => w.length >= 3);
   words = words.filter((w) => !skip.includes(w)).length ? words.filter((w) => !skip.includes(w)) : words;
   return [...new Set(words.map((w) => w.slice(0, Math.max(3, Math.min(w.length - 2, 5)))))];
+}
+
+// Иллюстрации: entries {"Gen.1.3": [{ img, thumb, w, h, title, author, year, license, src }]} — не больше двух на стих
+function normalizeIllustrations(json, warnings) {
+  if (!isObj(json.entries)) throw new ModuleError('В модуле иллюстраций нет поля "entries" вида {"Gen.1.3": [{img, …}]}.');
+  const entries = {};
+  let bad = 0;
+  for (const [k, list] of Object.entries(json.entries)) {
+    if (!/^[1-4]?[A-Za-z]+\.\d+\.\d+$/.test(k) || !Array.isArray(list)) {
+      bad++;
+      continue;
+    }
+    const items = list
+      .filter((x) => isObj(x) && typeof x.img === 'string' && /^https:\/\//.test(x.img))
+      .slice(0, 2)
+      .map((x) => ({ img: x.img, thumb: typeof x.thumb === 'string' ? x.thumb : x.img, w: +x.w || null, h: +x.h || null, title: String(x.title || ''), author: String(x.author || ''), year: String(x.year || ''), license: String(x.license || ''), src: typeof x.src === 'string' ? x.src : '' }));
+    if (items.length) entries[k] = items;
+    else bad++;
+  }
+  if (bad) warnings.push(`Пропущено записей без адреса картинки или с неверным стихом: ${bad}.`);
+  if (!Object.keys(entries).length) throw new ModuleError('В модуле иллюстраций нет ни одной картинки.');
+  return { entries };
 }
 
 // Аудиокнига: chapters {"John.3": {url, verses: [[стих, секунда], …], duration}} — времена начала стихов

@@ -117,11 +117,18 @@ export default function App() {
     repo
       .fetchCatalog()
       .then(async (cat) => {
+        // Модуля ещё нет в каталоге — не отмечаем его, поставим при следующем запуске
+        const missing = todo.filter((id) => !cat.some((c) => c.id === id));
+        if (missing.length) save('lateStarter', [...done, ...todo.filter((id) => !missing.includes(id))]);
         for (const id of todo) {
           const entry = cat.find((c) => c.id === id);
           if (!entry) continue;
           await repo.installFromCatalog(entry);
-          toast(`Установлен модуль «${entry.name}»: нажмите на название города в стихе, чтобы увидеть его на карте`);
+          toast(
+            entry.type === 'illustrations'
+              ? 'Добавлены иллюстрации к стихам: нажмите на значок картинки в конце стиха'
+              : `Установлен модуль «${entry.name}»: нажмите на название города в стихе, чтобы увидеть его на карте`
+          );
         }
       })
       .catch(() => save('lateStarter', done));

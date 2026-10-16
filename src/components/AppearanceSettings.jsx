@@ -120,6 +120,7 @@ export default function AppearanceSettings({ onClose }) {
       <section className="settings-group">
         <h4>Интерфейс</h4>
         <Switch id="set-xr" checked={s.showXrefButtons} onChange={(showXrefButtons) => set({ showXrefButtons })} label="Кнопки параллельных мест" />
+        <Switch id="set-il" checked={s.showIllustrations !== false} onChange={(showIllustrations) => set({ showIllustrations })} label="Значки иллюстраций у стихов" hint="Картинка в конце стиха открывает иллюстрацию к нему" />
         <Switch id="set-focus" checked={s.focusMode} onChange={(focusMode) => set({ focusMode })} label="Режим чтения" hint="Прячет кнопки в тексте, панель скрывается при прокрутке вниз" />
         <Switch id="set-anim" checked={s.animations} onChange={(animations) => set({ animations })} label="Анимации" />
         <Slider id="set-radius" label="Закругления" value={s.radius} min={0} max={24} step={1} onChange={(radius) => set({ radius })} format={(v) => `${v} px`} />

@@ -46,6 +46,7 @@ export const DEFAULT_SETTINGS = {
   showStrongs: false,
   showHeadings: true,
   showXrefButtons: true,
+  showIllustrations: true, // значок картинки у стихов, к которым есть иллюстрация
   continuousVerses: false, // стихи сплошным абзацем
   customColors: false,
   colors: { bg: '#f6f5f2', text: '#1d1c1a', accent: '#9a6a2f', panel: '#ffffff' },
