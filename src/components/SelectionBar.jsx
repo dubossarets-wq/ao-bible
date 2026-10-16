@@ -6,6 +6,7 @@ import { Check, Languages, BookCopy, Heart, Link2, Share2, Copy, NotebookPen, Bo
 import { useApp } from '../App.jsx';
 import { getVerse } from '../core/modules.js';
 import { listenFrom } from '../core/listen.js';
+import { swallowNextClick } from './ui.jsx';
 import { HL_COLORS, hlLabel } from '../core/highlights.js';
 import { plainText } from '../core/verseMarkup.js';
 import { bookMeta, formatRef, BOOKS } from '../core/books.js';
@@ -59,14 +60,14 @@ export default function SelectionBar({ index, module, selection, onDone }) {
 
   useEffect(() => {
     if (!palette) return;
-    const off = (e) => !paletteRef.current?.contains(e.target) && setPalette(false);
+    const off = (e) => !paletteRef.current?.contains(e.target) && (setPalette(false), swallowNextClick());
     document.addEventListener('pointerdown', off);
     return () => document.removeEventListener('pointerdown', off);
   }, [palette]);
 
   useEffect(() => {
     if (!more) return;
-    const off = (e) => !moreRef.current?.contains(e.target) && !e.target.closest?.('.tour') && setMore(false);
+    const off = (e) => !moreRef.current?.contains(e.target) && !e.target.closest?.('.tour') && (setMore(false), swallowNextClick());
     document.addEventListener('pointerdown', off);
     return () => document.removeEventListener('pointerdown', off);
   }, [more]);

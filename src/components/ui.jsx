@@ -3,6 +3,22 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CircleAlert } from 'lucide-react';
 
+// Нажатие мимо открытого меню только закрывает его: следующий щелчок (по слову, стиху) гасим.
+// Если вместо щелчка была прокрутка — через мгновение снимаем запрет, чтобы не съесть настоящее нажатие.
+export function swallowNextClick() {
+  const block = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    done();
+  };
+  const done = () => {
+    document.removeEventListener('click', block, true);
+    clearTimeout(t);
+  };
+  document.addEventListener('click', block, true);
+  const t = setTimeout(done, 700);
+}
+
 export function Toasts({ items }) {
   return (
     <div className="toasts" role="status" aria-live="polite">

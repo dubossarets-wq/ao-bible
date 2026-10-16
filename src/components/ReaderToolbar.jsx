@@ -10,6 +10,7 @@ import { RefreshCw, Map as MapIcon, PlayCircle, Link2, Headphones, BookOpenText,
 import { IS_PWA_BUILD, applyUpdate } from '../core/updates.js';
 import { useLivePosition } from '../core/livePosition.js';
 import { shortName } from '../core/moduleShort.js';
+import { swallowNextClick } from './ui.jsx';
 
 // Стрелки «←…» и «→…» как на скриншоте: стрелка с многоточием (история переходов)
 function HistoryArrow({ dir }) {
@@ -45,7 +46,11 @@ export default function ReaderToolbar({ index, pane, module }) {
 
   useEffect(() => {
     if (!menu) return;
-    const off = (e) => !menuRef.current?.contains(e.target) && !e.target.closest?.('.tour') && setMenu(false);
+    const off = (e) => {
+      if (menuRef.current?.contains(e.target) || e.target.closest?.('.tour')) return;
+      setMenu(false);
+      swallowNextClick(); // нажатие мимо меню только закрывает его
+    };
     const esc = (e) => e.key === 'Escape' && setMenu(false);
     document.addEventListener('pointerdown', off);
     document.addEventListener('keydown', esc);
