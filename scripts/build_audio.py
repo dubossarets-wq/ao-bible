@@ -40,6 +40,7 @@ import subprocess
 import sys
 import time
 import unicodedata
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -159,7 +160,38 @@ STRONG_RE = re.compile(r"\{([^{}|]*)\|[^{}]*\}")
 RU = {"а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ё": "e", "ж": "zh", "з": "z", "и": "i",
       "й": "i", "к": "k", "л": "l", "м": "m", "н": "n", "о": "o", "п": "p", "р": "r", "с": "s", "т": "t",
       "у": "u", "ф": "f", "х": "kh", "ц": "ts", "ч": "ch", "ш": "sh", "щ": "shch", "ъ": "", "ы": "y", "ь": "",
-      "э": "e", "ю": "yu", "я": "ya", "і": "i", "ѣ": "e", "ѳ": "f", "ѵ": "i"}
+      "э": "e", "ю": "yu", "я": "ya", "і": "i", "ѣ": "e", "ѳ": "f", "ѵ": "i",
+      # украинский, церковнославянский и буквы латиницы, которых нет в NFKD-разложении
+      "є": "ye", "ї": "yi", "ґ": "g", "ѡ": "o", "ѿ": "ot", "ѻ": "o", "ꙋ": "u", "ѹ": "u", "ꙗ": "ya", "ѧ": "ya",
+      "ѫ": "u", "ѯ": "ks", "ѱ": "ps", "ѕ": "z", "ꙁ": "z", "ѷ": "i", "ꙑ": "y",
+      "ß": "ss", "æ": "ae", "œ": "oe", "ø": "o", "ł": "l", "đ": "d", "þ": "th"}
+CJK_RE = re.compile(r"[㐀-鿿豈-﫿]")
+_PINYIN = None
+
+
+GREEK_RE = re.compile(r"[Ͱ-Ͽἀ-῿]")
+# Греческий — в новогреческом чтении (так читают чтецы LibriVox): диграфы, затем буквы
+GR_DI = [("ου", "u"), ("αι", "e"), ("ει", "i"), ("οι", "i"), ("υι", "i"), ("αυ", "av"), ("ευ", "ev"), ("ηυ", "iv"),
+         ("μπ", "b"), ("ντ", "d"), ("γγ", "ng"), ("γκ", "g"), ("γχ", "nch"), ("τζ", "dz")]
+GR = dict(zip("αβγδεζηθικλμνξοπρσςτυφχψω", ["a", "v", "g", "d", "e", "z", "i", "th", "i", "k", "l", "m", "n", "ks",
+                                             "o", "p", "r", "s", "s", "t", "i", "f", "ch", "ps", "o"]))
+
+
+def greek(t):
+    t = "".join(c for c in unicodedata.normalize("NFD", t) if not unicodedata.combining(c))
+    for a, b in GR_DI:
+        t = t.replace(a, b)
+    return "".join(GR.get(c, c) for c in t)
+
+
+def pinyin(t):
+    """Китайский текст → слоги пиньиня без тонов (pypinyin из .pylib-audio/zh)."""
+    global _PINYIN
+    if _PINYIN is None:
+        sys.path.insert(0, str(PYLIB / "zh"))
+        from pypinyin import lazy_pinyin
+        _PINYIN = lazy_pinyin
+    return " ".join(_PINYIN(t))
 
 
 def plain(v):
@@ -171,6 +203,10 @@ def plain(v):
 def romanize(text):
     """Текст стиха → строка латиницы a-z и ' (алфавит MMS_FA); слова через пробел."""
     t = plain(text).lower().replace("’", "'").replace("ʼ", "'")
+    if CJK_RE.search(t):
+        t = pinyin(t)
+    if GREEK_RE.search(t):
+        t = greek(t)
     t = "".join(RU.get(c, c) for c in t)
     t = unicodedata.normalize("NFKD", t)
     t = "".join(c for c in t if not unicodedata.combining(c))
@@ -254,7 +290,9 @@ class Aligner:
             targets += [inner if x == self.star else x for x in g]
             targets.append(inner if k < len(groups) - 1 else edge)
         e = em[f0:f1]
-        e = torch.cat([e[:, :self.star], torch.zeros(e.shape[0], 1), torch.full((e.shape[0], 1), STAR_LOGP)], 1)
+        # штраф внутренней звёздочки по кадрам; у потока из нескольких файлов он нулевой у краёв файлов
+        ins = em.inner_star(f0, f0 + e.shape[0]) if hasattr(em, "inner_star") else torch.full((e.shape[0], 1), STAR_LOGP)
+        e = torch.cat([e[:, :self.star], torch.zeros(e.shape[0], 1), ins], 1)
         e = e.unsqueeze(0).to(self.dev)
         t = torch.tensor([targets], dtype=torch.int32, device=self.dev)
         ali, sc = self.F.forced_align(e, t, blank=0)
@@ -279,7 +317,7 @@ class Aligner:
             res.append((f0 + ss[i0].start, f0 + ss[i1].end, sum(s.score for s in ss) / len(ss)))
         return res
 
-    def align_stream(self, em, verses, first_margin_s=120, group_letters=2500, max_gap_s=None):
+    def align_stream(self, em, verses, first_margin_s=120, group_letters=2500, max_gap_s=None, gap_ok=None):
         """verses — [(ключ, токены)] в порядке чтения. Выравнивает группами по ~group_letters букв,
         окно каждой группы — от конца предыдущей. max_gap_s — для живого чтения: стих, начавшийся дальше
         этого от конца предыдущего, считается «перескочившим» (чтец пропустил текст).
@@ -329,7 +367,8 @@ class Aligner:
                 return True
             if gap:
                 prev_end = r[m - 1][1] if m else (None if first else pos)
-                return prev_end is not None and r[m][0] - prev_end > gap
+                # gap_ok(a, b): разрыв между кадрами a и b объясним (граница файлов: объявления LibriVox)
+                return prev_end is not None and r[m][0] - prev_end > gap and not (gap_ok and gap_ok(prev_end, r[m][0]))
             return False
 
         pos, i, first = 0, 0, True
@@ -447,7 +486,8 @@ def merge_catalog(entries):
 
 def rebuild_catalog():
     entries = []
-    for mid in ("audio-rst-hexapla", "audio-kjv-librivox", "audio-rst-nt-wwjd", "audio-rst-ot-wwjd"):
+    ids = ["audio-rst-hexapla", "audio-kjv-librivox"] + [c["id"] for c in WWJD.values()] + [c["id"] for c in LVMODS.values()]
+    for mid in ids:
         f = OUT / f"{mid}.json"
         if f.exists():
             data = f.read_bytes()
@@ -780,7 +820,33 @@ WWJD = {
     "ot": {"item": "Russian-NT-NonDrama", "id": "audio-rst-ot-wwjd", "name": "Аудио ВЗ",
            "title": "Ветхий Завет — живое чтение (без музыки)", "what": "Ветхий Завет"},
 }
-WW_ALIAS = {"revelations": "Rev", "psalm": "Ps", "1king": "1Kgs", "2king": "2Kgs", "songofsolomon": "Song"}
+WW_ALIAS = {"revelations": "Rev", "psalm": "Ps", "1king": "1Kgs", "2king": "2Kgs", "songofsolomon": "Song",
+            # неканонические книги (Canon-Biblia): «2 Ездры» RST = 1Esd, «3 Ездры» = 2Esd
+            "1maccabees": "1Macc", "2maccabees": "2Macc", "3maccabees": "3Macc", "baruh": "Bar", "baruch": "Bar",
+            "epistleofjeremiah": "EpJer", "2esdras": "1Esd", "3esdras": "2Esd", "judith": "Jdt", "wisdom": "Wis",
+            "sirach": "Sir", "tobit": "Tob"}
+DC = ["1Esd", "Tob", "Jdt", "Wis", "Sir", "EpJer", "Bar", "1Macc", "2Macc", "3Macc", "2Esd", "PrMan"]
+ORDER_ALL = {b: i for i, b in enumerate(PROT + DC)}
+# Ещё записи wwjdru/wwjdua (archive.org, CC BY-NC-SA 3.0): файл = глава, в папках по книгам.
+# text — модуль с текстом для выравнивания (по умолчанию rst), translation — к какому переводу привязана запись.
+WWJD_NC = "Записи выложены на archive.org пользователем wwjdru под лицензией CC BY-NC-SA 3.0 (некоммерческая)"
+WWJD.update({
+    "nt-prudovsky": {"item": "NT-Biblia", "id": "audio-rst-nt-prudovsky", "name": "Аудио НЗ (Прудовский)",
+                     "title": "Новый Завет — читает И. Прудовский", "what": "Новый Завет",
+                     "reader": "И. Прудовский"},
+    "dc-prudovsky": {"item": "Canon-Biblia", "id": "audio-rst-dc-prudovsky", "name": "Аудио неканонич. книги",
+                     "title": "Неканонические книги — читает И. Прудовский", "what": "Неканонические книги",
+                     "reader": "И. Прудовский", "text": "rst-dc", "translation": "rst-dc"},
+    "nt-peisti": {"item": "Pestiya-Ctenie", "id": "audio-rst-nt-peisti", "name": "Аудио НЗ, Пс, Притч (Пейсти)",
+                  "title": "Новый Завет, Псалтирь, Притчи — читает Я. Н. Пейсти",
+                  "what": "Новый Завет, Псалтирь и Притчи", "reader": "Я. Н. Пейсти"},
+    "nt-blag": {"item": "Gramatnoe_Cheniye", "id": "audio-rst-nt-blag", "name": "Аудио НЗ (wwjdru, 3)",
+                "title": "Новый Завет — живое чтение (третья запись wwjdru)", "what": "Новый Завет", "reader": ""},
+    "nt-ogienko": {"item": "UkrainianNewTestament", "id": "audio-ukr-ogienko-nt-wwjd", "name": "Аудіо НЗ (Огієнко)",
+                   "title": "Новий Завіт (пер. І. Огієнка) — живе читання", "what": "Новый Завет",
+                   "text": "ukr-ogienko", "translation": "ukr-ogienko", "language": "uk",
+                   "author": "wwjdua (sites.google.com/site/wwjdua)"},
+})
 
 
 def ww_book(name, num):
@@ -794,15 +860,20 @@ def ww_book(name, num):
 
 
 def ww_files(item):
-    """[(OSIS, глава в имени файла, имя mp3, md5)] в порядке книг и глав."""
+    """[(OSIS, глава в имени файла, имя mp3, md5)] в порядке книг и глав.
+    Имена: «40Matthew01.mp3» или по папкам «40_Matthew/Bnn-40-01.mp3», «CP-19_Psalms/BP-19-001.mp3»
+    (номер книги в папке у разных записей свой — книгу определяем по названию)."""
     _, files = ia_files(item)
     out = []
     for name, f in files.items():
         m = re.fullmatch(r"(\d\d)(\d?)_?([A-Za-z]+?)_?(\d+)\.mp3", name)
         if m:
             out.append((ww_book(m[3], m[2]), int(m[4]), name, f.get("md5")))
-    order = {b: i for i, b in enumerate(PROT)}
-    return sorted(out, key=lambda x: (order[x[0]], x[1]))
+            continue
+        m = re.fullmatch(r"(?:[A-Za-z]+-)?\d+[-_]((?:\d[-_])?[A-Za-z_]+?)/[A-Za-z]+-\d+-(\d+)\.mp3", name)
+        if m:
+            out.append((ww_book(re.sub(r"[-_]", "", m[1]), ""), int(m[2]), name, f.get("md5")))
+    return sorted(out, key=lambda x: (ORDER_ALL[x[0]], x[1]))
 
 
 def ww_candidates(bid, c, nch):
@@ -819,7 +890,7 @@ def build_wwjd(args):
     from concurrent.futures import ThreadPoolExecutor
     cfg = WWJD[args.part]
     item, mid = cfg["item"], cfg["id"]
-    rst = load_bible("rst")
+    rst = load_bible(cfg.get("text", "rst"))
     items = ww_files(item)
     if args.books:
         items = [x for x in items if x[0] in args.books.split(",")]
@@ -839,23 +910,33 @@ def build_wwjd(args):
 
     al, t0, audio_s, align_s = None, time.time(), 0.0, 0.0
     problems, cur_book, seen, skipped = [], None, {}, []
-    order = {b: i for i, b in enumerate(PROT)}
+    order = ORDER_ALL
 
     def save():
         ch = dict(sorted(chapters.items(), key=lambda kv: (order[kv[0].split('.')[0]], int(kv[0].split('.')[1]))))
         books = sorted({k.split(".")[0] for k in ch}, key=order.get)
+        if "reader" in cfg or "text" in cfg:
+            tr = {"rst": "Синодальном переводе", "rst-dc": "Синодальном переводе",
+                  "ukr-ogienko": "переводе И. Огиенко"}.get(cfg.get("text", "rst"), cfg.get("text"))
+            desc = (f"{cfg['what']} в {tr}, живое чтение без музыки"
+                    + (f" (читает {cfg['reader']})" if cfg.get("reader") else "") + ", запись на каждую главу. "
+                    + WWJD_NC + ". Время стихов получено принудительным выравниванием текста с записью (MMS_FA). "
+                    "Озвучены книги: " + ", ".join(books) + ".")
+        else:
+            desc = (f"{cfg['what']} в Синодальном переводе, живые чтецы, без музыки, запись на каждую главу. "
+                    "Записи выложены на archive.org пользователем wwjdru под лицензией CC BY-NC-SA 3.0; "
+                    "вероятно, это записи Faith Comes By Hearing. Время стихов получено принудительным "
+                    "выравниванием текста RST с записью (MMS_FA). Озвучены книги: " + ", ".join(books) + ".")
         mod = {
             "format": "aob-module", "formatVersion": 1, "type": "audio",
             "id": mid, "name": cfg["name"], "title": cfg["title"],
-            "description": f"{cfg['what']} в Синодальном переводе, живые чтецы, без музыки, запись на каждую главу. "
-                           "Записи выложены на archive.org пользователем wwjdru под лицензией CC BY-NC-SA 3.0; "
-                           "вероятно, это записи Faith Comes By Hearing. Время стихов получено принудительным "
-                           "выравниванием текста RST с записью (MMS_FA). Озвучены книги: " + ", ".join(books) + ".",
-            "language": "ru", "version": "1.0 (archive.org, 2010)",
-            "author": "wwjdru (sites.google.com/site/wwjdru)",
+            "description": desc,
+            "language": cfg.get("language", "ru"), "version": "1.0 (archive.org, 2010)",
+            "author": cfg.get("author", "wwjdru (sites.google.com/site/wwjdru)")
+                      + (f"; читает {cfg['reader']}" if cfg.get("reader") else ""),
             "source": f"https://archive.org/details/{item}",
             "license": "CC BY-NC-SA 3.0 (по странице archive.org)",
-            "translation": "rst", "versification": "synodal",
+            "translation": cfg.get("translation", "rst"), "versification": "synodal",
             "chapters": ch,
         }
         merge_catalog([write_module(mod)])
@@ -934,7 +1015,493 @@ def build_wwjd(args):
     save()
 
 
+# --- Проекты LibriVox: выравнивание «потоком» через все файлы проекта ---------------------------------
+#
+# Запись проекта LibriVox — несколько mp3 (по главе, по нескольку глав или по книге — у разных проектов
+# по-разному, а названия разделов бывают на любом языке). Поэтому названия разделов не разбираем: текст
+# всех книг проекта в порядке чтения выравнивается с записью всех его файлов подряд, как с одной длинной
+# записью (эмиссии файлов читаются с диска по мере надобности). У краёв каждого файла «звёздочка»
+# бесплатна — там объявления LibriVox («This is a LibriVox recording…», «End of chapter…»). Затем каждая
+# глава получает файл, в котором прочитаны её стихи (глава, разрезанная между файлами, не размечается).
+
+LV_ALIGN_VERSION = 1
+EDGE_HEAD, EDGE_TAIL = 60, 30  # с, у начала и конца файла — бесплатная «звёздочка»
+TEXTS = DATA / "texts"
+
+# Модули из записей LibriVox. projects — [(id проекта LibriVox, книги OSIS по порядку чтения)];
+# если главу озвучили несколько проектов, берётся первый по списку. text — id переводов в public/modules,
+# с которыми выравнивать (первый существующий); пока перевода нет — текст eBible (ebible), собранный
+# в синодальную нумерацию тем же кодом, что и модуль перевода (scripts/extra_world.py), в data-src/audio/texts.
+NT = PROT[39:]
+OT = PROT[:39]
+
+
+def _b(*names):
+    return [x for n in names for x in (n if isinstance(n, list) else [n])]
+
+
+LVMODS = {
+    "web": {"id": "audio-web-librivox", "name": "Аудио WEB", "lang": "en", "text": ["web", "engwebp"],
+            "ebible": "engwebp", "translation": "web",
+            "title": "World English Bible — LibriVox (чтец Ron Altman)", "reader": "Ron Altman",
+            "what": "World English Bible (WEB)", "projects": [(21093, PROT)]},
+    "web-henson": {"id": "audio-web-librivox-henson", "name": "Аудио WEB (Henson)", "lang": "en",
+                   "text": ["web", "engwebp"], "ebible": "engwebp", "translation": "web",
+                   "title": "World English Bible — LibriVox (чтец Winfred Henson)", "reader": "Winfred Wardell Henson",
+                   "what": "World English Bible (WEB)", "projects": [(11622, PROT)]},
+    "asv": {"id": "audio-asv-librivox", "name": "Аудио ASV", "lang": "en", "text": ["asv", "eng-asv"],
+            "ebible": "eng-asv", "translation": "asv",
+            "title": "American Standard Version — LibriVox (чтец Ron Altman)", "reader": "Ron Altman",
+            "what": "American Standard Version (1901)", "projects": [(15545, PROT)]},
+    "bsb": {"id": "audio-bsb-librivox", "name": "Аудио BSB", "lang": "en", "text": ["bsb"],
+            "translation": "bsb", "title": "Berean Standard Bible — LibriVox (Послание к Евреям)",
+            "what": "Berean Standard Bible", "projects": [(19872, ["Heb"])]},
+    "kjv2": {"id": "audio-kjv-librivox-2", "name": "Аудио KJV (разные чтецы)", "lang": "en", "text": ["kjv"],
+             "translation": "kjv", "title": "King James Version — LibriVox, разные чтецы",
+             "what": "Библия короля Якова", "projects": "auto:KJV"},
+    "rv1909": {"id": "audio-rv1909-librivox", "name": "Аудио RV 1909", "lang": "es",
+               "text": ["rv1909", "spa-rv1909", "spaRV1909"], "ebible": "spaRV1909", "translation": "rv1909",
+               "title": "Reina-Valera 1909 — LibriVox, разные чтецы", "what": "Reina-Valera 1909",
+               "projects": "auto:Reina Valera",
+               # 1–2 Тим: у раздела «1 Timoteo 1» нет записи — проект берём без этой главы
+               "extra": [(12486, ["1Tim", "2Tim"], {"1Tim", "2Tim"}, {"1Tim.1"})]},
+    "cuv": {"id": "audio-cuv-librivox", "name": "Аудио 和合本", "lang": "zh",
+            "text": ["cuv", "cmn-cu89t", "cmn-cu89s"], "ebible": "cmn-cu89t", "translation": "cuv",
+            "title": "Chinese Union Version (和合本) — LibriVox", "what": "Chinese Union Version (和合本)",
+            "projects": [(13982, ["Ps"]), (2135, ["Matt"]), (5140, ["Mark"]), (5659, ["Luke"]), (13410, ["John"]),
+                         (6044, ["Acts"]), (5613, ["Rom"])]},
+    "luther1912": {"id": "audio-luther1912-librivox", "name": "Аудио Luther 1912", "lang": "de",
+                   "text": ["luther1912", "deu1912"], "ebible": "deu1912", "translation": "luther1912",
+                   "title": "Lutherbibel 1912 — LibriVox", "what": "Lutherbibel 1912",
+                   "projects": [(2909, ["Esth"]), (2952, ["Matt"]), (4037, ["John"])]},
+    "lsg": {"id": "audio-lsg-librivox", "name": "Аудио LSG", "lang": "fr",
+            "text": ["lsg", "fra-lsg", "fraLSG"], "ebible": "fraLSG", "translation": "lsg",
+            "title": "Louis Segond 1910 — LibriVox", "what": "Louis Segond 1910",
+            "projects": [(596, ["Ruth"]), (1454, ["Song"]), (122, ["John"]), (866, ["1Pet", "2Pet"])]},
+    "almeida": {"id": "audio-almeida-librivox", "name": "Аудио Almeida", "lang": "pt",
+                "text": ["almeida", "porbr2018"], "ebible": "porbr2018", "translation": "almeida",
+                "title": "Bíblia de Almeida — LibriVox", "what": "Bíblia (João Ferreira de Almeida)",
+                "projects": [(4205, ["Gen"]), (10668, ["Ruth"]), (17520, ["Eccl"])]},
+    "grc": {"id": "audio-byz-librivox", "name": "Аудио греч. НЗ", "lang": "grc", "text": ["byz-rp2018"],
+            "translation": "byz-rp2018",
+            "title": "Греческий Новый Завет — LibriVox (новогреческое произношение)",
+            "what": "греческий Новый Завет (чтецы читали Патриаршее издание 1904 г. и Textus Receptus Стефана; "
+                    "текст для разметки — Robinson-Pierpont 2018, отличия минимальны)",
+            "projects": [(2889, ["Matt"]), (4222, ["John"]), (4115, ["Col"]), (2242, ["Jas"]),
+                         (2307, ["1Pet", "2Pet"])]},
+    "csl": {"id": "audio-csl-librivox", "name": "Аудио ЦСЯ (Бытие)", "lang": "cu", "text": ["csl-elizabeth"],
+            "translation": "csl-elizabeth", "order": "syn",
+            "title": "Елизаветинская Библия — LibriVox (книга Бытия)", "what": "Елизаветинская Библия",
+            "projects": [(2218, ["Gen"])]},
+}
+
+# Номера книг в названиях проектов LibriVox: «Bible (KJV) 19: Psalms», «Bible (KJV) NT 09-12: …»
+_LV_SKIP = re.compile(r"Apocrypha|Deuterocanon|\b00:|Selections|Psalm 133|Sermon On|Dramatic", re.I)
+
+
+def lv_title_books(title):
+    m = re.search(r"\)\s+(NT\s+)?(\d+)(?:\s*-\s*(\d+))?\s*:", title)
+    if not m:
+        return None
+    a, b = int(m[2]), int(m[3] or m[2])
+    base = 39 if m[1] else 0
+    return [PROT[base + i - 1] for i in range(a, b + 1)]
+
+
+def lv_auto_projects(tag):
+    """Все проекты «Bible (<tag>) …» из каталога LibriVox, по одному на книгу: солист лучше хора, новее лучше."""
+    cat = DATA / "meta" / f"librivox-search-{re.sub(r'[^A-Za-z0-9]+', '_', tag)}.json"
+    found = {}
+    if cat.exists():
+        found = json.loads(cat.read_text(encoding="utf-8"))
+    else:
+        off = 0
+        while True:
+            q = urllib.parse.urlencode({"title": "^Bible (" + tag, "format": "json", "limit": "200",
+                                        "offset": str(off)})
+            try:
+                bs = json.loads(http_get("https://librivox.org/api/feed/audiobooks/?" + q)).get("books", [])
+            except Exception:  # noqa: BLE001 — 404, когда больше нет
+                bs = []
+            for x in bs:
+                found[x["id"]] = x["title"]
+            if len(bs) < 200:
+                break
+            off += 200
+        cat.parent.mkdir(parents=True, exist_ok=True)
+        cat.write_text(json.dumps(found, ensure_ascii=False), encoding="utf-8")
+    best = {}
+    for lid, title in found.items():
+        if not title.startswith(f"Bible ({tag})") or _LV_SKIP.search(title) or "Complete" in title:
+            continue
+        books = lv_title_books(title)
+        if not books:
+            continue
+        info, files = lv_project(int(lid))
+        if not files or any(f is None for f in files):
+            continue  # проект не закончен (у части разделов нет записи)
+        readers = {r["display_name"] for s in info["sections"] for r in s.get("readers", [])}
+        rank = (len(readers) > 1, -int(lid))
+        for bk in books:
+            if bk not in best or rank < best[bk][0]:
+                best[bk] = (rank, int(lid), tuple(books))
+    # проект, покрывающий несколько книг, берём, только если он лучший хотя бы для одной из них
+    out, seen = [], {}
+    for bk in PROT:
+        if bk in best:
+            lid = best[bk][1]
+            if lid not in seen:
+                seen[lid] = (lid, list(best[bk][2]), set())
+                out.append(seen[lid])
+            seen[lid][2].add(bk)
+    return out
+
+
+def lv_project(lid):
+    """(описание проекта LibriVox, [(item archive.org, имя mp3, раздел) или None — раздел без записи])."""
+    api = cached_json(f"https://librivox.org/api/feed/audiobooks/?id={lid}&format=json&extended=1",
+                      DATA / "meta" / f"librivox-{lid}.json", max_age_days=365)
+    info = api["books"][0]
+    files = []
+    for s in sorted(info["sections"], key=lambda s: int(s["section_number"])):
+        m = re.search(r"archive\.org/download/([^/]+)/(.+)$", s.get("listen_url") or "")
+        files.append((m[1], urllib.parse.unquote(m[2]), s) if m else None)
+    return info, files
+
+
+class StreamEm:
+    """Эмиссии нескольких файлов как одна последовательность кадров (np.memmap — в память не грузятся)."""
+
+    def __init__(self, torch, paths):
+        import numpy as np
+        self.np, self.torch = np, torch
+        self.parts = [np.load(p, mmap_mode="r") for p in paths]
+        self.offsets = [0]
+        for a in self.parts:
+            self.offsets.append(self.offsets[-1] + a.shape[0])
+        self.shape = (self.offsets[-1], self.parts[0].shape[1])
+        star = np.full(self.shape[0], STAR_LOGP, dtype=np.float32)
+        for a0, a1 in zip(self.offsets, self.offsets[1:]):
+            star[a0:min(a1, a0 + EDGE_HEAD * Aligner.FPS)] = 0
+            star[max(a0, a1 - EDGE_TAIL * Aligner.FPS):a1] = 0
+        self.star = star
+
+    def __getitem__(self, sl):
+        np = self.np
+        f0 = max(0, sl.start or 0)
+        f1 = self.shape[0] if sl.stop is None else min(self.shape[0], sl.stop)
+        out = [np.asarray(a[max(f0, a0) - a0:min(f1, a1) - a0], dtype=np.float32)
+               for a, a0, a1 in zip(self.parts, self.offsets, self.offsets[1:]) if a1 > f0 and a0 < f1]
+        return self.torch.from_numpy(np.concatenate(out) if out else np.zeros((0, self.shape[1]), np.float32))
+
+    def inner_star(self, f0, f1):
+        return self.torch.from_numpy(self.star[f0:f1].copy()).unsqueeze(1)
+
+    def file_of(self, frame):
+        import bisect
+        return min(len(self.parts) - 1, max(0, bisect.bisect_right(self.offsets, frame) - 1))
+
+    def boundary_between(self, a, b):
+        return self.file_of(a) != self.file_of(b)
+
+
+def ebible_text(eid):
+    """Текст перевода eBible в синодальной нумерации (data-src/audio/texts/<id>.json, формат как у модуля).
+    Собирается функциями scripts/extra_world.py — так же, как модуль перевода в public/modules."""
+    out = TEXTS / f"{eid}.json"
+    if out.exists():
+        return {b["id"]: b["chapters"] for b in json.loads(out.read_text(encoding="utf-8"))["books"]}
+    import zipfile
+    folder = TEXTS / eid
+    if not folder.exists():
+        z = http_get(f"https://ebible.org/Scriptures/{eid}_usfm.zip", TEXTS / f"{eid}_usfm.zip")
+        folder.mkdir(parents=True, exist_ok=True)
+        with zipfile.ZipFile(z) as zf:  # недоверенный архив: берём только *.usfm/*.SFM без путей
+            for n in zf.namelist():
+                base = n.replace("\\", "/").rsplit("/", 1)[-1]
+                if re.fullmatch(r"[\w.-]+\.(usfm|sfm|SFM)", base):
+                    (folder / base).write_bytes(zf.read(n))
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import extra_world as W
+    src, heads = W.read_usfm(folder, strongs=False)
+    schemes, best, _ = W.choose_schemes(src)
+    from collections import Counter
+    log(f"  {eid}: схемы нумерации по книгам {dict(Counter(map(str, schemes.values())))}")
+    books = W.collect(src, heads, schemes, eid).books()
+    out.write_text(json.dumps({"books": [{"id": b["id"], "chapters": b["chapters"]} for b in books]},
+                              ensure_ascii=False), encoding="utf-8")
+    return {b["id"]: b["chapters"] for b in books}
+
+
+def lv_text(cfg):
+    """(текст {книга: главы} в синодальной нумерации, откуда он)."""
+    for t in cfg["text"]:
+        if (OUT / f"{t}.json").exists():
+            return load_bible(t), t
+    if cfg.get("ebible"):
+        return ebible_text(cfg["ebible"]), "eBible " + cfg["ebible"]
+    raise SystemExit(f"нет текста для {cfg['id']}: {cfg['text']}")
+
+
+def lv_stream(text, books, order):
+    """[(ключ главы, стих, текст)] в порядке чтения: синодальная нумерация → порядок источника (KJV)."""
+    pos = (lambda b, c, v: (c, v)) if order == "syn" else kjv_position()
+    out = []
+    for bi, bid in enumerate(books):
+        for c, chap in enumerate(text.get(bid, []), 1):
+            for v, t in enumerate(chap, 1):
+                if t.strip():
+                    out.append(((bi, *pos(bid, c, v), c, v), f"{bid}.{c}", v, t))
+    out.sort(key=lambda x: x[0])
+    return [(ck, v, t) for _, ck, v, t in out]
+
+
+def lv_align_project(al_box, lid, books, text, order="kjv", drop=()):
+    """Выравнивает проект LibriVox целиком. Возвращает {files, verses, all} (времена — от начала потока)."""
+    from concurrent.futures import ThreadPoolExecutor
+    info, files = lv_project(lid)
+    if any(f is None for f in files):
+        log(f"  ! проект {lid}: у разделов {[i + 1 for i, f in enumerate(files) if f is None]} нет записи")
+    files = [f for f in files if f]
+    stream = [x for x in lv_stream(text, books, order) if x[0] not in drop]
+    key = hashlib.sha1(json.dumps([LV_ALIGN_VERSION, lid, [f[1] for f in files], stream],
+                                  ensure_ascii=False).encode()).hexdigest()[:12]
+    cache = DATA / "lv" / "align" / f"{lid}.{key}.json"
+    if cache.exists():
+        return json.loads(cache.read_text(encoding="utf-8"))
+    al = al_box[0] = al_box[0] or Aligner()
+    t0 = time.time()
+    metas = {}
+    for item in {f[0] for f in files}:
+        metas[item] = ia_files(item)[1]
+
+    def fetch(f):
+        item, name, _ = f
+        return http_get(f"https://archive.org/download/{item}/{name}", DATA / "lv" / item / "mp3" / name,
+                        md5=metas[item].get(name, {}).get("md5"))
+
+    pool = ThreadPoolExecutor(4)
+    futs = [pool.submit(fetch, f) if not (DATA / "lv" / f[0] / "emis" / f"{f[1]}.npy").exists() else None
+            for f in files]
+    paths = []
+    for f, fut in zip(files, futs):
+        npy = DATA / "lv" / f[0] / "emis" / f"{f[1]}.npy"
+        if not npy.exists():
+            al.emission(load_wav(fut.result()), npy)
+        paths.append(npy)
+    pool.shutdown()
+    em = StreamEm(al.torch, paths)
+    t1 = time.time()
+    vs = [((ck, v), al.tokens(t)) for ck, v, t in stream]
+    vs = [(k, t) for k, t in vs if t]
+    res = al.align_stream(em, vs, first_margin_s=120, max_gap_s=30, gap_ok=em.boundary_between)
+    fps = Aligner.FPS
+    r = {"files": [[f[0], f[1], (a1 - a0) / fps] for f, a0, a1 in zip(files, em.offsets, em.offsets[1:])],
+         "offsets": [o / fps for o in em.offsets],
+         "verses": [[ck, v, *res[(ck, v)]] for (ck, v), _ in vs if (ck, v) in res],
+         "all": [[ck, v] for (ck, v), _ in vs]}
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    cache.write_text(json.dumps(r), encoding="utf-8")
+    log(f"  проект {lid}: {em.shape[0] / fps / 3600:.1f} ч, {len(files)} файлов; скачивание и эмиссии "
+        f"{(t1 - t0) / 60:.1f} мин, выравнивание {(time.time() - t1) / 60:.1f} мин")
+    return r
+
+
+def lv_chapters(r, lid):
+    """Главы из результата выравнивания проекта: {ключ: глава модуля}, список проблем."""
+    import bisect
+    offs, files = r["offsets"], r["files"]
+    fidx = lambda t: min(len(files) - 1, max(0, bisect.bisect_right(offs, t) - 1))  # noqa: E731
+    allv = {}
+    for ck, v in r["all"]:
+        allv.setdefault(ck, []).append(v)
+    # у каждой главы — первый непрерывный отрезок стихов в порядке чтения
+    runs, order_ck = {}, []
+    for i, (ck, v, s0, e0, sc) in enumerate(r["verses"]):
+        if ck not in runs:
+            runs[ck] = [[i, v, s0, e0, sc]]
+            order_ck.append(ck)
+        elif runs[ck][-1] is not None and runs[ck][-1][0] == i - 1:
+            runs[ck].append([i, v, s0, e0, sc])
+        else:
+            runs[ck].append(None)
+    out, problems, low = {}, [], []
+    prev = None  # (файл, конец последнего стиха предыдущей главы)
+    for ck in order_ck:
+        vv = []
+        for x in runs[ck]:
+            if x is None:
+                break
+            vv.append(x)
+        low += [f"{ck}:{x[1]}({x[4]:.2f})" for x in vv if x[4] < 0.3]
+        vv = [x for k, x in enumerate(vv) if (k == 0 or x[1] > vv[k - 1][1]) and x[4] >= MIN_SCORE]
+        n_all = len(allv.get(ck, []))
+        if len(vv) < 0.7 * n_all:
+            problems.append(f"{ck} (найдено {len(vv)}/{n_all})")
+            prev = None
+            continue
+        fs = {fidx(x[2]) for x in vv}
+        if len(fs) > 1:
+            problems.append(f"{ck} (глава в двух файлах)")
+            prev = None
+            continue
+        fi = fs.pop()
+        base = offs[fi]
+        al_map = {x[1]: (x[2] - base, x[3] - base, x[4]) for x in vv}
+        keys = [x[1] for x in vv]
+        starts = verse_starts(keys, al_map)
+        first = starts[0]
+        start = max(0.0, first - 2.5) if not prev or prev[0] != fi else min(first, prev[1] + 0.3)
+        item, name, dur = files[fi]
+        out[ck] = {"url": f"https://archive.org/download/{item}/{urllib.parse.quote(name)}",
+                   "verses": fill_missing([[k, s] for k, s in zip(keys, starts)], allv[ck]),
+                   "duration": round(dur, 2), "start": round(start, 2),
+                   "end": round(min(dur, al_map[keys[-1]][1] + 0.6), 2), "_file": fi}
+        prev = (fi, al_map[keys[-1]][1])
+    ks = list(out)
+    for k1, k2 in zip(ks, ks[1:]):  # конец главы не заходит за начало следующей в том же файле
+        if out[k1]["_file"] == out[k2]["_file"]:
+            out[k1]["end"] = round(min(out[k1]["end"], out[k2]["start"]), 2)
+    for c in out.values():
+        del c["_file"]
+    if low:
+        log(f"  проект {lid}: стихи с низкой уверенностью ({len(low)}): {' '.join(low[:12])}{' …' if len(low) > 12 else ''}")
+    return out, problems
+
+
+def build_lv(args):
+    cfg = LVMODS[args.key]
+    text, tsrc = lv_text(cfg)
+    log(f"{cfg['id']}: текст — {tsrc}")
+    projects = cfg["projects"]
+    if isinstance(projects, str):
+        projects = lv_auto_projects(projects.split(":", 1)[1]) + cfg.get("extra", [])
+    if args.projects:
+        keep = {int(x) for x in args.projects.split(",")}
+        projects = [p for p in projects if p[0] in keep]
+    al_box = [None]
+    chapters, problems, used, taken = {}, [], [], set()
+    for p in projects:
+        lid, books = p[0], p[1]
+        prefer = p[2] if len(p) > 2 else set(books)
+        drop = p[3] if len(p) > 3 else set()
+        books = [b for b in books if b in text]
+        if not books:
+            log(f"  проект {lid}: книг {books} нет в тексте — пропущен")
+            continue
+        r = lv_align_project(al_box, lid, books, text, cfg.get("order", "kjv"), drop)
+        ch, pr = lv_chapters(r, lid)
+        problems += [f"[{lid}] {p}" for p in pr]
+        info, _ = lv_project(lid)
+        rd = sorted({x["display_name"] for s in info["sections"] for x in s.get("readers", [])})
+        n_new = 0
+        for k, c in ch.items():
+            # глава берётся из проекта, лучшего для её книги; из остальных — только если её ещё нет
+            if k not in chapters or (k.split(".")[0] in prefer and k not in taken):
+                if k in chapters:
+                    n_new -= 1
+                chapters[k] = c
+                n_new += 1
+                if k.split(".")[0] in prefer:
+                    taken.add(k)
+        if n_new:
+            used.append((lid, info["title"], rd, n_new))
+        log(f"  проект {lid} ({info['title']}): размечено {len(ch)} глав, взято {n_new}")
+    if problems:
+        log(f"  не размечены ({len(problems)}): " + "; ".join(problems))
+    order = {b: i for i, b in enumerate(PROT)}
+    chapters = dict(sorted(chapters.items(), key=lambda kv: (order[kv[0].split('.')[0]], int(kv[0].split('.')[1]))))
+    covered = sorted({k.split(".")[0] for k in chapters}, key=order.get)
+    total = sum(len(text[b]) for b in covered)
+    what = "вся Библия" if len(covered) == 66 else "книги " + ", ".join(covered)
+    all_readers = sorted({x for _, _, rd, _ in used for x in rd})
+    reader = cfg.get("reader") or (", ".join(all_readers) if len(all_readers) <= 4 else
+                                   ", ".join(all_readers[:4]) + f" и ещё {len(all_readers) - 4}")
+    srcs = " ".join(f"https://librivox.org/{lid}" for lid, *_ in used)
+    multi = any(c.get("start", 0) > 30 for c in chapters.values())
+    mod = {
+        "format": "aob-module", "formatVersion": 1, "type": "audio",
+        "id": cfg["id"], "name": cfg["name"], "title": cfg["title"],
+        "description": f"Живое чтение: {cfg['what']}, LibriVox (чтец: {reader}). Размечены: {what} "
+                       f"({len(chapters)} глав). " + ("В одном файле записано несколько глав: у главы есть "
+                                                      "start/end — секунды от начала файла. " if multi else "")
+                       + f"Время стихов получено принудительным выравниванием текста ({tsrc}) с записью (MMS_FA). "
+                         "Записи загружаются с archive.org.",
+        "language": cfg["lang"], "version": f"1.0 (LibriVox, {time.strftime('%Y-%m')})",
+        "author": f"LibriVox; читает {reader}",
+        "source": "LibriVox: " + ", ".join(f"«{t}» (librivox.org, id {lid})" for lid, t, _, _ in used),
+        "license": "Public Domain (LibriVox)",
+        "translation": cfg["translation"], "versification": "synodal",
+        "chapters": chapters,
+    }
+    log(f"  итого: {len(chapters)} глав из {total} в озвученных книгах")
+    merge_catalog([write_module(mod)])
+
+
+# --- Выборочная проверка распознаванием речи -----------------------------------------------------
+
+def check_module(args):
+    """Для случайных стихов модуля распознаёт 4 с записи с начала стиха (faster-whisper small, CPU) и
+    сравнивает слова с началом текста стиха (и предыдущего — чтобы заметить сдвиг на стих)."""
+    import random
+    import difflib
+    mod = json.loads((OUT / f"{args.module}.json").read_text(encoding="utf-8"))
+    tid = args.text or mod["translation"]
+    if (OUT / f"{tid}.json").exists():
+        text = load_bible(tid)
+    else:
+        cfg = next(c for c in LVMODS.values() if c["id"] == args.module)
+        text, _ = lv_text(cfg)
+    sys.path.insert(0, str(PYLIB / "asr"))
+    os.environ.setdefault("HF_HOME", str(DATA / "models" / "hf"))
+    import numpy as np
+    from faster_whisper import WhisperModel
+    asr = WhisperModel(os.environ.get("ASR_MODEL", "small"), device="cpu", compute_type="int8")
+    lang = {"cu": "ru", "grc": "el"}.get(mod["language"], mod["language"])
+    rnd = random.Random(args.seed)
+    keys = list(mod["chapters"])
+    picks = []
+    while len(picks) < args.n:
+        ck = rnd.choice(keys)
+        vv = mod["chapters"][ck]["verses"]
+        if len(vv) > 1:
+            picks.append((ck, rnd.choice(vv[1:])))
+    ok = 0
+    for ck, (v, t) in sorted(picks, key=lambda x: (PROT.index(x[0].split(".")[0]) if x[0].split(".")[0] in PROT else 99, int(x[0].split(".")[1]))):
+        c = mod["chapters"][ck]
+        url = urllib.parse.unquote(c["url"])
+        m = re.search(r"archive\.org/download/([^/]+)/(.+)$", url)
+        cands = [DATA / "lv" / m[1] / "mp3" / m[2]] + [d / "mp3" / m[2] for d in DATA.glob("wwjd-*")] + \
+                [DATA / "librivox-kjv" / "mp3" / m[2]]
+        path = next((p for p in cands if p.exists()), None)
+        if not path:
+            path = http_get(url, DATA / "lv" / m[1] / "mp3" / m[2])
+        raw = subprocess.run(["ffmpeg", "-v", "error", "-nostdin", "-ss", str(t), "-t", "4", "-i", str(path),
+                              "-ac", "1", "-ar", "16000", "-f", "f32le", "-"], check=True, capture_output=True).stdout
+        segs, _ = asr.transcribe(np.frombuffer(raw, dtype=np.float32).copy(), language=lang, beam_size=5,
+                                 vad_filter=False)
+        heard = " ".join(s.text.strip() for s in segs)
+        b, ch = ck.split(".")
+        cur = text[b][int(ch) - 1][v - 1] if v <= len(text[b][int(ch) - 1]) else ""
+        prv = text[b][int(ch) - 1][v - 2] if v >= 2 else ""
+
+        def sim(a, ref):
+            a, ref = romanize(a).split(), romanize(ref).split()
+            if not a or not ref:
+                return 0.0
+            ref = ref[:max(4, int(len(a) * 1.3))]
+            return difflib.SequenceMatcher(None, " ".join(a), " ".join(ref)).ratio()
+
+        s_cur, s_prv = sim(heard, cur), sim(heard, prv)
+        good = s_cur >= 0.45 and s_cur >= s_prv
+        ok += good
+        log(f"{'OK ' if good else '?? '} {ck}:{v} @{t:.1f}  {s_cur:.2f}/{s_prv:.2f}  слышно: {heard[:60]}\n"
+            f"{'':16s}текст: {plain(cur)[:60]}")
+    log(f"{args.module}: совпало {ok} из {len(picks)}")
+
+
 def main():
+    sys.stdout.reconfigure(errors="replace")  # консоль Windows (cp1251) не знает часть букв в названиях LibriVox
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("rst")
@@ -947,8 +1514,16 @@ def main():
     p.add_argument("refs", nargs="+")
     p.add_argument("--show", action="store_true", help="показать каждый стих")
     p = sub.add_parser("wwjd")
-    p.add_argument("part", choices=["nt", "ot"], help="nt — Новый Завет, ot — Ветхий")
+    p.add_argument("part", choices=list(WWJD), help="nt — Новый Завет, ot — Ветхий; прочие — другие чтецы")
     p.add_argument("--books", help="книги OSIS через запятую (по умолчанию все); прочие главы сохраняются")
+    p = sub.add_parser("lv", help="модуль из записей LibriVox (см. LVMODS)")
+    p.add_argument("key", choices=list(LVMODS))
+    p.add_argument("--projects", help="только эти проекты LibriVox (id через запятую)")
+    p = sub.add_parser("check", help="выборочная проверка модуля распознаванием речи")
+    p.add_argument("module")
+    p.add_argument("--n", type=int, default=24)
+    p.add_argument("--seed", type=int, default=1)
+    p.add_argument("--text", help="id перевода для сверки (по умолчанию translation модуля)")
     sub.add_parser("catalog")
     args = ap.parse_args()
     if args.cmd == "rst":
@@ -959,6 +1534,10 @@ def main():
         verify_rst(args)
     elif args.cmd == "wwjd":
         build_wwjd(args)
+    elif args.cmd == "lv":
+        build_lv(args)
+    elif args.cmd == "check":
+        check_module(args)
     else:
         rebuild_catalog()
 

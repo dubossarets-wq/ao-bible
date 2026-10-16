@@ -1,10 +1,8 @@
-// «Что нового»: короткий список изменений после обновления — крупно, с понятными значками.
+// «Что нового»: изменения после обновления — простым списком, крупным понятным текстом.
 import React, { useEffect } from 'react';
-import { ScrollText, Headphones, Keyboard, BookOpen, CalendarCheck, Bell, Sparkles, TextSelect } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { NEWS, markNewsSeen } from '../core/whatsNew.js';
 
-const ICONS = { ScrollText, Headphones, Keyboard, BookOpen, CalendarCheck, Bell, TextSelect };
 const fmt = (id) => new Date(`${id}T12:00`).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
 
 export default function NewsSheet({ payload, onClose }) {
@@ -15,20 +13,9 @@ export default function NewsSheet({ payload, onClose }) {
       <div className="news">
         {list.map((n) => (
           <ul key={n.id} className="news-list">
-            {n.items.map((it) => {
-              const Icon = ICONS[it.icon] || Sparkles;
-              return (
-                <li key={it.title}>
-                  <span className="news-icon" aria-hidden="true">
-                    <Icon size={20} />
-                  </span>
-                  <span>
-                    <strong>{it.title}</strong>
-                    {it.text}
-                  </span>
-                </li>
-              );
-            })}
+            {n.items.map((text) => (
+              <li key={text}>{text}</li>
+            ))}
           </ul>
         ))}
         <button className="btn primary news-ok" onClick={onClose}>

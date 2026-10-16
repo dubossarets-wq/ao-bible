@@ -172,6 +172,84 @@ def m_kulish():
 
 
 # ---------------------------------------------------------------------------------------------
+# Переводы на других языках (scripts/extra_world_list.py): eBible.org и CrossWire, нумерация — синодальная
+# ---------------------------------------------------------------------------------------------
+
+# Схема нумерации модуля SWORD (поле Versification) -> с какого перевода нумерации начинать подбор
+SWORD_PREFER = {"kjv": "kjv", "kjva": "kjv", "nrsv": "nrsv", "nrsva": "nrsv", "synodal": "syn", "synodalprot": "syn",
+                "orthodox": "syn", "vulg": "vulg", "catholic": "vulg", "catholic2": "vulg", "segond": "segond",
+                "calvin": "calvin", "darbyfr": "darbyfr", "mt": "mt", "leningrad": "mt", "german": "mt", "luther": "mt"}
+_EBIBLE_META = None
+
+
+def ebible_meta(eid):
+    global _EBIBLE_META
+    if _EBIBLE_META is None:
+        import csv
+        f = SRC / "ebible-meta" / "translations.csv"
+        _EBIBLE_META = {r["translationId"]: r for r in csv.DictReader(open(f, encoding="utf-8-sig"))} if f.exists() else {}
+    return _EBIBLE_META.get(eid, {})
+
+
+def world_bible(d):
+    import extra_world as W
+    kind, name = d["src"].split(":", 1)
+    if kind == "ebible":
+        src, heads = W.read_usfm(SRC / "ebible" / name)
+        prefer = d.get("prefer")
+        em = ebible_meta(name)
+        version = f"eBible.org {name}" + (f" ({em['UpdateDate']})" if em.get("UpdateDate") else "")
+        source = f"https://ebible.org/find/details.php?id={name} (лицензия: https://ebible.org/{name}/copr.htm)"
+    elif kind == "wikisource":
+        import extra_wiki as WK
+        src, heads = WK.read(name)
+        prefer = d.get("prefer") or "syn"
+        version = d.get("version") or f"Викитека ({WK.SETS[name][0]}.wikisource.org)"
+        source = d["source"]
+    else:
+        from extra_lib import sword_conf
+        vers = sword_conf(name).get("Versification", "KJV").lower()
+        src, heads = W.read_sword(name, vers)
+        prefer = d.get("prefer") or SWORD_PREFER.get(vers, "kjv")
+        version = f"CrossWire {name} " + B.sword_version(name)
+        source = CW_SRC.format(name) + " (DistributionLicense в conf-файле модуля)"
+    # schemes в списке — ограничить подбор нумерации (для текстов, уже близких к синодальной схеме)
+    schemes, best, _ = W.choose_schemes(src, prefer, **({"schemes": tuple(d["schemes"])} if d.get("schemes") else {}))
+    # per_chapter в списке — схема для отдельных глав книги, где источник сбит (см. extra_world_list.py)
+    for book, chmap in d.get("per_chapter", {}).items():
+        if book in schemes:
+            schemes[book].per_chapter.update(chmap)
+    other = {b: repr(s) for b, s in schemes.items() if repr(s) != best}
+    log(f"  [{d['id']}] нумерация источника: {best}" + (f"; отдельно: {other}" if other else ""))
+    col = W.collect(src, heads, schemes, d["id"])
+    books = col.books()
+    cov, short = W.quality(books, d["id"])
+    W.spot_check(books, d["id"])
+    if len(short) > 3 or cov < 0.9:
+        log(f"  [{d['id']}] ОТКЛОНЁН: текст неполный или со сбитой разбивкой на стихи")
+        return None
+    nt_only = all(BOOK_BY_ID.get(b["id"], {}).get("t") == "NT" for b in books)
+    feats = {"rtl": True} if d.get("rtl") else {}
+    desc = d["desc"] + (" Только Новый Завет." if nt_only and "Нов" not in d["desc"] else "") + \
+        " Нумерация стихов приведена к синодальной."
+    return bible({
+        "id": d["id"], "name": d["name"], "title": d["title"], "language": d["lang"], "description": desc,
+        "version": version, "author": d["author"], "source": source, "license": d["license"], "features": feats,
+    }, col)
+
+
+def _world_builders():
+    from extra_world_list import BIBLES, DOUBTFUL
+    out = []
+    for d in BIBLES + DOUBTFUL:
+        fn = (lambda dd: lambda: world_bible(dd))(d)
+        fn.__name__ = "m_w_" + d["id"].replace("-", "_")
+        BUILDER_IDS[fn.__name__] = [d["id"]]
+        out.append(fn)
+    return out
+
+
+# ---------------------------------------------------------------------------------------------
 # Комментарии
 # ---------------------------------------------------------------------------------------------
 
@@ -179,32 +257,25 @@ def commentary(meta, entries):
     return {**BASE, "type": "commentary", "versification": "synodal", **meta, "entries": C.sort_entries(entries)}
 
 
-LOP_PARTS = [
-    ("lopukhin-1", "Лопухин 1", "Бытие — Есфирь", "Gen", "Esth"),
-    ("lopukhin-2", "Лопухин 2", "Иов — 3 Ездры", "Job", "2Esd"),
-    ("lopukhin-3", "Лопухин 3", "Новый Завет", "Matt", "Rev"),
-]
+# Прежде «Толковая Библия» публиковалась тремя модулями lopukhin-1/2/3 (по томам), Barnes — двумя barnes-1/2;
+# теперь каждая работа — один модуль (приложение при обновлении заменяет старые id на новый).
+REPLACED_IDS = {"lopukhin-1": "lopukhin", "lopukhin-2": "lopukhin", "lopukhin-3": "lopukhin",
+                "barnes-1": "barnes", "barnes-2": "barnes"}
 
 
 def m_lopukhin():
     entries, skipped = R.lopukhin()
     if skipped:
         log("  лопухин: пропущены ссылки", skipped)
-    order = [b["id"] for b in json.loads((Path(__file__).resolve().parent.parent / "src" / "core" / "books.json").read_text(encoding="utf-8"))]
-    mods = []
-    for mid, name, rng, first, last in LOP_PARTS:
-        books = set(order[order.index(first):order.index(last) + 1])
-        part = {k: v for k, v in entries.items() if k.split(".")[0] in books}
-        mods.append(commentary({
-            "id": mid, "name": name, "title": f"Толковая Библия Лопухина: {rng}", "language": "ru",
-            "description": f"«Толковая Библия, или Комментарий на все книги Св. Писания» под ред. А. П. Лопухина и его "
-                           f"преемников (СПб., 1904–1913), часть: {rng}. Вступления к книгам и главам, толкования на "
-                           f"стихи и группы стихов. Синодальная нумерация.",
-            "version": "swmail/lopukhin_commentary d471c95", "author": "А. П. Лопухин и преемники (1904–1913); электронный текст — волонтёры (OCR, вычитка), SWORD-модуль — swmail",
-            "source": "https://github.com/swmail/lopukhin_commentary (SWORD-модуль, DistributionLicense=Public Domain)",
-            "license": "Public Domain",
-        }, part))
-    return mods
+    return commentary({
+        "id": "lopukhin", "name": "Лопухин", "title": "Толковая Библия Лопухина", "language": "ru",
+        "description": "«Толковая Библия, или Комментарий на все книги Св. Писания Ветхого и Нового Завета» под ред. "
+                       "А. П. Лопухина и его преемников (СПб., 1904–1913) — все книги в одном модуле. Вступления к "
+                       "книгам и главам, толкования на стихи и группы стихов. Синодальная нумерация.",
+        "version": "swmail/lopukhin_commentary d471c95", "author": "А. П. Лопухин и преемники (1904–1913); электронный текст — волонтёры (OCR, вычитка), SWORD-модуль — swmail",
+        "source": "https://github.com/swmail/lopukhin_commentary (SWORD-модуль, DistributionLicense=Public Domain)",
+        "license": "Public Domain", "replaces": ["lopukhin-1", "lopukhin-2", "lopukhin-3"],
+    }, entries)
 
 
 def m_mhcc():
@@ -228,20 +299,118 @@ def m_jfb():
 
 
 def m_barnes():
-    gospels = {"Matt", "Mark", "Luke", "John", "Acts"}
-    rest = {"Jas", "1Pet", "2Pet", "1John", "2John", "3John", "Jude", "Rom", "1Cor", "2Cor", "Gal", "Eph",
-            "Phil", "Col", "1Thess", "2Thess", "1Tim", "2Tim", "Titus", "Phlm", "Heb", "Rev"}
-    out = []
-    for mid, name, rng, books in (("barnes-1", "Barnes 1", "Евангелия и Деяния", gospels),
-                                  ("barnes-2", "Barnes 2", "Послания и Откровение", rest)):
-        out.append(commentary({
-            "id": mid, "name": name, "title": f"Barnes' Notes on the New Testament: {rng}", "language": "en",
-            "description": f"Комментарий Альберта Барнса на Новый Завет (англ.), часть: {rng}. Ссылки переведены в "
-                           f"синодальную нумерацию.",
-            "version": "CrossWire Barnes " + B.sword_version("Barnes"), "author": "Albert Barnes (1798–1870)",
-            "source": CW_SRC.format("Barnes"), "license": "Public Domain",
-        }, C.sword_commentary("Barnes", books=books, intro_title="Introduction")))
-    return out
+    return commentary({
+        "id": "barnes", "name": "Barnes", "title": "Barnes' Notes on the New Testament", "language": "en",
+        "description": "Комментарий Альберта Барнса на весь Новый Завет (англ.) в одном модуле. Ссылки переведены в "
+                       "синодальную нумерацию.",
+        "version": "CrossWire Barnes " + B.sword_version("Barnes"), "author": "Albert Barnes (1798–1870)",
+        "source": CW_SRC.format("Barnes"), "license": "Public Domain", "replaces": ["barnes-1", "barnes-2"],
+    }, C.sword_commentary("Barnes", intro_title="Introduction"))
+
+
+# Комментарии CrossWire (Public Domain по DistributionLicense в conf-файле; у Geneva поле не заполнено — текст 1599 г.)
+# (id, имя, заглавие, описание, автор, модуль SWORD, язык, заголовок вступлений, схема нумерации модуля)
+SWORD_COMMENTARIES = [
+    ("clarke", "Clarke", "Adam Clarke's Commentary on the Bible (1810–1826)",
+     "Комментарий Адама Кларка на всю Библию (англ.): филологические и исторические примечания к стихам.",
+     "Adam Clarke (1762–1832)", "Clarke", "en", "Introduction", "kjv"),
+    ("wesley", "Wesley", "John Wesley's Explanatory Notes (1754–1765)",
+     "Краткие пояснения Джона Уэсли ко всей Библии (англ.).", "John Wesley (1703–1791)", "Wesley", "en",
+     "Introduction", "kjv"),
+    ("scofield", "Scofield", "Scofield Reference Notes (1917)",
+     "Справочные примечания Библии Скофилда, издание 1917 г. (англ.).", "C. I. Scofield (1843–1921)", "Scofield",
+     "en", "Introduction", "kjv"),
+    ("geneva-notes", "Geneva notes", "Geneva Bible Translation Notes (1599)",
+     "Примечания Женевской Библии 1599 г. — первый английский «учебный» комментарий эпохи Реформации.",
+     "Переводчики Женевской Библии (1560–1599)", "Geneva", "en", "Introduction", "kjv"),
+    ("pnt", "PNT", "The People's New Testament (1891)",
+     "Комментарий на Новый Завет для широкого читателя Б. У. Джонсона (англ.).", "B. W. Johnson (1833–1894)", "PNT",
+     "en", "Introduction", "kjv"),
+    ("burkitt", "Burkitt", "Burkitt's Expository Notes on the New Testament",
+     "Толкования Уильяма Беркитта на Новый Завет (англ., 1700).", "William Burkitt (1650–1703)", "Burkitt", "en",
+     "Introduction", "kjv"),
+    ("catena-aurea", "Catena Aurea", "Catena Aurea: толкования святых отцов на Евангелия (Фома Аквинский)",
+     "«Золотая цепь» — подборка толкований святых отцов (Иоанна Златоуста, Августина, Иеронима, Илария, Оригена, "
+     "Феофилакта и др.) на каждый стих четырёх Евангелий, составленная Фомой Аквинским; английский перевод под "
+     "ред. Дж. Г. Ньюмена (1841–1845).", "Thomas Aquinas; пер. J. H. Newman и др.", "Catena", "en", "Introduction",
+     "kjv"),
+    ("treasury-of-david", "Treasury of David", "C. H. Spurgeon: The Treasury of David",
+     "«Сокровищница Давида» — толкование Чарльза Сперджена на Псалтирь с выдержками из других авторов (англ.). "
+     "Номера псалмов переведены в синодальные.", "Charles H. Spurgeon (1834–1892)", "TDavid", "en", "Introduction",
+     "kjv"),
+    ("keil-delitzsch", "K&D", "Keil & Delitzsch: Commentary on the Old Testament",
+     "Классический научный комментарий К. Ф. Кейля и Ф. Делича на весь Ветхий Завет (англ. пер. 1857–1878).",
+     "C. F. Keil (1807–1888), F. Delitzsch (1813–1890)", "KD", "en", "Introduction", "kjv"),
+    ("lightfoot", "Lightfoot", "John Lightfoot: Commentary from the Talmud and Hebraica",
+     "Комментарий Джона Лайтфута на Евангелия и другие книги НЗ по талмудическим и иудейским источникам (англ.).",
+     "John Lightfoot (1602–1675)", "Lightfoot", "en", "Introduction", "kjv"),
+    ("fourfold-gospel", "Fourfold Gospel", "The Fourfold Gospel and Commentary on Acts",
+     "Гармония Евангелий с комментарием Дж. У. Макгарви и Ф. Пендлтона, а также комментарий на Деяния (англ.).",
+     "J. W. McGarvey, Philip Y. Pendleton", "TFG", "en", "Introduction", "kjv"),
+    ("luther-comm", "Luther", "Martin Luther: Commentary on Selected Passages",
+     "Толкования Мартина Лютера на избранные места Писания (англ. перевод).", "Martin Luther (1483–1546)", "Luther",
+     "en", "Introduction", "kjv"),
+    ("chrysostome-fr", "Chrysostome", "Saint Jean Chrysostome: commentaires de la Bible",
+     "Толкования свт. Иоанна Златоуста на книги Библии во французском переводе (XIX в.).",
+     "Св. Иоанн Златоуст (ок. 347–407); фр. пер. XIX в.", "FreChry", "fr", "Introduction", "catholic"),
+    ("augustin-fr", "Augustin", "Saint Augustin: commentaires de la Bible",
+     "Толкования блж. Августина на книги Библии во французском переводе (XIX в.).",
+     "Бл. Августин (354–430); фр. пер. XIX в.", "FreAug", "fr", "Introduction", "catholic"),
+    ("jerome-fr", "Jérôme", "Saint Jérôme: commentaires de la Bible",
+     "Толкования блж. Иеронима Стридонского на книги Библии во французском переводе (XIX в.).",
+     "Бл. Иероним (ок. 342–420); фр. пер. XIX в.", "FreJer", "fr", "Introduction", "catholic"),
+    ("glossa-ordinaria", "Glossa", "Glossa ordinaria (латынь, изд. Миня)",
+     "Средневековый латинский свод святоотеческих толкований на Библию — «Обычная глосса» (по изданию Миня).",
+     "Валафрид Страбон (приписывается); изд. J.-P. Migne", "VulgGlossa", "la", "Prologus", "vulg"),
+    ("kanttekeningen", "Kanttekeningen", "Kanttekeningen bij de Statenvertaling (1637)",
+     "Примечания на полях Statenvertaling (нидерл., 1637) — классический реформатский комментарий.",
+     "Переводчики Statenvertaling", "DutKant", "nl", "Inleiding", "kjv"),
+    ("rieger", "Rieger", "Carl Heinrich Rieger: Betrachtungen über das Neue Testament",
+     "Пиетистские толкования Карла Генриха Ригера на Новый Завет (нем., XVIII в.).",
+     "Carl Heinrich Rieger (1726–1791)", "Rieger", "de", "Einleitung", "kjv"),
+]
+
+
+def _comm_mapper(vers):
+    import extra_world as W
+    if vers == "kjv":
+        return kjv2syn
+    if vers == "vulg":  # Псалтирь Вульгаты нумеруется как синодальная (по LXX), остальное — по таблице SWORD
+        return lambda b, c, v: W.mapper("syn" if b == "Ps" else "vulg")(b, c, v)
+    if vers == "catholic":  # схема SWORD Catholic: еврейская нумерация псалмов и стихов
+        return W.mapper("mt")
+    return W.mapper(vers)
+
+
+def _sword_comm_builder(row):
+    mid, name, title, desc, author, sword, lang, intro, vers = row
+
+    def fn():
+        from extra_lib import sword_conf
+        conf = sword_conf(sword)
+        lic = conf.get("DistributionLicense") or "Public Domain (по сроку: текст старше 1900 г.; в conf лицензия не указана)"
+        entries = C.sword_commentary(sword, intro_title=intro, versification=vers, mapper=_comm_mapper(vers))
+        if not entries:
+            log(f"  {mid}: статей нет — пропуск")
+            return None
+        bad = 0
+        for k, v in entries.items():  # символы-заменители U+FFFD (битые байты в исходнике) убираем
+            t = v["text"] if isinstance(v, dict) else v
+            if "�" in t:
+                bad += t.count("�")
+                t = t.replace("�", "")
+                entries[k] = {**v, "text": t} if isinstance(v, dict) else t
+        if bad:
+            log(f"  {mid}: убрано символов U+FFFD: {bad}")
+        return commentary({
+            "id": mid, "name": name, "title": title, "language": lang,
+            "description": desc + " Ссылки переведены в синодальную нумерацию.",
+            "version": f"CrossWire {sword} " + B.sword_version(sword), "author": author,
+            "source": CW_SRC.format(sword), "license": lic,
+        }, entries)
+    fn.__name__ = "m_c_" + mid.replace("-", "_")
+    BUILDER_IDS[fn.__name__] = [mid]
+    return fn
 
 
 # ---------------------------------------------------------------------------------------------
@@ -404,8 +573,8 @@ BUILDERS = [m_kjv, m_bsb, m_oshb, m_byz, m_csl, m_makarij, m_kulish,
 
 BUILDER_IDS = {"m_kjv": ["kjv"], "m_bsb": ["bsb"], "m_oshb": ["oshb"], "m_byz": ["byz-rp2018"],
                "m_csl": ["csl-elizabeth"], "m_makarij": ["rus-makarij"], "m_kulish": ["ukr-kulish"],
-               "m_lopukhin": ["lopukhin-1", "lopukhin-2", "lopukhin-3"], "m_mhcc": ["mhcc"], "m_jfb": ["jfb"],
-               "m_barnes": ["barnes-1", "barnes-2"], "m_nikifor": ["nikifor"], "m_easton": ["easton"],
+               "m_lopukhin": ["lopukhin"], "m_mhcc": ["mhcc"], "m_jfb": ["jfb"],
+               "m_barnes": ["barnes"], "m_nikifor": ["nikifor"], "m_easton": ["easton"],
                "m_smith": ["smith"], "m_hitchcock": ["hitchcock"], "m_nave": ["nave"],
                "m_abbott_smith": ["abbott-smith"], "m_bdb": ["bdb-glosses"], "m_openbible": ["xrefs-openbible"],
                "m_tsk": ["xrefs-tsk"], "m_maps": ["bible-maps"]}
@@ -416,7 +585,7 @@ def main(argv):
     want = set(argv)
     unpack_crosswire()
     entries = []
-    for fn in BUILDERS:
+    for fn in BUILDERS + [_sword_comm_builder(r) for r in SWORD_COMMENTARIES] + _world_builders():
         ids = BUILDER_IDS[fn.__name__]
         if want and not want.intersection(ids):
             continue

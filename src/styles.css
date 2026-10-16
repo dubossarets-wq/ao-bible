@@ -984,12 +984,10 @@ html.kb-open .tour-ctrl.top { top: auto; bottom: calc(var(--kb, 0px) + 8px); }
 @keyframes page-in { from { transform: translateX(100%); } }
 @media (min-width: 700px) { .sheet.page { left: 0; right: 0; width: auto; bottom: var(--kb, 0px); border-radius: 0; transform: none; animation: page-in .26s cubic-bezier(.2,.8,.2,1); } .sheet-layer.closing .sheet.page { transform: translateX(100%); } }
 
-/* «Что нового» */
+/* «Что нового» — простой список */
 .news { display: flex; flex-direction: column; gap: 14px; }
-.news-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
-.news-list li { display: flex; gap: 12px; align-items: flex-start; font-size: .98rem; line-height: 1.45; }
-.news-list li strong { display: block; font-size: 1.04rem; margin-bottom: 2px; }
-.news-icon { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 12%, var(--bg)); color: var(--accent); }
+.news-list { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 10px; font-size: 1rem; line-height: 1.5; }
+.news-list li::marker { color: var(--accent); }
 .news-ok { width: 100%; padding: 12px 14px; font-size: 1rem; margin-top: 4px; }
 
 /* Часть стиха: выбранные слова и любимые части */
