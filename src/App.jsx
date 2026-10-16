@@ -376,6 +376,22 @@ export default function App() {
     }
   });
 
+  // Любимая часть стиха: слова from..to (номера слов в стихе); заменяет прежнюю отметку этого стиха
+  const addFavoritePart = useEvent((ref, text, from, to) => {
+    setFavorites((fs) => [{ book: ref.book, chapter: ref.chapter, verse: ref.verse, text, part: { from, to }, at: Date.now() }, ...fs.filter((b) => !(b.book === ref.book && b.chapter === ref.chapter && b.verse === ref.verse))]);
+    toast('♥ Часть стиха — в любимых');
+  });
+  // «Книга.глава» → { стих: [from, to] } — какие слова подчеркнуть как любимую часть
+  const favParts = useMemo(() => {
+    const m = new Map();
+    for (const f of favorites)
+      if (f.part) {
+        const k = `${f.book}.${f.chapter}`;
+        m.set(k, { ...m.get(k), [f.verse]: [f.part.from, f.part.to] });
+      }
+    return m;
+  }, [favorites]);
+
   const noteKey = (ref) => `${ref.book}.${ref.chapter}.${ref.verse}`;
   const setNote = useEvent((ref, text, label) => {
     const key = noteKey(ref);
@@ -397,7 +413,7 @@ export default function App() {
       row[v] = (row[v] || '') + flag;
       m.set(k, row);
     };
-    favorites.forEach((r) => add(r.book, r.chapter, r.verse, 'f'));
+    favorites.forEach((r) => add(r.book, r.chapter, r.verse, r.part ? 'p' : 'f')); // p — любимая только часть стиха
     bookmarks.forEach((r) => add(r.book, r.chapter, r.verse, 'b'));
     Object.keys(notes).forEach((k) => {
       const [b, c, v] = k.split('.');
@@ -481,6 +497,8 @@ export default function App() {
     toggleBookmark,
     isFavorite,
     toggleFavorite,
+    addFavoritePart,
+    favParts,
     notes,
     setNote,
     marks,

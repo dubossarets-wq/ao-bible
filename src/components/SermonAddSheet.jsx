@@ -16,16 +16,19 @@ export default function SermonAddSheet({ pane, payload, onClose }) {
   const [title, setTitle] = useState('');
   const [done, setDone] = useState(null); // { id, title }
   const [texts, setTexts] = useState(null);
-  const label = selectionLabel(refs, true);
+  const label = selectionLabel(refs, true) + (payload.fragment ? ' (часть)' : '');
 
+  // Часть стиха (payload.fragment) — берём выбранные слова, а не весь стих
+  const fragment = payload.fragment || null;
   useEffect(() => {
+    if (fragment) return setTexts([fragment.text]);
     Promise.all(refs.map((r) => getVerse(moduleId, r))).then((vs) => setTexts(vs.map((v) => (v ? plainText(v) : ''))));
   }, []);
 
   const add = (id, name) => {
     addVerses(
       id,
-      refs.map((r, i) => ({ ...r, text: texts?.[i] || '' })),
+      refs.map((r, i) => ({ ...r, text: texts?.[i] || '', ...(fragment ? { part: true } : {}) })),
       moduleId
     );
     setDone({ id, title: name });

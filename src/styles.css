@@ -991,3 +991,14 @@ html.kb-open .tour-ctrl.top { top: auto; bottom: calc(var(--kb, 0px) + 8px); }
 .news-list li strong { display: block; font-size: 1.04rem; margin-bottom: 2px; }
 .news-icon { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 12%, var(--bg)); color: var(--accent); }
 .news-ok { width: 100%; padding: 12px 14px; font-size: 1rem; margin-top: 4px; }
+
+/* Часть стиха: выбранные слова и любимые части */
+.w.part-on { background: color-mix(in srgb, var(--accent) 24%, transparent); border-radius: 3px; box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 24%, transparent); }
+.w.fav-part { box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--love) 70%, transparent); }
+.fav-heart.part { opacity: .75; }
+.part-inline { flex-direction: column; align-items: stretch; }
+.part-hint { margin: 0; font-size: .9rem; line-height: 1.4; color: var(--muted); font-style: italic; }
+.part-btns { display: flex; gap: 8px; }
+.part-btns .btn.primary { flex: 1; }
+.part-btns .btn:not(.primary) { background: var(--panel); }
+.scroller.selecting .verse.selected .w { cursor: pointer; }

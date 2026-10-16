@@ -72,8 +72,8 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
                     </svg>
                   </button>
                 )}
-                {mk[v]?.includes('f') && (
-                  <span className="vmark fav-heart" title="Любимый стих" aria-label="Любимый стих">
+                {/[fp]/.test(mk[v] || '') && (
+                  <span className={`vmark fav-heart${mk[v].includes('p') ? ' part' : ''}`} title={mk[v].includes('p') ? 'Любимая часть стиха' : 'Любимый стих'} aria-label={mk[v].includes('p') ? 'Любимая часть стиха' : 'Любимый стих'}>
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M12 21s-7.6-4.7-9.7-9.4C.8 8.3 3 4.4 6.8 4.4c2.2 0 3.7 1.2 5.2 3 1.5-1.8 3-3 5.2-3 3.8 0 6 3.9 4.5 7.2C19.6 16.3 12 21 12 21z" fill="currentColor" />
                     </svg>
@@ -133,7 +133,7 @@ export function selectedIn(selection, bookId, c) {
 }
 
 // selection — Set ключей «Книга.глава.стих»; onSelect(ref, 'start' | 'toggle') — выделение стихов
-export default function ChapterView({ index, pane, module, onScrollDirection, selection, onSelect, selActions }) {
+export default function ChapterView({ index, pane, module, onScrollDirection, selection, onSelect, selActions, part, onPart }) {
   const { settings, openSheet, openPopover, closePopover, popover, reportPosition, navigate, sheet, modules, marks, toast, toggleFavorite } = useApp();
   const scroller = useRef(null);
   usePinchFont(scroller);
@@ -212,6 +212,24 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     document.addEventListener('pointerdown', onDown, true);
     return () => document.removeEventListener('pointerdown', onDown, true);
   }, []);
+
+  // Слова выбранной части стиха и любимых частей — отмечаем классами прямо в тексте
+  const { favParts } = useApp();
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    el.querySelectorAll('.w.part-on, .w.fav-part').forEach((w) => w.classList.remove('part-on', 'fav-part'));
+    const mark = (b, c, v, from, to, cls) =>
+      el.querySelectorAll(`.verse[data-b="${b}"][data-c="${c}"][data-v="${v}"] .w`).forEach((w) => +w.dataset.i >= from && +w.dataset.i <= to && w.classList.add(cls));
+    for (const [k, verses] of favParts) {
+      const [b, c] = k.split('.');
+      for (const [v, [from, to]] of Object.entries(verses)) mark(b, c, v, from, to, 'fav-part');
+    }
+    if (part?.from != null) {
+      const [b, c, v] = part.key.split('.');
+      mark(b, c, v, Math.min(part.from, part.to), Math.max(part.from, part.to), 'part-on');
+    }
+  });
 
   // Снимаем подсветку слова, когда закрыты и выборка словарей, и окно статьи
   useEffect(() => {
@@ -386,6 +404,12 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     const v = +verseEl.dataset.v;
     const vref = { book: book.id, chapter: c, verse: v };
     // В режиме выделения нажатие на стих добавляет или убирает его из выделения
+    // Выбор части стиха: нажатия по словам этого стиха задают начало и конец
+    if (part && `${vref.book}.${vref.chapter}.${vref.verse}` === part.key) {
+      const w = e.target.closest('.w');
+      if (w) onPart?.(+w.dataset.i);
+      return;
+    }
     if (selection?.size) return onSelect?.(vref, 'toggle');
     const text = book.data.chapters[c - 1][v - 1];
     const act = e.target.closest('[data-act]')?.dataset.act;

@@ -45,7 +45,7 @@ function nextAfter(r, module, books) {
   return nb ? { ref: { book: nb.id, chapter: 1, verse: 1 }, label: `${full(nb.id)} 1` } : null;
 }
 
-export default function PlanView({ index, pane, module, selection, onSelect, selActions }) {
+export default function PlanView({ index, pane, module, selection, onSelect, selActions, part, onPart }) {
   const { settings, openSheet, openPopover, closePopover, toggleFavorite, popover, sheet, reportPosition, navigate, marks, toast, modules, exitPlan, settlePlan, openPlanDay } = useApp();
   const { uid, day } = pane.plan;
   const plan = usePlan(uid);
@@ -207,6 +207,24 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
     return () => document.removeEventListener('pointerdown', onDown, true);
   }, []);
 
+  // Слова выбранной части стиха и любимых частей — отмечаем классами прямо в тексте
+  const { favParts } = useApp();
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    el.querySelectorAll('.w.part-on, .w.fav-part').forEach((w) => w.classList.remove('part-on', 'fav-part'));
+    const mark = (b, c, v, from, to, cls) =>
+      el.querySelectorAll(`.verse[data-b="${b}"][data-c="${c}"][data-v="${v}"] .w`).forEach((w) => +w.dataset.i >= from && +w.dataset.i <= to && w.classList.add(cls));
+    for (const [k, verses] of favParts) {
+      const [b, c] = k.split('.');
+      for (const [v, [from, to]] of Object.entries(verses)) mark(b, c, v, from, to, 'fav-part');
+    }
+    if (part?.from != null) {
+      const [b, c, v] = part.key.split('.');
+      mark(b, c, v, Math.min(part.from, part.to), Math.max(part.from, part.to), 'part-on');
+    }
+  });
+
   // Снимаем подсветку слова, когда закрыты и выборка словарей, и окно статьи
   useEffect(() => {
     if (!sheet && !popover && activeWord.current) {
@@ -277,6 +295,12 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
     }
     const vref = verseRefOf(e.target);
     if (!vref || !books?.[vref.book]) return;
+    // Выбор части стиха: нажатия по словам этого стиха задают начало и конец
+    if (part && `${vref.book}.${vref.chapter}.${vref.verse}` === part.key) {
+      const w = e.target.closest('.w');
+      if (w) onPart?.(+w.dataset.i);
+      return;
+    }
     if (selection?.size) return onSelect?.(vref, 'toggle');
     const text = books[vref.book].chapters[vref.chapter - 1][vref.verse - 1];
     const act = e.target.closest('[data-act]')?.dataset.act;

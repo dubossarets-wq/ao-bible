@@ -41,10 +41,10 @@ export function addVerses(id, items, moduleId) {
   const blocks = [];
   for (const it of items) {
     const last = blocks[blocks.length - 1];
-    if (last && last.book === it.book && last.chapter === it.chapter && (last.to || last.verse) + 1 === it.verse) {
+    if (!it.part && last && !last.part && last.book === it.book && last.chapter === it.chapter && (last.to || last.verse) + 1 === it.verse) {
       last.to = it.verse;
       last.text += ' ' + it.text;
-    } else blocks.push({ id: uid(), type: 'verse', book: it.book, chapter: it.chapter, verse: it.verse, to: null, text: it.text, moduleId });
+    } else blocks.push({ id: uid(), type: 'verse', book: it.book, chapter: it.chapter, verse: it.verse, to: null, text: it.text, moduleId, ...(it.part ? { part: true } : {}) });
   }
   touch(id, (s) => ({ ...s, blocks: [...s.blocks, ...blocks] }));
   return blocks.length;
@@ -78,8 +78,8 @@ export function sermonWith(ref) {
     .find((s) => s.blocks.some((b) => b.type === 'verse' && b.book === ref.book && b.chapter === ref.chapter && ref.verse >= b.verse && ref.verse <= (b.to || b.verse)));
 }
 
-export const blockRef = (b) => `${bookMeta(b.book).short.replace(/\.$/, '')} ${b.chapter}:${b.verse}${b.to ? `–${b.to}` : ''}`;
-export const blockRefFull = (b) => `${bookMeta(b.book).name} ${b.chapter}:${b.verse}${b.to ? `–${b.to}` : ''}`;
+export const blockRef = (b) => `${bookMeta(b.book).short.replace(/\.$/, '')} ${b.chapter}:${b.verse}${b.to ? `–${b.to}` : ''}${b.part ? ' (часть)' : ''}`;
+export const blockRefFull = (b) => `${bookMeta(b.book).name} ${b.chapter}:${b.verse}${b.to ? `–${b.to}` : ''}${b.part ? ' (часть)' : ''}`;
 
 // Проповедь обычным текстом — чтобы отправить или распечатать
 export function sermonText(s) {

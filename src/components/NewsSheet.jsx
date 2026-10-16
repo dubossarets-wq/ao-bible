@@ -1,10 +1,10 @@
 // «Что нового»: короткий список изменений после обновления — крупно, с понятными значками.
 import React, { useEffect } from 'react';
-import { ScrollText, Headphones, Keyboard, BookOpen, CalendarCheck, Bell, Sparkles } from 'lucide-react';
+import { ScrollText, Headphones, Keyboard, BookOpen, CalendarCheck, Bell, Sparkles, TextSelect } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { NEWS, markNewsSeen } from '../core/whatsNew.js';
 
-const ICONS = { ScrollText, Headphones, Keyboard, BookOpen, CalendarCheck, Bell };
+const ICONS = { ScrollText, Headphones, Keyboard, BookOpen, CalendarCheck, Bell, TextSelect };
 const fmt = (id) => new Date(`${id}T12:00`).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
 
 export default function NewsSheet({ payload, onClose }) {
