@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { usePersistentState, useEvent, load, save } from './core/storage.js';
 import { DEFAULT_SETTINGS, applySettings, resolveTheme, migrateSettings } from './core/settings.js';
 import * as repo from './core/modules.js';
@@ -120,6 +120,35 @@ export default function App() {
       })
       .catch(() => save('lateStarter', done));
   }, [modules, bibles.length]);
+
+  const merging = useRef(false);
+  // Объединённые модули: вместо частей одного автора («Лопухин 1/2/3») ставим общий модуль, части убираем,
+  // выбор «какие комментарии показывать в тексте» переносим на новый id. Нет общего в каталоге — ничего не трогаем.
+  useEffect(() => {
+    if (!modules || !navigator.onLine) return;
+    const old = modules.filter((m) => repo.MERGED[m.id]);
+    if (!old.length || merging.current) return;
+    merging.current = true;
+    repo
+      .fetchCatalog()
+      .then(async (cat) => {
+        for (const target of [...new Set(old.map((m) => repo.MERGED[m.id]))]) {
+          const entry = cat.find((c) => c.id === target);
+          if (!entry) continue;
+          if (!modules.some((m) => m.id === target)) await repo.installFromCatalog(entry);
+          const parts = old.filter((m) => repo.MERGED[m.id] === target).map((m) => m.id);
+          for (const id of parts) await repo.removeModule(id);
+          setSettings((s) => {
+            const list = s.inlineCommentaries;
+            if (!list || !list.some((id) => parts.includes(id))) return s;
+            return { ...s, inlineCommentaries: [...new Set(list.map((id) => repo.MERGED[id] || id))] };
+          });
+          toast(`«${entry.name}» теперь одним модулем вместо нескольких частей`);
+        }
+      })
+      .catch(() => {})
+      .finally(() => (merging.current = false));
+  }, [!!modules && modules.map((m) => m.id).join()]);
 
   // Аудиокниги ставятся вместе с переводом: к каждому установленному переводу — его записи из каталога.
   // Уже установленные обновляются сами, когда в каталоге появилась новая версия.
