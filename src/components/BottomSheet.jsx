@@ -1,6 +1,7 @@
 // Нижняя панель (Bottom Sheet): плавно выезжает снизу, высота меняется перетаскиванием ручки,
 // закрывается свайпом вниз, кнопкой, кликом по фону или клавишей Escape.
 // На широком экране выглядит как модальное окно у нижнего края (variant="wide" — почти на весь экран).
+// variant="page" — отдельная страница во весь экран: выезжает справа, вверху стрелка «назад» (без ручки и крестика).
 import React, { useEffect, useRef, useState } from 'react';
 import { X, ChevronLeft } from 'lucide-react';
 
@@ -68,12 +69,14 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
         className={`sheet ${variant} ${dragging ? 'dragging' : ''}`}
         style={{ '--sheet-h': `${Math.round(height * 100)}` }}
       >
-        <div className="sheet-grip" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
-          <span className="grip-bar" />
-        </div>
+        {variant !== 'page' && (
+          <div className="sheet-grip" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
+            <span className="grip-bar" />
+          </div>
+        )}
         <header className="sheet-head">
-          {onBack && (
-            <button className="icon-btn" onClick={onBack} aria-label="Назад">
+          {(onBack || variant === 'page') && (
+            <button className="icon-btn" onClick={onBack || close} aria-label={onBack ? 'Назад' : 'Назад к чтению'}>
               <ChevronLeft size={22} />
             </button>
           )}
@@ -82,9 +85,11 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
             {subtitle && <div className="sheet-sub">{subtitle}</div>}
           </div>
           {headerExtra}
-          <button className="icon-btn" onClick={close} aria-label="Закрыть">
-            <X size={22} />
-          </button>
+          {variant !== 'page' && (
+            <button className="icon-btn" onClick={close} aria-label="Закрыть">
+              <X size={22} />
+            </button>
+          )}
         </header>
         <div className="sheet-body">{children}</div>
         {footer && <div className="sheet-foot">{footer}</div>}

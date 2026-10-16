@@ -974,3 +974,12 @@ html.kb-open .tour-ctrl { padding: 8px 10px; }
 html.kb-open .tour-ctrl .tour-dots { display: none; }
 html.kb-open .tour-btns .btn { padding: 9px 12px; }
 html.kb-open .tour-ctrl.top { top: auto; bottom: calc(var(--kb, 0px) + 8px); }
+
+/* Отдельная страница во весь экран (проповеди): выезжает справа, «назад» — вверху слева */
+.sheet-layer:has(.sheet.page) .sheet-backdrop { display: none; }
+.sheet.page { inset: 0 0 var(--kb, 0px) 0; left: 0; right: 0; top: 0; width: auto; height: auto; max-height: none; transform: none; border-radius: 0; box-shadow: none; padding-top: var(--sat, 0px); animation: page-in .26s cubic-bezier(.2,.8,.2,1); }
+.sheet.page .sheet-head { padding: 8px 10px 8px 6px; min-height: var(--bar-h); }
+.sheet.page .sheet-body { max-width: 760px; width: 100%; margin: 0 auto; }
+.sheet-layer.closing .sheet.page { transform: translateX(100%); transition: transform .2s ease-in; }
+@keyframes page-in { from { transform: translateX(100%); } }
+@media (min-width: 700px) { .sheet.page { left: 0; right: 0; width: auto; bottom: var(--kb, 0px); border-radius: 0; transform: none; animation: page-in .26s cubic-bezier(.2,.8,.2,1); } .sheet-layer.closing .sheet.page { transform: translateX(100%); } }

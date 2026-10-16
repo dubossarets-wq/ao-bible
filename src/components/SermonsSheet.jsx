@@ -226,7 +226,7 @@ function Editor({ sermon, pane, moduleId, onBackToList }) {
       {!sermon.blocks.length && (
         <div className="sermon-hint">
           <p>
-            <strong>Как добавить стих:</strong> в тексте Библии зажмите стих пальцем — он выделится — и нажмите внизу «В проповедь». Или введите ссылку ниже.
+            <strong>Как добавить стих:</strong> в тексте Библии зажмите стих пальцем — он выделится — и нажмите под ним «В проповедь». Или введите ссылку ниже.
           </p>
           <p>
             <strong>Свой текст</strong> — кнопка «Текст»: вступление, пояснения, примеры, вывод. Порядок меняется перетаскиванием: зажмите стих или текст и ведите.
@@ -318,7 +318,7 @@ export default function SermonsSheet({ pane, payload, onClose }) {
   };
 
   return (
-    <BottomSheet title={sermon ? 'Проповедь' : 'Проповеди'} onClose={onClose} onBack={sermon ? () => setOpenId(null) : null} initial={2}>
+    <BottomSheet title={sermon ? 'Проповедь' : 'Проповеди'} onClose={onClose} onBack={sermon && !(payload.open && openId === payload.open) ? () => setOpenId(null) : null} variant="page">
       {sermon ? (
         <Editor sermon={sermon} pane={pane} moduleId={moduleId} onBackToList={() => setOpenId(null)} />
       ) : (
@@ -331,7 +331,7 @@ export default function SermonsSheet({ pane, payload, onClose }) {
           </form>
           {!sermons.length ? (
             <Empty icon={ScrollText} title="Проповедей пока нет">
-              Создайте проповедь, а потом добавляйте в неё стихи прямо во время чтения: зажмите стих и нажмите внизу «В проповедь».
+              Создайте проповедь, а потом добавляйте в неё стихи прямо во время чтения: зажмите стих и нажмите под ним «В проповедь».
             </Empty>
           ) : (
             <div className="sermon-pick">
