@@ -124,7 +124,7 @@ function SelectionInline({ index, module, refs, onDone, onPartStart }) {
           onDone();
         }}
       >
-        <Headphones size={18} /> Слушать с {formatRef(first)}
+        <Headphones size={18} /> Слушать
       </button>
       <button
         className="btn"

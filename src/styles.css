@@ -1011,3 +1011,7 @@ html.kb-open .tour-ctrl.top { top: auto; bottom: calc(var(--kb, 0px) + 8px); }
 .verses:not(.continuous) .verse.selected { padding-block: calc(3px + var(--part-pad)); margin-top: calc(-3px - var(--part-pad)); margin-bottom: calc(var(--verse-gap) - 3px - var(--part-pad)); }
 /* «Кафедра»: размер букв двумя пальцами — страница сама не масштабируется */
 .pulpit-body { touch-action: pan-y; }
+
+/* Кнопки под выделенным стихом — в один ряд: «Слушать», «В проповедь», «Часть стиха» */
+.sel-inline:not(.part-inline) { flex-wrap: nowrap; gap: 6px; }
+.sel-inline:not(.part-inline) .btn { flex: 1 1 auto; min-width: 0; padding: 10px 8px; gap: 5px; font-size: .9rem; white-space: nowrap; }
