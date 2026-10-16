@@ -64,10 +64,7 @@ function LangList({ onPicked }) {
             aria-checked={l.code === cur}
             className={`lang-row ${l.code === cur ? 'on' : ''}`}
             lang={l.locale}
-            onClick={() => {
-              setLang(l.code);
-              onPicked();
-            }}
+            onClick={() => setLang(l.code).then(onPicked)}
           >
             <Flag code={l.flag} size={30} />
             <span className="lang-text">

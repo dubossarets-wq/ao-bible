@@ -320,8 +320,8 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
         const c = +ch.dataset.c;
         logChapter(book.id, c);
         const { credited, finished } = creditChapter(book.id, c);
-        if (finished.length) toast(t('План «{plan}»: чтение на сегодня выполнено ✓', { plan: finished[0] }));
-        else if (credited.length) toast(t('Засчитано в план «{plan}»: {ref}', { plan: credited[0], ref: formatRef({ book: book.id, chapter: c, verse: 1 }).replace(/:1$/, '') }));
+        if (finished.length) toast(t('План «{plan}»: чтение на сегодня выполнено ✓', { plan: t(finished[0]) }));
+        else if (credited.length) toast(t('Засчитано в план «{plan}»: {ref}', { plan: t(credited[0]), ref: formatRef({ book: book.id, chapter: c, verse: 1 }).replace(/:1$/, '') }));
       }
     }, 1000);
     return () => clearInterval(timer);

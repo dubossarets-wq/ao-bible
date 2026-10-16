@@ -223,7 +223,7 @@ export default function VerseImageSheet({ payload, onClose }) {
       </div>
       <div className="vimg-bgs" role="listbox" aria-label={t('Фон')}>
         {photos.map((p) => (
-          <button key={p.id} className={`vimg-bg ${bgId === p.id ? 'on' : ''}`} onClick={() => setBgId(p.id)} title={p.title} aria-label={p.title} aria-selected={bgId === p.id}>
+          <button key={p.id} className={`vimg-bg ${bgId === p.id ? 'on' : ''}`} onClick={() => setBgId(p.id)} title={t(p.title)} aria-label={t(p.title)} aria-selected={bgId === p.id}>
             <img src={`images/verse-bg/${p.thumb}`} alt="" loading="lazy" />
           </button>
         ))}
@@ -274,7 +274,7 @@ export default function VerseImageSheet({ payload, onClose }) {
       </div>
       {photo && (
         <p className="vimg-credit">
-          {t('Фото: {title}', { title: photo.title })}
+          {t('Фото: {title}', { title: t(photo.title) })}
           {photo.author ? ` — ${photo.author}` : ''} ({photo.license})
         </p>
       )}

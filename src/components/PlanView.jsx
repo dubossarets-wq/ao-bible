@@ -382,7 +382,7 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
 
       <div className={`text-col${settings.bookMode ? ' book-mode' : ''}`} dir={module.language === 'he' ? 'rtl' : undefined} lang={module.language || undefined}>
         <div className="plan-intro">
-          <div className="plan-intro-name">{plan.name}</div>
+          <div className="plan-intro-name">{t(plan.name)}</div>
           <div className="plan-intro-meta">
             {t('День {n} из {total}', { n: day + 1, total: plan.readings.length })} · {t('{n} отрывок|{n} отрывка|{n} отрывков', { n })}
           </div>

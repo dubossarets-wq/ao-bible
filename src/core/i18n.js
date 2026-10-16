@@ -1,5 +1,7 @@
 // Язык интерфейса. Ключ перевода — сама русская строка: t('Закладка удалена') → «Bookmark removed».
 // Словари — src/i18n/<код>.json { "русская строка": "перевод" }; чего нет в словаре, показывается по-русски.
+// В сборке они лежат отдельными файлами i18n/<код>.json (scripts/build.mjs): грузится только выбранный язык,
+// приложение не тяжелеет на все языки сразу. Загруженный словарь кладётся в кэш браузера — работает и без интернета.
 // Подстановки: t('Закладка: {ref}', { ref }). Вместо {…} можно подставить и элемент React —
 // тогда t() вернёт массив (для JSX), а не строку.
 // Множественное число — формы через «|» в порядке русских правил «один | несколько | много»:
@@ -11,54 +13,33 @@
 import { createElement, Fragment, useSyncExternalStore } from 'react';
 import { load, save } from './storage.js';
 import { P } from './channel.js';
-import uk from '../i18n/uk.json';
-import ro from '../i18n/ro.json';
-import en from '../i18n/en.json';
-import es from '../i18n/es.json';
-import pt from '../i18n/pt.json';
-import fr from '../i18n/fr.json';
-import de from '../i18n/de.json';
-import it from '../i18n/it.json';
-import pl from '../i18n/pl.json';
-import ko from '../i18n/ko.json';
-import zh from '../i18n/zh.json';
-import id from '../i18n/id.json';
-import be from '../i18n/be.json';
-import bg from '../i18n/bg.json';
-import sr from '../i18n/sr.json';
-import cs from '../i18n/cs.json';
-import ka from '../i18n/ka.json';
-import hy from '../i18n/hy.json';
-import sw from '../i18n/sw.json';
-import hi from '../i18n/hi.json';
-import ja from '../i18n/ja.json';
 
 // Порядок — как в списке выбора: сначала языки нашего края, потом самые распространённые.
 // name — название на самом языке; flag — код страны для круглого флажка (components/Flag.jsx);
 // locale — для дат и чисел (Intl); rtl — письмо справа налево.
 export const LANGS = [
   { code: 'ru', name: 'Русский', flag: 'ru', locale: 'ru-RU' },
-  { code: 'uk', name: 'Українська', flag: 'ua', locale: 'uk-UA', dict: uk },
-  { code: 'ro', name: 'Română', flag: 'ro', locale: 'ro-RO', dict: ro },
-  { code: 'en', name: 'English', flag: 'gb', locale: 'en-GB', dict: en },
-  { code: 'es', name: 'Español', flag: 'es', locale: 'es-ES', dict: es },
-  { code: 'pt', name: 'Português', flag: 'br', locale: 'pt-BR', dict: pt },
-  { code: 'fr', name: 'Français', flag: 'fr', locale: 'fr-FR', dict: fr },
-  { code: 'de', name: 'Deutsch', flag: 'de', locale: 'de-DE', dict: de },
-  { code: 'it', name: 'Italiano', flag: 'it', locale: 'it-IT', dict: it },
-  { code: 'pl', name: 'Polski', flag: 'pl', locale: 'pl-PL', dict: pl },
-  { code: 'be', name: 'Беларуская', flag: 'by', locale: 'be-BY', dict: be },
-  { code: 'bg', name: 'Български', flag: 'bg', locale: 'bg-BG', dict: bg },
-  { code: 'sr', name: 'Српски', flag: 'rs', locale: 'sr-Cyrl-RS', dict: sr },
-  { code: 'cs', name: 'Čeština', flag: 'cz', locale: 'cs-CZ', dict: cs },
-  { code: 'ka', name: 'ქართული', flag: 'ge', locale: 'ka-GE', dict: ka },
-  { code: 'hy', name: 'Հայերեն', flag: 'am', locale: 'hy-AM', dict: hy },
-  { code: 'ko', name: '한국어', flag: 'kr', locale: 'ko-KR', dict: ko },
-  { code: 'zh', name: '中文（简体）', flag: 'cn', locale: 'zh-CN', dict: zh },
-  { code: 'ja', name: '日本語', flag: 'jp', locale: 'ja-JP', dict: ja },
-  { code: 'id', name: 'Bahasa Indonesia', flag: 'id', locale: 'id-ID', dict: id },
-  { code: 'hi', name: 'हिन्दी', flag: 'in', locale: 'hi-IN', dict: hi },
-  { code: 'sw', name: 'Kiswahili', flag: 'tz', locale: 'sw-TZ', dict: sw },
+  { code: 'uk', name: 'Українська', flag: 'ua', locale: 'uk-UA' },
+  { code: 'ro', name: 'Română', flag: 'ro', locale: 'ro-RO' },
+  { code: 'en', name: 'English', flag: 'gb', locale: 'en-GB' },
+  { code: 'es', name: 'Español', flag: 'es', locale: 'es-ES' },
+  { code: 'pt', name: 'Português', flag: 'br', locale: 'pt-BR' },
+  { code: 'fr', name: 'Français', flag: 'fr', locale: 'fr-FR' },
+  { code: 'de', name: 'Deutsch', flag: 'de', locale: 'de-DE' },
+  { code: 'it', name: 'Italiano', flag: 'it', locale: 'it-IT' },
+  { code: 'pl', name: 'Polski', flag: 'pl', locale: 'pl-PL' },
+  { code: 'be', name: 'Беларуская', flag: 'by', locale: 'be-BY' },
+  { code: 'bg', name: 'Български', flag: 'bg', locale: 'bg-BG' },
+  { code: 'sr', name: 'Српски', flag: 'rs', locale: 'sr-Cyrl-RS' },
+  { code: 'cs', name: 'Čeština', flag: 'cz', locale: 'cs-CZ' },
+  { code: 'ka', name: 'ქართული', flag: 'ge', locale: 'ka-GE' },
+  { code: 'hy', name: 'Հայերեն', flag: 'am', locale: 'hy-AM' },
+  { code: 'ko', name: '한국어', flag: 'kr', locale: 'ko-KR' },
+  { code: 'zh', name: '中文（简体）', flag: 'cn', locale: 'zh-CN' },
+  { code: 'ja', name: '日本語', flag: 'jp', locale: 'ja-JP' },
+  { code: 'id', name: 'Bahasa Indonesia', flag: 'id', locale: 'id-ID' },
+  { code: 'hi', name: 'हिन्दी', flag: 'in', locale: 'hi-IN' },
+  { code: 'sw', name: 'Kiswahili', flag: 'tz', locale: 'sw-TZ' },
 ];
 const BY_CODE = new Map(LANGS.map((l) => [l.code, l]));
 
@@ -90,6 +71,47 @@ function initialLang() {
 
 let lang = initialLang();
 let info = BY_CODE.get(lang);
+const dicts = new Map(); // код → словарь (уже загруженные)
+
+const BUILD = typeof __BUILD__ !== 'undefined' ? __BUILD__ : 'dev';
+const CACHE = `${P}i18n`; // 'aob.i18n' — свой кэш, service worker его не чистит и сам отдаёт оттуда
+// Словарь языка: из кэша браузера (офлайн) или из сети; ?v= — своя версия словаря у каждой сборки
+async function fetchDict(code) {
+  const url = new URL(`i18n/${code}.json?v=${BUILD}`, document.baseURI).href;
+  let cache = null;
+  try {
+    cache = await caches.open(CACHE);
+    const hit = await cache.match(url);
+    if (hit) return await hit.json();
+  } catch {
+    /* Cache API недоступен (не https) — просто из сети */
+  }
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`i18n ${code}: ${res.status}`);
+  const dict = await res.clone().json();
+  try {
+    if (cache) {
+      // Словари прежних сборок больше не нужны
+      for (const req of await cache.keys()) if (!req.url.includes(`?v=${BUILD}`)) await cache.delete(req);
+      await cache.put(url, res);
+    }
+  } catch {
+    /* не сохранилось — в следующий раз загрузится снова */
+  }
+  return dict;
+}
+
+async function loadDict(code) {
+  if (code === 'ru' || dicts.has(code)) return;
+  try {
+    dicts.set(code, await fetchDict(code));
+  } catch {
+    // Нет сети и нет кэша: показываем по-русски, словарь попробуем загрузить в следующий раз
+  }
+}
+
+// Словарь текущего языка — до первого показа приложения (main.jsx ждёт, но не дольше нескольких секунд)
+export const i18nReady = loadDict(lang);
 const listeners = new Set();
 const plurals = new Map();
 const pluralRule = (code) => {
@@ -109,8 +131,9 @@ export const langInfo = (code = lang) => BY_CODE.get(code);
 // Локаль для Intl: даты, числа, сравнение строк
 export const locale = () => info.locale;
 
-export function setLang(code) {
+export async function setLang(code) {
   if (!BY_CODE.has(code) || code === lang) return;
+  await loadDict(code);
   lang = code;
   info = BY_CODE.get(code);
   save('lang', code);
@@ -127,7 +150,7 @@ export const useLang = () => useSyncExternalStore(subscribe, getLang);
 export const N_ = (s) => s;
 
 function pick(key, params) {
-  const val = info.dict?.[key];
+  const val = dicts.get(lang)?.[key];
   // «История@@формат картинки» — после @@ пояснение для переводчика (одно русское слово — разные смыслы)
   const at = key.indexOf('@@');
   if (at >= 0) key = key.slice(0, at);

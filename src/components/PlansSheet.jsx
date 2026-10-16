@@ -35,7 +35,7 @@ function ActivePlan({ plan, onChange, onRemove, read }) {
   return (
     <div className="plan-card">
       <div className="plan-head">
-        <span className="plan-name">{plan.name}</span>
+        <span className="plan-name">{t(plan.name)}</span>
         <span className="plan-meta">
           {t('{done} из {total} дн.', { done: doneCount, total: days })}
         </span>
@@ -157,7 +157,7 @@ export default function PlansSheet({ pane, onClose }) {
   };
   const add = (plan) => {
     setPlans((ps) => [{ ...plan, uid: Date.now().toString(36), start: localDate(), done: {}, ...(plan.calendar ? { year: new Date().getFullYear() } : {}) }, ...ps]);
-    toast(t('План «{name}» начат — нажмите «Читать»', { name: plan.name }));
+    toast(t('План «{name}» начат — нажмите «Читать»', { name: t(plan.name) }));
   };
   const start = async (meta) => {
     setBusy(meta.id);
@@ -214,9 +214,9 @@ export default function PlansSheet({ pane, onClose }) {
         {index?.map((m) => (
           <div key={m.id} className="plan-offer">
             <div className="plan-offer-text">
-              <span className="plan-name">{m.name}</span>
+              <span className="plan-name">{t(m.name)}</span>
               <span className="plan-meta">
-                {t('{n} дн.', { n: m.days })}{m.description ? ` · ${m.description}` : ''}
+                {t('{n} дн.', { n: m.days })}{m.description ? ` · ${t(m.description)}` : ''}
               </span>
             </div>
             <button className="btn small" disabled={!!busy} onClick={() => start(m)}>

@@ -64,6 +64,15 @@ const isPublished = (src) => {
   return catalogIds.has(rel[0].replace(/\.json(\.gz)?$/, ''));
 };
 const out = path.join(root, 'dist');
+
+// Словари языков интерфейса — отдельными файлами i18n/<код>.json: приложение грузит только выбранный язык
+async function copyDicts(dir) {
+  const src = path.join(root, 'src/i18n');
+  await mkdir(path.join(dir, 'i18n'), { recursive: true });
+  for (const f of (await readdir(src)).filter((f) => f.endsWith('.json'))) {
+    await writeFile(path.join(dir, 'i18n', f), JSON.stringify(JSON.parse(await readFile(path.join(src, f), 'utf8'))));
+  }
+}
 const PWA_DIR = STAGING ? 'pwa-staging' : 'pwa';
 await rm(path.join(out, PWA_DIR), { recursive: true, force: true });
 await rm(path.join(out, 'artifact'), { recursive: true, force: true });
@@ -84,6 +93,7 @@ ${FONTS}
   // Хостинг артефактов не отдаёт .gz — публикуем только .json и убираем gz-ссылки из каталога
   await cp(path.join(root, 'public/modules'), path.join(dir, 'modules'), { recursive: true, filter: (src) => !src.endsWith('.gz') && isPublished(src) });
   await writeFile(path.join(dir, 'modules/catalog.json'), publishedCatalog(true));
+  await copyDicts(dir);
   console.log(`artifact: index.html ${(html.length / 1024).toFixed(0)} КБ`);
 }
 
@@ -122,6 +132,7 @@ ${FONTS}
   await writeFile(path.join(dir, 'index.html'), html);
   await cp(path.join(root, 'public/modules'), path.join(dir, 'modules'), { recursive: true, filter: isPublished });
   await writeFile(path.join(dir, 'modules/catalog.json'), publishedCatalog(false));
+  await copyDicts(dir);
   // Планы чтения (готовые) — рядом с приложением
   if (existsSync(path.join(root, 'public/plans'))) await cp(path.join(root, 'public/plans'), path.join(dir, 'plans'), { recursive: true });
   // Фоны для картинок со стихом (фото в общественном достоянии / CC0)

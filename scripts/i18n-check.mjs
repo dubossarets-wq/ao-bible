@@ -51,6 +51,17 @@ for (const file of await walk(src)) {
   }
 }
 
+// Названия и описания готовых планов чтения и подписи фото-фонов: данные по-русски, переводятся при показе — t(plan.name)
+for (const [file, pick] of [
+  ['public/plans/index.json', (j) => j.plans.flatMap((p) => [p.name, p.description])],
+  ['public/images/verse-bg/index.json', (j) => j.images.map((im) => im.title)],
+]) {
+  for (const k of pick(JSON.parse(await readFile(path.join(root, file), 'utf8'))).filter(Boolean)) {
+    if (!keys.has(k)) keys.set(k, new Set());
+    keys.get(k).add(file);
+  }
+}
+
 // Грамматические термины разбора слов (src/core/morph.js переводит их при показе): поля «ru» в morphData.json
 {
   const walk = (o) => {
