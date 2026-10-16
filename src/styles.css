@@ -991,9 +991,10 @@ html.kb-open .tour-ctrl.top { top: auto; bottom: calc(var(--kb, 0px) + 8px); }
 .news-ok { width: 100%; padding: 12px 14px; font-size: 1rem; margin-top: 4px; }
 
 /* Часть стиха: выбранные слова и любимые части */
-/* Сплошная подложка выбранной части: без просветов между словами и между строками
-   (вертикальные поля закрывают межстрочный промежуток, на переносе строки подложка продолжается) */
-.part-wrap { background: color-mix(in srgb, var(--accent) 24%, transparent); padding: var(--part-pad, .175em) 0; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+/* Выбранная часть стиха — цельная плашка под текстом (рисует partShape.js) */
+.part-shape { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.part-shape i { position: absolute; background: color-mix(in srgb, var(--accent) 24%, transparent); }
+.verse.selected .vt, .verse.selected .vn, .verse.selected .vmark, .verse.selected .xr, .verse.selected .cm, .verse.selected .note-tag { position: relative; z-index: 1; }
 .w.fav-part { box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--love) 70%, transparent); }
 .fav-heart.part { opacity: .75; }
 .part-inline { flex-direction: column; align-items: stretch; }
@@ -1007,8 +1008,8 @@ html.kb-open .tour-ctrl.top { top: auto; bottom: calc(var(--kb, 0px) + 8px); }
 .pulpit-body, .pulpit-body h1, .pulpit-verse, .pulpit-text { -webkit-hyphens: auto; hyphens: auto; overflow-wrap: anywhere; word-break: normal; }
 
 /* Выделенный стих: 3 px между белой подложкой и краем выбранной части (стих при этом не сдвигается) */
-.verse { --part-pad: calc((var(--lh, 1.45) - 1.1) * .5em); }
-.verses:not(.continuous) .verse.selected { padding-block: calc(3px + var(--part-pad)); margin-top: calc(-3px - var(--part-pad)); margin-bottom: calc(var(--verse-gap) - 3px - var(--part-pad)); }
+/* Выделенный стих: запас сверху и снизу, чтобы между белой подложкой и плашкой части было не меньше 3 px */
+.verses:not(.continuous) .verse.selected { padding-block: 5px; margin-top: -5px; margin-bottom: calc(var(--verse-gap) - 5px); }
 /* «Кафедра»: размер букв двумя пальцами — страница сама не масштабируется */
 .pulpit-body { touch-action: pan-y; }
 

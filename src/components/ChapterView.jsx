@@ -17,6 +17,7 @@ import { creditChapter } from '../core/planStore.js';
 import { sermonWith } from '../core/sermons.js';
 import { formatRef } from '../core/books.js';
 import { usePinchFont } from './usePinchFont.js';
+import { drawPart, clearPart } from './partShape.js';
 
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -219,8 +220,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     const el = scroller.current;
     if (!el) return;
     el.querySelectorAll('.w.fav-part').forEach((w) => w.classList.remove('fav-part'));
-    // Прежняя подложка выбранной части — снимаем (слова остаются на месте)
-    el.querySelectorAll('.part-wrap').forEach((x) => x.replaceWith(...x.childNodes));
+    clearPart(el); // прежняя подложка выбранной части
     const mark = (b, c, v, from, to, cls) =>
       el.querySelectorAll(`.verse[data-b="${b}"][data-c="${c}"][data-v="${v}"] .w`).forEach((w) => +w.dataset.i >= from && +w.dataset.i <= to && w.classList.add(cls));
     for (const [k, verses] of favParts) {
@@ -228,20 +228,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       for (const [v, [from, to]] of Object.entries(verses)) mark(b, c, v, from, to, 'fav-part');
     }
     if (part?.from != null) {
-      const [b, c, v] = part.key.split('.');
-      // Выбранная часть — одной сплошной подложкой: от первого до последнего слова, вместе с пробелами
-      const verse = el.querySelector(`.verse[data-b="${b}"][data-c="${c}"][data-v="${v}"]`);
-      const a = verse?.querySelector(`.w[data-i="${Math.min(part.from, part.to)}"]`);
-      const z = verse?.querySelector(`.w[data-i="${Math.max(part.from, part.to)}"]`);
-      if (a && z) {
-        const r = document.createRange();
-        r.setStartBefore(a);
-        r.setEndAfter(z);
-        const wrap = document.createElement('span');
-        wrap.className = 'part-wrap';
-        wrap.appendChild(r.extractContents());
-        r.insertNode(wrap);
-      }
+      drawPart(el, part); // выбранная часть — одной цельной плашкой под текстом
     }
   });
 
