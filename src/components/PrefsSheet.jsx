@@ -1,7 +1,7 @@
 // Настройки: что показывать в меню ⋮, вид текста, аудио (ИИ-диктор, книги без интернета),
 // библиотека модулей, мои данные (сохранить в файл / перенести на другой телефон), обновления и «О приложении».
 import React, { useRef, useState } from 'react';
-import { ChevronRight, Library, Palette, RefreshCw, History, Info, Download, Upload, Trash2, BookOpenCheck, Loader2, AlignLeft, MoreVertical, Headphones, HardDrive } from 'lucide-react';
+import { ChevronRight, Library, Palette, RefreshCw, History, Info, Download, Upload, Trash2, BookOpenCheck, Loader2, AlignLeft, MoreVertical, Headphones, HardDrive, Sparkles } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { Segmented, Switch, Hint, ConfirmButton } from './ui.jsx';
@@ -236,6 +236,9 @@ export default function PrefsSheet({ pane, onClose }) {
         <section className="settings-group">
           <Row icon={RefreshCw} onClick={check} sub={updates.available ? 'Нажмите, чтобы обновить' : `Сейчас: версия от ${buildDate(BUILD)}`} extra={checking ? <Loader2 size={16} className="spin" /> : null}>
             {updates.available ? 'Обновить приложение' : 'Проверить обновления'}
+          </Row>
+          <Row icon={Sparkles} onClick={() => go('news')} sub="Что изменилось в последнем обновлении">
+            Что нового
           </Row>
           <Row icon={History} onClick={() => go('versions')} sub="Вернуться к прежней версии, резервные копии">
             Версии приложения

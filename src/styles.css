@@ -335,8 +335,8 @@ mark { background: var(--hl); color: inherit; border-radius: 2px; padding: 0 1px
 
 /* Уведомления */
 .toasts { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(max(var(--kb, 0px), env(safe-area-inset-bottom, 0px)) + 20px); z-index: 60; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; width: min(420px, calc(100% - 32px)); }
-.toast { background: var(--bar); color: var(--bar-text); padding: 10px 16px; border-radius: 999px; font-size: .9rem; box-shadow: 0 8px 24px rgba(0,0,0,.2); animation: toast .22s ease-out; text-align: center; }
-.toast.error { background: var(--danger); color: #fff; border-radius: 14px; }
+.toast { background: color-mix(in srgb, var(--bar) 86%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: var(--bar-text); padding: 10px 16px; border-radius: 999px; font-size: .9rem; box-shadow: 0 8px 24px rgba(0,0,0,.2); animation: toast .22s ease-out; text-align: center; }
+.toast.error { background: color-mix(in srgb, var(--danger) 88%, transparent); color: #fff; border-radius: 14px; }
 @keyframes toast { from { opacity: 0; transform: translateY(8px); } }
 
 /* ---------- Выделение стихов (долгое нажатие) ---------- */
@@ -983,3 +983,11 @@ html.kb-open .tour-ctrl.top { top: auto; bottom: calc(var(--kb, 0px) + 8px); }
 .sheet-layer.closing .sheet.page { transform: translateX(100%); transition: transform .2s ease-in; }
 @keyframes page-in { from { transform: translateX(100%); } }
 @media (min-width: 700px) { .sheet.page { left: 0; right: 0; width: auto; bottom: var(--kb, 0px); border-radius: 0; transform: none; animation: page-in .26s cubic-bezier(.2,.8,.2,1); } .sheet-layer.closing .sheet.page { transform: translateX(100%); } }
+
+/* «Что нового» */
+.news { display: flex; flex-direction: column; gap: 14px; }
+.news-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.news-list li { display: flex; gap: 12px; align-items: flex-start; font-size: .98rem; line-height: 1.45; }
+.news-list li strong { display: block; font-size: 1.04rem; margin-bottom: 2px; }
+.news-icon { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 12%, var(--bg)); color: var(--accent); }
+.news-ok { width: 100%; padding: 12px 14px; font-size: 1rem; margin-top: 4px; }

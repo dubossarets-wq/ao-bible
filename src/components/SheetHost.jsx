@@ -24,6 +24,7 @@ import SermonsSheet from './SermonsSheet.jsx';
 import SermonAddSheet from './SermonAddSheet.jsx';
 import VerseImageSheet from './VerseImageSheet.jsx';
 import HelpSheet from './HelpSheet.jsx';
+import NewsSheet from './NewsSheet.jsx';
 
 const KINDS = {
   dict: DictionaryBottomSheet,
@@ -49,6 +50,7 @@ const KINDS = {
   'sermon-add': SermonAddSheet,
   'verse-image': VerseImageSheet,
   help: HelpSheet,
+  news: NewsSheet,
 };
 
 export default function SheetHost() {

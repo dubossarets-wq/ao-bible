@@ -11,6 +11,7 @@ import AudioBar from './components/AudioBar.jsx';
 import TourOverlay from './components/TourOverlay.jsx';
 import { fitsTranslation, detachFollow, audioState } from './core/audio.js';
 import { useSermons } from './core/sermons.js';
+import { pendingNews } from './core/whatsNew.js';
 import { useUpdates, applyUpdate } from './core/updates.js';
 import { IS_STAGING } from './core/channel.js';
 import { Toasts } from './components/ui.jsx';
@@ -77,10 +78,15 @@ export default function App() {
 
   const updates = useUpdates();
 
+  // Уведомление внизу — одно: новое заменяет предыдущее. Короткое показывается 1,6 с,
+  // длинное — чуть дольше, чтобы его успели прочитать (не дольше 3,2 с)
+  const toastTimer = useRef(0);
   const toast = useCallback((text, kind = 'info') => {
     const id = Math.random();
-    setToasts((t) => [...t, { id, text, kind }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3200);
+    setToasts([{ id, text, kind }]);
+    clearTimeout(toastTimer.current);
+    const ms = Math.min(3200, 1600 + Math.max(0, String(text).length - 40) * 20);
+    toastTimer.current = setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), ms);
   }, []);
 
   // Автообновление (по умолчанию) и экстренное обновление: переходим на новую версию сразу,
@@ -122,6 +128,16 @@ export default function App() {
   }, [modules, bibles.length]);
 
   const merging = useRef(false);
+  // После обновления — один раз «Что нового» (когда приложение готово и не открыто другое окно)
+  const ready0 = modules !== null && bibles.length > 0;
+  useEffect(() => {
+    if (!ready0) return;
+    const items = pendingNews();
+    if (!items.length) return;
+    const t = setTimeout(() => setSheet((s) => s || { kind: 'news', pane: 0, payload: { items }, id: Date.now() }), 1200);
+    return () => clearTimeout(t);
+  }, [ready0]);
+
   // Объединённые модули: вместо частей одного автора («Лопухин 1/2/3») ставим общий модуль, части убираем,
   // выбор «какие комментарии показывать в тексте» переносим на новый id. Нет общего в каталоге — ничего не трогаем.
   useEffect(() => {
