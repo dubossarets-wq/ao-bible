@@ -218,7 +218,9 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
   useEffect(() => {
     const el = scroller.current;
     if (!el) return;
-    el.querySelectorAll('.w.part-on, .w.fav-part').forEach((w) => w.classList.remove('part-on', 'fav-part'));
+    el.querySelectorAll('.w.fav-part').forEach((w) => w.classList.remove('fav-part'));
+    // Прежняя подложка выбранной части — снимаем (слова остаются на месте)
+    el.querySelectorAll('.part-wrap').forEach((x) => x.replaceWith(...x.childNodes));
     const mark = (b, c, v, from, to, cls) =>
       el.querySelectorAll(`.verse[data-b="${b}"][data-c="${c}"][data-v="${v}"] .w`).forEach((w) => +w.dataset.i >= from && +w.dataset.i <= to && w.classList.add(cls));
     for (const [k, verses] of favParts) {
@@ -227,7 +229,19 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     }
     if (part?.from != null) {
       const [b, c, v] = part.key.split('.');
-      mark(b, c, v, Math.min(part.from, part.to), Math.max(part.from, part.to), 'part-on');
+      // Выбранная часть — одной сплошной подложкой: от первого до последнего слова, вместе с пробелами
+      const verse = el.querySelector(`.verse[data-b="${b}"][data-c="${c}"][data-v="${v}"]`);
+      const a = verse?.querySelector(`.w[data-i="${Math.min(part.from, part.to)}"]`);
+      const z = verse?.querySelector(`.w[data-i="${Math.max(part.from, part.to)}"]`);
+      if (a && z) {
+        const r = document.createRange();
+        r.setStartBefore(a);
+        r.setEndAfter(z);
+        const wrap = document.createElement('span');
+        wrap.className = 'part-wrap';
+        wrap.appendChild(r.extractContents());
+        r.insertNode(wrap);
+      }
     }
   });
 

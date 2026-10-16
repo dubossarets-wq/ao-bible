@@ -991,7 +991,9 @@ html.kb-open .tour-ctrl.top { top: auto; bottom: calc(var(--kb, 0px) + 8px); }
 .news-ok { width: 100%; padding: 12px 14px; font-size: 1rem; margin-top: 4px; }
 
 /* Часть стиха: выбранные слова и любимые части */
-.w.part-on { background: color-mix(in srgb, var(--accent) 24%, transparent); border-radius: 3px; box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 24%, transparent); }
+/* Сплошная подложка выбранной части: без просветов между словами и между строками
+   (вертикальные поля закрывают межстрочный промежуток, на переносе строки подложка продолжается) */
+.part-wrap { background: color-mix(in srgb, var(--accent) 24%, transparent); padding: calc((var(--lh, 1.45) - 1.1) * .5em) 0; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 .w.fav-part { box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--love) 70%, transparent); }
 .fav-heart.part { opacity: .75; }
 .part-inline { flex-direction: column; align-items: stretch; }
