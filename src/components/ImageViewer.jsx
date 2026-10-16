@@ -172,10 +172,12 @@ export default function ImageViewer({ payload, onClose }) {
           {[item.author, item.year].filter(Boolean).join(', ')}
           {item.license ? ` · ${item.license}` : ''}
           {item.src && (
-            <a href={item.src} target="_blank" rel="noopener noreferrer">
-              {' '}
-              · источник <ExternalLink size={12} />
-            </a>
+            <>
+              {' · '}
+              <a href={item.src} target="_blank" rel="noopener noreferrer">
+                источник <ExternalLink size={12} />
+              </a>
+            </>
           )}
         </span>
         <small>Нажмите на картинку, чтобы увеличить; двумя пальцами — плавно.</small>

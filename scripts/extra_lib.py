@@ -506,7 +506,7 @@ def merge_catalog(entries, in_place=False):
     # Модуль, объединивший прежние части («replaces»), вытесняет их записи из каталога
     ids |= {old for e in entries for old in e.get("replaces", [])}
     mods = [m for m in cat["modules"] if m["id"] not in ids]
-    order = ["bible", "commentary", "dictionary", "maps", "crossrefs"]
+    order = ["bible", "commentary", "dictionary", "maps", "illustrations", "crossrefs"]
     for e in entries:
         pos = len(mods)
         # после последнего модуля того же типа (недоступные «заглушки» остаются в конце)
