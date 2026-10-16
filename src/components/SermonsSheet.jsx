@@ -32,6 +32,36 @@ function AutoText({ value, onChange, placeholder, autoFocus }) {
 function Pulpit({ sermon, onClose }) {
   const [size, setSize] = useState(() => load('pulpitSize', 26));
   useEffect(() => save('pulpitSize', size), [size]);
+  // Размер букв двумя пальцами: развести — крупнее, свести — мельче
+  const body = useRef(null);
+  useEffect(() => {
+    const el = body.current;
+    if (!el) return;
+    let g = null;
+    const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    const start = (e) => {
+      if (e.touches.length === 2) g = { d: dist(e.touches), s: Number(el.style.fontSize.replace('px', '')) || 26 };
+    };
+    const move = (e) => {
+      if (!g || e.touches.length !== 2) return;
+      e.preventDefault();
+      setSize(Math.round(Math.max(18, Math.min(60, g.s * (dist(e.touches) / g.d)))));
+    };
+    const end = (e) => e.touches.length < 2 && (g = null);
+    const noZoom = (e) => e.preventDefault();
+    el.addEventListener('touchstart', start, { passive: true });
+    el.addEventListener('touchmove', move, { passive: false });
+    el.addEventListener('touchend', end);
+    el.addEventListener('touchcancel', end);
+    el.addEventListener('gesturestart', noZoom);
+    return () => {
+      el.removeEventListener('touchstart', start);
+      el.removeEventListener('touchmove', move);
+      el.removeEventListener('touchend', end);
+      el.removeEventListener('touchcancel', end);
+      el.removeEventListener('gesturestart', noZoom);
+    };
+  }, []);
   useEffect(() => {
     let lock = null;
     let alive = true;
@@ -63,7 +93,7 @@ function Pulpit({ sermon, onClose }) {
           <Minus size={20} />
         </button>
         <Type size={18} aria-hidden="true" />
-        <button className="icon-btn" onClick={() => setSize((v) => Math.min(48, v + 2))} aria-label="Крупнее">
+        <button className="icon-btn" onClick={() => setSize((v) => Math.min(60, v + 2))} aria-label="Крупнее">
           <Plus size={20} />
         </button>
         <span className="pulpit-title">{sermon.title}</span>
@@ -71,7 +101,7 @@ function Pulpit({ sermon, onClose }) {
           <X size={22} />
         </button>
       </div>
-      <div className="pulpit-body" lang="ru" style={{ fontSize: `${size}px` }}>
+      <div className="pulpit-body" ref={body} lang="ru" style={{ fontSize: `${size}px` }}>
         <h1>{sermon.title}</h1>
         {sermon.date && <div className="pulpit-date">{fmtDate(sermon.date)}</div>}
         {sermon.blocks.map((b) =>
