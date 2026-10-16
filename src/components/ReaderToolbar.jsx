@@ -9,6 +9,7 @@ import { plainText } from '../core/verseMarkup.js';
 import { RefreshCw, Map as MapIcon, PlayCircle, Link2, Headphones, BookOpenText, CalendarCheck } from 'lucide-react';
 import { IS_PWA_BUILD, applyUpdate } from '../core/updates.js';
 import { useLivePosition } from '../core/livePosition.js';
+import { shortName } from '../core/moduleShort.js';
 
 // Стрелки «←…» и «→…» как на скриншоте: стрелка с многоточием (история переходов)
 function HistoryArrow({ dir }) {
@@ -73,7 +74,7 @@ export default function ReaderToolbar({ index, pane, module }) {
     <header className="toolbar topbar">
       {/* Перевод — «таблетка» слева, место — по центру; действия — круглые кнопки справа */}
       <button className="tb tb-module" onClick={() => openSheet('modules', index)} aria-label={`Перевод: ${module?.name}. Сменить перевод`}>
-        <span className="tb-module-name">{module?.name || '—'}</span>
+        <span className="tb-module-name">{shortName(module)}</span>
         <ChevronDown size={14} className="tb-chev" />
       </button>
       <button className="tb tb-ref" onClick={() => openSheet('nav', index)} aria-label={`${bookMeta(ref.book).name} ${ref.chapter}:${ref.verse}. Выбрать место`}>
