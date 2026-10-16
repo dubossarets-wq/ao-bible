@@ -3,7 +3,8 @@
 // 1. Если перевод размечен номерами Стронга, берём именно их (точная привязка).
 // 2. Иначе пытаемся сопоставить русскую словоформу с номерами Стронга по обратному индексу
 //    симфонии (wordIndex) — это приблизительное соответствие, и интерфейс об этом предупреждает.
-// 3. Словари «по словам» ищутся по самой словоформе, затем по основе слова.
+// 3. Словари «по словам» ищутся по самой словоформе, затем по начальной форме (благодати → благодать,
+//    агнца → агнец), затем без приставки (возлюбил → любить), и лишь потом — ближайшие слова с той же основой.
 import { getPayload, listModules } from './modules.js';
 import { testamentOf } from './books.js';
 import { normalizeWord } from './verseMarkup.js';
@@ -20,6 +21,60 @@ export function stem(word) {
   const w = normalizeWord(word);
   for (const e of ENDINGS) if (w.length - e.length >= 3 && w.endsWith(e)) return w.slice(0, -e.length);
   return w;
+}
+
+// Ключ для словаря: без ударений и титл, дореформенные буквы — в современные (для ЦСЯ, Макария)
+export function dictKey(word) {
+  return normalizeWord(word)
+    .normalize('NFD')
+    .replace(/[\u0300\u0301\u0483-\u0489]/g, '')
+    .normalize('NFC')
+    .replace(/ѣ/g, 'е')
+    .replace(/[іѵ]/g, 'и')
+    .replace(/ѳ/g, 'ф')
+    .replace(/ъ$/, '');
+}
+
+const LEMMA_ENDINGS = ['', 'ь', 'а', 'я', 'о', 'е', 'й', 'ий', 'ый', 'ой', 'ть', 'ти', 'ться', 'ие', 'ия'];
+const VERB_ENDINGS = ['ить', 'еть', 'ать', 'ять', 'ть', 'ти', 'ться', 'иться'];
+// Похоже на глагол («любил», «говорит», «сказали») — начальную форму ищем сначала среди глагольных
+const VERBAL = /(ил|ел|ал|ял|ла|ли|ло|ет|ит|ут|ют|ат|ят|ешь|ишь|ете|ите|ем|им|вши|ться|тся|лся|лась|лись)$/;
+const VOWELS = /[аеёиоуыэюяй]/;
+// Возможные начальные формы по основе: «благодат» → благодать…, «агнц» → агнец (беглая гласная)
+function lemmaGuesses(st, verbal) {
+  const out = (verbal ? [...VERB_ENDINGS, ...LEMMA_ENDINGS] : [...LEMMA_ENDINGS, ...VERB_ENDINGS]).map((e) => st + e);
+  const last = st.slice(-1);
+  const prev = st.slice(-2, -1);
+  if (st.length >= 3 && !VOWELS.test(last) && prev && !VOWELS.test(prev))
+    for (const v of ['е', 'о']) for (const e of ['', 'ь']) out.push(st.slice(0, -1) + v + last + e);
+  return out;
+}
+const PREFIXES = ['пред', 'пере', 'воз', 'вос', 'раз', 'рас', 'при', 'про', 'под', 'пре', 'вы', 'из', 'ис', 'на', 'за', 'от', 'об', 'до', 'со', 'по', 'у', 'с', 'о'];
+
+function findWord(entries, keys, text) {
+  const key = dictKey(text);
+  const exact = entries[key] || entries[text.toLowerCase()];
+  if (exact) return [{ key, entry: exact, match: 'form' }];
+  const byLemma = (w) => {
+    const st = stem(w);
+    return [...new Set(lemmaGuesses(st, VERBAL.test(w)))].filter((k) => k !== w && entries[k]);
+  };
+  // Начальная форма слова
+  let hits = byLemma(key);
+  if (hits.length) return hits.slice(0, 3).map((k) => ({ key: k, entry: entries[k], match: 'lemma' }));
+  // Без приставки: «возлюбил» → «любить»
+  for (const pre of PREFIXES) {
+    if (!key.startsWith(pre) || key.length - pre.length < 4) continue;
+    const rest = key.slice(pre.length);
+    hits = entries[rest] ? [rest] : byLemma(rest);
+    if (hits.length) return hits.slice(0, 2).map((k) => ({ key: k, entry: entries[k], match: 'root' }));
+  }
+  // Ближайшие слова с той же основой: сначала с той же основой целиком, потом по близости длины
+  const st = stem(key);
+  return prefixMatches(keys, st, 50)
+    .sort((a, b) => (stem(a) === st ? 0 : 1) - (stem(b) === st ? 0 : 1) || Math.abs(a.length - key.length) - Math.abs(b.length - key.length))
+    .slice(0, 4)
+    .map((k) => ({ key: k, entry: entries[k], match: 'stem' }));
 }
 
 const sortedKeys = new Map(); // moduleId -> отсортированные ключи (для поиска по основе)
@@ -86,12 +141,7 @@ export async function lookupWord({ token, ref }) {
         if (e) found.push({ key: s, entry: e, match: mapping.mode });
       }
     } else {
-      const direct = p.entries[norm] || p.entries[lower];
-      if (direct) found.push({ key: norm, entry: direct, match: 'form' });
-      else {
-        const st = stem(token.text);
-        for (const k of prefixMatches(keysFor(m.id, p.entries), st, 4)) found.push({ key: k, entry: p.entries[k], match: 'stem' });
-      }
+      found.push(...findWord(p.entries, keysFor(m.id, p.entries), token.text));
     }
     if (found.length) results.push({ module: m, found });
   }

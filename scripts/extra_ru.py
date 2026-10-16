@@ -136,8 +136,9 @@ def _split_params(body):
     return out
 
 
-def _expand_templates(s, refs):
-    """Раскрывает {{…}} изнутри наружу: Библия -> текст ссылки (и запоминает ссылку), остальное — по смыслу."""
+def _expand_templates(s, refs, hook=None):
+    """Раскрывает {{…}} изнутри наружу: Библия -> текст ссылки (и запоминает ссылку), остальное — по смыслу.
+    hook(name, pos, named) -> str | None — своя обработка шаблонов (словари Викитеки, extra_dicts_ru.py)."""
     pat = re.compile(r"\{\{((?:(?!\{\{|\}\}).)*)\}\}", re.S)
     syn = synodal()
     for _ in range(10):
@@ -152,6 +153,10 @@ def _expand_templates(s, refs):
             named = dict(p.split("=", 1) for p in params[1:] if re.match(r"^\s*[\w ]+\s*=", p))
             named = {k.strip(): v for k, v in named.items()}
             low = name.lower()
+            if hook:
+                res = hook(name, pos, named)
+                if res is not None:
+                    return res
             if name == "Библия":
                 bk = pos[0].strip() if pos else ""
                 cv = pos[1].strip() if len(pos) > 1 else ""
@@ -190,11 +195,11 @@ def _expand_templates(s, refs):
     return s
 
 
-def _wikitext_to_text(w, refs):
+def _wikitext_to_text(w, refs, hook=None):
     w = re.sub(r"<!--.*?-->", "", w, flags=re.S)
     w = re.sub(r"<ref[^>/]*/>", "", w)
     w = re.sub(r"<ref[^>]*>(.*?)</ref>", lambda m: " [" + m.group(1).strip() + "]", w, flags=re.S)
-    w = _expand_templates(w, refs)
+    w = _expand_templates(w, refs, hook)
     w = re.sub(r"\[\[(?:Категория|Category|Файл|File|Изображение|Image):[^\]]*\]\]", "", w)
     w = re.sub(r"\[\[[^\]|]*\|([^\]]*)\]\]", r"\1", w)
     w = re.sub(r"\[\[([^\]]*)\]\]", r"\1", w)

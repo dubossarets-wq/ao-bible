@@ -280,6 +280,7 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
               <article className="entry">
                 <h3 className="entry-word">{f.entry.word || f.key}</h3>
                 {f.match === 'stem' && <p className="warn small">Найдено по основе слова «{token.text}» — проверьте, что это та же лексема.</p>}
+                {f.match === 'root' && <p className="warn small">Найдено по корню слова «{token.text}» (без приставки).</p>}
                 {f.entry.original && <div className="orig">{f.entry.original}</div>}
                 <p className="prewrap">
                   <LinkedText text={f.entry.text || f.entry.definition} onOpen={openRef} />

@@ -15,6 +15,7 @@
   openbible/             — https://a.openbible.info/data/cross-references.zip
   lopukhin/github-swmail-lopukhin_commentary/ — https://github.com/swmail/lopukhin_commentary
   nikifor/ru-wikisource/ — статьи «БЭАН/…» Русской Викитеки (MediaWiki API)
+  ru-wikisource-dump/    — словари Викитеки (Даль, ПБЭ, ЭСБЕ, ЕЭБЕ): scripts/extra_dicts_ru.py extract | fetch
   wikimedia-maps/        — карты с Wikimedia Commons + manifest.json (лицензия и автор каждой карты)
 Нужен pysword в .pylib (см. build_dc.py).
 """
@@ -32,6 +33,7 @@ import extra_bibles as B  # noqa: E402
 import extra_comm as C  # noqa: E402
 import extra_dicts as D  # noqa: E402
 import extra_ru as R  # noqa: E402
+import extra_dicts_ru as RD  # noqa: E402
 from extra_lib import (BOOK_BY_ID, CW, OUT, SRC, kjv2syn, log, merge_catalog, parse_osis_ref,  # noqa: E402
                        write_module)
 
@@ -434,6 +436,74 @@ def m_nikifor():
     }, R.nikifor())
 
 
+WS_LIC = "Public Domain (издано в Российской империи до 1917 г.); электронный текст Викитеки — CC BY-SA 4.0"
+
+
+def _ws_version(set_name):
+    rows = RD.read_set(set_name)
+    last = max((r.get("timestamp") or "" for r in rows), default="")[:10]
+    return f"Викитека, правки по {last}" if last else "Викитека"
+
+
+def m_dal():
+    entries = RD.dal()
+    return dictionary({
+        "id": "dal", "name": "Даль", "title": "Толковый словарь живого великорусского языка В. И. Даля (2-е изд., 1880–1882)",
+        "language": "ru",
+        "description": "Словарь Владимира Даля: статьи-гнёзда с толкованиями, примерами и пословицами; для производных "
+                       "слов гнезда — отдельные статьи с отрывком («Благостыня» → из статьи «Благий»). В модуль вошли "
+                       "слова, которые встречаются в Синодальном, церковнославянском и других русских переводах "
+                       "(весь словарь — свыше 100 МБ). Орфография приведена к современной автоматически (ѣ, і, ъ, "
+                       "-аго, приставки без-/из-/раз-), ударения сохранены.",
+        "version": _ws_version("dal2"), "author": "В. И. Даль (1801–1872); электронный текст — участники Русской Викитеки",
+        "source": "https://ru.wikisource.org/wiki/Толковый_словарь_Владимира_Даля (2-е издание, страницы сканов «Толковый словарь Даля (2-е издание)»)",
+        "license": WS_LIC,
+    }, entries)
+
+
+def m_pbe():
+    return dictionary({
+        "id": "pbe", "name": "ПБЭ", "title": "Православная богословская энциклопедия (1900–1911), тт. 1–12",
+        "language": "ru",
+        "description": "«Православная богословская энциклопедия, или Богословский энциклопедический словарь» под ред. "
+                       "А. П. Лопухина (тт. 1–6) и Н. Н. Глубоковского (тт. 7–12), буквы А — Константинопольская "
+                       "церковь. Статьи, вычитанные на Викитеке (пока почти только тт. 1–2: А — Бытие), в современной "
+                       "орфографии; взяты те, что находятся по словам русских переводов Библии. Ссылки на стихи — "
+                       "в синодальной нумерации.",
+        "version": _ws_version("pbe"), "author": "А. П. Лопухин, Н. Н. Глубоковский (ред.) и авторы статей; электронный текст — участники Русской Викитеки",
+        "source": "https://ru.wikisource.org/wiki/Православная_богословская_энциклопедия",
+        "license": WS_LIC, "versification": "synodal",
+    }, RD.pbe())
+
+
+def m_esbe_bible():
+    return dictionary({
+        "id": "esbe-bible", "name": "Брокгауз", "title": "Энциклопедический словарь Брокгауза и Ефрона: статьи к Библии",
+        "language": "ru",
+        "description": "Выборка из Энциклопедического словаря Брокгауза и Ефрона (1890–1907): статьи о библейских "
+                       "лицах, местах, книгах и понятиях, богословии и Церкви — те, что находятся по словам русских "
+                       "переводов Библии и имеют ссылки на Писание или библейскую тему. Весь словарь (≈120 тыс. "
+                       "статей, ≈500 МБ) для чтения Библии не нужен.",
+        "version": "Викитека, дамп " + RD.dump_date(), "author": "Ф. А. Брокгауз, И. А. Ефрон (изд.), авторы статей; электронный текст — участники Русской Викитеки",
+        "source": "https://ru.wikisource.org/wiki/Энциклопедический_словарь_Брокгауза_и_Ефрона",
+        "license": WS_LIC, "versification": "synodal",
+    }, RD.esbe())
+
+
+def m_eebe_bible():
+    return dictionary({
+        "id": "eebe-bible", "name": "Евр. энциклопедия", "title": "Еврейская энциклопедия Брокгауза и Ефрона (1906–1913): статьи к Библии",
+        "language": "ru",
+        "description": "Выборка из Еврейской энциклопедии Брокгауза и Ефрона: статьи о библейских лицах, местах, "
+                       "обрядах и понятиях с ссылками на Писание, которые находятся по словам русских переводов. "
+                       "Имена в заглавиях — часто в еврейской передаче; ссылки переведены в синодальную нумерацию "
+                       "(названия книг — по еврейской Библии: I Сам. = 1 Цар., I Цар. = 3 Цар.).",
+        "version": "Викитека, дамп " + RD.dump_date(), "author": "Л. Каценельсон, Д. Гинцбург (ред.), авторы статей; электронный текст — участники Русской Викитеки",
+        "source": "https://ru.wikisource.org/wiki/Еврейская_энциклопедия_Брокгауза_и_Ефрона",
+        "license": WS_LIC, "versification": "synodal",
+    }, RD.eebe())
+
+
 def _en_dict(mid, name, title, desc, author, sword):
     return dictionary({
         "id": mid, "name": name, "title": title, "language": "en", "description": desc,
@@ -464,6 +534,37 @@ def m_nave():
     return _en_dict("nave", "Nave", "Nave's Topical Bible (1896)",
                     "Тематический указатель Орвилла Нейва (англ.): ~5 тыс. тем со списками мест Писания "
                     "(ссылки в нумерации KJV).", "Orville J. Nave (1841–1917)", "Nave")
+
+
+def m_isbe():
+    return _en_dict("isbe", "ISBE", "International Standard Bible Encyclopedia (1915)",
+                    "Международная стандартная библейская энциклопедия под ред. Джеймса Орра (англ.), ~9 тыс. статей: "
+                    "лица, места, понятия, обычаи, богословие. Ищется по английскому слову. Ссылки — в нумерации KJV.",
+                    "James Orr (ред.), J. L. Nuelsen, E. Y. Mullins, M. O. Evans, M. G. Kyle", "ISBE")
+
+
+def m_amtract():
+    return _en_dict("amtract", "ATS", "American Tract Society Bible Dictionary (1859)",
+                    "Библейский словарь Американского трактатного общества под ред. У. У. Рэнда (англ.), ~2,3 тыс. "
+                    "статей. Ищется по английскому слову. Ссылки — в нумерации KJV.",
+                    "W. W. Rand (ред.), American Tract Society", "AmTract")
+
+
+def m_torrey():
+    return _en_dict("torrey", "Torrey", "R. A. Torrey's New Topical Textbook (1897)",
+                    "Тематический указатель Р. А. Торри (англ.): ~600 тем со списками мест Писания (нумерация KJV).",
+                    "Reuben A. Torrey (1856–1928)", "Torrey")
+
+
+def m_webster1828():
+    d = _en_dict("webster1828", "Webster 1828", "Webster's American Dictionary of the English Language (1828)",
+                 "Толковый словарь английского языка Ноя Уэбстера 1828 г. (англ.), ~62 тыс. слов — язык эпохи KJV; "
+                 "многие статьи с примерами из Писания. Ищется по английскому слову.",
+                 "Noah Webster (1758–1843); электронный текст — Akai Tsurugi (github.com/akaitsurugi/webster1828)",
+                 "Webster1828")
+    d["license"] = "CC BY-SA 4.0 (электронный текст Akai Tsurugi; словарь 1828 г. — Public Domain)"
+    d["source"] += "; https://github.com/akaitsurugi/webster1828"
+    return d
 
 
 def m_abbott_smith():
@@ -568,14 +669,18 @@ def m_maps():
 
 BUILDERS = [m_kjv, m_bsb, m_oshb, m_byz, m_csl, m_makarij, m_kulish,
             m_lopukhin, m_mhcc, m_jfb, m_barnes,
-            m_nikifor, m_easton, m_smith, m_hitchcock, m_nave, m_abbott_smith, m_bdb,
+            m_nikifor, m_dal, m_pbe, m_esbe_bible, m_eebe_bible,
+            m_easton, m_smith, m_hitchcock, m_nave, m_isbe, m_amtract, m_torrey, m_webster1828,
+            m_abbott_smith, m_bdb,
             m_openbible, m_tsk, m_maps]
 
 BUILDER_IDS = {"m_kjv": ["kjv"], "m_bsb": ["bsb"], "m_oshb": ["oshb"], "m_byz": ["byz-rp2018"],
                "m_csl": ["csl-elizabeth"], "m_makarij": ["rus-makarij"], "m_kulish": ["ukr-kulish"],
                "m_lopukhin": ["lopukhin"], "m_mhcc": ["mhcc"], "m_jfb": ["jfb"],
-               "m_barnes": ["barnes"], "m_nikifor": ["nikifor"], "m_easton": ["easton"],
-               "m_smith": ["smith"], "m_hitchcock": ["hitchcock"], "m_nave": ["nave"],
+               "m_barnes": ["barnes"], "m_nikifor": ["nikifor"], "m_dal": ["dal"],
+               "m_pbe": ["pbe"], "m_esbe_bible": ["esbe-bible"], "m_eebe_bible": ["eebe-bible"], "m_easton": ["easton"],
+               "m_smith": ["smith"], "m_hitchcock": ["hitchcock"], "m_nave": ["nave"], "m_isbe": ["isbe"],
+               "m_amtract": ["amtract"], "m_torrey": ["torrey"], "m_webster1828": ["webster1828"],
                "m_abbott_smith": ["abbott-smith"], "m_bdb": ["bdb-glosses"], "m_openbible": ["xrefs-openbible"],
                "m_tsk": ["xrefs-tsk"], "m_maps": ["bible-maps"]}
 
