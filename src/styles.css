@@ -1000,3 +1000,6 @@ html.kb-open .tour-ctrl.top { top: auto; bottom: calc(var(--kb, 0px) + 8px); }
 .part-btns .btn.primary { flex: 1; }
 .part-btns .btn:not(.primary) { background: var(--panel); }
 .scroller.selecting .verse.selected .w { cursor: pointer; }
+
+/* «Кафедра»: длинные слова переносятся по слогам (на крупном шрифте иначе не помещаются) */
+.pulpit-body, .pulpit-body h1, .pulpit-verse, .pulpit-text { -webkit-hyphens: auto; hyphens: auto; overflow-wrap: anywhere; word-break: normal; }

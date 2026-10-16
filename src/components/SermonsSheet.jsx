@@ -71,7 +71,7 @@ function Pulpit({ sermon, onClose }) {
           <X size={22} />
         </button>
       </div>
-      <div className="pulpit-body" style={{ fontSize: `${size}px` }}>
+      <div className="pulpit-body" lang="ru" style={{ fontSize: `${size}px` }}>
         <h1>{sermon.title}</h1>
         {sermon.date && <div className="pulpit-date">{fmtDate(sermon.date)}</div>}
         {sermon.blocks.map((b) =>
