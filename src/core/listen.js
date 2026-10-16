@@ -2,6 +2,7 @@
 // Если к главе записи нет — ИИ-диктор (синтез речи): сразу, если человек его включил, иначе предлагаем включить.
 import { startAudio, audioSourcesFor, showAudioMessage } from './audio.js';
 import { load } from './storage.js';
+import { t } from './i18n.js';
 
 export async function listenFrom(pane, moduleId, ref) {
   const { recorded, otherRecorded, tts } = await audioSourcesFor(moduleId, ref);
@@ -16,7 +17,7 @@ export async function listenFrom(pane, moduleId, ref) {
     ref,
     offerTts: tts,
     error: otherRecorded.length
-      ? `Для этого перевода нет аудиозаписи (есть к переводу ${otherRecorded[0].name}).`
-      : 'Для этой главы нет аудиозаписи.',
+      ? t('Для этого перевода нет аудиозаписи (есть к переводу {name}).', { name: otherRecorded[0].name })
+      : t('Для этой главы нет аудиозаписи.'),
   });
 }

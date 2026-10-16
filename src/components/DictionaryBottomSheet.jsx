@@ -10,8 +10,9 @@ import { formatRef, parseOsisRef, bookMeta } from '../core/books.js';
 import { Empty } from './ui.jsx';
 import LinkedText from './LinkedText.jsx';
 import WordStats from './WordStats.jsx';
+import { t, N_ } from '../core/i18n.js';
 
-const KIND_LABEL = { strongs: 'по номерам Стронга', words: 'по словам' };
+const KIND_LABEL = { strongs: N_('по номерам Стронга'), words: N_('по словам') };
 
 // «from H24 (אָבִיב)» → кликабельные номера Стронга
 function StrongLinks({ text, onOpen }) {
@@ -44,33 +45,33 @@ function StrongEntry({ num, entry, module, mapping, onOpenStrong, onOpenRef }) {
       )}
       <dl className="facts">
         <div>
-          <dt>Номер Стронга</dt>
+          <dt>{t('Номер Стронга')}</dt>
           <dd className="mono">{num}</dd>
         </div>
         {entry.xlit && (
           <div>
-            <dt>Транслитерация</dt>
+            <dt>{t('Транслитерация')}</dt>
             <dd>{entry.xlit}</dd>
           </div>
         )}
         {entry.pron && (
           <div>
-            <dt>Произношение</dt>
+            <dt>{t('Произношение')}</dt>
             <dd>{entry.pron}</dd>
           </div>
         )}
         <div>
-          <dt>Язык</dt>
-          <dd>{isHeb ? 'иврит / арамейский (ВЗ)' : 'греческий (НЗ)'}</dd>
+          <dt>{t('Язык')}</dt>
+          <dd>{isHeb ? t('иврит / арамейский (ВЗ)') : t('греческий (НЗ)')}</dd>
         </div>
         {morph.length > 0 &&
           morph.map((m) => {
             const d = describeMorph(m);
             return (
               <div key={m}>
-                <dt>Грамматическая форма</dt>
+                <dt>{t('Грамматическая форма')}</dt>
                 <dd>
-                  {d.text || 'расшифровка кода не входит в установленные данные'} <span className="mono muted">({m})</span>
+                  {d.text || t('расшифровка кода не входит в установленные данные')} <span className="mono muted">({m})</span>
                 </dd>
               </div>
             );
@@ -78,7 +79,7 @@ function StrongEntry({ num, entry, module, mapping, onOpenStrong, onOpenRef }) {
       </dl>
       {entry.definition && (
         <section>
-          <h4>Значение</h4>
+          <h4>{t('Значение')}</h4>
           <p>
             <StrongLinks text={entry.definition} onOpen={onOpenStrong} />
           </p>
@@ -86,7 +87,7 @@ function StrongEntry({ num, entry, module, mapping, onOpenStrong, onOpenRef }) {
       )}
       {entry.derivation && (
         <section>
-          <h4>Происхождение</h4>
+          <h4>{t('Происхождение')}</h4>
           <p>
             <StrongLinks text={entry.derivation} onOpen={onOpenStrong} />
           </p>
@@ -94,14 +95,14 @@ function StrongEntry({ num, entry, module, mapping, onOpenStrong, onOpenRef }) {
       )}
       {entry.kjv && (
         <section>
-          <h4>Переводы в KJV</h4>
+          <h4>{t('Переводы в KJV')}</h4>
           <p>{entry.kjv}</p>
         </section>
       )}
       <WordStats num={num} onOpenRef={onOpenRef} />
       {entry.renderings && (
         <section>
-          <h4>Как переведено в синодальном тексте · {entry.count} употр.</h4>
+          <h4>{t('Как переведено в синодальном тексте · {n} употр.', { n: entry.count })}</h4>
           <ul className="renderings">
             {entry.renderings.map(([w, n]) => (
               <li key={w}>
@@ -120,7 +121,7 @@ function StrongEntry({ num, entry, module, mapping, onOpenStrong, onOpenRef }) {
       )}
       {entry.refs?.length > 0 && (
         <section>
-          <h4>{entry.renderings ? 'Первые места употребления' : 'Связанные стихи'}</h4>
+          <h4>{entry.renderings ? t('Первые места употребления') : t('Связанные стихи')}</h4>
           <div className="chips">
             {entry.refs.map((r) => {
               const p = parseOsisRef(r);
@@ -135,7 +136,7 @@ function StrongEntry({ num, entry, module, mapping, onOpenStrong, onOpenRef }) {
       )}
       <p className="source-note">
         {module.name}
-        {module.language === 'en' ? ' · статья на английском языке' : ''} · {module.license}
+        {module.language === 'en' ? ` · ${t('статья на английском языке')}` : ''} · {module.license}
       </p>
     </article>
   );
@@ -178,18 +179,18 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
   const subtitle = `${bookMeta(ref.book).short} ${ref.chapter}:${ref.verse}`;
 
   return (
-    <BottomSheet title={top ? `Статья ${top.num}` : `Слово: ${token.text}`} subtitle={subtitle} onClose={onClose} onBack={back} initial={payload.initial ?? 1}>
+    <BottomSheet title={top ? t('Статья {num}', { num: top.num }) : t('Слово: {word}', { word: token.text })} subtitle={subtitle} onClose={onClose} onBack={back} initial={payload.initial ?? 1}>
       {!res && (
         <div className="loading">
-          <Loader2 className="spin" size={20} /> Ищу в словарях…
+          <Loader2 className="spin" size={20} /> {t('Ищу в словарях…')}
         </div>
       )}
       {res && !top && (
         <div className="mapping">
           {mapping.mode === 'exact' && (
             <div className="map-line">
-              <span className="badge ok">Точная привязка</span>
-              <span className="muted">слово размечено в переводе:</span>
+              <span className="badge ok">{t('Точная привязка')}</span>
+              <span className="muted">{t('слово размечено в переводе:')}</span>
               {mapping.strongs.map((s) => (
                 <span key={s} className="mono strong-chip">
                   {s}
@@ -201,8 +202,7 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
             <div className="warn">
               <AlertTriangle size={16} />
               <span>
-                Перевод не размечен номерами Стронга. Варианты подобраны по симфонии RST+ — это приблизительное соответствие, одно русское слово может
-                передавать разные слова оригинала:{' '}
+                {t('Перевод не размечен номерами Стронга. Варианты подобраны по симфонии RST+ — это приблизительное соответствие, одно русское слово может передавать разные слова оригинала:')}{' '}
                 {mapping.strongs.map((s) => (
                   <span key={s} className="mono strong-chip">
                     {s} · {Math.round(mapping.weights[s] * 100)}%
@@ -214,7 +214,7 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
           {mapping.mode === 'none' && res.results.length === 0 && (
             <div className="warn">
               <AlertTriangle size={16} />
-              <span>Для этого слова нет привязки к оригиналу ни в переводе, ни в установленных симфониях.</span>
+              <span>{t('Для этого слова нет привязки к оригиналу ни в переводе, ни в установленных симфониях.')}</span>
             </div>
           )}
         </div>
@@ -223,14 +223,14 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
       {res && !current && !top && (
         <>
           {res.results.length === 0 ? (
-            <Empty icon={BookText} title="Статей не найдено">
-              {res.dictionaryCount === 0 ? 'Нет включённых словарей. ' : `Проверено словарей: ${res.dictionaryCount}. `}
+            <Empty icon={BookText} title={t('Статей не найдено')}>
+              {res.dictionaryCount === 0 ? `${t('Нет включённых словарей.')} ` : `${t('Проверено словарей: {n}.', { n: res.dictionaryCount })} `}
               <button className="link-inline" onClick={() => openSheet('library', pane, { tab: 'installed' })}>
-                Открыть библиотеку модулей
+                {t('Открыть библиотеку модулей')}
               </button>
             </Empty>
           ) : (
-            <ul className="dict-list" aria-label="Словари со статьями">
+            <ul className="dict-list" aria-label={t('Словари со статьями')}>
               {res.results.map((r) => (
                 <li key={r.module.id}>
                   <button className="dict-row" onClick={() => (setSelected(r.module.id), setEntryIdx(0))}>
@@ -239,10 +239,10 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
                       <span className="dict-name">{r.module.name}</span>
                       <span className="dict-desc">
                         {r.found.map((f) => f.entry.lemma || f.entry.word || f.key).join(' · ')}
-                        {r.found.some((f) => f.match === 'stem') ? ' · совпадение по основе слова' : ''}
+                        {r.found.some((f) => f.match === 'stem') ? ` · ${t('совпадение по основе слова')}` : ''}
                       </span>
                     </span>
-                    <span className="dict-count">{r.found.length > 1 ? `${r.found.length} статьи` : KIND_LABEL[r.module.dictionaryKind] || ''}</span>
+                    <span className="dict-count">{r.found.length > 1 ? t('{n} статьи', { n: r.found.length }) : KIND_LABEL[r.module.dictionaryKind] ? t(KIND_LABEL[r.module.dictionaryKind]) : ''}</span>
                   </button>
                 </li>
               ))}
@@ -254,7 +254,7 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
       {current && (
         <>
           {!top && view.results.length > 1 && (
-            <div className="tabs" role="tablist" aria-label="Словари">
+            <div className="tabs" role="tablist" aria-label={t('Словари')}>
               {view.results.map((r) => (
                 <button key={r.module.id} role="tab" aria-selected={r.module.id === current.module.id} className={r.module.id === current.module.id ? 'on' : ''} onClick={() => (setSelected(r.module.id), setEntryIdx(0))}>
                   {r.module.name}
@@ -263,7 +263,7 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
             </div>
           )}
           {current.found.length > 1 && (
-            <div className="tabs sub" role="tablist" aria-label="Статьи">
+            <div className="tabs sub" role="tablist" aria-label={t('Статьи')}>
               {current.found.map((f, i) => (
                 <button key={f.key} role="tab" aria-selected={i === entryIdx} className={i === entryIdx ? 'on' : ''} onClick={() => setEntryIdx(i)}>
                   {f.key}
@@ -279,7 +279,7 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
             return (
               <article className="entry">
                 <h3 className="entry-word">{f.entry.word || f.key}</h3>
-                {f.match === 'stem' && <p className="warn small">Найдено по основе слова «{token.text}» — проверьте, что это та же лексема.</p>}
+                {f.match === 'stem' && <p className="warn small">{t('Найдено по основе слова «{word}» — проверьте, что это та же лексема.', { word: token.text })}</p>}
                 {f.entry.original && <div className="orig">{f.entry.original}</div>}
                 <p className="prewrap">
                   <LinkedText text={f.entry.text || f.entry.definition} onOpen={openRef} />

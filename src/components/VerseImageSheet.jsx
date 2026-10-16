@@ -7,15 +7,16 @@ import { useApp } from '../App.jsx';
 import { Segmented } from './ui.jsx';
 import { selectionLabel, selectionText } from './SelectionBar.jsx';
 import { ensureFont } from '../core/settings.js';
+import { t, N_ } from '../core/i18n.js';
 
 // Цветные фоны — на случай, если фото не нужны или не загрузились
 const GRADIENTS = [
-  { id: 'g-dawn', title: 'Рассвет', stops: ['#3b2a4d', '#c0705a', '#f1c27d'], tone: 'dark' },
-  { id: 'g-sea', title: 'Море', stops: ['#0f2f45', '#1f6d86', '#7fb7c4'], tone: 'dark' },
-  { id: 'g-olive', title: 'Олива', stops: ['#2c3523', '#5d6b3c', '#a3a46b'], tone: 'dark' },
-  { id: 'g-night', title: 'Ночь', stops: ['#0b1020', '#1d2440', '#3b3f66'], tone: 'dark' },
-  { id: 'g-paper', title: 'Бумага', stops: ['#f6efe1', '#efe3c8', '#e5d3ad'], tone: 'paper' },
-  { id: 'g-stone', title: 'Камень', stops: ['#2b2a28', '#4a4741', '#6d675c'], tone: 'dark' },
+  { id: 'g-dawn', title: N_('Рассвет'), stops: ['#3b2a4d', '#c0705a', '#f1c27d'], tone: 'dark' },
+  { id: 'g-sea', title: N_('Море'), stops: ['#0f2f45', '#1f6d86', '#7fb7c4'], tone: 'dark' },
+  { id: 'g-olive', title: N_('Олива'), stops: ['#2c3523', '#5d6b3c', '#a3a46b'], tone: 'dark' },
+  { id: 'g-night', title: N_('Ночь'), stops: ['#0b1020', '#1d2440', '#3b3f66'], tone: 'dark' },
+  { id: 'g-paper', title: N_('Бумага'), stops: ['#f6efe1', '#efe3c8', '#e5d3ad'], tone: 'paper' },
+  { id: 'g-stone', title: N_('Камень'), stops: ['#2b2a28', '#4a4741', '#6d675c'], tone: 'dark' },
 ];
 const SIZES = { square: [1080, 1080], post: [1080, 1350], story: [1080, 1920] };
 
@@ -24,11 +25,11 @@ function wrap(ctx, text, width) {
   const lines = [];
   let line = '';
   for (const w of words) {
-    const t = line ? `${line} ${w}` : w;
-    if (ctx.measureText(t).width > width && line) {
+    const next = line ? `${line} ${w}` : w;
+    if (ctx.measureText(next).width > width && line) {
       lines.push(line);
       line = w;
-    } else line = t;
+    } else line = next;
   }
   if (line) lines.push(line);
   return lines;
@@ -187,8 +188,8 @@ export default function VerseImageSheet({ payload, onClose }) {
     draw(canvas.current, { bg: photo && imgFailed ? GRADIENTS[0] : bg, img: photo && !imgFailed ? img : null, text, ref, format, scale, pos });
     ready.current = null;
     const c = canvas.current;
-    const t = setTimeout(() => c.toBlob((b) => (ready.current = b), 'image/jpeg', 0.9), 150);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => c.toBlob((b) => (ready.current = b), 'image/jpeg', 0.9), 150);
+    return () => clearTimeout(timer);
   }, [text, bgId, img, imgFailed, format, scale, pos, fontsReady]);
 
   const blob = () => new Promise((res) => canvas.current.toBlob(res, 'image/jpeg', 0.9));
@@ -212,15 +213,15 @@ export default function VerseImageSheet({ payload, onClose }) {
     a.download = fileName;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 2000);
-    toast('Картинка сохранена');
+    toast(t('Картинка сохранена'));
   };
 
   return (
-    <BottomSheet title="Картинка со стихом" subtitle={ref} onClose={onClose} initial={2}>
+    <BottomSheet title={t('Картинка со стихом')} subtitle={ref} onClose={onClose} initial={2}>
       <div className={`vimg-preview ${format}`}>
-        {text == null || !bgId ? <Loader2 className="spin" /> : <canvas ref={canvas} aria-label={`Картинка: ${ref}. Двигайте текст пальцем, размер — двумя пальцами`} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} />}
+        {text == null || !bgId ? <Loader2 className="spin" /> : <canvas ref={canvas} aria-label={t('Картинка: {ref}. Двигайте текст пальцем, размер — двумя пальцами', { ref })} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} />}
       </div>
-      <div className="vimg-bgs" role="listbox" aria-label="Фон">
+      <div className="vimg-bgs" role="listbox" aria-label={t('Фон')}>
         {photos.map((p) => (
           <button key={p.id} className={`vimg-bg ${bgId === p.id ? 'on' : ''}`} onClick={() => setBgId(p.id)} title={p.title} aria-label={p.title} aria-selected={bgId === p.id}>
             <img src={`images/verse-bg/${p.thumb}`} alt="" loading="lazy" />
@@ -231,8 +232,8 @@ export default function VerseImageSheet({ payload, onClose }) {
             key={g.id}
             className={`vimg-bg ${bgId === g.id ? 'on' : ''}`}
             onClick={() => setBgId(g.id)}
-            title={g.title}
-            aria-label={g.title}
+            title={t(g.title)}
+            aria-label={t(g.title)}
             aria-selected={bgId === g.id}
             style={{ background: `linear-gradient(160deg, ${g.stops.join(', ')})` }}
           />
@@ -243,37 +244,37 @@ export default function VerseImageSheet({ payload, onClose }) {
         value={format}
         onChange={setFormat}
         options={[
-          ['square', 'Квадрат'],
-          ['post', 'Пост'],
-          ['story', 'История'],
+          ['square', t('Квадрат')],
+          ['post', t('Пост')],
+          ['story', t('История@@формат картинки: вертикальная, для «историй» в соцсетях')],
         ]}
       />
-      <p className="vimg-tip">Текст можно передвинуть пальцем, а размер изменить двумя пальцами.</p>
+      <p className="vimg-tip">{t('Текст можно передвинуть пальцем, а размер изменить двумя пальцами.')}</p>
       <div className="vimg-size">
-        <span className="field-label">Размер текста</span>
+        <span className="field-label">{t('Размер текста')}</span>
         {(scale !== 1 || pos.x || pos.y) && (
           <button className="link-btn" onClick={() => (setScale(1), setPos({ x: 0, y: 0 }))}>
-            как было
+            {t('как было')}
           </button>
         )}
-        <button className="icon-btn" onClick={() => setScale((v) => Math.max(0.4, +(v - 0.1).toFixed(2)))} aria-label="Мельче">
+        <button className="icon-btn" onClick={() => setScale((v) => Math.max(0.4, +(v - 0.1).toFixed(2)))} aria-label={t('Мельче')}>
           <Minus size={18} />
         </button>
-        <button className="icon-btn" onClick={() => setScale((v) => Math.min(2.2, +(v + 0.1).toFixed(2)))} aria-label="Крупнее">
+        <button className="icon-btn" onClick={() => setScale((v) => Math.min(2.2, +(v + 0.1).toFixed(2)))} aria-label={t('Крупнее')}>
           <Plus size={18} />
         </button>
       </div>
       <div className="pref-btns">
         <button className="btn primary" onClick={share} disabled={text == null}>
-          <Share2 size={17} /> Поделиться
+          <Share2 size={17} /> {t('Поделиться')}
         </button>
         <button className="btn" onClick={() => save()} disabled={text == null}>
-          <Download size={17} /> Сохранить
+          <Download size={17} /> {t('Сохранить')}
         </button>
       </div>
       {photo && (
         <p className="vimg-credit">
-          Фото: {photo.title}
+          {t('Фото: {title}', { title: photo.title })}
           {photo.author ? ` — ${photo.author}` : ''} ({photo.license})
         </p>
       )}

@@ -2,16 +2,17 @@
 // Чтение дня — список глав «Книга.Глава» или «Книга.Глава-Глава».
 import { listModules } from './modules.js';
 import { bookMeta, BOOKS } from './books.js';
+import { t, N_ } from './i18n.js';
 
 export async function fetchPlanIndex() {
   const res = await fetch('plans/index.json', { cache: 'no-cache' });
-  if (!res.ok) throw new Error('Список планов недоступен');
+  if (!res.ok) throw new Error(t('Список планов недоступен'));
   return (await res.json()).plans || [];
 }
 
 export async function fetchPlan(file) {
   const res = await fetch(`plans/${file}`, { cache: 'no-cache' });
-  if (!res.ok) throw new Error('План не загрузился');
+  if (!res.ok) throw new Error(t('План не загрузился'));
   return res.json();
 }
 
@@ -38,11 +39,11 @@ export async function makeCustomPlan(bookIds, days) {
 }
 
 export const SCOPES = {
-  all: { label: 'Вся Библия', books: () => BOOKS.filter((b) => !b.dc).map((b) => b.id) },
-  ot: { label: 'Ветхий Завет', books: () => BOOKS.filter((b) => b.t === 'OT' && !b.dc).map((b) => b.id) },
-  nt: { label: 'Новый Завет', books: () => BOOKS.filter((b) => b.t === 'NT').map((b) => b.id) },
-  gospels: { label: 'Евангелия', books: () => ['Matt', 'Mark', 'Luke', 'John'] },
-  ps: { label: 'Псалтирь', books: () => ['Ps'] },
+  all: { label: N_('Вся Библия'), books: () => BOOKS.filter((b) => !b.dc).map((b) => b.id) },
+  ot: { label: N_('Ветхий Завет'), books: () => BOOKS.filter((b) => b.t === 'OT' && !b.dc).map((b) => b.id) },
+  nt: { label: N_('Новый Завет'), books: () => BOOKS.filter((b) => b.t === 'NT').map((b) => b.id) },
+  gospels: { label: N_('Евангелия'), books: () => ['Matt', 'Mark', 'Luke', 'John'] },
+  ps: { label: N_('Псалтирь'), books: () => ['Ps'] },
 };
 
 // «Gen.1» — глава; «Ps.9.1-21» — стихи главы; «Zech.13.1» — стих; «Ps.119-120» — главы

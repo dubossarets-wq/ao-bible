@@ -10,6 +10,7 @@ import { X, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { useTour, stopTour, goStep } from '../core/tour.js';
 import { TOURS } from './tours.js';
+import { t } from '../core/i18n.js';
 
 const PAD = 6;
 const GAP = 14;
@@ -17,10 +18,10 @@ const stop = (e) => e.stopPropagation();
 const ease = (from, to, k) => (from == null || Math.abs(to - from) < 0.5 ? to : from + (to - from) * k);
 
 export default function TourOverlay() {
-  const t = useTour();
+  const ts = useTour();
   const app = useApp();
-  const tour = TOURS.find((x) => x.id === t.id);
-  const step = tour?.steps[t.step];
+  const tour = TOURS.find((x) => x.id === ts.id);
+  const step = tour?.steps[ts.step];
   const [ctrlTop, setCtrlTop] = useState(false);
   const moving = useRef(false);
   const els = useRef({});
@@ -39,33 +40,33 @@ export default function TourOverlay() {
 
   // Какой шаг сейчас на экране — чтобы запоздалое «шаг сделан» не перескочило через следующий шаг
   const stepKey = useRef('');
-  stepKey.current = `${t.id}:${t.step}`;
+  stepKey.current = `${ts.id}:${ts.step}`;
   const advance = (doAction, key = stepKey.current) => {
     if (!step || moving.current || key !== stepKey.current) return;
     moving.current = true;
     if (doAction && step.next && !step.until?.()) step.next(apiRef.current);
     setTimeout(() => {
       moving.current = false;
-      if (t.step + 1 >= tour.steps.length) stopTour();
-      else goStep(t.step + 1);
+      if (ts.step + 1 >= tour.steps.length) stopTour();
+      else goStep(ts.step + 1);
     }, doAction && step.next ? 350 : 0);
   };
   const advanceRef = useRef(advance);
   advanceRef.current = advance;
-  const back = () => t.step > 0 && goStep(t.step - 1);
+  const back = () => ts.step > 0 && goStep(ts.step - 1);
 
   // Вход в шаг: в начале урока — чистый экран, затем подготовка шага
   useEffect(() => {
     if (!step) return;
     moving.current = false;
-    if (t.step === 0) apiRef.current.reset();
-    const tm = setTimeout(() => step.before?.(apiRef.current), t.step === 0 ? 250 : 80);
+    if (ts.step === 0) apiRef.current.reset();
+    const tm = setTimeout(() => step.before?.(apiRef.current), ts.step === 0 ? 250 : 80);
     return () => clearTimeout(tm);
-  }, [t.id, t.step]);
+  }, [ts.id, ts.step]);
 
   useEffect(() => {
     if (!step) return;
-    const myKey = `${t.id}:${t.step}`;
+    const myKey = `${ts.id}:${ts.step}`;
     // Шаг «выполнен», когда условие стало верным после того, как было неверным (то, что уже было до шага, не в счёт)
     let armed = !step.until?.();
     let scrolled = false;
@@ -151,7 +152,7 @@ export default function TourOverlay() {
       cancelAnimationFrame(raf);
       document.removeEventListener('click', onClick, true);
     };
-  }, [t.id, t.step]);
+  }, [ts.id, ts.step]);
 
   // Урок закончился — в следующий раз подсветка начнётся с нуля
   useEffect(() => {
@@ -159,12 +160,12 @@ export default function TourOverlay() {
   }, [tour]);
 
   if (!step) return null;
-  const last = t.step === tour.steps.length - 1;
+  const last = ts.step === tour.steps.length - 1;
   const reg = (k) => (el) => (els.current[k] = el);
   const dim = (k, style) => <div ref={reg(k)} className="tour-dim" style={style} />;
 
   return createPortal(
-    <div className="tour" role="dialog" aria-label={`Инструкция: ${tour.title}`}>
+    <div className="tour" role="dialog" aria-label={t('Инструкция: {title}', { title: t(tour.title) })}>
       {dim('dt', { left: 0, top: 0, right: 0 })}
       {dim('db', { left: 0, right: 0, bottom: 0 })}
       {dim('dl', { left: 0 })}
@@ -173,33 +174,33 @@ export default function TourOverlay() {
       <div ref={reg('bubble')} className="tour-bubble" onPointerDown={stop}>
         <i ref={reg('arrow')} className="tour-arrow" />
         <div className="tour-head">
-          {tour.title} · шаг {t.step + 1} из {tour.steps.length}
+          {t('{title} · шаг {n} из {total}', { title: t(tour.title), n: ts.step + 1, total: tour.steps.length })}
         </div>
-        <p className="tour-text">{step.text}</p>
+        <p className="tour-text">{t(step.text)}</p>
       </div>
       <div ref={reg('ctrl')} className={`tour-ctrl ${ctrlTop ? 'top' : 'bottom'}`} onPointerDown={stop}>
         <div className="tour-dots" aria-hidden="true">
           {tour.steps.map((_, i) => (
-            <i key={i} className={i === t.step ? 'on' : i < t.step ? 'done' : ''} />
+            <i key={i} className={i === ts.step ? 'on' : i < ts.step ? 'done' : ''} />
           ))}
-          <button className="icon-btn tour-close" onClick={() => (apiRef.current.reset(), stopTour())} aria-label="Закончить инструкцию">
+          <button className="icon-btn tour-close" onClick={() => (apiRef.current.reset(), stopTour())} aria-label={t('Закончить инструкцию')}>
             <X size={20} />
           </button>
         </div>
         <div className="tour-btns">
-          {t.step > 0 && (
+          {ts.step > 0 && (
             <button className="btn" onClick={back}>
-              <ChevronLeft size={18} /> Назад
+              <ChevronLeft size={18} /> {t('Назад')}
             </button>
           )}
           <button className="btn primary" onClick={() => (last ? (apiRef.current.reset(), stopTour()) : advance(true))}>
             {last ? (
               <>
-                <Check size={18} /> Понятно
+                <Check size={18} /> {t('Понятно')}
               </>
             ) : (
               <>
-                Далее <ChevronRight size={18} />
+                {t('Далее')} <ChevronRight size={18} />
               </>
             )}
           </button>

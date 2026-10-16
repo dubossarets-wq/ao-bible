@@ -4,6 +4,7 @@
 import { useSyncExternalStore } from 'react';
 import { load, save } from './storage.js';
 import { bookMeta } from './books.js';
+import { t } from './i18n.js';
 
 const read = () => {
   const v = load('sermons', []);
@@ -28,7 +29,7 @@ export const useSermons = () => useSyncExternalStore(subscribe, getSermons);
 const touch = (id, fn) => setSermons((list) => list.map((s) => (s.id === id ? { ...fn(s), updatedAt: Date.now() } : s)));
 
 export function createSermon(title) {
-  const s = { id: uid(), title: title.trim() || 'Новая проповедь', date: '', blocks: [], createdAt: Date.now(), updatedAt: Date.now() };
+  const s = { id: uid(), title: title.trim() || t('Новая проповедь'), date: '', blocks: [], createdAt: Date.now(), updatedAt: Date.now() };
   setSermons((list) => [s, ...list]);
   return s.id;
 }

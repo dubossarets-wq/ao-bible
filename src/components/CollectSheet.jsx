@@ -4,6 +4,7 @@ import { FolderPlus, Folder, Check } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { selectionLabel, selectionText } from './SelectionBar.jsx';
+import { t } from '../core/i18n.js';
 
 export default function CollectSheet({ payload, onClose }) {
   const { collections, addToCollection, toast } = useApp();
@@ -18,13 +19,13 @@ export default function CollectSheet({ payload, onClose }) {
   const add = (id, newName) => {
     if (!items) return;
     addToCollection(id, items, newName);
-    toast(`Добавлено в подборку «${newName || collections.find((c) => c.id === id)?.name}»`);
+    toast(t('Добавлено в подборку «{name}»', { name: newName || collections.find((c) => c.id === id)?.name }));
     onClose();
   };
   const has = (c) => refs.every((r) => c.items.some((x) => x.book === r.book && x.chapter === r.chapter && x.verse === r.verse));
 
   return (
-    <BottomSheet title="В подборку" subtitle={selectionLabel(refs, true)} onClose={onClose} initial={0}>
+    <BottomSheet title={t('В подборку')} subtitle={selectionLabel(refs, true)} onClose={onClose} initial={0}>
       <form
         className="ref-form"
         onSubmit={(e) => {
@@ -33,10 +34,10 @@ export default function CollectSheet({ payload, onClose }) {
         }}
       >
         <label htmlFor="collection-name" className="sr-only">
-          Название новой подборки
+          {t('Название новой подборки')}
         </label>
-        <input id="collection-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Новая подборка: «К уроку», «Утешение»…" autoComplete="off" />
-        <button className="btn primary" type="submit" disabled={!name.trim() || !items} aria-label="Создать подборку">
+        <input id="collection-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('Новая подборка: «К уроку», «Утешение»…')} autoComplete="off" />
+        <button className="btn primary" type="submit" disabled={!name.trim() || !items} aria-label={t('Создать подборку')}>
           <FolderPlus size={18} />
         </button>
       </form>
@@ -47,7 +48,7 @@ export default function CollectSheet({ payload, onClose }) {
               <button className="list-main" onClick={() => add(c.id)} disabled={!items}>
                 <Folder size={16} className="accent" />
                 <span className="list-title">{c.name}</span>
-                <span className="list-meta">{has(c) ? <Check size={15} /> : `${c.items.length} ст.`}</span>
+                <span className="list-meta">{has(c) ? <Check size={15} /> : t('{n} ст.', { n: c.items.length })}</span>
               </button>
             </li>
           ))}

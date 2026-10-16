@@ -14,6 +14,7 @@ import { useSermons } from './core/sermons.js';
 import { useUpdates, applyUpdate } from './core/updates.js';
 import { IS_STAGING } from './core/channel.js';
 import { Toasts } from './components/ui.jsx';
+import { t, useLang } from './core/i18n.js';
 
 const AppCtx = createContext(null);
 export const useApp = () => useContext(AppCtx);
@@ -44,6 +45,7 @@ function usePrefersDark() {
 }
 
 export default function App() {
+  useLang(); // смена языка перерисовывает всё приложение
   const [settings, setSettings] = usePersistentState('settings', DEFAULT_SETTINGS, migrateSettings);
   const fullSettings = useMemo(() => ({ ...DEFAULT_SETTINGS, ...settings, colors: { ...DEFAULT_SETTINGS.colors, ...settings.colors }, menu: { ...DEFAULT_SETTINGS.menu, ...settings.menu } }), [settings]);
   const prefersDark = usePrefersDark();
@@ -88,9 +90,9 @@ export default function App() {
   useEffect(() => {
     if (!updates.available || !(updates.auto || updates.forced) || sheet) return;
     if (!updates.forced && audioState().active && audioState().playing) return; // дослушают — обновимся при следующей проверке
-    toast(updates.forced ? 'Экстренное обновление…' : 'Обновляюсь до новой версии…');
-    const t = setTimeout(() => applyUpdate(), 600);
-    return () => clearTimeout(t);
+    toast(updates.forced ? t('Экстренное обновление…') : t('Обновляюсь до новой версии…'));
+    const timer = setTimeout(() => applyUpdate(), 600);
+    return () => clearTimeout(timer);
   }, [updates.available, updates.auto, updates.forced, sheet]);
 
   // О каждой новой версии сообщаем один раз; дальше — только точка на ⋮
@@ -98,7 +100,7 @@ export default function App() {
     if (!updates.available || !updates.latest || updates.auto || updates.forced) return;
     if (load('notifiedBuild', null) === updates.latest) return;
     save('notifiedBuild', updates.latest);
-    toast('Доступна новая версия — меню ⋮ → «Обновить приложение»');
+    toast(t('Доступна новая версия — меню ⋮ → «Обновить приложение»'));
   }, [updates.available, updates.latest, toast]);
 
   // Один раз доустанавливаем новые базовые модули (например, «Места» для карты) у прежних пользователей
@@ -115,7 +117,7 @@ export default function App() {
           const entry = cat.find((c) => c.id === id);
           if (!entry) continue;
           await repo.installFromCatalog(entry);
-          toast(`Установлен модуль «${entry.name}»: нажмите на название города в стихе, чтобы увидеть его на карте`);
+          toast(t('Установлен модуль «{name}»: нажмите на название города в стихе, чтобы увидеть его на карте', { name: entry.name }));
         }
       })
       .catch(() => save('lateStarter', done));
@@ -134,7 +136,7 @@ export default function App() {
   }, []);
   // Память браузера переполнена — предупреждаем: иначе правки молча не сохранились бы
   useEffect(() => {
-    const full = () => toast('Память приложения заполнена — последние изменения могут не сохраниться. Сохраните данные в файл: Настройки → «Мои данные».', 'error');
+    const full = () => toast(t('Память приложения заполнена — последние изменения могут не сохраниться. Сохраните данные в файл: Настройки → «Мои данные».'), 'error');
     window.addEventListener('aob-storage-full', full);
     return () => window.removeEventListener('aob-storage-full', full);
   }, [toast]);
@@ -171,7 +173,7 @@ export default function App() {
         // Одно сообщение на все подключённые записи
         if (added.length) {
           const names = [...new Set(added.map((e) => bibles.find((b) => fitsTranslation(e.translation, b.id))?.name).filter(Boolean))];
-          toast(`Подключены аудиокниги${names.length ? ` к переводу ${names.join(', ')}` : ''} — нажмите 🎧 внизу, чтобы слушать`);
+          toast(names.length ? t('Подключены аудиокниги к переводу {names} — нажмите 🎧 внизу, чтобы слушать', { names: names.join(', ') }) : t('Подключены аудиокниги — нажмите 🎧 внизу, чтобы слушать'));
         }
       })
       .catch(() => {});
@@ -290,7 +292,7 @@ export default function App() {
     const mod = bibles.find((b) => b.id === moduleId);
     if (!mod) return;
     if (!mod.books.some((b) => b.id === ref.book)) {
-      toast(`В переводе ${mod.name} нет книги «${bookMeta(ref.book).name}»`, 'error');
+      toast(t('В переводе {module} нет книги «{book}»', { module: mod.name, book: bookMeta(ref.book).name }), 'error');
       return;
     }
     const clean = { book: ref.book, chapter: ref.chapter, verse: ref.verse };
@@ -314,20 +316,20 @@ export default function App() {
   const toggleBookmark = useEvent((ref, text) => {
     if (isBookmarked(ref)) {
       setBookmarks((bs) => bs.filter((b) => !(b.book === ref.book && b.chapter === ref.chapter && b.verse === ref.verse)));
-      toast('Закладка удалена');
+      toast(t('Закладка удалена'));
     } else {
       setBookmarks((bs) => [{ book: ref.book, chapter: ref.chapter, verse: ref.verse, text: text || '', at: Date.now() }, ...bs]);
-      toast(`Закладка: ${bookMeta(ref.book).short} ${ref.chapter}:${ref.verse}`);
+      toast(t('Закладка: {ref}', { ref: `${bookMeta(ref.book).short} ${ref.chapter}:${ref.verse}` }));
     }
   });
   const isFavorite = (ref) => favorites.some((b) => b.book === ref.book && b.chapter === ref.chapter && b.verse === ref.verse);
   const toggleFavorite = useEvent((ref, text) => {
     if (isFavorite(ref)) {
       setFavorites((fs) => fs.filter((b) => !(b.book === ref.book && b.chapter === ref.chapter && b.verse === ref.verse)));
-      toast('Убрано из любимых стихов');
+      toast(t('Убрано из любимых стихов'));
     } else {
       setFavorites((fs) => [{ ...ref, text, at: Date.now() }, ...fs]);
-      toast('♥ Добавлено в любимые стихи');
+      toast(t('♥ Добавлено в любимые стихи'));
     }
   });
 
@@ -386,7 +388,7 @@ export default function App() {
       let id = collectionId;
       if (!id) {
         id = Date.now().toString(36);
-        list = [{ id, name: newName || 'Подборка', at: Date.now(), items: [] }, ...cs];
+        list = [{ id, name: newName || t('Подборка'), at: Date.now(), items: [] }, ...cs];
       }
       return list.map((c) => {
         if (c.id !== id) return c;
@@ -459,8 +461,8 @@ export default function App() {
         <TourOverlay />
         <Toasts items={toasts} />
         {IS_STAGING && (
-          <div className="staging-badge" aria-label="Тестовое приложение">
-            ТЕСТ
+          <div className="staging-badge" aria-label={t('Тестовое приложение')}>
+            {t('ТЕСТ')}
           </div>
         )}
       </div>

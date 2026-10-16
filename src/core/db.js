@@ -2,6 +2,7 @@
 // запрет сайта, превью), работает в памяти — приложение остаётся рабочим до перезагрузки.
 
 import { DB_NAME } from './channel.js';
+import { t } from './i18n.js';
 const DB_VERSION = 1;
 export const STORES = {
   modules: 'modules', // метаданные модулей (keyPath: id)
@@ -113,6 +114,6 @@ function txDone(tx) {
   return new Promise((resolve, reject) => {
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error || new Error('Транзакция прервана'));
+    tx.onabort = () => reject(tx.error || new Error(t('Транзакция прервана')));
   });
 }

@@ -3,6 +3,7 @@
 import { load, save } from './storage.js';
 import * as db from './db.js';
 import { normalize, bytesToJson, ModuleError } from './schema.js';
+import { t } from './i18n.js';
 
 const bookCache = new Map(); // `${moduleId}|${bookId}` -> { chapters, headings, xrefs }
 const payloadCache = new Map(); // moduleId -> Promise<payload>
@@ -70,17 +71,17 @@ export async function installNormalized({ meta, data }, { origin = 'file', catal
     // Пишем пачками, чтобы показывать прогресс и не блокировать интерфейс.
     for (let i = 0; i < items.length; i += 8) {
       await db.putMany(db.STORES.bookdata, items.slice(i, i + 8));
-      onProgress?.(Math.min(1, (i + 8) / items.length), `Сохранение книг: ${Math.min(items.length, i + 8)} из ${items.length}`);
+      onProgress?.(Math.min(1, (i + 8) / items.length), t('Сохранение книг: {done} из {total}', { done: Math.min(items.length, i + 8), total: items.length }));
     }
   } else {
-    onProgress?.(0.5, 'Сохранение…');
+    onProgress?.(0.5, t('Сохранение…'));
     await db.put(db.STORES.payload, data, meta.id);
   }
   await db.put(db.STORES.modules, record);
   // Текущий список, а не копия на начало установки — иначе одновременные установки затирают друг друга
   modulesCache = [...(await listModules()).filter((m) => m.id !== meta.id), record];
   emit();
-  onProgress?.(1, 'Готово');
+  onProgress?.(1, t('Готово'));
   return record;
 }
 
@@ -143,11 +144,10 @@ async function fetchWithProgress(url, onProgress, expected) {
     res = await fetch(url, { cache: 'no-cache' });
   } catch (e) {
     throw new ModuleError(
-      `Не удалось подключиться к ${url}. Возможно, адрес недоступен или браузер заблокировал запрос ` +
-        `(внутри Claude Artifact разрешены только файлы, опубликованные вместе с приложением).`
+      t('Не удалось подключиться к {url}. Возможно, адрес недоступен или браузер заблокировал запрос (внутри Claude Artifact разрешены только файлы, опубликованные вместе с приложением).', { url })
     );
   }
-  if (!res.ok) throw new ModuleError(`Сервер ответил ошибкой ${res.status} для ${url}.`);
+  if (!res.ok) throw new ModuleError(t('Сервер ответил ошибкой {status} для {url}.', { status: res.status, url }));
   const total = +res.headers.get('content-length') || expected || 0;
   if (!res.body || !res.body.getReader) return res.arrayBuffer();
   const reader = res.body.getReader();
@@ -158,7 +158,7 @@ async function fetchWithProgress(url, onProgress, expected) {
     if (done) break;
     chunks.push(value);
     loaded += value.length;
-    onProgress?.(total ? Math.min(0.99, loaded / total) : 0, `Загрузка: ${(loaded / 1048576).toFixed(1)} МБ${total ? ` из ${(total / 1048576).toFixed(1)}` : ''}`);
+    onProgress?.(total ? Math.min(0.99, loaded / total) : 0, total ? t('Загрузка: {done} МБ из {total}', { done: (loaded / 1048576).toFixed(1), total: (total / 1048576).toFixed(1) }) : t('Загрузка: {done} МБ', { done: (loaded / 1048576).toFixed(1) }));
   }
   const out = new Uint8Array(loaded);
   let o = 0;
@@ -172,7 +172,7 @@ async function fetchWithProgress(url, onProgress, expected) {
 export async function fetchCatalog(url = CATALOG_URL) {
   const buf = await fetchWithProgress(url);
   const json = await bytesToJson(buf);
-  if (json?.format !== 'aob-catalog' || !Array.isArray(json.modules)) throw new ModuleError('По этому адресу нет каталога в формате aob-catalog.');
+  if (json?.format !== 'aob-catalog' || !Array.isArray(json.modules)) throw new ModuleError(t('По этому адресу нет каталога в формате aob-catalog.'));
   const base = new URL(url, location.href);
   return json.modules.map((m) => ({
     ...m,
@@ -182,7 +182,7 @@ export async function fetchCatalog(url = CATALOG_URL) {
 }
 
 export async function installFromCatalog(entry, onProgress) {
-  if (entry.unavailable || !entry.url) throw new ModuleError('Этот модуль пока недоступен для загрузки.');
+  if (entry.unavailable || !entry.url) throw new ModuleError(t('Этот модуль пока недоступен для загрузки.'));
   const useGz = entry.urlGz && typeof DecompressionStream !== 'undefined';
   const buf = await fetchWithProgress(useGz ? entry.urlGz : entry.url, (p, l) => onProgress?.(p * 0.6, l), useGz ? entry.sizeGz : entry.size);
   const json = await bytesToJson(buf, (l) => onProgress?.(0.65, l));
@@ -200,13 +200,13 @@ export async function installFromCatalog(entry, onProgress) {
 export async function importFile(file, onProgress) {
   const buf = await new Promise((resolve, reject) => {
     const r = new FileReader();
-    r.onprogress = (e) => e.lengthComputable && onProgress?.((e.loaded / e.total) * 0.3, `Чтение файла: ${Math.round((e.loaded / e.total) * 100)}%`);
+    r.onprogress = (e) => e.lengthComputable && onProgress?.((e.loaded / e.total) * 0.3, t('Чтение файла: {pct}%', { pct: Math.round((e.loaded / e.total) * 100) }));
     r.onload = () => resolve(r.result);
-    r.onerror = () => reject(new ModuleError(`Не удалось прочитать файл: ${r.error?.message || 'ошибка чтения'}`));
+    r.onerror = () => reject(new ModuleError(t('Не удалось прочитать файл: {error}', { error: r.error?.message || t('ошибка чтения') })));
     r.readAsArrayBuffer(file);
   });
   const json = await bytesToJson(buf, (l) => onProgress?.(0.35, l));
-  onProgress?.(0.45, 'Проверка структуры…');
+  onProgress?.(0.45, t('Проверка структуры…'));
   await new Promise((r) => setTimeout(r, 0));
   const norm = normalize(json, { fileName: file.name });
   norm.meta.size = file.size;

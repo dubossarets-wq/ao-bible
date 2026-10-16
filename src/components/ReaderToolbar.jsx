@@ -9,6 +9,7 @@ import { plainText } from '../core/verseMarkup.js';
 import { RefreshCw, Map as MapIcon, PlayCircle, Link2, Headphones, BookOpenText, CalendarCheck } from 'lucide-react';
 import { IS_PWA_BUILD, applyUpdate } from '../core/updates.js';
 import { useLivePosition } from '../core/livePosition.js';
+import { t } from '../core/i18n.js';
 
 // Стрелки «←…» и «→…» как на скриншоте: стрелка с многоточием (история переходов)
 function HistoryArrow({ dir }) {
@@ -72,30 +73,30 @@ export default function ReaderToolbar({ index, pane, module }) {
   return (
     <header className="toolbar topbar">
       {/* Перевод — «таблетка» слева, место — по центру; действия — круглые кнопки справа */}
-      <button className="tb tb-module" onClick={() => openSheet('modules', index)} aria-label={`Перевод: ${module?.name}. Сменить перевод`}>
+      <button className="tb tb-module" onClick={() => openSheet('modules', index)} aria-label={t('Перевод: {name}. Сменить перевод', { name: module?.name })}>
         <span className="tb-module-name">{module?.name || '—'}</span>
         <ChevronDown size={14} className="tb-chev" />
       </button>
-      <button className="tb tb-ref" onClick={() => openSheet('nav', index)} aria-label={`${bookMeta(ref.book).name} ${ref.chapter}:${ref.verse}. Выбрать место`}>
+      <button className="tb tb-ref" onClick={() => openSheet('nav', index)} aria-label={t('{ref}. Выбрать место', { ref: `${bookMeta(ref.book).name} ${ref.chapter}:${ref.verse}` })}>
         <span className="tb-ref-text">{label}</span>
         <ChevronDown size={16} className="tb-chev" />
       </button>
-      <button className="tb tb-icon tb-hist" onClick={() => go(index, -1)} disabled={pane.hIndex <= 0} aria-label="Назад по истории" title="Назад">
+      <button className="tb tb-icon tb-hist" onClick={() => go(index, -1)} disabled={pane.hIndex <= 0} aria-label={t('Назад по истории')} title={t('Назад')}>
         <ArrowLeft size={21} />
       </button>
       {pane.hIndex < pane.history.length - 1 && (
-        <button className="tb tb-icon tb-hist" onClick={() => go(index, 1)} aria-label="Вперёд по истории" title="Вперёд">
+        <button className="tb tb-icon tb-hist" onClick={() => go(index, 1)} aria-label={t('Вперёд по истории')} title={t('Вперёд')}>
           <ArrowRight size={21} />
         </button>
       )}
-      <button className="tb tb-icon" onClick={() => openSheet('search', index)} aria-label="Поиск" title="Поиск">
+      <button className="tb tb-icon" onClick={() => openSheet('search', index)} aria-label={t('Поиск')} title={t('Поиск')}>
         <Search size={21} />
       </button>
       <button
         className={`tb tb-icon tb-split ${split ? 'on' : ''}`}
         onClick={() => (split ? closeSplit() : openSplit())}
-        aria-label={split ? 'Закрыть вторую панель' : 'Разделить экран'}
-        title={split ? 'Закрыть вторую панель' : 'Разделить экран'}
+        aria-label={split ? t('Закрыть вторую панель') : t('Разделить экран')}
+        title={split ? t('Закрыть вторую панель') : t('Разделить экран')}
       >
         {split ? <X size={21} /> : <Columns2 size={21} />}
       </button>
@@ -105,14 +106,14 @@ export default function ReaderToolbar({ index, pane, module }) {
           onClick={() => setMenu((m) => !m)}
           aria-haspopup="menu"
           aria-expanded={menu}
-          aria-label={updates.available ? 'Ещё. Доступно обновление' : 'Ещё'}
+          aria-label={updates.available ? t('Ещё. Доступно обновление') : t('Ещё')}
         >
           <MoreVertical size={22} />
           {updates.available && <span className="update-dot" aria-hidden="true" />}
         </button>
         {menu && (
           <div className="menu" role="menu">
-            {item(isBookmarked(ref) ? BookmarkCheck : Bookmark, isBookmarked(ref) ? 'Убрать закладку' : 'Закладка на это место', async () => {
+            {item(isBookmarked(ref) ? BookmarkCheck : Bookmark, isBookmarked(ref) ? t('Убрать закладку') : t('Закладка на это место'), async () => {
               const v = isBookmarked(ref) ? null : await getVerse(module.id, ref);
               toggleBookmark(ref, v ? plainText(v).slice(0, 160) : '');
             })}
@@ -128,7 +129,7 @@ export default function ReaderToolbar({ index, pane, module }) {
               >
                 <PlayCircle size={18} />
                 <span className="menu-2">
-                  <span>К последней закладке</span>
+                  <span>{t('К последней закладке')}</span>
                   <span className="menu-2-sub">
                     {bookMeta(bookmarks[0].book).short} {bookmarks[0].chapter}:{bookmarks[0].verse}
                     {bookmarks[0].text ? ` · ${bookmarks[0].text}` : ''}
@@ -136,35 +137,35 @@ export default function ReaderToolbar({ index, pane, module }) {
                 </span>
               </button>
             )}
-            {item(Heart, 'Закладки, заметки, любимые стихи', () => openSheet('bookmarks', index))}
-            {m.sermons && item(ScrollText, 'Проповеди', () => openSheet('sermons', index))}
-            {m.plans && item(CalendarCheck, 'Планы чтения', () => openSheet('plans', index))}
-            {m.listen && item(Headphones, 'Слушать с этого места', () => listenFrom(index, module.id, ref))}
-            {m.maps && modules.some((x) => x.type === 'maps') && item(MapIcon, 'Карты', () => openSheet('maps', index))}
+            {item(Heart, t('Закладки, заметки, любимые стихи'), () => openSheet('bookmarks', index))}
+            {m.sermons && item(ScrollText, t('Проповеди'), () => openSheet('sermons', index))}
+            {m.plans && item(CalendarCheck, t('Планы чтения'), () => openSheet('plans', index))}
+            {m.listen && item(Headphones, t('Слушать с этого места'), () => listenFrom(index, module.id, ref))}
+            {m.maps && modules.some((x) => x.type === 'maps') && item(MapIcon, t('Карты'), () => openSheet('maps', index))}
             {/* Переключатели, которые человек сам вынес в меню (Настройки → «Меню ⋮») */}
             {(m.focus || m.book || (m.split && split)) && <div className="menu-sep" />}
-            {m.focus && item(settings.focusMode ? EyeOff : Eye, 'Режим чтения', () => setSettings({ focusMode: !settings.focusMode }), settings.focusMode ? 'вкл' : 'выкл')}
-            {m.book && item(BookOpenText, 'Как книга', () => setSettings({ bookMode: !settings.bookMode, continuousVerses: false }), settings.bookMode ? 'вкл' : 'выкл')}
+            {m.focus && item(settings.focusMode ? EyeOff : Eye, t('Режим чтения'), () => setSettings({ focusMode: !settings.focusMode }), settings.focusMode ? t('вкл') : t('выкл'))}
+            {m.book && item(BookOpenText, t('Как книга'), () => setSettings({ bookMode: !settings.bookMode, continuousVerses: false }), settings.bookMode ? t('вкл') : t('выкл'))}
             {m.split &&
               split &&
               panes[1]?.kind !== 'map' &&
-              item(Link2, 'Синхронная прокрутка', () => setSettings({ syncScroll: !settings.syncScroll }), settings.syncScroll ? 'вкл' : 'выкл')}
+              item(Link2, t('Синхронная прокрутка'), () => setSettings({ syncScroll: !settings.syncScroll }), settings.syncScroll ? t('вкл') : t('выкл'))}
             {m.split &&
               split &&
-              item(settings.splitLayout === 'rows' ? Columns2 : Rows2, settings.splitLayout === 'rows' ? 'Панели рядом' : 'Панели друг над другом', () =>
+              item(settings.splitLayout === 'rows' ? Columns2 : Rows2, settings.splitLayout === 'rows' ? t('Панели рядом') : t('Панели друг над другом'), () =>
                 setSettings({ splitLayout: settings.splitLayout === 'rows' ? 'columns' : 'rows' })
               )}
             <div className="menu-sep" />
             {IS_PWA_BUILD && updates.available && (
               <button role="menuitem" className="menu-item update-item" onClick={() => applyUpdate()}>
                 <RefreshCw size={18} />
-                <span>Обновить приложение</span>
-                <span className="menu-extra badge-new">новая версия</span>
+                <span>{t('Обновить приложение')}</span>
+                <span className="menu-extra badge-new">{t('новая версия')}</span>
               </button>
             )}
-            {item(Palette, 'Оформление', () => openSheet('settings', index))}
-            {item(SettingsIcon, 'Настройки', () => openSheet('prefs', index))}
-            {m.help && item(BookOpenCheck, 'Инструкция', () => openSheet('help', index))}
+            {item(Palette, t('Оформление'), () => openSheet('settings', index))}
+            {item(SettingsIcon, t('Настройки'), () => openSheet('prefs', index))}
+            {m.help && item(BookOpenCheck, t('Инструкция'), () => openSheet('help', index))}
           </div>
         )}
       </div>

@@ -1,25 +1,26 @@
 // Настройки оформления: значения по умолчанию, темы и применение к CSS-переменным.
+import { N_ } from './i18n.js';
 
 export const THEMES = {
   light: {
-    label: 'Светлая',
+    label: N_('Светлая'),
     bg: '#f6f5f2', text: '#1d1c1a', muted: '#7d7a73', accent: '#9a6a2f', panel: '#ffffff',
     bar: '#38363a', barText: '#f3f1ec', line: '#e3e0d9', hl: '#f6e3a8', verseNum: '#55524c',
   },
   sepia: {
-    label: 'Сепия',
+    label: N_('Сепия'),
     bg: '#f3e9d7', text: '#3b2f22', muted: '#8a7a64', accent: '#8b5a24', panel: '#faf3e6',
     bar: '#4a3d2f', barText: '#f6ecda', line: '#e2d4bb', hl: '#ebd189', verseNum: '#6b5a44',
   },
   dark: {
-    label: 'Тёмная',
+    label: N_('Тёмная'),
     bg: '#161617', text: '#dedbd4', muted: '#8d8a84', accent: '#d9a35c', panel: '#212123',
     bar: '#0c0c0d', barText: '#e8e5de', line: '#2e2e31', hl: '#5b4a1c', verseNum: '#a7a39b',
   },
 };
 
 export const FONTS = {
-  system: { label: 'Системный', css: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' },
+  system: { label: N_('Системный'), css: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' },
   'PT Serif': { label: 'PT Serif', css: '"PT Serif", Georgia, serif', google: 'PT+Serif:ital,wght@0,400;0,700;1,400' },
   Literata: { label: 'Literata', css: 'Literata, Georgia, serif', google: 'Literata:ital,wght@0,300..700;1,400' },
   'Noto Serif': { label: 'Noto Serif', css: '"Noto Serif", Georgia, serif', google: 'Noto+Serif:ital,wght@0,300..700;1,400' },

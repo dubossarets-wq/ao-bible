@@ -9,6 +9,7 @@ import { formatRef, bookMeta } from '../core/books.js';
 import { getVerse } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
 import { Empty, Hint } from './ui.jsx';
+import { t } from '../core/i18n.js';
 
 export default function CrossReferencesSheet({ pane, payload, onClose }) {
   const { openInOther, panes, bibles } = useApp();
@@ -44,19 +45,19 @@ export default function CrossReferencesSheet({ pane, payload, onClose }) {
   };
 
   return (
-    <BottomSheet title={`Параллельные места · ${formatRef(ref)}`} subtitle={module ? `Тексты из перевода ${module.name}` : null} onClose={onClose} initial={1}>
+    <BottomSheet title={t('Параллельные места · {ref}', { ref: formatRef(ref) })} subtitle={module ? t('Тексты из перевода {module}', { module: module.name }) : null} onClose={onClose} initial={1}>
       {source && <blockquote className="xref-source">{source}</blockquote>}
       {!items && (
         <div className="loading">
-          <Loader2 className="spin" size={20} /> Собираю параллельные места…
+          <Loader2 className="spin" size={20} /> {t('Собираю параллельные места…')}
         </div>
       )}
-      {items && items.length === 0 && <Empty icon={Link2} title="Параллельных мест нет">Для этого стиха в установленных модулях нет ссылок.</Empty>}
+      {items && items.length === 0 && <Empty icon={Link2} title={t('Параллельных мест нет')}>{t('Для этого стиха в установленных модулях нет ссылок.')}</Empty>}
       {items && items.length > 0 && (
         <>
           <h4 className="sheet-h4">
-            Места · {items.length}
-            <Hint>Нажмите на место — оно откроется {pane === 0 ? 'во второй панели, а исходный текст останется в первой' : 'в этой панели; вернуться можно кнопкой «назад»'}.</Hint>
+            {t('Места')} · {items.length}
+            <Hint>{pane === 0 ? t('Нажмите на место — оно откроется во второй панели, а исходный текст останется в первой.') : t('Нажмите на место — оно откроется в этой панели; вернуться можно кнопкой «назад».')}</Hint>
           </h4>
           <ul className="xref-list">
             {items.map((it) => (
@@ -74,7 +75,7 @@ export default function CrossReferencesSheet({ pane, payload, onClose }) {
                       {it.truncated && <span className="muted">…</span>}
                     </span>
                   ) : (
-                    <span className="xref-text muted">В переводе {module?.name} нет текста для {bookMeta(it.ref.book).name}.</span>
+                    <span className="xref-text muted">{t('В переводе {module} нет текста для {book}.', { module: module?.name, book: bookMeta(it.ref.book).name })}</span>
                   )}
                 </button>
               </li>

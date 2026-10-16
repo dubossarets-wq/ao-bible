@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Loader2, BarChart3 } from 'lucide-react';
 import { strongStats } from '../core/wordstats.js';
 import { formatRef } from '../core/books.js';
+import { t } from '../core/i18n.js';
 
 export default function WordStats({ num, onOpenRef }) {
   const [st, setSt] = useState(null);
@@ -19,7 +20,7 @@ export default function WordStats({ num, onOpenRef }) {
   if (!st)
     return (
       <div className="loading small">
-        <Loader2 className="spin" size={16} /> Считаю употребления…
+        <Loader2 className="spin" size={16} /> {t('Считаю употребления…')}
       </div>
     );
   if (!st.total) return null;
@@ -28,9 +29,9 @@ export default function WordStats({ num, onOpenRef }) {
   return (
     <section className="word-stats">
       <h4>
-        <BarChart3 size={13} /> Употребление в {st.module}: {st.total} раз в {st.verses} стихах, {st.byBook.length} книгах
+        <BarChart3 size={13} /> {t('Употребление в {module}: {total} раз в {verses} стихах, {books} книгах', { module: st.module, total: st.total, verses: st.verses, books: st.byBook.length })}
       </h4>
-      <ul className="stat-bars" aria-label="По книгам">
+      <ul className="stat-bars" aria-label={t('По книгам')}>
         {top.map((b) => (
           <li key={b.book}>
             <span className="sb-name">{b.short.replace(/\.$/, '')}</span>
@@ -39,7 +40,7 @@ export default function WordStats({ num, onOpenRef }) {
           </li>
         ))}
       </ul>
-      {st.byBook.length > top.length && <p className="field-hint">И ещё в {st.byBook.length - top.length} книгах.</p>}
+      {st.byBook.length > top.length && <p className="field-hint">{t('И ещё в {n} книгах.', { n: st.byBook.length - top.length })}</p>}
       <div className="chips">
         {(all ? st.refs : st.refs.slice(0, 24)).map((r) => (
           <button key={`${r.book}.${r.chapter}.${r.verse}`} className="chip" onClick={() => onOpenRef(r)}>
@@ -48,7 +49,7 @@ export default function WordStats({ num, onOpenRef }) {
         ))}
         {!all && st.refs.length > 24 && (
           <button className="chip ghost" onClick={() => setAll(true)}>
-            Все {st.refs.length}
+            {t('Все {n}', { n: st.refs.length })}
           </button>
         )}
       </div>

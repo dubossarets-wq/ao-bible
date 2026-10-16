@@ -2,13 +2,14 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CircleAlert } from 'lucide-react';
+import { t } from '../core/i18n.js';
 
 export function Toasts({ items }) {
   return (
     <div className="toasts" role="status" aria-live="polite">
-      {items.map((t) => (
-        <div key={t.id} className={`toast ${t.kind}`}>
-          {t.text}
+      {items.map((x) => (
+        <div key={x.id} className={`toast ${x.kind}`}>
+          {x.text}
         </div>
       ))}
     </div>
@@ -28,7 +29,7 @@ export function Progress({ value, label }) {
 
 // Пояснение к настройке: значок «!» в кружке рядом с названием. Текст — во всплывающем облачке
 // поверх содержимого (ничего не сдвигает); закрывается повторным нажатием, нажатием мимо, прокруткой, Esc.
-export function Hint({ children, label = 'Пояснение' }) {
+export function Hint({ children, label = t('Пояснение') }) {
   const [pos, setPos] = useState(null);
   const btn = useRef(null);
   const pop = useRef(null);
@@ -172,8 +173,8 @@ export function Segmented({ value, options, onChange, label, id }) {
   // Первое появление — без анимации, дальше подложка ездит
   const [ready, setReady] = useState(false);
   useEffect(() => {
-    const t = requestAnimationFrame(() => setReady(true));
-    return () => cancelAnimationFrame(t);
+    const raf = requestAnimationFrame(() => setReady(true));
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   const drag = useRef(null);
@@ -254,7 +255,7 @@ export function Slider({ id, label, value, min, max, step, onChange, format = (v
 }
 
 // Подтверждение прямо в интерфейсе (confirm() в артефакте не работает)
-export function ConfirmButton({ children, confirmText = 'Точно?', onConfirm, className = 'btn', ...rest }) {
+export function ConfirmButton({ children, confirmText = t('Точно?'), onConfirm, className = 'btn', ...rest }) {
   const [armed, setArmed] = useState(false);
   return armed ? (
     <span className="confirm-group">
@@ -262,7 +263,7 @@ export function ConfirmButton({ children, confirmText = 'Точно?', onConfirm
         {confirmText}
       </button>
       <button className="btn" onClick={() => setArmed(false)}>
-        Отмена
+        {t('Отмена')}
       </button>
     </span>
   ) : (
@@ -282,4 +283,4 @@ export function Empty({ icon: Icon, title, children }) {
   );
 }
 
-export const fmtSize = (b) => (b > 1048576 ? `${(b / 1048576).toFixed(1)} МБ` : `${Math.max(1, Math.round(b / 1024))} КБ`);
+export const fmtSize = (b) => (b > 1048576 ? t('{n} МБ', { n: (b / 1048576).toFixed(1) }) : t('{n} КБ', { n: Math.max(1, Math.round(b / 1024)) }));

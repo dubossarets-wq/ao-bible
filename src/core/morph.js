@@ -4,31 +4,33 @@
 //    и арамейского (модуль oshb, например HC/Vqw3ms) — по таблицам morphData.json
 //    (перенос эталонного разбора scripts/morph_check.py).
 // Для неизвестных кодов показываем сам код без догадок.
+// Термины — по-русски (ключи словарей интерфейса), на другие языки переводятся при показе: t(термин).
 import DATA from './morphData.json';
+import { t, N_ } from './i18n.js';
 
-const FORMS = ['перфект', 'имперфект', 'повелительное наклонение', 'инфинитив', 'действительное причастие', 'страдательное причастие', 'причастие'];
+const FORMS = [N_('перфект'), N_('имперфект'), N_('повелительное наклонение'), N_('инфинитив'), N_('действительное причастие'), N_('страдательное причастие'), N_('причастие')];
 const GRID = {
-  'Кал (Qal)': [8804, 8799, 8798, 8800, 8802, 8803, 8801],
-  'Пиэль (Piel)': [8765, 8762, 8761, 8763, null, null, 8764],
-  'Пуаль (Pual)': [8795, 8792, null, null, null, null, 8794],
-  'Нифаль (Niphal)': [8738, 8735, 8734, 8736, null, null, 8737],
-  'Хифиль (Hiphil)': [8689, 8686, 8685, 8687, null, null, 8688],
-  'Хофаль (Hophal)': [8717, 8714, null, 8715, null, null, 8716],
-  'Хитпаэль (Hithpael)': [8694, 8691, 8690, 8692, null, null, 8693],
-  'Полель (Polel)': [8790, 8787, null, 8788, null, null, 8789],
-  'Пеэль/Пеиль (Peel/Peil)': [null, null, null, 8756, null, null, null],
-  'Поэль (Poel)': [null, 8779, null, 8780, null, null, 8781],
-  'Поаль (Poal)': [8776, null, null, null, null, null, null],
-  'Пилпель (Pilpel)': [8773, 8770, 8769, 8771, null, null, 8772],
-  'Пилель (Pilel)': [8768, 8766, null, null, null, null, null],
-  'Пулаль (Pulal)': [8797, null, null, null, null, null, null],
-  'Хитпоэль (Hithpoel)': [null, 8704, 8703, null, null, null, 8706],
-  'Хитполель (Hithpolel)': [8712, 8709, null, null, null, null, null],
-  'Хитпалпель (Hithpalpel)': [null, 8698, null, null, null, null, null],
-  'Шафель (Shaphel)': [8806, null, null, null, null, null, null],
+  [N_('Кал (Qal)')]: [8804, 8799, 8798, 8800, 8802, 8803, 8801],
+  [N_('Пиэль (Piel)')]: [8765, 8762, 8761, 8763, null, null, 8764],
+  [N_('Пуаль (Pual)')]: [8795, 8792, null, null, null, null, 8794],
+  [N_('Нифаль (Niphal)')]: [8738, 8735, 8734, 8736, null, null, 8737],
+  [N_('Хифиль (Hiphil)')]: [8689, 8686, 8685, 8687, null, null, 8688],
+  [N_('Хофаль (Hophal)')]: [8717, 8714, null, 8715, null, null, 8716],
+  [N_('Хитпаэль (Hithpael)')]: [8694, 8691, 8690, 8692, null, null, 8693],
+  [N_('Полель (Polel)')]: [8790, 8787, null, 8788, null, null, 8789],
+  [N_('Пеэль/Пеиль (Peel/Peil)')]: [null, null, null, 8756, null, null, null],
+  [N_('Поэль (Poel)')]: [null, 8779, null, 8780, null, null, 8781],
+  [N_('Поаль (Poal)')]: [8776, null, null, null, null, null, null],
+  [N_('Пилпель (Pilpel)')]: [8773, 8770, 8769, 8771, null, null, 8772],
+  [N_('Пилель (Pilel)')]: [8768, 8766, null, null, null, null, null],
+  [N_('Пулаль (Pulal)')]: [8797, null, null, null, null, null, null],
+  [N_('Хитпоэль (Hithpoel)')]: [null, 8704, 8703, null, null, null, 8706],
+  [N_('Хитполель (Hithpolel)')]: [8712, 8709, null, null, null, null, null],
+  [N_('Хитпалпель (Hithpalpel)')]: [null, 8698, null, null, null, null, null],
+  [N_('Шафель (Shaphel)')]: [8806, null, null, null, null, null, null],
 };
 const TVM = new Map();
-for (const [stem, codes] of Object.entries(GRID)) codes.forEach((c, i) => c && TVM.set(c, `${stem}, ${FORMS[i]}`));
+for (const [stem, codes] of Object.entries(GRID)) codes.forEach((c, i) => c && TVM.set(c, [stem, FORMS[i]]));
 
 // --- Робинсон / OSHB ---------------------------------------------------------------------
 
@@ -114,7 +116,7 @@ function parseHebrew(code) {
 function describeParsed(segs, key = 'ru') {
   if (!segs || segs.some((s) => s.error)) return null;
   return segs
-    .map((s) => [s.posInfo[key], ...s.slots.filter(([, , v]) => v).map(([, , v]) => v[key]), ...s.suffixes.map(([, v]) => v[key])].join(', '))
+    .map((s) => [s.posInfo[key], ...s.slots.filter(([, , v]) => v).map(([, , v]) => v[key]), ...s.suffixes.map(([, v]) => v[key])].map((x) => (key === 'ru' ? t(x) : x)).join(', '))
     .join(' + ');
 }
 
@@ -122,7 +124,7 @@ export function describeMorph(code) {
   const tvm = /^T?([HG])(\d+)$/.exec(code);
   if (tvm) {
     const n = +tvm[2];
-    return { code, text: tvm[1] === 'H' && TVM.has(n) ? TVM.get(n) : null };
+    return { code, text: tvm[1] === 'H' && TVM.has(n) ? TVM.get(n).map((x) => t(x)).join(', ') : null };
   }
   try {
     const hebrew = /^[HA][A-Za-z0-9/]*$/.test(code) && !code.includes('-') && !(code in DATA.greek.pos);

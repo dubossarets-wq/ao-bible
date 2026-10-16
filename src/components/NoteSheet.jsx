@@ -7,6 +7,7 @@ import { selectionLabel, selectionText } from './SelectionBar.jsx';
 import { ConfirmButton } from './ui.jsx';
 import LinkedText from './LinkedText.jsx';
 import { hasRefs } from '../core/refLinks.js';
+import { t, fmtDateTime } from '../core/i18n.js';
 
 export default function NoteSheet({ pane, payload, onClose }) {
   const { notes, setNote, toast, openInOther } = useApp();
@@ -26,32 +27,32 @@ export default function NoteSheet({ pane, payload, onClose }) {
 
   const save = () => {
     setNote(first, text, label);
-    toast(text.trim() ? 'Заметка сохранена' : 'Заметка удалена');
+    toast(text.trim() ? t('Заметка сохранена') : t('Заметка удалена'));
     onClose();
   };
 
   return (
     <BottomSheet
-      title={existing ? 'Заметка' : 'Новая заметка'}
+      title={existing ? t('Заметка') : t('Новая заметка')}
       subtitle={label}
       onClose={onClose}
       initial={1}
       footer={
         <div className="row-actions note-actions">
           {existing && (
-            <ConfirmButton className="btn" confirmText="Удалить" onConfirm={() => (setNote(first, ''), toast('Заметка удалена'), onClose())}>
-              <Trash2 size={16} /> Удалить
+            <ConfirmButton className="btn" confirmText={t('Удалить')} onConfirm={() => (setNote(first, ''), toast(t('Заметка удалена')), onClose())}>
+              <Trash2 size={16} /> {t('Удалить')}
             </ConfirmButton>
           )}
           <button className="btn primary push" onClick={save}>
-            <Save size={16} /> Сохранить
+            <Save size={16} /> {t('Сохранить')}
           </button>
         </div>
       }
     >
       {verse && <blockquote className="xref-source">{verse}</blockquote>}
       <label htmlFor="note-text" className="sr-only">
-        Текст заметки
+        {t('Текст заметки')}
       </label>
       <textarea
         id="note-text"
@@ -59,7 +60,7 @@ export default function NoteSheet({ pane, payload, onClose }) {
         className="note-area"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Ваши мысли, вопросы, ссылки…"
+        placeholder={t('Ваши мысли, вопросы, ссылки…')}
         rows={7}
         onKeyDown={(e) => (e.metaKey || e.ctrlKey) && e.key === 'Enter' && save()}
       />
@@ -75,7 +76,7 @@ export default function NoteSheet({ pane, payload, onClose }) {
           />
         </p>
       )}
-      {existing && <p className="field-hint">Создана {new Date(existing.at).toLocaleString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>}
+      {existing && <p className="field-hint">{t('Создана {date}', { date: fmtDateTime(existing.at, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) })}</p>}
     </BottomSheet>
   );
 }

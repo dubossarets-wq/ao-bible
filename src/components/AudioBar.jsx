@@ -7,9 +7,10 @@ import { downloadBook, isBookOffline, removeBook } from '../core/offlineAudio.js
 import { useApp } from '../App.jsx';
 import { formatRef, bookMeta } from '../core/books.js';
 import { Segmented } from './ui.jsx';
+import { t } from '../core/i18n.js';
 
 const RATES = [0.75, 1, 1.25, 1.5];
-const mb = (b) => `${(b / 1048576).toFixed(b < 10485760 ? 1 : 0)} МБ`;
+const mb = (b) => t('{n} МБ', { n: (b / 1048576).toFixed(b < 10485760 ? 1 : 0) });
 
 // Кнопка рядом с настройками: скачать звучащую книгу, чтобы слушать без интернета.
 // Во время загрузки — круг прогресса, после — зелёная галочка; под панелью — короткая подпись.
@@ -20,13 +21,13 @@ function DownloadButton({ audioId, book, onNote }) {
   const name = bookMeta(book).name;
   const click = async () => {
     if (prog != null) return;
-    if (offline) return onNote({ ok: true, text: `«${name}» есть в телефоне — слушается без интернета`, remove: () => removeBook(audioId, book).then(() => (setOffline(false), onNote(null))) });
+    if (offline) return onNote({ ok: true, text: t('«{book}» есть в телефоне — слушается без интернета', { book: name }), remove: () => removeBook(audioId, book).then(() => (setOffline(false), onNote(null))) });
     setProg(0);
-    onNote({ text: `Скачиваю «${name}»…` });
+    onNote({ text: t('Скачиваю «{book}»…', { book: name }) });
     try {
-      const bytes = await downloadBook(audioId, book, { onProgress: (done, total, b) => (setProg(done / total), onNote({ text: `Скачиваю «${name}»: ${done} из ${total} · ${mb(b)}` })) });
+      const bytes = await downloadBook(audioId, book, { onProgress: (done, total, b) => (setProg(done / total), onNote({ text: t('Скачиваю «{book}»: {done} из {total} · {size}', { book: name, done, total, size: mb(b) }) })) });
       setOffline(true);
-      onNote({ ok: true, text: `«${name}» скачана (${mb(bytes)}) — можно слушать без интернета` });
+      onNote({ ok: true, text: t('«{book}» скачана ({size}) — можно слушать без интернета', { book: name, size: mb(bytes) }) });
     } catch (e) {
       onNote({ text: e.message });
     } finally {
@@ -35,7 +36,7 @@ function DownloadButton({ audioId, book, onNote }) {
   };
   const C = 2 * Math.PI * 14;
   return (
-    <button className={`audio-btn dl ${offline ? 'ok' : ''}`} onClick={click} aria-label={offline ? `${name} скачана для прослушивания без интернета` : `Скачать ${name} для прослушивания без интернета`} title={offline ? 'Скачано' : 'Скачать книгу'}>
+    <button className={`audio-btn dl ${offline ? 'ok' : ''}`} onClick={click} aria-label={offline ? t('{book} скачана для прослушивания без интернета', { book: name }) : t('Скачать {book} для прослушивания без интернета', { book: name })} title={offline ? t('Скачано') : t('Скачать книгу')}>
       {prog != null ? (
         <>
           <svg className="dl-ring" viewBox="0 0 32 32" aria-hidden="true">
@@ -71,12 +72,12 @@ export default function AudioBar() {
   const left = a.sleep?.kind === 'min' ? Math.max(1, Math.round((a.sleep.until - Date.now()) / 60000)) : null;
 
   return (
-    <div className="audio-bar" role="region" aria-label="Аудиокнига">
+    <div className="audio-bar" role="region" aria-label={t('Аудиокнига')}>
       {/* Записи нет — предлагаем ИИ-диктора */}
       {a.offerTts && !a.playing && (
         <div className="audio-offer">
           <p>
-            <strong>{a.error || 'Для этой главы нет аудиозаписи.'}</strong> Включить ИИ-диктора? Он прочитает текст синтезированным голосом — не так живо, как чтец.
+            <strong>{a.error || t('Для этой главы нет аудиозаписи.')}</strong> {t('Включить ИИ-диктора? Он прочитает текст синтезированным голосом — не так живо, как чтец.')}
           </p>
           <div className="audio-offer-btns">
             <button
@@ -86,13 +87,13 @@ export default function AudioBar() {
                 startAudio({ pane: a.pane, moduleId: a.moduleId, ref: a.ref, source: 'tts' });
               }}
             >
-              <Sparkles size={16} /> Включить ИИ-диктора
+              <Sparkles size={16} /> {t('Включить ИИ-диктора')}
             </button>
             <button className="btn" onClick={stopAudio}>
-              Не нужно
+              {t('Не нужно')}
             </button>
           </div>
-          <small>Выключить можно в «Настройках», раздел «Аудио».</small>
+          <small>{t('Выключить можно в «Настройках», раздел «Аудио».')}</small>
         </div>
       )}
       {note && (
@@ -100,46 +101,46 @@ export default function AudioBar() {
           {note.text}
           {note.remove && (
             <button className="link-btn" onClick={note.remove}>
-              удалить из телефона
+              {t('удалить из телефона')}
             </button>
           )}
           <button className="link-btn" onClick={() => setNote(null)}>
-            скрыть
+            {t('скрыть')}
           </button>
         </div>
       )}
       {opts && (
         <div className="audio-opts">
-          <Segmented id="audio-rate" label="Скорость" value={a.rate} onChange={setRate} options={RATES.map((r) => [r, `${r}×`])} />
+          <Segmented id="audio-rate" label={t('Скорость')} value={a.rate} onChange={setRate} options={RATES.map((r) => [r, `${r}×`])} />
           <Segmented
             id="audio-sleep"
-            label="Таймер сна"
+            label={t('Таймер сна')}
             value={a.sleep ? (a.sleep.kind === 'chapter' ? 'chapter' : String(a.sleep.minutes)) : 'off'}
             onChange={(v) => (v === 'off' ? setSleep(null) : v === 'chapter' ? setSleep('chapter') : setSleep('min', +v))}
             options={[
-              ['off', 'Выкл'],
-              ['15', '15 мин'],
-              ['30', '30 мин'],
-              ['60', '60 мин'],
-              ['chapter', 'Конец главы'],
+              ['off', t('Выкл')],
+              ['15', t('{n} мин', { n: 15 })],
+              ['30', t('{n} мин', { n: 30 })],
+              ['60', t('{n} мин', { n: 60 })],
+              ['chapter', t('Конец главы')],
             ]}
           />
         </div>
       )}
       <div className="audio-main">
-        <button className="audio-btn" onClick={() => stepVerse(-1)} aria-label="Предыдущий стих">
+        <button className="audio-btn" onClick={() => stepVerse(-1)} aria-label={t('Предыдущий стих')}>
           <SkipBack size={20} />
         </button>
-        <button className="audio-btn play" onClick={() => (a.playing ? pauseAudio() : resumeAudio())} aria-label={a.playing ? 'Пауза' : 'Слушать'}>
+        <button className="audio-btn play" onClick={() => (a.playing ? pauseAudio() : resumeAudio())} aria-label={a.playing ? t('Пауза') : t('Слушать')}>
           {a.loading ? <Loader2 size={22} className="spin" /> : a.playing ? <Pause size={22} /> : <Play size={22} />}
         </button>
-        <button className="audio-btn" onClick={() => stepVerse(1)} aria-label="Следующий стих">
+        <button className="audio-btn" onClick={() => stepVerse(1)} aria-label={t('Следующий стих')}>
           <SkipForward size={20} />
         </button>
         <div className="audio-info">
           {/* Человек ушёл в другое место — место чтения становится кнопкой «вернуться» */}
           {a.ref && !a.follow ? (
-            <button className="audio-ref audio-back" onClick={() => (resumeFollow(), navigate(a.pane, a.ref, { flash: false, audio: true }))} title="Вернуться к месту, которое сейчас звучит">
+            <button className="audio-ref audio-back" onClick={() => (resumeFollow(), navigate(a.pane, a.ref, { flash: false, audio: true }))} title={t('Вернуться к месту, которое сейчас звучит')}>
               <CornerUpLeft size={14} /> {formatRef(a.ref)}
             </button>
           ) : (
@@ -147,15 +148,15 @@ export default function AudioBar() {
           )}
           {((a.error && !a.offerTts) || left || a.sleep?.kind === 'chapter' || a.source === 'tts') && (
             <span className="audio-src">
-              {a.error && !a.offerTts ? a.error : [a.source === 'tts' && 'ИИ-диктор', left ? `сон через ${left} мин` : a.sleep?.kind === 'chapter' && 'до конца главы'].filter(Boolean).join(' · ')}
+              {a.error && !a.offerTts ? a.error : [a.source === 'tts' && t('ИИ-диктор'), left ? t('сон через {n} мин', { n: left }) : a.sleep?.kind === 'chapter' && t('до конца главы')].filter(Boolean).join(' · ')}
             </span>
           )}
         </div>
         {a.ref && a.source !== 'tts' && a.source !== 'none' && <DownloadButton key={`${a.source}|${a.ref.book}`} audioId={a.source} book={a.ref.book} onNote={setNote} />}
-        <button className={`audio-btn ${opts ? 'on' : ''}`} onClick={() => setOpts((v) => !v)} aria-label="Настройки чтения вслух" aria-expanded={opts}>
+        <button className={`audio-btn ${opts ? 'on' : ''}`} onClick={() => setOpts((v) => !v)} aria-label={t('Настройки чтения вслух')} aria-expanded={opts}>
           <SlidersHorizontal size={19} />
         </button>
-        <button className="audio-btn" onClick={stopAudio} aria-label="Закрыть аудио">
+        <button className="audio-btn" onClick={stopAudio} aria-label={t('Закрыть аудио')}>
           <X size={20} />
         </button>
       </div>

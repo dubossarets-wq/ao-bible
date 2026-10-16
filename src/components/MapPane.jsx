@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { X, MapPin, Satellite, Map as MapIcon, Loader2, ChevronDown, ExternalLink, Layers } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { parseOsisRef, formatRef } from '../core/books.js';
+import { t } from '../core/i18n.js';
 
 const ML_VERSION = '4.7.1';
 const STYLE = 'https://tiles.openfreemap.org/styles/liberty';
@@ -23,7 +24,7 @@ function loadMapLibre() {
       js.onload = () => resolve(window.maplibregl);
       js.onerror = () => {
         mlPromise = null;
-        reject(new Error('Не удалось загрузить карту. Проверьте подключение к интернету.'));
+        reject(new Error(t('Не удалось загрузить карту. Проверьте подключение к интернету.')));
       };
       document.head.appendChild(js);
     });
@@ -67,11 +68,11 @@ export default function MapPane({ pane }) {
         m.addControl(new ml.ScaleControl({ unit: 'metric' }), 'bottom-left');
         m.on('load', () => {
           const first = m.getStyle().layers[1]?.id;
-          m.addSource('satellite', { type: 'raster', tiles: [ESRI], tileSize: 256, maxzoom: 18, attribution: 'Снимки © Esri' });
+          m.addSource('satellite', { type: 'raster', tiles: [ESRI], tileSize: 256, maxzoom: 18, attribution: t('Снимки © Esri') });
           m.addLayer({ id: 'satellite', type: 'raster', source: 'satellite', layout: { visibility: 'none' } }, first);
           alive && setState('ready');
         });
-        m.on('error', (e) => console.warn('Карта:', e?.error?.message || e));
+        m.on('error', (e) => console.warn('Карта:', e?.error?.message || e)); // i18n-ignore: для разработчика
         marker.current = new ml.Marker({ color: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#9a6a2f' })
           .setLngLat([place.lng, place.lat])
           .addTo(m);
@@ -133,7 +134,7 @@ export default function MapPane({ pane }) {
   const refs = (place.refs || []).map(parseOsisRef).filter(Boolean);
 
   return (
-    <section className={`reader map-pane ${clean ? 'clean' : ''}`} aria-label={`Карта: ${place.name}`}>
+    <section className={`reader map-pane ${clean ? 'clean' : ''}`} aria-label={t('Карта: {name}', { name: place.name })}>
       <header className="toolbar">
         <div className="tb tb-place">
           <MapPin size={18} />
@@ -147,16 +148,16 @@ export default function MapPane({ pane }) {
             setClean((v) => !v);
           }}
           aria-pressed={clean}
-          aria-label={clean ? 'Показать подписи, дороги и кнопки' : 'Только карта и точка'}
-          title={clean ? 'Показать все наложения' : 'Только карта и точка'}
+          aria-label={clean ? t('Показать подписи, дороги и кнопки') : t('Только карта и точка')}
+          title={clean ? t('Показать все наложения') : t('Только карта и точка')}
           disabled={state !== 'ready'}
         >
           <Layers size={21} />
         </button>
-        <button className={`tb tb-icon ${sat ? 'on' : ''}`} onClick={() => setSat((v) => !v)} aria-pressed={sat} aria-label={sat ? 'Обычная карта' : 'Спутник'} title={sat ? 'Обычная карта' : 'Спутник'} disabled={state !== 'ready'}>
+        <button className={`tb tb-icon ${sat ? 'on' : ''}`} onClick={() => setSat((v) => !v)} aria-pressed={sat} aria-label={sat ? t('Обычная карта') : t('Спутник')} title={sat ? t('Обычная карта') : t('Спутник')} disabled={state !== 'ready'}>
           {sat ? <MapIcon size={21} /> : <Satellite size={21} />}
         </button>
-        <button className="tb tb-icon" onClick={closePlaceMap} aria-label="Закрыть карту" title="Закрыть карту">
+        <button className="tb tb-icon" onClick={closePlaceMap} aria-label={t('Закрыть карту')} title={t('Закрыть карту')}>
           <X size={22} />
         </button>
       </header>
@@ -164,12 +165,12 @@ export default function MapPane({ pane }) {
         <div ref={box} className="map-canvas" />
         {state === 'loading' && (
           <div className="map-status">
-            <Loader2 className="spin" size={20} /> Загружаю карту…
+            <Loader2 className="spin" size={20} /> {t('Загружаю карту…')}
           </div>
         )}
         {state === 'error' && (
           <div className="map-status error-text">
-            {error} Координаты места: {place.lat.toFixed(4)}, {place.lng.toFixed(4)}.
+            {error} {t('Координаты места: {lat}, {lng}.', { lat: place.lat.toFixed(4), lng: place.lng.toFixed(4) })}
           </div>
         )}
         <div ref={card} className={`place-card ${cardOpen ? 'open' : ''}`}>
@@ -184,13 +185,13 @@ export default function MapPane({ pane }) {
             <div className="place-card-body">
               {place.modern && (
                 <p>
-                  <span className="muted">Сейчас: </span>
+                  <span className="muted">{t('Сейчас:')} </span>
                   {place.modern}
                 </p>
               )}
               {place.confidence != null && (
                 <div className="conf">
-                  <span className="muted">Уверенность отождествления: {place.confidence}%</span>
+                  <span className="muted">{t('Уверенность отождествления: {pct}%', { pct: place.confidence })}</span>
                   <span className="conf-bar">
                     <i style={{ width: `${place.confidence}%` }} />
                   </span>
@@ -204,12 +205,12 @@ export default function MapPane({ pane }) {
                       {formatRef(r)}
                     </button>
                   ))}
-                  {refs.length > 40 && <span className="muted small">и ещё {refs.length - 40}</span>}
+                  {refs.length > 40 && <span className="muted small">{t('и ещё {n}', { n: refs.length - 40 })}</span>}
                 </div>
               )}
               <p className="source-note">
                 <a href={`https://www.google.com/maps/@${place.lat},${place.lng},2000m/data=!3m1!1e3`} target="_blank" rel="noopener">
-                  Спутник Google <ExternalLink size={12} />
+                  {t('Спутник Google')} <ExternalLink size={12} />
                 </a>
                 {' · '}
                 {place.license || 'OpenBible.info, CC BY 4.0'}

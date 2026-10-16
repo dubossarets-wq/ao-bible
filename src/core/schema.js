@@ -2,24 +2,26 @@
 // Принимает родной формат aob-module и несколько распространённых JSON-форматов,
 // автоматически определяя тип модуля.
 import { BOOKS, findBookId, bookMeta } from './books.js';
+import { t, N_ } from './i18n.js';
 
+// Подписи помечены N_() и переводятся при показе: t(MODULE_TYPES[type])
 export const MODULE_TYPES = {
-  bible: 'Перевод Библии',
-  commentary: 'Комментарий',
-  dictionary: 'Словарь',
-  maps: 'Карты',
-  crossrefs: 'Параллельные места',
-  audio: 'Аудиокнига',
+  bible: N_('Перевод Библии'),
+  commentary: N_('Комментарий'),
+  dictionary: N_('Словарь'),
+  maps: N_('Карты'),
+  crossrefs: N_('Параллельные места'),
+  audio: N_('Аудиокнига'),
 };
 
 // Разделы библиотеки (множественное число) в порядке показа
 export const MODULE_SECTIONS = [
-  ['bible', 'Переводы'],
-  ['commentary', 'Комментарии'],
-  ['dictionary', 'Словари'],
-  ['maps', 'Карты'],
-  ['audio', 'Аудиокниги'],
-  ['crossrefs', 'Параллельные места'],
+  ['bible', N_('Переводы')],
+  ['commentary', N_('Комментарии')],
+  ['dictionary', N_('Словари')],
+  ['maps', N_('Карты')],
+  ['audio', N_('Аудиокниги')],
+  ['crossrefs', N_('Параллельные места')],
 ];
 
 const OSIS_VERSE = /^[1-4]?[A-Za-z]+\.\d+\.\d+(-(\d+\.)?\d+)?$/;
@@ -89,12 +91,12 @@ export function detect(json) {
 
 export function normalize(json, { fileName = '' } = {}) {
   const { format, type } = detect(json);
-  if (format === 'catalog') throw new ModuleError('Это файл каталога, а не модуль. Откройте его во вкладке «Онлайн-каталог».');
+  if (format === 'catalog') throw new ModuleError(t('Это файл каталога, а не модуль. Откройте его во вкладке «Онлайн-каталог».'));
   if (!format || !type) {
     throw new ModuleError(
-      'Не удалось определить тип модуля. Нужен JSON в формате aob-module (поле "format": "aob-module") ' +
-        'или один из поддерживаемых форматов: массив книг с "chapters", список стихов {book, chapter, verse, text}, ' +
-        'словарь {"H1": {...}} или список статей [{word, definition}].'
+      t('Не удалось определить тип модуля. Нужен JSON в формате aob-module (поле "format": "aob-module") или один из поддерживаемых форматов: массив книг с "chapters", список стихов {fields}, словарь {"H1": {...}} или список статей [{word, definition}].', {
+        fields: '{book, chapter, verse, text}',
+      })
     );
   }
   const baseName = fileName.replace(/\.(json|gz)+$/i, '');
@@ -102,14 +104,14 @@ export function normalize(json, { fileName = '' } = {}) {
   const meta = {
     id: slug(src.id || baseName || src.name),
     type,
-    name: String(src.name || src.abbreviation || baseName || 'Без названия').slice(0, 40),
+    name: String(src.name || src.abbreviation || baseName || t('Без названия')).slice(0, 40),
     title: src.title || src.name || baseName || '',
     description: src.description || '',
     language: src.language || src.lang || 'ru',
     version: src.version ? String(src.version) : '',
     author: src.author || '',
-    source: src.source || (fileName ? `Файл ${fileName}` : ''),
-    license: src.license || 'не указана',
+    source: src.source || (fileName ? t('Файл {name}', { name: fileName }) : ''),
+    license: src.license || t('не указана'),
     versification: src.versification || 'synodal',
     features: isObj(src.features) ? src.features : {},
   };
@@ -123,7 +125,7 @@ export function normalize(json, { fileName = '' } = {}) {
   else if (type === 'commentary') data = normalizeCommentary(json, warnings);
   else if (type === 'maps') data = normalizeMaps(json, warnings);
   else if (type === 'audio') data = normalizeAudio(json, warnings);
-  else throw new ModuleError(`Неизвестный тип модуля «${type}». Допустимы: bible, commentary, dictionary, maps, crossrefs.`);
+  else throw new ModuleError(t('Неизвестный тип модуля «{type}». Допустимы: bible, commentary, dictionary, maps, crossrefs.', { type }));
 
   if (type === 'bible') {
     meta.books = data.books.map((b) => ({
@@ -165,7 +167,7 @@ function normalizeBible(json, format, warnings) {
 
   if (format === 'aob' || format === 'books-array') {
     const list = format === 'aob' ? json.books : json;
-    if (!Array.isArray(list) || !list.length) throw new ModuleError('В модуле нет книг (поле "books" пустое).');
+    if (!Array.isArray(list) || !list.length) throw new ModuleError(t('В модуле нет книг (поле "books" пустое).'));
     list.forEach((b, i) => {
       const raw = b.id ?? b.osis;
       let id = resolveBook(raw ?? b.name ?? b.abbrev, raw || b.name ? null : i);
@@ -174,8 +176,8 @@ function normalizeBible(json, format, warnings) {
       // Совсем без опознаваемого кода — по порядку протестантского канона (форматы вида [{abbrev:"gn", chapters}])
       if (!id && !raw && !b.name) id = resolveBook(null, i);
       if (!id && format === 'books-array' && !raw) id = resolveBook(null, i);
-      if (!id) return warnings.push(`Книга №${i + 1} («${b.name || b.id || b.abbrev || '?'}») не распознана и пропущена.`);
-      if (!Array.isArray(b.chapters)) return warnings.push(`У книги ${id} нет массива "chapters" — пропущена.`);
+      if (!id) return warnings.push(t('Книга №{n} («{name}») не распознана и пропущена.', { n: i + 1, name: b.name || b.id || b.abbrev || '?' }));
+      if (!Array.isArray(b.chapters)) return warnings.push(t('У книги {id} нет массива "chapters" — пропущена.', { id }));
       push(id, b, b.chapters.map((c) => (Array.isArray(c) ? c.map(verseText) : [])));
     });
   } else if (format === 'flat-verses') {
@@ -195,16 +197,16 @@ function normalizeBible(json, format, warnings) {
       while (ch.length < v.verse) ch.push('');
       ch[v.verse - 1] = String(v.text);
     }
-    if (skipped) warnings.push(`Пропущено записей без распознанной книги/главы/стиха: ${skipped}.`);
+    if (skipped) warnings.push(t('Пропущено записей без распознанной книги/главы/стиха: {n}.', { n: skipped }));
     const order = BOOKS.map((b) => b.id);
     [...map.keys()].sort((a, b) => order.indexOf(a) - order.indexOf(b)).forEach((id) => push(id, null, map.get(id)));
   }
-  if (!books.length) throw new ModuleError('Не найдено ни одной распознанной книги.');
+  if (!books.length) throw new ModuleError(t('Не найдено ни одной распознанной книги.'));
   const seen = new Set();
   for (const b of books) {
-    if (seen.has(b.id)) throw new ModuleError(`Книга ${b.id} встречается в модуле дважды.`);
+    if (seen.has(b.id)) throw new ModuleError(t('Книга {id} встречается в модуле дважды.', { id: b.id }));
     seen.add(b.id);
-    if (!b.chapters.length) warnings.push(`В книге ${b.name} нет глав.`);
+    if (!b.chapters.length) warnings.push(t('В книге {name} нет глав.', { name: b.name }));
   }
   return { books };
 }
@@ -220,11 +222,11 @@ function normalizeDictionary(json, format, meta, warnings) {
       entries[key] = { word, text: String(e.definition || e.text || e.description || ''), refs: Array.isArray(e.refs) ? e.refs : [] };
     }
   } else entries = json.entries;
-  if (!isObj(entries) || !Object.keys(entries).length) throw new ModuleError('В словаре нет статей (поле "entries" пустое).');
+  if (!isObj(entries) || !Object.keys(entries).length) throw new ModuleError(t('В словаре нет статей (поле "entries" пустое).'));
 
   if (meta.dictionaryKind === 'strongs') {
     const bad = Object.keys(entries).filter((k) => !/^[HG]\d+[a-z]?$/i.test(k));
-    if (bad.length) warnings.push(`Ключи не похожи на номера Стронга и не будут найдены: ${bad.slice(0, 5).join(', ')}${bad.length > 5 ? '…' : ''}`);
+    if (bad.length) warnings.push(t('Ключи не похожи на номера Стронга и не будут найдены: {keys}', { keys: bad.slice(0, 5).join(', ') + (bad.length > 5 ? '…' : '') }));
   } else {
     // Ключи словаря по словам приводим к нижнему регистру для поиска.
     const norm = {};
@@ -241,7 +243,7 @@ function normalizeDictionary(json, format, meta, warnings) {
 
 // Комментарий: entries {"Josh.13.33": "текст" | {title, text}}, ключ — стих или диапазон «Josh.13.1-5»
 function normalizeCommentary(json, warnings) {
-  if (!isObj(json.entries)) throw new ModuleError('В комментарии нет поля "entries" вида {"Gen.1.1": "текст"}.');
+  if (!isObj(json.entries)) throw new ModuleError(t('В комментарии нет поля "entries" вида {example}.', { example: '{"Gen.1.1": "…"}' }));
   const entries = {};
   let bad = 0;
   for (const [k, v] of Object.entries(json.entries)) {
@@ -252,8 +254,8 @@ function normalizeCommentary(json, warnings) {
     const e = isObj(v) ? { title: v.title ? String(v.title) : '', text: String(v.text ?? '') } : { text: String(v) };
     if (e.text.trim()) entries[k] = e;
   }
-  if (bad) warnings.push(`Пропущено статей с ключом не в формате "Книга.глава.стих": ${bad}.`);
-  if (!Object.keys(entries).length) throw new ModuleError('В комментарии нет ни одной статьи с ключом вида "Gen.1.1".');
+  if (bad) warnings.push(t('Пропущено статей с ключом не в формате "Книга.глава.стих": {n}.', { n: bad }));
+  if (!Object.keys(entries).length) throw new ModuleError(t('В комментарии нет ни одной статьи с ключом вида "Gen.1.1".'));
   return { entries };
 }
 
@@ -266,10 +268,10 @@ function normalizeMaps(json, warnings) {
     const img = isObj(m) && typeof m.image === 'string' ? m.image.trim() : '';
     const ok = /^(https?:|data:image\/)/.test(img) || (/^[\w./-]+\.(jpe?g|png|webp|gif|svg)$/i.test(img) && !img.includes('..'));
     if (!ok) {
-      warnings.push(`Карта №${i + 1} пропущена: нет поля "image" (адрес, data:image или путь к картинке).`);
+      warnings.push(t('Карта №{n} пропущена: нет поля "image" (адрес, data:image или путь к картинке).', { n: i + 1 }));
       return;
     }
-    maps.push({ id: String(m.id || i + 1), title: String(m.title || `Карта ${i + 1}`), description: String(m.description || ''), image: img, refs: Array.isArray(m.refs) ? m.refs.map(String) : [] });
+    maps.push({ id: String(m.id || i + 1), title: String(m.title || t('Карта {n}', { n: i + 1 })), description: String(m.description || ''), image: img, refs: Array.isArray(m.refs) ? m.refs.map(String) : [] });
   });
   const places = [];
   let bad = 0;
@@ -290,8 +292,8 @@ function normalizeMaps(json, warnings) {
       stems: Array.isArray(p.stems) && p.stems.length ? p.stems.map(String) : placeStems(String(p.name)),
     });
   });
-  if (bad) warnings.push(`Пропущено мест без названия или координат: ${bad}.`);
-  if (!maps.length && !places.length) throw new ModuleError('В модуле карт нет ни карт с изображением, ни мест с координатами.');
+  if (bad) warnings.push(t('Пропущено мест без названия или координат: {n}.', { n: bad }));
+  if (!maps.length && !places.length) throw new ModuleError(t('В модуле карт нет ни карт с изображением, ни мест с координатами.'));
   return { maps, places };
 }
 
@@ -305,7 +307,7 @@ export function placeStems(name) {
 
 // Аудиокнига: chapters {"John.3": {url, verses: [[стих, секунда], …], duration}} — времена начала стихов
 function normalizeAudio(json, warnings) {
-  if (!isObj(json.chapters)) throw new ModuleError('В аудиомодуле нет поля "chapters" вида {"John.3": {url, verses}}.');
+  if (!isObj(json.chapters)) throw new ModuleError(t('В аудиомодуле нет поля "chapters" вида {example}.', { example: '{"John.3": {url, verses}}' }));
   const chapters = {};
   let bad = 0;
   for (const [k, c] of Object.entries(json.chapters)) {
@@ -318,8 +320,8 @@ function normalizeAudio(json, warnings) {
     // start/end — границы главы внутри файла, если в одном файле несколько глав
     chapters[k] = { url: c.url, verses, duration: +c.duration || null, start: isFinite(c.start) ? +c.start : null, end: isFinite(c.end) ? +c.end : null };
   }
-  if (bad) warnings.push(`Пропущено глав без адреса записи или разметки стихов: ${bad}.`);
-  if (!Object.keys(chapters).length) throw new ModuleError('В аудиомодуле нет ни одной главы с записью и разметкой стихов.');
+  if (bad) warnings.push(t('Пропущено глав без адреса записи или разметки стихов: {n}.', { n: bad }));
+  if (!Object.keys(chapters).length) throw new ModuleError(t('В аудиомодуле нет ни одной главы с записью и разметкой стихов.'));
   return { chapters };
 }
 
@@ -328,7 +330,7 @@ function normalizeCrossrefs(json) {
   for (const [k, v] of Object.entries(json.refs)) {
     if (Array.isArray(v) && /^[1-3]?[A-Za-z]+\.\d+\.\d+$/.test(k)) refs[k] = v.map(String);
   }
-  if (!Object.keys(refs).length) throw new ModuleError('В модуле нет ссылок вида "Gen.1.1": ["John.1.1", …].');
+  if (!Object.keys(refs).length) throw new ModuleError(t('В модуле нет ссылок вида {example}.', { example: '"Gen.1.1": ["John.1.1", …]' }));
   return { refs };
 }
 
@@ -337,17 +339,17 @@ function normalizeCrossrefs(json) {
 export async function bytesToJson(buffer, onStage) {
   let bytes = new Uint8Array(buffer);
   if (bytes[0] === 0x1f && bytes[1] === 0x8b) {
-    if (typeof DecompressionStream === 'undefined') throw new ModuleError('Браузер не умеет распаковывать .gz. Загрузите несжатый .json.');
-    onStage?.('Распаковка…');
+    if (typeof DecompressionStream === 'undefined') throw new ModuleError(t('Браузер не умеет распаковывать .gz. Загрузите несжатый .json.'));
+    onStage?.(t('Распаковка…'));
     const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
     bytes = new Uint8Array(await new Response(stream).arrayBuffer());
   }
-  onStage?.('Разбор JSON…');
+  onStage?.(t('Разбор JSON…'));
   await new Promise((r) => setTimeout(r, 0));
   const text = new TextDecoder('utf-8').decode(bytes);
   try {
     return JSON.parse(text.charCodeAt(0) === 0xfeff ? text.slice(1) : text);
   } catch (e) {
-    throw new ModuleError(`Файл не является корректным JSON: ${e.message}`);
+    throw new ModuleError(t('Файл не является корректным JSON: {error}', { error: e.message }));
   }
 }

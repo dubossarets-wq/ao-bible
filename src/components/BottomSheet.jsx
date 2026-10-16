@@ -3,6 +3,7 @@
 // На широком экране выглядит как модальное окно у нижнего края (variant="wide" — почти на весь экран).
 import React, { useEffect, useRef, useState } from 'react';
 import { X, ChevronLeft } from 'lucide-react';
+import { t } from '../core/i18n.js';
 
 const SNAPS = [0.5, 0.7, 0.92]; // первая ступень — половина экрана
 
@@ -73,7 +74,7 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
         </div>
         <header className="sheet-head">
           {onBack && (
-            <button className="icon-btn" onClick={onBack} aria-label="Назад">
+            <button className="icon-btn" onClick={onBack} aria-label={t('Назад')}>
               <ChevronLeft size={22} />
             </button>
           )}
@@ -82,7 +83,7 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
             {subtitle && <div className="sheet-sub">{subtitle}</div>}
           </div>
           {headerExtra}
-          <button className="icon-btn" onClick={close} aria-label="Закрыть">
+          <button className="icon-btn" onClick={close} aria-label={t('Закрыть')}>
             <X size={22} />
           </button>
         </header>

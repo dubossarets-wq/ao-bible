@@ -9,6 +9,7 @@ import { getVerse } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
 import { usePersistentState } from '../core/storage.js';
 import { Segmented, Switch, Progress } from './ui.jsx';
+import { t } from '../core/i18n.js';
 
 const PAGE = 200;
 
@@ -63,7 +64,7 @@ export default function SearchPanel({ pane, onClose }) {
     setResults([]);
     setShown(PAGE);
     setRan(q);
-    setProgress({ p: 0, label: 'Поиск…' });
+    setProgress({ p: 0, label: t('Поиск…') });
     const acc = [];
     // Книги перебираются по порядку перевода — результаты идут в порядке Библии
     await search({
@@ -85,7 +86,7 @@ export default function SearchPanel({ pane, onClose }) {
 
   useEffect(() => {
     const q = query.trim();
-    const t = setTimeout(
+    const timer = setTimeout(
       async () => {
         const r = /\d/.test(q) ? parseHumanRef(q) : null;
         if (r && module.books.some((b) => b.id === r.book)) {
@@ -100,7 +101,7 @@ export default function SearchPanel({ pane, onClose }) {
       },
       q.length < 4 ? 350 : 220
     );
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [query, scope, wholeWord, module.id]);
 
   const remember = (q) => q && setHistory((h) => [q, ...h.filter((x) => x !== q)].slice(0, 15));
@@ -128,7 +129,7 @@ export default function SearchPanel({ pane, onClose }) {
   };
 
   return (
-    <BottomSheet title="Поиск" subtitle={`${module.name} · ${module.title || ''}`} onClose={onClose} initial={2}>
+    <BottomSheet title={t('Поиск')} subtitle={`${module.name} · ${module.title || ''}`} onClose={onClose} initial={2}>
       <form
         className="ref-form"
         onSubmit={(e) => {
@@ -137,7 +138,7 @@ export default function SearchPanel({ pane, onClose }) {
         }}
       >
         <label htmlFor="search-input" className="sr-only">
-          Слово, фраза или ссылка
+          {t('Слово, фраза или ссылка')}
         </label>
         <div className="input-wrap">
           <Search size={18} className="input-icon" />
@@ -147,17 +148,17 @@ export default function SearchPanel({ pane, onClose }) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Слово, фраза или ссылка (Ин 3:16)"
+            placeholder={t('Слово, фраза или ссылка (Ин 3:16)')}
             autoComplete="off"
             enterKeyHint="search"
           />
           {query && (
-            <button type="button" className="icon-btn subtle" aria-label="Очистить" onClick={() => setQuery('')}>
+            <button type="button" className="icon-btn subtle" aria-label={t('Очистить')} onClick={() => setQuery('')}>
               <X size={16} />
             </button>
           )}
         </div>
-        <button className="btn primary" type="submit" aria-label="Искать">
+        <button className="btn primary" type="submit" aria-label={t('Искать')}>
           <CornerDownLeft size={18} />
         </button>
       </form>
@@ -166,27 +167,27 @@ export default function SearchPanel({ pane, onClose }) {
         value={scope}
         onChange={setScope}
         options={[
-          ['all', 'Вся Библия'],
-          ['OT', 'ВЗ'],
-          ['NT', 'НЗ'],
+          ['all', t('Вся Библия')],
+          ['OT', t('ВЗ')],
+          ['NT', t('НЗ')],
           ['book', bookMeta(p.ref.book).short],
         ]}
       />
-      <Switch id="search-whole" checked={wholeWord} onChange={setWholeWord} label="Только целые слова" hint="Иначе «свет» найдёт и «светильник»" />
+      <Switch id="search-whole" checked={wholeWord} onChange={setWholeWord} label={t('Только целые слова')} hint={t('Иначе «свет» найдёт и «светильник»')} />
 
       {refHit && (
         <button className="ref-hit" onClick={() => goRef(refHit.ref)}>
           <span className="ref-hit-title">
-            <CornerDownLeft size={15} /> Перейти: {formatRef(refHit.ref, { full: true })}
+            <CornerDownLeft size={15} /> {t('Перейти: {ref}', { ref: formatRef(refHit.ref, { full: true }) })}
           </span>
-          {refHit.text ? <span className="xref-text">{refHit.text}</span> : <span className="muted">В переводе {module.name} нет такого стиха.</span>}
+          {refHit.text ? <span className="xref-text">{refHit.text}</span> : <span className="muted">{t('В переводе {module} нет такого стиха.', { module: module.name })}</span>}
         </button>
       )}
       {progress && <Progress value={progress.p} label={progress.label} />}
 
       {results === null && !refHit && history.length > 0 && (
         <section className="nav-group">
-          <h4>Недавние запросы</h4>
+          <h4>{t('Недавние запросы')}</h4>
           <div className="chips">
             {history.map((h) => (
               <button
@@ -201,7 +202,7 @@ export default function SearchPanel({ pane, onClose }) {
               </button>
             ))}
             <button className="chip ghost" onClick={() => setHistory([])}>
-              Очистить
+              {t('Очистить')}
             </button>
           </div>
         </section>
@@ -210,8 +211,8 @@ export default function SearchPanel({ pane, onClose }) {
       {results && (
         <>
           <div className="result-count">
-            {progress ? <Loader2 className="spin" size={14} /> : null} Найдено: {results.length}
-            {!progress && results.length === 0 && ' — попробуйте другую форму слова или отключите «целые слова».'}
+            {progress ? <Loader2 className="spin" size={14} /> : null} {t('Найдено: {n}', { n: results.length })}
+            {!progress && results.length === 0 && ` — ${t('попробуйте другую форму слова или отключите «целые слова».')}`}
           </div>
           <ul className="results">
             {results.slice(0, shown).map((r) => (
@@ -227,7 +228,7 @@ export default function SearchPanel({ pane, onClose }) {
           </ul>
           {results.length > shown && (
             <button className="btn wide" onClick={() => setShown((s) => s + PAGE)}>
-              Показать ещё ({results.length - shown})
+              {t('Показать ещё ({n})', { n: results.length - shown })}
             </button>
           )}
         </>

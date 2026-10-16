@@ -3,6 +3,7 @@
 // Модули (переводы, словари) в файл не входят — их можно заново скачать в библиотеке.
 import { P } from './channel.js';
 import { SERVICE, snapshot, replaceAll } from './backup.js';
+import { t } from './i18n.js';
 
 const FORMAT = 'aob-userdata';
 // Резервные копии внутри приложения в файл не кладём — они только раздувают его
@@ -47,9 +48,9 @@ export async function readDataFile(file) {
   try {
     json = JSON.parse(text);
   } catch {
-    throw new Error('Это не файл с данными AO Bible.');
+    throw new Error(t('Это не файл с данными AO Bible.'));
   }
-  if (json?.format !== FORMAT || !json.data || typeof json.data !== 'object') throw new Error('Это не файл с данными AO Bible.');
+  if (json?.format !== FORMAT || !json.data || typeof json.data !== 'object') throw new Error(t('Это не файл с данными AO Bible.'));
   return json;
 }
 
@@ -65,12 +66,13 @@ export function importData(json) {
 // Сохранить файл: на телефоне — через «Поделиться» (Файлы, облако, мессенджер), на компьютере — скачиванием
 export async function saveDataFile() {
   const json = exportData();
-  const name = `AO Bible — мои данные ${new Date().toLocaleDateString('ru-RU').replace(/\./g, '-')}.json`;
+  // Дата в имени файла — цифрами «16-10-2026», одинаково для всех языков
+  const name = `${t('AO Bible — мои данные')} ${new Date().toLocaleDateString('ru-RU').replace(/\./g, '-')}.json`;
   const blob = new Blob([JSON.stringify(json)], { type: 'application/json' });
   const file = new File([blob], name, { type: 'application/json' });
   if (navigator.canShare?.({ files: [file] }) && matchMedia('(pointer: coarse)').matches) {
     try {
-      await navigator.share({ files: [file], title: 'AO Bible — мои данные' });
+      await navigator.share({ files: [file], title: t('AO Bible — мои данные') });
       return 'shared';
     } catch (e) {
       if (e?.name === 'AbortError') return 'cancelled';

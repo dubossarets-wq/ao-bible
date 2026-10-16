@@ -11,6 +11,7 @@ import { refsForVerse, textForRef } from '../core/crossrefs.js';
 import { placesInVerse } from '../core/places.js';
 import { formatRef } from '../core/books.js';
 import { hlColor, hlLabel } from '../core/highlights.js';
+import { t } from '../core/i18n.js';
 
 export default function VerseGuide({ pane, payload, onClose }) {
   const app = useApp();
@@ -52,10 +53,10 @@ export default function VerseGuide({ pane, payload, onClose }) {
   const hl = highlights[key];
 
   return (
-    <BottomSheet title={`Всё о стихе · ${formatRef(ref)}`} onClose={onClose} initial={2}>
+    <BottomSheet title={t('Всё о стихе · {ref}', { ref: formatRef(ref) })} onClose={onClose} initial={2}>
       {!d && (
         <div className="loading">
-          <Loader2 className="spin" size={20} /> Собираю сведения…
+          <Loader2 className="spin" size={20} /> {t('Собираю сведения…')}
         </div>
       )}
       {d && (
@@ -64,7 +65,7 @@ export default function VerseGuide({ pane, payload, onClose }) {
           {(notes[key] || hl || inCollections.length > 0) && (
             <section className="guide-sec">
               <h4>
-                <NotebookPen size={13} /> Ваши пометки
+                <NotebookPen size={13} /> {t('Ваши пометки')}
               </h4>
               {hl && (
                 <p>
@@ -76,13 +77,13 @@ export default function VerseGuide({ pane, payload, onClose }) {
                   {notes[key].text}
                 </button>
               )}
-              {inCollections.length > 0 && <p className="muted small">В подборках: {inCollections.map((c) => c.name).join(', ')}</p>}
+              {inCollections.length > 0 && <p className="muted small">{t('В подборках: {names}', { names: inCollections.map((c) => c.name).join(', ') })}</p>}
             </section>
           )}
           {d.words.length > 0 && (
             <section className="guide-sec">
               <h4>
-                <Languages size={13} /> Слова оригинала · по {d.tagged}
+                <Languages size={13} /> {t('Слова оригинала · по {module}', { module: d.tagged })}
               </h4>
               <ul className="guide-words">
                 {d.words.map((w) => (
@@ -109,7 +110,7 @@ export default function VerseGuide({ pane, payload, onClose }) {
           {d.comm.length > 0 && (
             <section className="guide-sec">
               <h4>
-                <MessageSquareText size={13} /> Комментарии
+                <MessageSquareText size={13} /> {t('Комментарии')}
               </h4>
               {d.comm.map((c) => (
                 <button key={c.module.id} className="guide-card" onClick={() => openSheet('commentary', pane, { ref, moduleId: c.module.id })}>
@@ -122,7 +123,7 @@ export default function VerseGuide({ pane, payload, onClose }) {
           {d.xrefs.length > 0 && (
             <section className="guide-sec">
               <h4>
-                <Link2 size={13} /> Параллельные места
+                <Link2 size={13} /> {t('Параллельные места')}
               </h4>
               {d.xrefs.map((x) => (
                 <button key={x.osis} className="guide-card" onClick={() => go(x.ref)}>
@@ -134,7 +135,7 @@ export default function VerseGuide({ pane, payload, onClose }) {
           {d.places.length > 0 && (
             <section className="guide-sec">
               <h4>
-                <MapPin size={13} /> Места на карте
+                <MapPin size={13} /> {t('Места на карте')}
               </h4>
               <div className="chips">
                 {d.places.map((p) => (

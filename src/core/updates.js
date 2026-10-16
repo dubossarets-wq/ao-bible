@@ -7,6 +7,7 @@
 import { P } from './channel.js';
 import { useCallback, useEffect, useState } from 'react';
 import { snapshot } from './backup.js';
+import { t, locale } from './i18n.js';
 
 export const BUILD = typeof __BUILD__ !== 'undefined' ? __BUILD__ : 'dev';
 export const IS_PWA_BUILD = typeof __PWA__ !== 'undefined' && __PWA__;
@@ -110,8 +111,8 @@ export function useUpdates() {
       setState({ available, checking: false, latest, error: null, forced, auto: autoUpdateEnabled() });
       return { available };
     } catch {
-      setState((s) => ({ ...s, checking: false, error: 'Нет связи с сервером' }));
-      return { available: false, error: 'Нет связи с сервером' };
+      setState((s) => ({ ...s, checking: false, error: t('Нет связи с сервером') }));
+      return { available: false, error: t('Нет связи с сервером') };
     }
   }, []);
 
@@ -164,5 +165,5 @@ export function buildDate(build, iso) {
     const m = /^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})?$/.exec(build || '');
     d = m ? new Date(Date.UTC(+m[1], m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0))) : null;
   }
-  return d && !isNaN(d) ? d.toLocaleString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : build;
+  return d && !isNaN(d) ? d.toLocaleString(locale(), { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : build;
 }

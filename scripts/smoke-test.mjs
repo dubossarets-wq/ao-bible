@@ -44,7 +44,8 @@ const check = (name, ok, extra = '') => {
 };
 
 async function run(label, viewport, isMobile) {
-  const ctx = await browser.newContext({ viewport, isMobile, hasTouch: isMobile, deviceScaleFactor: 2, serviceWorkers: 'block', colorScheme: 'dark' });
+  // Язык браузера — русский: проверки опираются на русские подписи (при первом запуске язык берётся из браузера)
+  const ctx = await browser.newContext({ viewport, isMobile, hasTouch: isMobile, deviceScaleFactor: 2, serviceWorkers: 'block', colorScheme: 'dark', locale: 'ru-RU' });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));

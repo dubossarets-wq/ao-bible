@@ -9,6 +9,7 @@ import { listenFrom } from '../core/listen.js';
 import { HL_COLORS, hlLabel } from '../core/highlights.js';
 import { plainText } from '../core/verseMarkup.js';
 import { bookMeta, formatRef, BOOKS } from '../core/books.js';
+import { t } from '../core/i18n.js';
 
 const ORDER = new Map(BOOKS.map((b, i) => [b.id, i]));
 
@@ -77,7 +78,7 @@ export default function SelectionBar({ index, module, selection, onDone }) {
     const text = await fullText();
     try {
       await navigator.clipboard.writeText(text);
-      toast(refs.length > 1 ? `Скопировано стихов: ${refs.length}` : 'Стих скопирован');
+      toast(refs.length > 1 ? t('Скопировано стихов: {n}', { n: refs.length }) : t('Стих скопирован'));
       onDone();
     } catch {
       openSheet('compare', index, { refs, moduleId: module.id, copyFallback: text });
@@ -97,9 +98,9 @@ export default function SelectionBar({ index, module, selection, onDone }) {
     }
     try {
       await navigator.clipboard.writeText(text);
-      toast('Поделиться отсюда нельзя — текст скопирован');
+      toast(t('Поделиться отсюда нельзя — текст скопирован'));
     } catch {
-      toast('Не удалось ни поделиться, ни скопировать', 'error');
+      toast(t('Не удалось ни поделиться, ни скопировать'), 'error');
     }
   };
 
@@ -142,29 +143,29 @@ export default function SelectionBar({ index, module, selection, onDone }) {
   );
 
   return (
-    <header className="toolbar selection-bar" role="toolbar" aria-label="Действия с выделенными стихами">
-      <button className="tb tb-icon" onClick={onDone} aria-label="Готово, снять выделение" title="Готово">
+    <header className="toolbar selection-bar" role="toolbar" aria-label={t('Действия с выделенными стихами')}>
+      <button className="tb tb-icon" onClick={onDone} aria-label={t('Готово, снять выделение')} title={t('Готово')}>
         <Check size={24} />
       </button>
       <div className="tb tb-sel-ref" aria-live="polite">
         <span className="sel-ref">{label}</span>
-        <span className="sel-count" aria-label={`Выделено стихов: ${refs.length}`}>
+        <span className="sel-count" aria-label={t('Выделено стихов: {n}', { n: refs.length })}>
           {refs.length}
         </span>
       </div>
-      <button className="tb tb-icon" onClick={parallel} aria-label="Открыть параллельно в другом переводе" title="Параллельно в другом переводе">
+      <button className="tb tb-icon" onClick={parallel} aria-label={t('Открыть параллельно в другом переводе')} title={t('Параллельно в другом переводе')}>
         <Languages size={22} />
       </button>
       {/* Комментарии — рядом с переводом */}
-      <button className="tb tb-icon" onClick={() => (openSheet('commentary', index, { ref: first }), onDone())} aria-label="Комментарии" title="Комментарии">
+      <button className="tb tb-icon" onClick={() => (openSheet('commentary', index, { ref: first }), onDone())} aria-label={t('Комментарии')} title={t('Комментарии')}>
         <MessageSquareText size={21} />
       </button>
       <div className="hl-wrap" ref={paletteRef}>
-        <button className={`tb tb-icon ${highlights[`${first.book}.${first.chapter}.${first.verse}`] ? 'on' : ''}`} onClick={() => setPalette((v) => !v)} aria-label="Выделить цветом" aria-expanded={palette} title="Выделить цветом">
+        <button className={`tb tb-icon ${highlights[`${first.book}.${first.chapter}.${first.verse}`] ? 'on' : ''}`} onClick={() => setPalette((v) => !v)} aria-label={t('Выделить цветом')} aria-expanded={palette} title={t('Выделить цветом')}>
           <Highlighter size={21} />
         </button>
         {palette && (
-          <div className="hl-palette" role="menu" aria-label="Цвет выделения">
+          <div className="hl-palette" role="menu" aria-label={t('Цвет выделения')}>
             {HL_COLORS.map((c) => (
               <button
                 key={c.id}
@@ -179,37 +180,37 @@ export default function SelectionBar({ index, module, selection, onDone }) {
                 }}
               />
             ))}
-            <button role="menuitem" className="hl-dot clear" aria-label="Убрать выделение" title="Убрать выделение" onClick={() => (setHighlight(refs, null), onDone())}>
+            <button role="menuitem" className="hl-dot clear" aria-label={t('Убрать выделение')} title={t('Убрать выделение')} onClick={() => (setHighlight(refs, null), onDone())}>
               <Eraser size={15} />
             </button>
           </div>
         )}
       </div>
-      <button className={`tb tb-icon tb-opt ${fav ? 'on' : ''}`} onClick={toggleFav} aria-label={fav ? 'Убрать из любимых' : 'В любимые'} title="Любимые стихи">
+      <button className={`tb tb-icon tb-opt ${fav ? 'on' : ''}`} onClick={toggleFav} aria-label={fav ? t('Убрать из любимых') : t('В любимые')} title={t('Любимые стихи')}>
         <Heart size={21} fill={fav ? 'currentColor' : 'none'} />
       </button>
-      <button className={`tb tb-icon ${hasNote ? 'on' : ''}`} onClick={() => (openSheet('note', index, { refs, moduleId: module.id }), onDone())} aria-label={hasNote ? 'Открыть заметку' : 'Добавить заметку'} title="Заметка">
+      <button className={`tb tb-icon ${hasNote ? 'on' : ''}`} onClick={() => (openSheet('note', index, { refs, moduleId: module.id }), onDone())} aria-label={hasNote ? t('Открыть заметку') : t('Добавить заметку')} title={t('Заметка')}>
         <NotebookPen size={21} />
       </button>
-      <button className={`tb tb-icon ${bm ? 'on' : ''}`} onClick={toggleBm} aria-label={bm ? 'Убрать закладку' : 'Закладка: продолжить отсюда'} title={bm ? 'Убрать закладку' : 'Закладка «продолжить отсюда»'}>
+      <button className={`tb tb-icon ${bm ? 'on' : ''}`} onClick={toggleBm} aria-label={bm ? t('Убрать закладку') : t('Закладка: продолжить отсюда')} title={bm ? t('Убрать закладку') : t('Закладка «продолжить отсюда»')}>
         {bm ? <BookmarkCheck size={21} /> : <Bookmark size={21} />}
       </button>
       <div className="tb-menu-wrap" ref={moreRef}>
-        <button className="tb tb-icon tb-more" onClick={() => setMore((m) => !m)} aria-haspopup="menu" aria-expanded={more} aria-label="Ещё действия">
+        <button className="tb tb-icon tb-more" onClick={() => setMore((m) => !m)} aria-haspopup="menu" aria-expanded={more} aria-label={t('Ещё действия')}>
           <MoreHorizontal size={22} />
         </button>
         {more && (
           <div className="menu" role="menu">
-            {moreItem(Compass, 'Всё о стихе', () => openSheet('guide', index, { ref: first, moduleId: module.id }))}
-            {moreItem(ScrollText, 'В проповедь', () => openSheet('sermon-add', index, { refs, moduleId: module.id }))}
-            {moreItem(FolderPlus, 'В подборку…', () => openSheet('collect', index, { refs, moduleId: module.id }))}
-            {moreItem(Heart, fav ? 'Убрать из любимых' : 'В любимые', toggleFav)}
-            {moreItem(BookCopy, 'Сравнить переводы', () => openSheet('compare', index, { refs, moduleId: module.id }))}
-            {refs.length === 1 && moreItem(Link2, 'Параллельные места', () => openSheet('xrefs', index, { ref: first }))}
-            {moreItem(Headphones, 'Слушать отсюда', () => (listenFrom(index, module.id, first), onDone()))}
-            {moreItem(Copy, 'Копировать', copy)}
-            {moreItem(ImageIcon, 'Картинка со стихом', () => openSheet('verse-image', index, { refs, moduleId: module.id }))}
-            {moreItem(Share2, 'Поделиться', share)}
+            {moreItem(Compass, t('Всё о стихе'), () => openSheet('guide', index, { ref: first, moduleId: module.id }))}
+            {moreItem(ScrollText, t('В проповедь'), () => openSheet('sermon-add', index, { refs, moduleId: module.id }))}
+            {moreItem(FolderPlus, t('В подборку…'), () => openSheet('collect', index, { refs, moduleId: module.id }))}
+            {moreItem(Heart, fav ? t('Убрать из любимых') : t('В любимые'), toggleFav)}
+            {moreItem(BookCopy, t('Сравнить переводы'), () => openSheet('compare', index, { refs, moduleId: module.id }))}
+            {refs.length === 1 && moreItem(Link2, t('Параллельные места'), () => openSheet('xrefs', index, { ref: first }))}
+            {moreItem(Headphones, t('Слушать отсюда'), () => (listenFrom(index, module.id, first), onDone()))}
+            {moreItem(Copy, t('Копировать'), copy)}
+            {moreItem(ImageIcon, t('Картинка со стихом'), () => openSheet('verse-image', index, { refs, moduleId: module.id }))}
+            {moreItem(Share2, t('Поделиться'), share)}
           </div>
         )}
       </div>

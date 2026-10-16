@@ -4,6 +4,7 @@
 import { getPayload } from './modules.js';
 import { load, save } from './storage.js';
 import { IS_STAGING } from './channel.js';
+import { t } from './i18n.js';
 
 const CACHE = IS_STAGING ? 'aobs-audio-v1' : 'aob-audio-v1';
 const hasCache = () => typeof caches !== 'undefined';
@@ -27,18 +28,18 @@ const urlsOf = (payload, book) => [...new Set(Object.entries(payload?.chapters |
 
 // Скачать все записи книги. onProgress(готово, всего, байт); signal — чтобы можно было остановить
 export async function downloadBook(audioId, book, { onProgress, signal } = {}) {
-  if (!hasCache()) throw new Error('Этот браузер не умеет хранить записи для прослушивания без интернета.');
+  if (!hasCache()) throw new Error(t('Этот браузер не умеет хранить записи для прослушивания без интернета.'));
   const urls = urlsOf(await getPayload(audioId), book);
-  if (!urls.length) throw new Error('К этой книге нет аудиозаписей.');
+  if (!urls.length) throw new Error(t('К этой книге нет аудиозаписей.'));
   const cache = await caches.open(CACHE);
   let bytes = 0;
   for (let i = 0; i < urls.length; i++) {
-    if (signal?.aborted) throw new DOMException('Остановлено', 'AbortError');
+    if (signal?.aborted) throw new DOMException(t('Остановлено'), 'AbortError');
     const have = await cache.match(urls[i]);
     if (have) bytes += +(have.headers.get('x-size') || 0);
     else {
       const res = await fetch(urls[i], { mode: 'cors', signal });
-      if (!res.ok) throw new Error(`Запись не скачалась (ошибка ${res.status}). Проверьте интернет и попробуйте ещё раз.`);
+      if (!res.ok) throw new Error(t('Запись не скачалась (ошибка {status}). Проверьте интернет и попробуйте ещё раз.', { status: res.status }));
       const blob = await res.blob();
       bytes += blob.size;
       await cache.put(urls[i], new Response(blob, { headers: { 'content-type': res.headers.get('content-type') || 'audio/mpeg', 'x-size': String(blob.size) } }));

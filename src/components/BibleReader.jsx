@@ -14,6 +14,7 @@ import { useLivePosition } from '../core/livePosition.js';
 import { usePlan } from '../core/planStore.js';
 import { dayUnits, unitDone, readingDone } from '../core/plans.js';
 import { CornerUpLeft, X, Headphones, ScrollText } from 'lucide-react';
+import { t } from '../core/i18n.js';
 
 // В режиме плана полоса показывает, сколько отрывков дня уже прочитано
 function PlanProgress({ uid, day }) {
@@ -21,7 +22,7 @@ function PlanProgress({ uid, day }) {
   if (!plan) return null;
   const units = dayUnits(plan, day);
   const pct = units.length ? (units.filter((u) => unitDone(plan, day, u.key)).length / units.length) * 100 : 0;
-  const label = `Прочитано за день: ${Math.round(pct)}%`;
+  const label = t('Прочитано за день: {pct}%', { pct: Math.round(pct) });
   return (
     <div className="read-progress plan" role="progressbar" aria-label={label} title={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
       <span style={{ width: `${pct}%` }} />
@@ -38,21 +39,21 @@ function ListenFab({ index, module, pane }) {
   useEffect(() => {
     const reader = btn.current?.closest('.reader');
     if (!reader) return;
-    let t = 0;
+    let timer = 0;
     const onScroll = () => {
       btn.current?.classList.add('dim');
-      clearTimeout(t);
-      t = setTimeout(() => btn.current?.classList.remove('dim'), 900);
+      clearTimeout(timer);
+      timer = setTimeout(() => btn.current?.classList.remove('dim'), 900);
     };
     reader.addEventListener('scroll', onScroll, { capture: true, passive: true });
     return () => {
-      clearTimeout(t);
+      clearTimeout(timer);
       reader.removeEventListener('scroll', onScroll, { capture: true });
     };
   }, [audio.active]);
   if (audio.active) return null;
   return (
-    <button ref={btn} className="listen-fab" onClick={() => listenFrom(index, module.id, ref)} aria-label={`Слушать с этого места: ${formatRef(ref)}`} title={`Слушать с ${formatRef(ref)}`}>
+    <button ref={btn} className="listen-fab" onClick={() => listenFrom(index, module.id, ref)} aria-label={t('Слушать с этого места: {ref}', { ref: formatRef(ref) })} title={t('Слушать с {ref}', { ref: formatRef(ref) })}>
       <Headphones size={20} />
     </button>
   );
@@ -72,7 +73,7 @@ function SelectionInline({ index, module, refs, onDone }) {
           onDone();
         }}
       >
-        <Headphones size={18} /> Слушать с {formatRef(first)}
+        <Headphones size={18} /> {t('Слушать с {ref}', { ref: formatRef(first) })}
       </button>
       <button
         className="btn"
@@ -81,7 +82,7 @@ function SelectionInline({ index, module, refs, onDone }) {
           onDone();
         }}
       >
-        <ScrollText size={17} /> В проповедь
+        <ScrollText size={17} /> {t('В проповедь')}
       </button>
     </div>
   );
@@ -97,9 +98,9 @@ function PlanReturn({ index, lastPlan }) {
   return (
     <div className="plan-return">
       <button className="plan-return-btn" onClick={() => returnToPlan(index)}>
-        <CornerUpLeft size={16} /> Вернуться к плану · {done} из {rs.length}
+        <CornerUpLeft size={16} /> {t('Вернуться к плану · {done} из {total}', { done, total: rs.length })}
       </button>
-      <button className="plan-return-x" onClick={() => dismissPlanReturn(index)} aria-label="Скрыть кнопку возврата к плану">
+      <button className="plan-return-x" onClick={() => dismissPlanReturn(index)} aria-label={t('Скрыть кнопку возврата к плану')}>
         <X size={15} />
       </button>
     </div>
@@ -114,7 +115,7 @@ function ReadingProgress({ module, index, fallback }) {
   const total = book.verses.reduce((a, b) => a + b, 0) || 1;
   const before = book.verses.slice(0, ref_.chapter - 1).reduce((a, b) => a + b, 0);
   const pct = Math.min(100, Math.max(0, ((before + ref_.verse) / total) * 100));
-  const label = `Прочитано книги «${book.name}»: ${Math.round(pct)}%`;
+  const label = t('Прочитано книги «{book}»: {pct}%', { book: book.name, pct: Math.round(pct) });
   return (
     <div className="read-progress" role="progressbar" aria-label={label} title={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
       <span style={{ width: `${pct}%` }} />
@@ -157,7 +158,7 @@ export default function BibleReader({ index }) {
   const selRefs = selection.size ? sortedRefs(selection) : null;
   const selActions = selRefs ? { last: selRefs[selRefs.length - 1], node: <SelectionInline index={index} module={module} refs={selRefs} onDone={() => setSelection(new Set())} /> } : null;
   return (
-    <section className={`reader ${settings.focusMode && barHidden && !selection.size ? 'bar-hidden' : ''}`} aria-label={index === 0 ? 'Основная панель' : 'Вторая панель'}>
+    <section className={`reader ${settings.focusMode && barHidden && !selection.size ? 'bar-hidden' : ''}`} aria-label={index === 0 ? t('Основная панель') : t('Вторая панель')}>
       {selection.size ? (
         <SelectionBar index={index} module={module} selection={selection} onDone={() => setSelection(new Set())} />
       ) : (

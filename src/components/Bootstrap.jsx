@@ -5,17 +5,18 @@ import * as repo from '../core/modules.js';
 import { load, save } from '../core/storage.js';
 import { useApp } from '../App.jsx';
 import { Progress } from './ui.jsx';
+import { t } from '../core/i18n.js';
 
 export default function Bootstrap() {
   const { openSheet } = useApp();
   const firstRun = !load('bootstrapped', false);
-  const [state, setState] = useState(firstRun ? { phase: 'run', label: 'Подключаю каталог…', p: 0 } : { phase: 'idle' });
+  const [state, setState] = useState(firstRun ? { phase: 'run', label: t('Подключаю каталог…'), p: 0 } : { phase: 'idle' });
   const started = useRef(false);
 
   const run = async () => {
     // Первую установку делает только этот экран — автодоустановка в App её не дублирует
     save('lateStarter', repo.LATE_STARTER);
-    setState({ phase: 'run', label: 'Подключаю каталог…', p: 0 });
+    setState({ phase: 'run', label: t('Подключаю каталог…'), p: 0 });
     try {
       const catalog = await repo.fetchCatalog();
       const list = repo.STARTER.map((id) => catalog.find((c) => c.id === id)).filter(Boolean);
@@ -27,7 +28,7 @@ export default function Bootstrap() {
         try {
           await repo.installFromCatalog(m);
         } catch (e) {
-          console.warn('Не удалось установить', m.id, e);
+          console.warn('Не удалось установить', m.id, e); // i18n-ignore: только для разработчика
         }
       }
     } catch (e) {
@@ -49,7 +50,7 @@ export default function Bootstrap() {
         <h1>AO Bible</h1>
         {state.phase === 'run' && (
           <>
-            <p>Готовлю библиотеку: синодальный перевод с номерами Стронга, параллельные места и словари.</p>
+            <p>{t('Готовлю библиотеку: синодальный перевод с номерами Стронга, параллельные места и словари.')}</p>
             <Progress value={state.p} label={state.label} />
           </>
         )}
@@ -58,21 +59,21 @@ export default function Bootstrap() {
             <p className="error-text">{state.message}</p>
             <div className="row-actions">
               <button className="btn primary" onClick={run}>
-                <RotateCw size={16} /> Повторить
+                <RotateCw size={16} /> {t('Повторить')}
               </button>
               <button className="btn" onClick={() => openSheet('library', 0, { tab: 'import' })}>
-                <Library size={16} /> Импорт из файла
+                <Library size={16} /> {t('Импорт из файла')}
               </button>
             </div>
           </>
         )}
         {state.phase === 'idle' && (
           <>
-            <p>Нет ни одного установленного перевода. Установите перевод из каталога или импортируйте JSON-файл.</p>
+            <p>{t('Нет ни одного установленного перевода. Установите перевод из каталога или импортируйте JSON-файл.')}</p>
             <div className="row-actions">
-              <button className="btn primary" onClick={run}>Установить RST+ и словари</button>
+              <button className="btn primary" onClick={run}>{t('Установить RST+ и словари')}</button>
               <button className="btn" onClick={() => openSheet('library', 0, { tab: 'catalog' })}>
-                <Library size={16} /> Библиотека модулей
+                <Library size={16} /> {t('Библиотека модулей')}
               </button>
             </div>
           </>

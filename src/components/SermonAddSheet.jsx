@@ -8,6 +8,7 @@ import { plainText } from '../core/verseMarkup.js';
 import { useSermons, createSermon, addVerses } from '../core/sermons.js';
 import { selectionLabel } from './SelectionBar.jsx';
 import { places } from './SermonsSheet.jsx';
+import { t, fmtDate } from '../core/i18n.js';
 
 export default function SermonAddSheet({ pane, payload, onClose }) {
   const { openSheet } = useApp();
@@ -32,13 +33,13 @@ export default function SermonAddSheet({ pane, payload, onClose }) {
   };
   const createAndAdd = (e) => {
     e?.preventDefault();
-    const name = title.trim() || 'Новая проповедь';
+    const name = title.trim() || t('Новая проповедь');
     add(createSermon(name), name);
   };
 
   if (done)
     return (
-      <BottomSheet title="Добавлено" onClose={onClose} initial={1}>
+      <BottomSheet title={t('Добавлено')} onClose={onClose} initial={1}>
         <div className="sermon-done">
           {/* Галочка — по центру свободного места, надпись и кнопки — внизу окна */}
           <div className="sermon-done-top">
@@ -47,14 +48,14 @@ export default function SermonAddSheet({ pane, payload, onClose }) {
             </span>
           </div>
           <p>
-            <strong>{label}</strong> — в проповеди «{done.title}».
+            {t('{ref} — в проповеди «{title}».', { ref: <strong>{label}</strong>, title: done.title })}
           </p>
           <div className="pref-btns">
             <button className="btn primary" onClick={() => openSheet('sermons', pane, { open: done.id })}>
-              <ScrollText size={17} /> Открыть проповедь
+              <ScrollText size={17} /> {t('Открыть проповедь')}
             </button>
             <button className="btn" onClick={onClose}>
-              Читать дальше
+              {t('Читать дальше')}
             </button>
           </div>
         </div>
@@ -62,21 +63,21 @@ export default function SermonAddSheet({ pane, payload, onClose }) {
     );
 
   return (
-    <BottomSheet title="Добавить в проповедь" subtitle={label} onClose={onClose} initial={1}>
+    <BottomSheet title={t('Добавить в проповедь')} subtitle={label} onClose={onClose} initial={1}>
       <form className="sermon-new" onSubmit={createAndAdd}>
         <label htmlFor="sermon-title" className="field-label">
-          {sermons.length ? 'Новая проповедь' : 'Назовите проповедь'}
+          {sermons.length ? t('Новая проповедь') : t('Назовите проповедь')}
         </label>
         <div className="ref-form">
-          <input id="sermon-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Например: Благодать Божья" autoComplete="off" autoFocus={!sermons.length} enterKeyHint="done" />
+          <input id="sermon-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('Например: Благодать Божья')} autoComplete="off" autoFocus={!sermons.length} enterKeyHint="done" />
           <button className="btn primary" type="submit" disabled={!texts}>
-            <Plus size={17} /> Создать
+            <Plus size={17} /> {t('Создать')}
           </button>
         </div>
       </form>
       {sermons.length > 0 && (
         <section className="nav-group">
-          <h4>Или выберите проповедь</h4>
+          <h4>{t('Или выберите проповедь')}</h4>
           <div className="sermon-pick">
             {sermons.map((s) => (
               <button key={s.id} className="sermon-pick-row" disabled={!texts} onClick={() => add(s.id, s.title)}>
@@ -85,7 +86,7 @@ export default function SermonAddSheet({ pane, payload, onClose }) {
                   {s.title}
                   <small>
                     {places(s.blocks.filter((b) => b.type === 'verse').length)}
-                    {s.date ? ` · ${new Date(s.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}` : ''}
+                    {s.date ? ` · ${fmtDate(s.date, { day: 'numeric', month: 'long' })}` : ''}
                   </small>
                 </span>
                 <Plus size={18} className="sermon-pick-add" />

@@ -11,10 +11,11 @@ import { getVerse } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
 import { useSermons, createSermon, deleteSermon, renameSermon, addVerses, addTextBlock, updateBlock, removeBlock, moveBlock, blockRef, blockRefFull, sermonText } from '../core/sermons.js';
 import { load, save } from '../core/storage.js';
+import { t, fmtDate as fmtD } from '../core/i18n.js';
 
 // «1 место», «2 места», «5 мест»
-export const places = (n) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? 'место' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? 'места' : 'мест'}`;
-const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
+export const places = (n) => t('{n} место|{n} места|{n} мест', { n });
+const fmtDate = (d) => (d ? fmtD(d, { day: 'numeric', month: 'long', year: 'numeric' }) : '');
 
 // Поле текста, которое растёт по мере набора
 function AutoText({ value, onChange, placeholder, autoFocus }) {
@@ -57,17 +58,17 @@ function Pulpit({ sermon, onClose }) {
     };
   }, []);
   return createPortal(
-    <div className="pulpit" role="dialog" aria-label={`Кафедра: ${sermon.title}`}>
+    <div className="pulpit" role="dialog" aria-label={t('Кафедра: {title}', { title: sermon.title })}>
       <div className="pulpit-bar">
-        <button className="icon-btn" onClick={() => setSize((v) => Math.max(18, v - 2))} aria-label="Мельче">
+        <button className="icon-btn" onClick={() => setSize((v) => Math.max(18, v - 2))} aria-label={t('Мельче')}>
           <Minus size={20} />
         </button>
         <Type size={18} aria-hidden="true" />
-        <button className="icon-btn" onClick={() => setSize((v) => Math.min(48, v + 2))} aria-label="Крупнее">
+        <button className="icon-btn" onClick={() => setSize((v) => Math.min(48, v + 2))} aria-label={t('Крупнее')}>
           <Plus size={20} />
         </button>
         <span className="pulpit-title">{sermon.title}</span>
-        <button className="icon-btn" onClick={onClose} aria-label="Закрыть кафедру">
+        <button className="icon-btn" onClick={onClose} aria-label={t('Закрыть кафедру')}>
           <X size={22} />
         </button>
       </div>
@@ -86,7 +87,7 @@ function Pulpit({ sermon, onClose }) {
             </div>
           ) : null
         )}
-        <div className="pulpit-end">Аминь</div>
+        <div className="pulpit-end">{t('Аминь')}</div>
       </div>
     </div>,
     document.body
@@ -103,7 +104,7 @@ function Editor({ sermon, pane, moduleId, onBackToList }) {
   const addByRef = async (e) => {
     e.preventDefault();
     const r = parseHumanRef(ref);
-    if (!r) return setRefErr('Не понял ссылку. Пример: «Ин 3:16» или «Пс 22:1-4».');
+    if (!r) return setRefErr(t('Не понял ссылку. Пример: «Ин 3:16» или «Пс 22:1-4».'));
     // «Ин 3» — вся глава; «Ин 3:16-18» — стихи; «Ин 3:16–4:2» — через главу
     const wholeChapter = !/\d\s*[:.,]\s*\d|\d\s+\d/.test(ref.replace(/^\s*\d\s*/, ''));
     const endCh = r.end?.chapter || r.chapter;
@@ -111,12 +112,12 @@ function Editor({ sermon, pane, moduleId, onBackToList }) {
     const items = [];
     for (let c = r.chapter; c <= endCh && items.length < 400; c++) {
       for (let v = c === r.chapter ? r.verse : 1; c < endCh || v <= endV; v++) {
-        const t = await getVerse(moduleId, { book: r.book, chapter: c, verse: v });
-        if (t == null) break;
-        items.push({ book: r.book, chapter: c, verse: v, text: plainText(t) });
+        const vt = await getVerse(moduleId, { book: r.book, chapter: c, verse: v });
+        if (vt == null) break;
+        items.push({ book: r.book, chapter: c, verse: v, text: plainText(vt) });
       }
     }
-    if (!items.length) return setRefErr('Такого места нет в выбранном переводе.');
+    if (!items.length) return setRefErr(t('Такого места нет в выбранном переводе.'));
     addVerses(sermon.id, items, moduleId);
     setRef('');
     setRefErr('');
@@ -127,7 +128,7 @@ function Editor({ sermon, pane, moduleId, onBackToList }) {
       if (navigator.share && matchMedia('(pointer: coarse)').matches) await navigator.share({ title: sermon.title, text });
       else {
         await navigator.clipboard.writeText(text);
-        toast('Текст проповеди скопирован');
+        toast(t('Текст проповеди скопирован'));
       }
     } catch {
       /* отменили «Поделиться» */
@@ -212,13 +213,13 @@ function Editor({ sermon, pane, moduleId, onBackToList }) {
   return (
     <>
       <div className="sermon-head">
-        <input className="sermon-title-input" value={sermon.title} onChange={(e) => renameSermon(sermon.id, e.target.value)} aria-label="Название проповеди" placeholder="Название проповеди" />
+        <input className="sermon-title-input" value={sermon.title} onChange={(e) => renameSermon(sermon.id, e.target.value)} aria-label={t('Название проповеди')} placeholder={t('Название проповеди')} />
         <div className="sermon-actions">
           <button className="btn primary" onClick={() => setPulpit(true)} disabled={!sermon.blocks.length}>
-            <Presentation size={17} /> Кафедра
+            <Presentation size={17} /> {t('Кафедра')}
           </button>
           <button className="btn" onClick={share} disabled={!sermon.blocks.length}>
-            {navigator.share ? <Share2 size={17} /> : <Copy size={17} />} Поделиться
+            {navigator.share ? <Share2 size={17} /> : <Copy size={17} />} {t('Поделиться')}
           </button>
         </div>
       </div>
@@ -226,10 +227,10 @@ function Editor({ sermon, pane, moduleId, onBackToList }) {
       {!sermon.blocks.length && (
         <div className="sermon-hint">
           <p>
-            <strong>Как добавить стих:</strong> в тексте Библии зажмите стих пальцем — он выделится — и нажмите внизу «В проповедь». Или введите ссылку ниже.
+            <strong>{t('Как добавить стих:')}</strong> {t('в тексте Библии зажмите стих пальцем — он выделится — и нажмите внизу «В проповедь». Или введите ссылку ниже.')}
           </p>
           <p>
-            <strong>Свой текст</strong> — кнопка «Текст»: вступление, пояснения, примеры, вывод. Порядок меняется перетаскиванием: зажмите стих или текст и ведите.
+            <strong>{t('Свой текст')}</strong> {t('— кнопка «Текст»: вступление, пояснения, примеры, вывод. Порядок меняется перетаскиванием: зажмите стих или текст и ведите.')}
           </p>
         </div>
       )}
@@ -245,27 +246,27 @@ function Editor({ sermon, pane, moduleId, onBackToList }) {
                     closeSheet();
                     navigate(pane, { book: b.book, chapter: b.chapter, verse: b.verse });
                   }}
-                  title="Открыть в Библии"
+                  title={t('Открыть в Библии')}
                 >
                   {blockRef(b)}
                 </button>
                 <p className="sermon-verse-text">{b.text}</p>
               </>
             ) : (
-              <AutoText value={b.text} onChange={(text) => updateBlock(sermon.id, b.id, { text })} placeholder="Ваш текст: мысль, пояснение, пример…" autoFocus={fresh === b.id} />
+              <AutoText value={b.text} onChange={(text) => updateBlock(sermon.id, b.id, { text })} placeholder={t('Ваш текст: мысль, пояснение, пример…')} autoFocus={fresh === b.id} />
             )}
             <div className="sermon-block-tools">
-              <span className="sermon-grip" title="Зажмите, чтобы перетащить" aria-hidden="true">
+              <span className="sermon-grip" title={t('Зажмите, чтобы перетащить')} aria-hidden="true">
                 <GripVertical size={17} />
               </span>
               <button className="link-btn sermon-add-after" onClick={() => setFresh(addTextBlock(sermon.id, i - 1))}>
-                + текст выше
+                {t('+ текст выше')}
               </button>
               <button className="link-btn sermon-add-after" onClick={() => setFresh(addTextBlock(sermon.id, i))}>
-                + текст ниже
+                {t('+ текст ниже')}
               </button>
               <span className="sermon-tools-gap" />
-              <ConfirmButton className="icon-btn subtle" confirmText="Удалить" onConfirm={() => removeBlock(sermon.id, b.id)} aria-label={b.type === 'verse' ? 'Удалить стих из проповеди' : 'Удалить текст'}>
+              <ConfirmButton className="icon-btn subtle" confirmText={t('Удалить')} onConfirm={() => removeBlock(sermon.id, b.id)} aria-label={b.type === 'verse' ? t('Удалить стих из проповеди') : t('Удалить текст')}>
                 <Trash2 size={16} />
               </ConfirmButton>
             </div>
@@ -275,27 +276,27 @@ function Editor({ sermon, pane, moduleId, onBackToList }) {
 
       <div className="sermon-add">
         <button className="btn" onClick={() => setFresh(addTextBlock(sermon.id))}>
-          <Plus size={17} /> Текст
+          <Plus size={17} /> {t('Текст')}
         </button>
         <form className="ref-form" onSubmit={addByRef}>
-          <input value={ref} onChange={(e) => (setRef(e.target.value), setRefErr(''))} placeholder="Стих по ссылке: Ин 3:16" aria-label="Добавить стих по ссылке" autoComplete="off" enterKeyHint="done" />
+          <input value={ref} onChange={(e) => (setRef(e.target.value), setRefErr(''))} placeholder={t('Стих по ссылке: Ин 3:16')} aria-label={t('Добавить стих по ссылке')} autoComplete="off" enterKeyHint="done" />
           <button className="btn" type="submit" disabled={!ref.trim()}>
-            <Plus size={17} /> Стих
+            <Plus size={17} /> {t('Стих')}
           </button>
         </form>
         {refErr && <p className="error-text small">{refErr}</p>}
       </div>
       <p className="sermon-foot">
-        {places(verses)} Писания · сохраняется само
+        {t('{n} место Писания|{n} места Писания|{n} мест Писания', { n: verses })} · {t('сохраняется само')}
         <ConfirmButton
           className="link-btn danger"
-          confirmText="Удалить проповедь?"
+          confirmText={t('Удалить проповедь?')}
           onConfirm={() => {
             deleteSermon(sermon.id);
             onBackToList();
           }}
         >
-          удалить проповедь
+          {t('удалить проповедь')}
         </ConfirmButton>
       </p>
       {pulpit && <Pulpit sermon={sermon} onClose={() => setPulpit(false)} />}
@@ -318,20 +319,20 @@ export default function SermonsSheet({ pane, payload, onClose }) {
   };
 
   return (
-    <BottomSheet title={sermon ? 'Проповедь' : 'Проповеди'} onClose={onClose} onBack={sermon ? () => setOpenId(null) : null} initial={2}>
+    <BottomSheet title={sermon ? t('Проповедь') : t('Проповеди')} onClose={onClose} onBack={sermon ? () => setOpenId(null) : null} initial={2}>
       {sermon ? (
         <Editor sermon={sermon} pane={pane} moduleId={moduleId} onBackToList={() => setOpenId(null)} />
       ) : (
         <>
           <form className="ref-form" onSubmit={create}>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Название новой проповеди" aria-label="Название новой проповеди" autoComplete="off" enterKeyHint="done" />
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('Название новой проповеди')} aria-label={t('Название новой проповеди')} autoComplete="off" enterKeyHint="done" />
             <button className="btn primary" type="submit">
-              <Plus size={17} /> Создать
+              <Plus size={17} /> {t('Создать')}
             </button>
           </form>
           {!sermons.length ? (
-            <Empty icon={ScrollText} title="Проповедей пока нет">
-              Создайте проповедь, а потом добавляйте в неё стихи прямо во время чтения: зажмите стих и нажмите внизу «В проповедь».
+            <Empty icon={ScrollText} title={t('Проповедей пока нет')}>
+              {t('Создайте проповедь, а потом добавляйте в неё стихи прямо во время чтения: зажмите стих и нажмите внизу «В проповедь».')}
             </Empty>
           ) : (
             <div className="sermon-pick">
@@ -342,7 +343,7 @@ export default function SermonsSheet({ pane, payload, onClose }) {
                     {s.title}
                     <small>
                       {places(s.blocks.filter((b) => b.type === 'verse').length)}
-                      {s.date ? ` · ${fmtDate(s.date)}` : ` · изменена ${new Date(s.updatedAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}`}
+                      {s.date ? ` · ${fmtDate(s.date)}` : ` · ${t('изменена {date}', { date: fmtD(s.updatedAt, { day: 'numeric', month: 'short' }) })}`}
                     </small>
                   </span>
                 </button>

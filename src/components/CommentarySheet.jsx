@@ -7,6 +7,7 @@ import { formatRef } from '../core/books.js';
 import { Empty } from './ui.jsx';
 import { useApp } from '../App.jsx';
 import LinkedText from './LinkedText.jsx';
+import { t } from '../core/i18n.js';
 
 export default function CommentarySheet({ pane, payload, onClose }) {
   const { openInOther } = useApp();
@@ -24,13 +25,13 @@ export default function CommentarySheet({ pane, payload, onClose }) {
 
   const cur = res?.find((x) => x.module.id === sel);
   return (
-    <BottomSheet title={`Комментарий · ${formatRef(ref)}`} subtitle={cur?.module.title || cur?.module.name} onClose={onClose} initial={0}>
+    <BottomSheet title={t('Комментарий · {ref}', { ref: formatRef(ref) })} subtitle={cur?.module.title || cur?.module.name} onClose={onClose} initial={0}>
       {!res && (
         <div className="loading">
-          <Loader2 className="spin" size={20} /> Загрузка…
+          <Loader2 className="spin" size={20} /> {t('Загрузка…')}
         </div>
       )}
-      {res && !res.length && <Empty icon={MessageSquareText} title="Комментариев к этому стиху нет" />}
+      {res && !res.length && <Empty icon={MessageSquareText} title={t('Комментариев к этому стиху нет')} />}
       {res && res.length > 1 && (
         <div className="tabs" role="tablist">
           {res.map((x) => (

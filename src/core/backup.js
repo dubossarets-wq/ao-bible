@@ -5,6 +5,7 @@
 import { P } from './channel.js';
 import { BUILD } from './updates.js';
 import { freezeStorage } from './storage.js';
+import { t, N_ } from './i18n.js';
 
 const K_BACKUPS = P + 'backups';
 const K_LAST = P + 'lastBuild';
@@ -69,6 +70,15 @@ export function listBackups() {
     };
     return { at: b.at, build: b.build, reason: b.reason, bookmarks: count(P + 'bookmarks'), notes: count(P + 'notes'), favorites: count(P + 'favorites') };
   });
+}
+
+// Причина копии хранится по-русски (так записывали и прежние версии) — переводим при показе
+N_('перед восстановлением из копии');
+N_('перед восстановлением из файла');
+export function reasonLabel(reason) {
+  const m = /^(до обновления с версии|перед переходом на версию) (.+)$/.exec(reason || '');
+  if (m) return m[1] === 'до обновления с версии' ? t('до обновления с версии {v}', { v: m[2] }) : t('перед переходом на версию {v}', { v: m[2] });
+  return reason ? t(reason) : '';
 }
 
 export function restoreBackup(at) {

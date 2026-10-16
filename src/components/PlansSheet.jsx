@@ -9,6 +9,7 @@ import { readStats } from '../core/readLog.js';
 import { bookMeta } from '../core/books.js';
 import { fetchPlanIndex, fetchPlan, makeCustomPlan, SCOPES, parseReading, planToday, behindDays, readingDone, localDate } from '../core/plans.js';
 import { ConfirmButton, Empty, Segmented, Hint } from './ui.jsx';
+import { t, fmtDate } from '../core/i18n.js';
 
 function ActivePlan({ plan, onChange, onRemove, read }) {
   const days = plan.readings.length;
@@ -36,9 +37,9 @@ function ActivePlan({ plan, onChange, onRemove, read }) {
       <div className="plan-head">
         <span className="plan-name">{plan.name}</span>
         <span className="plan-meta">
-          {doneCount} из {days} дн.
+          {t('{done} из {total} дн.', { done: doneCount, total: days })}
         </span>
-        <ConfirmButton className="icon-btn subtle" confirmText="Удалить" onConfirm={onRemove} aria-label="Удалить план">
+        <ConfirmButton className="icon-btn subtle" confirmText={t('Удалить')} onConfirm={onRemove} aria-label={t('Удалить план')}>
           <Trash2 size={15} />
         </ConfirmButton>
       </div>
@@ -47,28 +48,28 @@ function ActivePlan({ plan, onChange, onRemove, read }) {
       </div>
       {behind.length > 0 && (
         <div className="plan-behind">
-          Пропущено дней: {behind.length}
+          {t('Пропущено дней: {n}', { n: behind.length })}
           {day !== behind[0] && (
             <button className="link-btn" onClick={() => setDay(behind[0])}>
-              к первому пропущенному
+              {t('к первому пропущенному')}
             </button>
           )}
         </div>
       )}
       <div className="plan-day">
-        <button className="icon-btn subtle" onClick={() => setDay((d) => Math.max(0, d - 1))} disabled={day === 0} aria-label="Предыдущий день">
+        <button className="icon-btn subtle" onClick={() => setDay((d) => Math.max(0, d - 1))} disabled={day === 0} aria-label={t('Предыдущий день')}>
           <ChevronLeft size={18} />
         </button>
         <span className="plan-day-label">
-          День {day + 1}
-          {day === today ? ' · сегодня' : ''}
-          <small>{dayDone ? 'прочитано' : `${partDone} из ${rs.length} отрывков`}</small>
+          {t('День {n}', { n: day + 1 })}
+          {day === today ? ` · ${t('сегодня')}` : ''}
+          <small>{dayDone ? t('прочитано') : t('{done} из {total} отрывков', { done: partDone, total: rs.length })}</small>
         </span>
-        <button className="icon-btn subtle" onClick={() => setDay((d) => Math.min(days - 1, d + 1))} disabled={day === days - 1} aria-label="Следующий день">
+        <button className="icon-btn subtle" onClick={() => setDay((d) => Math.min(days - 1, d + 1))} disabled={day === days - 1} aria-label={t('Следующий день')}>
           <ChevronRight size={18} />
         </button>
-        <button className={`btn small ${dayDone ? 'primary' : ''}`} onClick={() => toggle(day)} title={dayDone ? 'Снять отметку дня' : 'Отметить весь день прочитанным'}>
-          <Check size={14} /> {dayDone ? 'Прочитано' : 'Отметить'}
+        <button className={`btn small ${dayDone ? 'primary' : ''}`} onClick={() => toggle(day)} title={dayDone ? t('Снять отметку дня') : t('Отметить весь день прочитанным')}>
+          <Check size={14} /> {dayDone ? t('Прочитано') : t('Отметить')}
         </button>
       </div>
       <div className="chips">
@@ -79,13 +80,12 @@ function ActivePlan({ plan, onChange, onRemove, read }) {
         ))}
       </div>
       <button className={`btn ${dayDone ? '' : 'primary'} plan-read`} onClick={() => read(plan, day, dayDone || firstLeft < 0 ? 0 : firstLeft)}>
-        <BookOpen size={17} /> {dayDone ? 'Перечитать' : partDone ? 'Продолжить чтение' : 'Читать'}
+        <BookOpen size={17} /> {dayDone ? t('Перечитать') : partDone ? t('Продолжить чтение') : t('Читать')}
       </button>
     </div>
   );
 }
 
-const plural = (n, one, few, many) => (n % 10 === 1 && n % 100 !== 11 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? few : many);
 const chLabel = (key) => {
   const [b, c] = key.split('.');
   return `${bookMeta(b).short.replace(/\.$/, '')} ${c}`;
@@ -96,24 +96,24 @@ function ReadStats({ open }) {
   const st = useMemo(() => readStats(), []);
   const [more, setMore] = useState(false);
   if (!st.total) return null;
-  const fmt = (d) => new Date(`${d}T12:00`).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+  const fmt = (d) => fmtDate(`${d}T12:00`, { day: 'numeric', month: 'short' });
   return (
     <section className="nav-group read-stats">
       <h4>
-        Прочитано <Hint>Глава засчитывается, когда вы дочитали её до последнего стиха — в плане или в обычном чтении.</Hint>
+        {t('Прочитано')} <Hint>{t('Глава засчитывается, когда вы дочитали её до последнего стиха — в плане или в обычном чтении.')}</Hint>
       </h4>
       <div className="stat-row">
         <div className="stat">
           <b>{st.today}</b>
-          <span>сегодня</span>
+          <span>{t('сегодня')}</span>
         </div>
         <div className="stat">
           <b>{st.week}</b>
-          <span>за 7 дней</span>
+          <span>{t('за 7 дней')}</span>
         </div>
         <div className="stat">
           <b>{st.total}</b>
-          <span>{plural(st.total, 'глава', 'главы', 'глав')} всего</span>
+          <span>{t('глава всего|главы всего|глав всего', { n: st.total })}</span>
         </div>
       </div>
       <div className="chips">
@@ -124,7 +124,7 @@ function ReadStats({ open }) {
         ))}
         {st.recent.length > 8 && !more && (
           <button className="chip" onClick={() => setMore(true)}>
-            ещё…
+            {t('ещё…')}
           </button>
         )}
       </div>
@@ -157,7 +157,7 @@ export default function PlansSheet({ pane, onClose }) {
   };
   const add = (plan) => {
     setPlans((ps) => [{ ...plan, uid: Date.now().toString(36), start: localDate(), done: {}, ...(plan.calendar ? { year: new Date().getFullYear() } : {}) }, ...ps]);
-    toast(`План «${plan.name}» начат — нажмите «Читать»`);
+    toast(t('План «{name}» начат — нажмите «Читать»', { name: plan.name }));
   };
   const start = async (meta) => {
     setBusy(meta.id);
@@ -176,19 +176,19 @@ export default function PlansSheet({ pane, onClose }) {
     try {
       const readings = await makeCustomPlan(SCOPES[scope].books(), n);
       // Глав меньше, чем дней (Евангелия за 730 дней) — дней столько, сколько глав
-      add({ planId: 'custom', name: `${SCOPES[scope].label} за ${readings.length} дн.`, readings });
+      add({ planId: 'custom', name: t('{scope} за {n} дн.', { scope: t(SCOPES[scope].label), n: readings.length }), readings });
     } catch (e) {
-      toast(e.message || 'Не удалось составить план', 'error');
+      toast(e.message || t('Не удалось составить план'), 'error');
     } finally {
       setBusy(null);
     }
   };
 
   return (
-    <BottomSheet title="Планы чтения" onClose={onClose} initial={2}>
+    <BottomSheet title={t('Планы чтения')} onClose={onClose} initial={2}>
       {plans.length === 0 && (
-        <Empty icon={CalendarCheck} title="Активных планов нет">
-          Выберите план ниже — каждый день здесь будет чтение на сегодня.
+        <Empty icon={CalendarCheck} title={t('Активных планов нет')}>
+          {t('Выберите план ниже — каждый день здесь будет чтение на сегодня.')}
         </Empty>
       )}
       {plans.map((p) => (
@@ -204,11 +204,11 @@ export default function PlansSheet({ pane, onClose }) {
       <ReadStats open={openChapter} />
 
       <section className="nav-group">
-        <h4>Начать план</h4>
+        <h4>{t('Начать план')}</h4>
         {err && <p className="error-text small">{err}</p>}
         {!index && !err && (
           <div className="loading small">
-            <Loader2 className="spin" size={16} /> Загружаю планы…
+            <Loader2 className="spin" size={16} /> {t('Загружаю планы…')}
           </div>
         )}
         {index?.map((m) => (
@@ -216,11 +216,11 @@ export default function PlansSheet({ pane, onClose }) {
             <div className="plan-offer-text">
               <span className="plan-name">{m.name}</span>
               <span className="plan-meta">
-                {m.days} дн.{m.description ? ` · ${m.description}` : ''}
+                {t('{n} дн.', { n: m.days })}{m.description ? ` · ${m.description}` : ''}
               </span>
             </div>
             <button className="btn small" disabled={!!busy} onClick={() => start(m)}>
-              {busy === m.id ? <Loader2 size={14} className="spin" /> : <Plus size={14} />} Начать
+              {busy === m.id ? <Loader2 size={14} className="spin" /> : <Plus size={14} />} {t('Начать')}
             </button>
           </div>
         ))}
@@ -228,16 +228,16 @@ export default function PlansSheet({ pane, onClose }) {
 
       <section className="nav-group">
         <h4>
-          Свой план <Hint>Главы выбранных книг делятся на дни поровну по числу стихов.</Hint>
+          {t('Свой план')} <Hint>{t('Главы выбранных книг делятся на дни поровну по числу стихов.')}</Hint>
         </h4>
-        <Segmented id="plan-scope" value={scope} onChange={setScope} options={Object.entries(SCOPES).map(([k, v]) => [k, v.label])} />
+        <Segmented id="plan-scope" value={scope} onChange={setScope} options={Object.entries(SCOPES).map(([k, v]) => [k, t(v.label)])} />
         <div className="ref-form">
           <label htmlFor="plan-days" className="sr-only">
-            Число дней
+            {t('Число дней')}
           </label>
           <input id="plan-days" type="number" inputMode="numeric" min="7" max="730" value={days} onChange={(e) => setDays(e.target.value)} />
           <button className="btn primary" onClick={startCustom} disabled={!!busy}>
-            Начать на {Math.max(7, Math.min(730, +days || 90))} дн.
+            {t('Начать на {n} дн.', { n: Math.max(7, Math.min(730, +days || 90)) })}
           </button>
         </div>
       </section>

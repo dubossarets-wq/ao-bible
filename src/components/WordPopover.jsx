@@ -6,6 +6,7 @@ import { useApp } from '../App.jsx';
 import { lookupWord } from '../core/lexicon.js';
 import { markClosedOnWord } from '../core/tapState.js';
 import { placesForWord } from '../core/places.js';
+import { t } from '../core/i18n.js';
 
 const GAP = 10;
 
@@ -79,14 +80,14 @@ export default function WordPopover() {
       className={`word-pop ${pos ? (pos.below ? 'below' : 'above') : 'measuring'}`}
       style={pos ? { left: pos.left, top: pos.top, '--arrow': `${pos.arrow}px` } : undefined}
       role="menu"
-      aria-label={`Словари для слова «${popover.token.text}»`}
+      aria-label={t('Словари для слова «{word}»', { word: popover.token.text })}
     >
       {!res && (
         <div className="wp-item wp-muted">
-          <Loader2 className="spin" size={16} /> Поиск…
+          <Loader2 className="spin" size={16} /> {t('Поиск…')}
         </div>
       )}
-      {res && approx && <div className="wp-note">≈ приблизительно: перевод без номеров Стронга</div>}
+      {res && approx && <div className="wp-note">{t('≈ приблизительно: перевод без номеров Стронга')}</div>}
       {places.map((pl) => (
         <button
           key={`place|${pl.id}`}
@@ -100,7 +101,7 @@ export default function WordPopover() {
           <MapPin size={17} className="wp-pin" />
           <span className="wp-key">{pl.name}</span>
           <span className="wp-sep">·</span>
-          <span className="wp-dict">Карта</span>
+          <span className="wp-dict">{t('Карта')}</span>
         </button>
       ))}
       {res &&
@@ -113,7 +114,7 @@ export default function WordPopover() {
         ))}
       {res && !items.length && !places.length && (
         <>
-          <div className="wp-item wp-muted">Статей для «{popover.token.text}» нет</div>
+          <div className="wp-item wp-muted">{t('Статей для «{word}» нет', { word: popover.token.text })}</div>
           <button
             role="menuitem"
             className="wp-item"
@@ -122,7 +123,7 @@ export default function WordPopover() {
               openSheet('library', popover.pane, { tab: 'installed' });
             }}
           >
-            Словари в библиотеке
+            {t('Словари в библиотеке')}
           </button>
         </>
       )}

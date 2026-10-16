@@ -4,6 +4,7 @@ import { Bookmark, BookmarkCheck, Heart, Copy, Link2, Columns2, NotebookPen } fr
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { formatRef } from '../core/books.js';
+import { t } from '../core/i18n.js';
 
 export default function VerseActions({ pane, payload, onClose }) {
   const { isBookmarked, toggleBookmark, isFavorite, toggleFavorite, openSheet, openInOther, toast, bibles, panes, notes } = useApp();
@@ -15,7 +16,7 @@ export default function VerseActions({ pane, payload, onClose }) {
     const s = `${text}\n— ${label}`;
     try {
       await navigator.clipboard.writeText(s);
-      toast('Стих скопирован');
+      toast(t('Стих скопирован'));
     } catch {
       const sel = window.getSelection();
       const el = document.getElementById('verse-copy-text');
@@ -25,7 +26,7 @@ export default function VerseActions({ pane, payload, onClose }) {
         sel.removeAllRanges();
         sel.addRange(r);
       }
-      toast('Текст выделен — скопируйте его вручную');
+      toast(t('Текст выделен — скопируйте его вручную'));
     }
   };
 
@@ -42,12 +43,12 @@ export default function VerseActions({ pane, payload, onClose }) {
         {text}
       </blockquote>
       <div className="actions">
-        {row(isBookmarked(ref) ? BookmarkCheck : Bookmark, isBookmarked(ref) ? 'Убрать закладку' : 'Закладка', () => toggleBookmark(ref, text.slice(0, 160)), isBookmarked(ref))}
-        {row(NotebookPen, notes[`${ref.book}.${ref.chapter}.${ref.verse}`] ? 'Заметка' : 'Добавить заметку', () => openSheet('note', pane, { refs: [ref], moduleId: mod?.id }))}
-        {row(Heart, isFavorite(ref) ? 'Убрать из любимых' : 'В любимые', () => toggleFavorite(ref, text), isFavorite(ref))}
-        {row(Copy, 'Копировать', copy)}
-        {row(Link2, 'Параллельные места', () => openSheet('xrefs', pane, { ref }))}
-        {pane === 0 && row(Columns2, 'Открыть во второй панели', () => (onClose(), openInOther(0, ref)))}
+        {row(isBookmarked(ref) ? BookmarkCheck : Bookmark, isBookmarked(ref) ? t('Убрать закладку') : t('Закладка'), () => toggleBookmark(ref, text.slice(0, 160)), isBookmarked(ref))}
+        {row(NotebookPen, notes[`${ref.book}.${ref.chapter}.${ref.verse}`] ? t('Заметка') : t('Добавить заметку'), () => openSheet('note', pane, { refs: [ref], moduleId: mod?.id }))}
+        {row(Heart, isFavorite(ref) ? t('Убрать из любимых') : t('В любимые'), () => toggleFavorite(ref, text), isFavorite(ref))}
+        {row(Copy, t('Копировать'), copy)}
+        {row(Link2, t('Параллельные места'), () => openSheet('xrefs', pane, { ref }))}
+        {pane === 0 && row(Columns2, t('Открыть во второй панели'), () => (onClose(), openInOther(0, ref)))}
       </div>
     </BottomSheet>
   );

@@ -17,6 +17,7 @@ import { logChapter, minSeconds } from '../core/readLog.js';
 import { Chapter, marksFor, selectedIn, afterProps, LONG_PRESS_MS } from './ChapterView.jsx';
 import { usePinchFont } from './usePinchFont.js';
 import { sermonWith } from '../core/sermons.js';
+import { t } from '../core/i18n.js';
 
 const STRIP = 50; // высота закреплённой строки плана с запасом
 
@@ -173,11 +174,11 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
       if (!hits.length) return;
       hits.filter((u) => u.dataset.whole).forEach((u) => (logChapter(u.dataset.b, +u.dataset.c), creditChapter(u.dataset.b, +u.dataset.c)));
       const finished = markUnits(uid, day, hits.map((u) => u.dataset.u));
-      if (finished) toast('План на сегодня выполнен 🎉');
+      if (finished) toast(t('План на сегодня выполнен 🎉'));
       else {
         const np = planRef.current;
         const r = readings.find((x) => readingUnits(x).some((u) => u.key === hits[0].dataset.u));
-        if (r && readingDone(np, day, r)) toast(`✓ Прочитано: ${readingLabel(r, module)}`);
+        if (r && readingDone(np, day, r)) toast(t('✓ Прочитано: {ref}', { ref: readingLabel(r, module) }));
       }
     }, 1000);
     return () => clearInterval(timer);
@@ -217,14 +218,14 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
 
   const scrollToReading = (i) => {
     const el = scroller.current;
-    const t = el?.querySelector(`[data-r="${i}"]`);
-    if (t) el.scrollTo({ top: i === 0 ? 0 : yOf(t) - STRIP, behavior: settings.animations ? 'smooth' : 'auto' });
+    const seg = el?.querySelector(`[data-r="${i}"]`);
+    if (seg) el.scrollTo({ top: i === 0 ? 0 : yOf(seg) - STRIP, behavior: settings.animations ? 'smooth' : 'auto' });
   };
   const markReading = (r) => {
     readingUnits(r)
       .filter((u) => u.to == null)
       .forEach((u) => logChapter(u.book, u.chapter));
-    if (markUnits(uid, day, readingUnits(r).map((u) => u.key))) toast('План на сегодня выполнен 🎉');
+    if (markUnits(uid, day, readingUnits(r).map((u) => u.key))) toast(t('План на сегодня выполнен 🎉'));
   };
 
   // Нажатия: слова, номера стихов, параллельные места, заметки, комментарии; долгое нажатие — выделение
@@ -333,9 +334,9 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
       <div className="scroller">
         <div className="text-col">
           <div className="notice">
-            Этот план удалён или в нём нет такого дня.{' '}
+            {t('Этот план удалён или в нём нет такого дня.')}{' '}
             <button className="btn small" onClick={() => exitPlan(index)}>
-              Обычное чтение
+              {t('Обычное чтение')}
             </button>
           </div>
         </div>
@@ -363,9 +364,9 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
       onPointerCancel={cancelPress}
       onContextMenu={onContextMenu}
     >
-      <div className="plan-strip" role="navigation" aria-label="Отрывки плана на день">
+      <div className="plan-strip" role="navigation" aria-label={t('Отрывки плана на день')}>
         <span className="plan-strip-day">
-          День {day + 1} · {doneCount}/{n}
+          {t('День {n}', { n: day + 1 })} · {doneCount}/{n}
         </span>
         <div className="plan-strip-chips">
           {readings.map((r, i) => (
@@ -374,7 +375,7 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
             </button>
           ))}
         </div>
-        <button className="icon-btn subtle" onClick={() => exitPlan(index)} aria-label="Выйти из плана" title="Выйти из плана">
+        <button className="icon-btn subtle" onClick={() => exitPlan(index)} aria-label={t('Выйти из плана')} title={t('Выйти из плана')}>
           <X size={17} />
         </button>
       </div>
@@ -383,13 +384,13 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
         <div className="plan-intro">
           <div className="plan-intro-name">{plan.name}</div>
           <div className="plan-intro-meta">
-            День {day + 1} из {plan.readings.length} · {n} {n === 1 ? 'отрывок' : n < 5 ? 'отрывка' : 'отрывков'}
+            {t('День {n} из {total}', { n: day + 1, total: plan.readings.length })} · {t('{n} отрывок|{n} отрывка|{n} отрывков', { n })}
           </div>
-          <p className="plan-intro-hint">Читайте подряд сверху вниз. Отрывок отметится сам, когда вы дочитаете его до конца.</p>
+          <p className="plan-intro-hint">{t('Читайте подряд сверху вниз. Отрывок отметится сам, когда вы дочитаете его до конца.')}</p>
         </div>
         {!books && (
           <div className="loading">
-            <Loader2 className="spin" size={22} /> Загрузка…
+            <Loader2 className="spin" size={22} /> {t('Загрузка…')}
           </div>
         )}
         {books &&
@@ -403,12 +404,12 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
               <section key={r + i} className={`plan-seg${doneFlags[i] ? ' is-done' : ''}`} data-r={i}>
                 <header className="plan-seg-head">
                   <span className="plan-seg-n">
-                    Чтение {i + 1} из {n}
+                    {t('Чтение {n} из {total}', { n: i + 1, total: n })}
                   </span>
                   <span className="plan-seg-label">{readingLabel(r, module, true)}</span>
                   {doneFlags[i] && (
                     <span className="plan-seg-ok">
-                      <Check size={14} /> Прочитано
+                      <Check size={14} /> {t('Прочитано')}
                     </span>
                   )}
                 </header>
@@ -417,7 +418,7 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
                   if (!data)
                     return (
                       <div key={k} className="notice">
-                        В переводе {module.name} нет книги «{bookMeta(u.book).name}». Выберите другой перевод вверху.
+                        {t('В переводе {module} нет книги «{book}». Выберите другой перевод вверху.', { module: module.name, book: bookMeta(u.book).name })}
                       </div>
                     );
                   const verses = data.chapters[u.chapter - 1];
@@ -452,35 +453,35 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
                 <div className="plan-seg-end">
                   {doneFlags[i] ? (
                     <div className="plan-ok">
-                      <Check size={16} /> {readingLabel(r, module)} — прочитано
+                      <Check size={16} /> {t('{ref} — прочитано', { ref: readingLabel(r, module) })}
                     </div>
                   ) : (
                     <button className="btn small subtle plan-mark" onClick={() => markReading(r)}>
-                      <Check size={14} /> Отметить прочитанным
+                      <Check size={14} /> {t('Отметить прочитанным')}
                     </button>
                   )}
                   {i < n - 1 ? (
                     <button className="btn primary plan-next" onClick={() => scrollToReading(i + 1)}>
-                      Дальше по плану: {readingLabel(readings[i + 1], module)} <ChevronDown size={17} />
+                      {t('Дальше по плану: {ref}', { ref: readingLabel(readings[i + 1], module) })} <ChevronDown size={17} />
                     </button>
                   ) : allDone ? (
                     <div className="plan-finish">
                       <div className="plan-finish-row">
                         <PartyPopper size={22} />
-                        <strong>План на сегодня выполнен</strong>
+                        <strong>{t('План на сегодня выполнен')}</strong>
                         <button className="btn primary" onClick={() => exitPlan(index)}>
-                          Готово
+                          {t('Готово')}
                         </button>
                       </div>
                       {day < plan.readings.length - 1 && (
                         <button className="btn plan-next-day" onClick={() => openPlanDay(index, uid, day + 1)}>
-                          Читать день {day + 2} <ChevronRight size={16} />
+                          {t('Читать день {n}', { n: day + 2 })} <ChevronRight size={16} />
                         </button>
                       )}
                     </div>
                   ) : (
                     <div className="plan-left">
-                      <span>Осталось прочитать:</span>
+                      <span>{t('Осталось прочитать:')}</span>
                       {readings.map((x, j) =>
                         doneFlags[j] ? null : (
                           <button key={x + j} className="chip" onClick={() => scrollToReading(j)}>
@@ -496,9 +497,9 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
                       onClick={() => navigate(index, next.ref, { flash: false, planReturn: { at: i < n - 1 ? i + 1 : firstLeft >= 0 ? firstLeft : i, ref: null } })}
                     >
                       <span className="plan-offplan-main">
-                        Читать дальше: {next.label} <ChevronRight size={15} />
+                        {t('Читать дальше: {ref}', { ref: next.label })} <ChevronRight size={15} />
                       </span>
-                      <span className="plan-offplan-sub">не входит в план</span>
+                      <span className="plan-offplan-sub">{t('не входит в план')}</span>
                     </button>
                   )}
                 </div>

@@ -17,6 +17,7 @@ import { creditChapter } from '../core/planStore.js';
 import { sermonWith } from '../core/sermons.js';
 import { formatRef } from '../core/books.js';
 import { usePinchFont } from './usePinchFont.js';
+import { t, useLang } from '../core/i18n.js';
 
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -33,12 +34,13 @@ export function highlightRegex(query) {
 // from/to — показать только часть главы (отрывок плана), idp — приставка к id стихов (на странице плана
 // одна и та же глава может встретиться дважды), noBookTitle/noChapterTitle — без заголовков (их заменяет заголовок отрывка)
 export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, xrefs, counts, comments, opts, hlRe, flashVerse, isPsalm, selected, marks, from = 1, to = null, idp = '', noBookTitle = false, noChapterTitle = false, afterVerse = null, afterNode = null }) {
+  useLang(); // глава в memo — подписи (номер главы, кнопки) обновляются при смене языка
   const sel = selected ? new Set(selected.split(',').map(Number)) : null;
   const mk = marks ? Object.fromEntries(marks.split(',').map((x) => x.split(':'))) : {};
   return (
     <div className="chapter" data-c={c}>
       {c === 1 && !noBookTitle && <h1 className="book-title">{bookName}</h1>}
-      {!noChapterTitle && <h2 className="chapter-title">{isPsalm ? `Псалом ${c}` : `Глава ${c}`}</h2>}
+      {!noChapterTitle && <h2 className="chapter-title">{isPsalm ? t('Псалом {n}', { n: c }) : t('Глава {n}', { n: c })}</h2>}
       <div className={`verses ${opts.continuous ? 'continuous' : ''}`}>
         {verses.map((text, i) => {
           const v = i + 1;
@@ -57,13 +59,13 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
                 aria-selected={sel ? sel.has(v) : undefined}
               >
                 {opts.showVerseNumbers && (
-                  <button className="vn" data-act="verse" aria-label={`Стих ${v}: действия`}>
+                  <button className="vn" data-act="verse" aria-label={t('Стих {n}: действия', { n: v })}>
                     {v}
                   </button>
                 )}
-                {mk[v]?.includes('b') && <span className="vmark bm" title="Закладка" aria-label="Закладка" />}
+                {mk[v]?.includes('b') && <span className="vmark bm" title={t('Закладка')} aria-label={t('Закладка')} />}
                 {mk[v]?.includes('s') && (
-                  <button className="vmark sermon-mark" data-act="sermon" title="Есть в проповеди — открыть" aria-label="Стих есть в проповеди. Открыть проповедь">
+                  <button className="vmark sermon-mark" data-act="sermon" title={t('Есть в проповеди — открыть')} aria-label={t('Стих есть в проповеди. Открыть проповедь')}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="M15 12h-5" />
                       <path d="M15 8h-5" />
@@ -73,7 +75,7 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
                   </button>
                 )}
                 {mk[v]?.includes('f') && (
-                  <span className="vmark fav-heart" title="Любимый стих" aria-label="Любимый стих">
+                  <span className="vmark fav-heart" title={t('Любимый стих')} aria-label={t('Любимый стих')}>
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M12 21s-7.6-4.7-9.7-9.4C.8 8.3 3 4.4 6.8 4.4c2.2 0 3.7 1.2 5.2 3 1.5-1.8 3-3 5.2-3 3.8 0 6 3.9 4.5 7.2C19.6 16.3 12 21 12 21z" fill="currentColor" />
                     </svg>
@@ -81,7 +83,7 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
                 )}
                 <span className="vt" dangerouslySetInnerHTML={{ __html: verseHtml(text, { showStrongs: opts.showStrongs, highlight: hlRe }) }} />
                 {mk[v]?.includes('n') && (
-                  <button className="note-tag" data-act="note" aria-label="Заметка к стиху" title="Заметка">
+                  <button className="note-tag" data-act="note" aria-label={t('Заметка к стиху')} title={t('Заметка')}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="M12 20h9" />
                       <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
@@ -89,7 +91,7 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
                   </button>
                 )}
                 {opts.showXref && n > 0 && (
-                  <button className="xr" data-act="xref" aria-label={`Параллельные места: ${n}`}>
+                  <button className="xr" data-act="xref" aria-label={t('Параллельные места: {n}', { n })}>
                     [⇅&nbsp;{n}]
                   </button>
                 )}
@@ -97,7 +99,7 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
                   ?.get(`${bookId}.${c}.${v}`)
                   ?.filter((cm) => !opts.inlineComments || opts.inlineComments.includes(cm.id))
                   .map((cm) => (
-                    <button key={cm.id} className="cm" data-act="comment" data-m={cm.id} aria-label={`Комментарий: ${cm.name}`}>
+                    <button key={cm.id} className="cm" data-act="comment" data-m={cm.id} aria-label={t('Комментарий: {name}', { name: cm.name })}>
                       {cm.name}
                     </button>
                   ))}
@@ -160,19 +162,19 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     setError(null);
     const meta = module.books.find((b) => b.id === ref.book);
     if (!meta) {
-      setError(`В переводе ${module.name} нет книги «${ref.book}».`);
+      setError(t('В переводе {module} нет книги «{book}».', { module: module.name, book: ref.book }));
       return;
     }
     clearLivePosition(index);
     getBook(module.id, ref.book).then((data) => {
       if (!alive) return;
-      if (!data) return setError('Не удалось прочитать книгу из хранилища. Попробуйте переустановить модуль в библиотеке.');
+      if (!data) return setError(t('Не удалось прочитать книгу из хранилища. Попробуйте переустановить модуль в библиотеке.'));
       const total = data.chapters.length;
       const c = Math.min(Math.max(1, ref.chapter), total);
       pending.current = { type: 'nav', c, v: ref.verse };
       setBook({ id: ref.book, data, meta });
       setRange({ start: Math.max(1, c - 1), end: Math.min(total, c + 1) });
-    }).catch(() => alive && setError('Не удалось прочитать книгу из памяти телефона. Закройте приложение и откройте снова.'));
+    }).catch(() => alive && setError(t('Не удалось прочитать книгу из памяти телефона. Закройте приложение и откройте снова.')));
     return () => {
       alive = false;
     };
@@ -318,8 +320,8 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
         const c = +ch.dataset.c;
         logChapter(book.id, c);
         const { credited, finished } = creditChapter(book.id, c);
-        if (finished.length) toast(`План «${finished[0]}»: чтение на сегодня выполнено ✓`);
-        else if (credited.length) toast(`Засчитано в план «${credited[0]}»: ${formatRef({ book: book.id, chapter: c, verse: 1 }).replace(/:1$/, '')}`);
+        if (finished.length) toast(t('План «{plan}»: чтение на сегодня выполнено ✓', { plan: finished[0] }));
+        else if (credited.length) toast(t('Засчитано в план «{plan}»: {ref}', { plan: credited[0], ref: formatRef({ book: book.id, chapter: c, verse: 1 }).replace(/:1$/, '') }));
       }
     }, 1000);
     return () => clearInterval(timer);
@@ -526,7 +528,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
         {error && <div className="notice error-text">{error}</div>}
         {!error && (!book || !range) && (
           <div className="loading">
-            <Loader2 className="spin" size={22} /> Загрузка…
+            <Loader2 className="spin" size={22} /> {t('Загрузка…')}
           </div>
         )}
         {book && range && !error && (
@@ -560,10 +562,10 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
               <div className="book-end">
                 {nextBook ? (
                   <button className="book-jump" onClick={() => navigate(index, { book: nextBook.id, chapter: 1, verse: 1 })}>
-                    Следующая книга: {nextBook.name} <ChevronRight size={18} />
+                    {t('Следующая книга: {name}', { name: nextBook.name })} <ChevronRight size={18} />
                   </button>
                 ) : (
-                  <div className="muted">Конец перевода</div>
+                  <div className="muted">{t('Конец перевода')}</div>
                 )}
               </div>
             )}

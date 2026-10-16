@@ -6,6 +6,7 @@ import { useApp } from '../App.jsx';
 import { getPayload } from '../core/modules.js';
 import { parseOsisRef, formatRef } from '../core/books.js';
 import { Empty } from './ui.jsx';
+import { t } from '../core/i18n.js';
 
 export default function MapsSheet({ pane, onClose }) {
   const { modules, openSheet, openInOther, openPlaceMap } = useApp();
@@ -34,10 +35,10 @@ export default function MapsSheet({ pane, onClose }) {
         variant="wide"
         headerExtra={
           <>
-            <button className="icon-btn" aria-label="Уменьшить" onClick={() => setZoom((z) => Math.max(1, z / 1.5))}>
+            <button className="icon-btn" aria-label={t('Уменьшить')} onClick={() => setZoom((z) => Math.max(1, z / 1.5))}>
               <ZoomOut size={20} />
             </button>
-            <button className="icon-btn" aria-label="Увеличить" onClick={() => setZoom((z) => Math.min(6, z * 1.5))}>
+            <button className="icon-btn" aria-label={t('Увеличить')} onClick={() => setZoom((z) => Math.min(6, z * 1.5))}>
               <ZoomIn size={20} />
             </button>
           </>
@@ -63,16 +64,16 @@ export default function MapsSheet({ pane, onClose }) {
     );
 
   return (
-    <BottomSheet title="Карты" onClose={onClose} initial={1}>
+    <BottomSheet title={t('Карты')} onClose={onClose} initial={1}>
       {places.length > 0 && (
         <section className="nav-group">
-          <h4>Места · {places.length}</h4>
+          <h4>{t('Места')} · {places.length}</h4>
           <div className="input-wrap">
             <Search size={18} className="input-icon" />
             <label htmlFor="place-q" className="sr-only">
-              Найти место
+              {t('Найти место')}
             </label>
-            <input id="place-q" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Найти место: Хеврон, Вифлеем…" autoComplete="off" />
+            <input id="place-q" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('Найти место: Хеврон, Вифлеем…')} autoComplete="off" />
           </div>
           {found.length > 0 && (
             <ul className="list">
@@ -88,14 +89,14 @@ export default function MapsSheet({ pane, onClose }) {
               ))}
             </ul>
           )}
-          {query.length >= 2 && !found.length && <p className="field-hint">Ничего не найдено.</p>}
+          {query.length >= 2 && !found.length && <p className="field-hint">{t('Ничего не найдено.')}</p>}
         </section>
       )}
       {maps && !maps.length && !places.length && (
-        <Empty icon={MapIcon} title="Карты не установлены">
-          Модули карт можно установить из каталога или импортировать из JSON.{' '}
+        <Empty icon={MapIcon} title={t('Карты не установлены')}>
+          {t('Модули карт можно установить из каталога или импортировать из JSON.')}{' '}
           <button className="link-inline" onClick={() => openSheet('library', pane, { tab: 'catalog', section: 'maps' })}>
-            Открыть библиотеку
+            {t('Открыть библиотеку')}
           </button>
         </Empty>
       )}
@@ -117,7 +118,7 @@ export default function MapsSheet({ pane, onClose }) {
       {!maps && null}
       {maps && !maps.length && places.length ? null : maps && !maps.length ? null : (
         <p className="sheet-hint">
-          <Library size={14} /> Модули карт подключаются в библиотеке модулей.
+          <Library size={14} /> {t('Модули карт подключаются в библиотеке модулей.')}
         </p>
       )}
     </BottomSheet>

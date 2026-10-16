@@ -3,6 +3,7 @@
 import { listModules, getPayload, getBook } from './modules.js';
 import { parseOsisRef } from './books.js';
 import { plainText } from './verseMarkup.js';
+import { t } from './i18n.js';
 
 let countIndex = null; // Map `${book}.${c}.${v}` -> число ссылок (для бейджа у стиха)
 let countIndexKey = '';
@@ -37,7 +38,7 @@ export async function refsForVerse(moduleId, ref) {
     if (parsed) out.push({ osis: r, ref: parsed, source });
   };
   const book = await getBook(moduleId, ref.book);
-  for (const r of book?.xrefs?.[`${ref.chapter}:${ref.verse}`] || []) add(r, 'перевод');
+  for (const r of book?.xrefs?.[`${ref.chapter}:${ref.verse}`] || []) add(r, t('перевод'));
   const mods = (await listModules()).filter((m) => m.type === 'crossrefs' && m.enabled !== false);
   for (const m of mods) {
     const p = await getPayload(m.id);

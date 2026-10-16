@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '../App.jsx';
 import BibleReader from './BibleReader.jsx';
+import { t } from '../core/i18n.js';
 
 function useOrientation(pref) {
   const calc = () => {
@@ -68,7 +69,7 @@ export default function SplitScreenReader() {
             role="separator"
             tabIndex={0}
             aria-orientation={orientation === 'columns' ? 'vertical' : 'horizontal'}
-            aria-label="Изменить размер панелей"
+            aria-label={t('Изменить размер панелей')}
             aria-valuenow={Math.round(ratio * 100)}
             onPointerDown={onDown}
             onPointerMove={onMove}

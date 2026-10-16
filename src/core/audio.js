@@ -7,6 +7,7 @@ import { getBook, getPayload, listModules, getModule } from './modules.js';
 import { plainText } from './verseMarkup.js';
 import { load, save } from './storage.js';
 import { playableUrl } from './offlineAudio.js';
+import { t } from './i18n.js';
 
 const LANG = { ru: 'ru-RU', en: 'en-US', uk: 'uk-UA', cu: 'ru-RU', he: 'he-IL', grc: 'el-GR' };
 
@@ -149,7 +150,7 @@ function stopEngines() {
   if (el) el.pause();
 }
 
-const playError = (e) => (e?.name === 'NotAllowedError' ? 'Нажмите ▶, чтобы начать воспроизведение' : 'Не удалось воспроизвести запись');
+const playError = (e) => (e?.name === 'NotAllowedError' ? t('Нажмите ▶, чтобы начать воспроизведение') : t('Не удалось воспроизвести запись'));
 
 async function neighbourVerse(moduleId, ref, dir) {
   const mod = await getModule(moduleId);
@@ -192,7 +193,7 @@ async function playFrom(ref) {
 }
 
 async function speakVerse(ref) {
-  if (typeof speechSynthesis === 'undefined') return set({ playing: false, error: 'Браузер не поддерживает синтез речи' });
+  if (typeof speechSynthesis === 'undefined') return set({ playing: false, error: t('Браузер не поддерживает синтез речи') });
   const my = ++gen;
   const mod = await getModule(state.moduleId);
   const book = await getBook(state.moduleId, ref.book);
@@ -212,7 +213,7 @@ async function speakVerse(ref) {
   };
   u.onerror = (e) => {
     if (my !== gen || e.error === 'interrupted' || e.error === 'canceled') return;
-    set({ playing: false, error: 'Синтез речи недоступен на этом устройстве' });
+    set({ playing: false, error: t('Синтез речи недоступен на этом устройстве') });
   };
   speechSynthesis.speak(u);
 }
@@ -226,7 +227,7 @@ async function playRecorded(ref) {
     const ch = p?.chapters?.[key];
     if (my !== gen) return;
     if (!ch) {
-      set({ loading: false, playing: false, error: 'Для этой главы нет аудиозаписи.', offerTts: true });
+      set({ loading: false, playing: false, error: t('Для этой главы нет аудиозаписи.'), offerTts: true });
       return;
     }
     const next = { key, module: state.source, verses: ch.verses, url: ch.url, start: ch.start ?? null, end: ch.end ?? null };
@@ -237,7 +238,7 @@ async function playRecorded(ref) {
       el.addEventListener('ended', onEnded);
       el.addEventListener('waiting', () => set({ loading: true }));
       el.addEventListener('playing', () => set({ loading: false }));
-      el.addEventListener('error', () => set({ loading: false, playing: false, error: 'Запись не загрузилась. Проверьте интернет.' }));
+      el.addEventListener('error', () => set({ loading: false, playing: false, error: t('Запись не загрузилась. Проверьте интернет.') }));
     }
     if (loadedUrl !== ch.url) {
       const src = await playableUrl(ch.url); // скачанная книга — из памяти телефона

@@ -6,7 +6,9 @@ import { useApp } from '../App.jsx';
 import * as repo from '../core/modules.js';
 import { MODULE_TYPES } from '../core/schema.js';
 import { Progress, fmtSize } from './ui.jsx';
+import { t, fmtNum } from '../core/i18n.js';
 
+// Пример файла модуля — образец формата, не переводится
 const SAMPLE = `{
   "format": "aob-module",
   "formatVersion": 1,
@@ -36,7 +38,7 @@ export default function ModuleImporter({ onDone }) {
   const addFiles = async (files) => {
     for (const file of files) {
       const key = `${file.name}-${file.size}-${Math.random()}`;
-      setItems((l) => [...l, { key, file, state: 'reading', p: 0, label: 'Чтение…' }]);
+      setItems((l) => [...l, { key, file, state: 'reading', p: 0, label: t('Чтение…') }]);
       try {
         const norm = await repo.importFile(file, (p, label) => patch(key, { p, label }));
         patch(key, { state: 'ready', norm, p: 0.5 });
@@ -47,22 +49,22 @@ export default function ModuleImporter({ onDone }) {
   };
 
   const install = async (it) => {
-    patch(it.key, { state: 'installing', p: 0.5, label: 'Установка…' });
+    patch(it.key, { state: 'installing', p: 0.5, label: t('Установка…') });
     try {
       await repo.installNormalized(it.norm, { origin: 'file', onProgress: (p, label) => patch(it.key, { p: 0.5 + p * 0.5, label }) });
       patch(it.key, { state: 'done' });
-      toast(`${it.norm.meta.name} установлен`);
+      toast(t('{name} установлен', { name: it.norm.meta.name }));
     } catch (e) {
-      patch(it.key, { state: 'error', error: `Не удалось сохранить: ${e.message}` });
+      patch(it.key, { state: 'error', error: t('Не удалось сохранить: {error}', { error: e.message }) });
     }
   };
 
   const copySample = async () => {
     try {
       await navigator.clipboard.writeText(SAMPLE);
-      toast('Пример скопирован');
+      toast(t('Пример скопирован'));
     } catch {
-      toast('Выделите пример и скопируйте вручную');
+      toast(t('Выделите пример и скопируйте вручную'));
     }
   };
 
@@ -82,9 +84,9 @@ export default function ModuleImporter({ onDone }) {
         }}
       >
         <Upload size={26} strokeWidth={1.6} />
-        <div>Перетащите JSON-файлы сюда или</div>
+        <div>{t('Перетащите JSON-файлы сюда или')}</div>
         <button className="btn primary" onClick={() => input.current?.click()}>
-          Выбрать файлы
+          {t('Выбрать файлы')}
         </button>
         <input
           ref={input}
@@ -98,7 +100,7 @@ export default function ModuleImporter({ onDone }) {
             e.target.value = '';
           }}
         />
-        <div className="field-hint">Переводы, словари и параллельные места · .json или .json.gz · тип определяется автоматически</div>
+        <div className="field-hint">{t('Переводы, словари и параллельные места · .json или .json.gz · тип определяется автоматически')}</div>
       </div>
 
       {items.map((it) => {
@@ -122,12 +124,12 @@ export default function ModuleImporter({ onDone }) {
             {m && it.state !== 'error' && (
               <>
                 <div className="mod-meta">
-                  Тип: {MODULE_TYPES[m.type]}
-                  {m.dictionaryKind ? ` (${m.dictionaryKind === 'strongs' ? 'по номерам Стронга' : 'по словам'})` : ''} · id: <span className="mono">{m.id}</span>
-                  {m.type === 'bible' && ` · ${m.stats.books} кн., ${m.stats.verses.toLocaleString('ru-RU')} стихов${m.features.strongs ? ', есть номера Стронга' : ''}`}
-                  {m.type === 'dictionary' && ` · ${m.stats.entries.toLocaleString('ru-RU')} статей`}
-                  {m.type === 'crossrefs' && ` · ссылки для ${m.stats.verses.toLocaleString('ru-RU')} стихов`}
-                  <div>Лицензия: {m.license}</div>
+                  {t('Тип: {type}', { type: MODULE_TYPES[m.type] ? t(MODULE_TYPES[m.type]) : m.type })}
+                  {m.dictionaryKind ? ` (${m.dictionaryKind === 'strongs' ? t('по номерам Стронга') : t('по словам')})` : ''} · id: <span className="mono">{m.id}</span>
+                  {m.type === 'bible' && ` · ${t('{books} кн., {verses} стихов', { books: m.stats.books, verses: fmtNum(m.stats.verses) })}${m.features.strongs ? `, ${t('есть номера Стронга')}` : ''}`}
+                  {m.type === 'dictionary' && ` · ${t('{n} статей', { n: fmtNum(m.stats.entries) })}`}
+                  {m.type === 'crossrefs' && ` · ${t('ссылки для {n} стихов', { n: fmtNum(m.stats.verses) })}`}
+                  <div>{t('Лицензия: {license}', { license: m.license })}</div>
                 </div>
                 {it.norm.warnings.length > 0 && (
                   <ul className="warn-list">
@@ -143,22 +145,22 @@ export default function ModuleImporter({ onDone }) {
             <div className="row-actions">
               {it.state === 'ready' && (
                 <button className="btn small primary" onClick={() => install(it)}>
-                  {exists ? 'Заменить установленный' : 'Установить'}
+                  {exists ? t('Заменить установленный') : t('Установить')}
                 </button>
               )}
               {it.state === 'done' && (
                 <>
                   <span className="badge ok">
-                    <CheckCircle2 size={13} /> Установлен
+                    <CheckCircle2 size={13} /> {t('Установлен')}
                   </span>
                   <button className="btn small" onClick={onDone}>
-                    К установленным
+                    {t('К установленным')}
                   </button>
                 </>
               )}
               {it.state !== 'installing' && it.state !== 'done' && (
                 <button className="btn small" onClick={() => setItems((l) => l.filter((x) => x.key !== it.key))}>
-                  Убрать
+                  {t('Убрать')}
                 </button>
               )}
             </div>
@@ -167,15 +169,19 @@ export default function ModuleImporter({ onDone }) {
       })}
 
       <section className="nav-group">
-        <h4>Формат модуля</h4>
+        <h4>{t('Формат модуля')}</h4>
         <p className="field-hint">
-          Родной формат — <span className="mono">aob-module</span> (описание: docs/MODULE_SCHEMA.md в проекте). Также принимаются массив книг с полем <span className="mono">chapters</span>,
-          список стихов <span className="mono">{'{book, chapter, verse, text}'}</span>, словарь <span className="mono">{'{"H1": {...}}'}</span> и список статей{' '}
-          <span className="mono">{'[{word, definition}]'}</span>.
+          {t('Родной формат — {native} (описание: docs/MODULE_SCHEMA.md в проекте). Также принимаются массив книг с полем {chapters}, список стихов {verses}, словарь {dict} и список статей {entries}.', {
+            native: <span className="mono">aob-module</span>,
+            chapters: <span className="mono">chapters</span>,
+            verses: <span className="mono">{'{book, chapter, verse, text}'}</span>,
+            dict: <span className="mono">{'{"H1": {...}}'}</span>,
+            entries: <span className="mono">{'[{word, definition}]'}</span>,
+          })}
         </p>
         <pre className="code">{SAMPLE}</pre>
         <button className="btn small" onClick={copySample}>
-          <Copy size={14} /> Скопировать пример
+          <Copy size={14} /> {t('Скопировать пример')}
         </button>
       </section>
     </>

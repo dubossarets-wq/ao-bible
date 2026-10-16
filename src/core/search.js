@@ -3,6 +3,7 @@
 import { getBook, getModule } from './modules.js';
 import { testamentOf } from './books.js';
 import { plainText } from './verseMarkup.js';
+import { t } from './i18n.js';
 
 const plainCache = new Map(); // `${moduleId}|${bookId}` -> string[][]
 
@@ -29,7 +30,7 @@ export function queryRegex(query, { wholeWord = false, flags = 'giu' } = {}) {
 
 export async function search({ moduleId, query, scope = 'all', currentBook, wholeWord, onResult, onProgress, signal }) {
   const mod = await getModule(moduleId);
-  if (!mod) throw new Error('Перевод не установлен');
+  if (!mod) throw new Error(t('Перевод не установлен'));
   const re = queryRegex(query, { wholeWord, flags: 'iu' });
   if (!re) return { total: 0 };
   let books = mod.books;

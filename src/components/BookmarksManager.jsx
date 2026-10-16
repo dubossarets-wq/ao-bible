@@ -9,6 +9,7 @@ import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { formatRef, parseOsisRef, bookMeta } from '../core/books.js';
 import { Empty, ConfirmButton } from './ui.jsx';
+import { t, fmtDateTime } from '../core/i18n.js';
 
 const ORDER = new Map(BOOKS.map((b, i) => [b.id, i]));
 const byBible = (a, b) => (ORDER.get(a.book) ?? 999) - (ORDER.get(b.book) ?? 999) || a.chapter - b.chapter || a.verse - b.verse;
@@ -31,17 +32,17 @@ function HighlightsTab({ moduleId, open }) {
   }, [Object.keys(highlights).length, color, moduleId]);
   if (!Object.keys(highlights).length)
     return (
-      <Empty icon={Highlighter} title="Выделений пока нет">
-        Зажмите стих и нажмите маркер, чтобы выделить его цветом.
+      <Empty icon={Highlighter} title={t('Выделений пока нет')}>
+        {t('Зажмите стих и нажмите маркер, чтобы выделить его цветом.')}
       </Empty>
     );
   const counts = {};
   Object.values(highlights).forEach((c) => (counts[c] = (counts[c] || 0) + 1));
   return (
     <>
-      <div className="chips filter-chips" role="group" aria-label="Цвет">
+      <div className="chips filter-chips" role="group" aria-label={t('Цвет')}>
         <button className={`chip ${color === 'all' ? 'on' : ''}`} onClick={() => setColor('all')}>
-          Все
+          {t('Все')}
         </button>
         {HL_COLORS.filter((c) => counts[c.id]).map((c) => (
           <button key={c.id} className={`chip ${color === c.id ? 'on' : ''}`} onClick={() => setColor(c.id)}>
@@ -58,7 +59,7 @@ function HighlightsTab({ moduleId, open }) {
               </span>
               {texts[x.key] && <span className="list-text">{texts[x.key]}</span>}
             </button>
-            <button className="icon-btn subtle" aria-label="Убрать выделение" onClick={() => setHighlight([x.ref], null)}>
+            <button className="icon-btn subtle" aria-label={t('Убрать выделение')} onClick={() => setHighlight([x.ref], null)}>
               <Trash2 size={16} />
             </button>
           </li>
@@ -75,15 +76,15 @@ function CollectionsTab({ open }) {
   const c = collections.find((x) => x.id === cur);
   if (!collections.length)
     return (
-      <Empty icon={Folder} title="Подборок пока нет">
-        Зажмите стих → «⋯» → «В подборку…», чтобы собрать стихи к уроку или теме.
+      <Empty icon={Folder} title={t('Подборок пока нет')}>
+        {t('Зажмите стих → «⋯» → «В подборку…», чтобы собрать стихи к уроку или теме.')}
       </Empty>
     );
   if (c)
     return (
       <>
         <button className="btn small" onClick={() => setCur(null)}>
-          <ChevronLeft size={14} /> Все подборки
+          <ChevronLeft size={14} /> {t('Все подборки')}
         </button>
         <h4 className="sheet-h4">
           {c.name} · {c.items.length}
@@ -97,7 +98,7 @@ function CollectionsTab({ open }) {
               </button>
               <button
                 className="icon-btn subtle"
-                aria-label="Убрать из подборки"
+                aria-label={t('Убрать из подборки')}
                 onClick={() => setCollections((cs) => cs.map((y) => (y.id === c.id ? { ...y, items: y.items.filter((i) => i !== x) } : y)))}
               >
                 <Trash2 size={16} />
@@ -114,9 +115,9 @@ function CollectionsTab({ open }) {
           <button className="list-main" onClick={() => setCur(x.id)}>
             <Folder size={16} className="accent" />
             <span className="list-title">{x.name}</span>
-            <span className="list-meta">{x.items.length} ст.</span>
+            <span className="list-meta">{t('{n} ст.', { n: x.items.length })}</span>
           </button>
-          <ConfirmButton className="icon-btn subtle" confirmText="Удалить" onConfirm={() => setCollections((cs) => cs.filter((y) => y.id !== x.id))} aria-label="Удалить подборку">
+          <ConfirmButton className="icon-btn subtle" confirmText={t('Удалить')} onConfirm={() => setCollections((cs) => cs.filter((y) => y.id !== x.id))} aria-label={t('Удалить подборку')}>
             <Trash2 size={16} />
           </ConfirmButton>
         </li>
@@ -125,7 +126,7 @@ function CollectionsTab({ open }) {
   );
 }
 
-const fmtDate = (t) => new Date(t).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const fmtDate = (at) => fmtDateTime(at, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
 export default function BookmarksManager({ pane, payload, onClose }) {
   const { bookmarks, setBookmarks, favorites, setFavorites, notes, setNote, panes, navigate, go, openSheet, highlights, collections } = useApp();
@@ -147,15 +148,15 @@ export default function BookmarksManager({ pane, payload, onClose }) {
   const notesShown = nqs ? noteList.filter((n) => `${n.text} ${n.label} ${formatRef(n.ref, { full: true })}`.toLowerCase().replace(/ё/g, 'е').includes(nqs)) : noteList;
 
   return (
-    <BottomSheet title="Закладки и заметки" onClose={onClose} initial={2}>
+    <BottomSheet title={t('Закладки и заметки')} onClose={onClose} initial={2}>
       <div className="tabs" role="tablist">
         {[
-          ['bookmarks', 'Закладки', bookmarks.length],
-          ['favorites', 'Любимые стихи', favorites.length],
-          ['notes', 'Заметки', noteList.length],
-          ['highlights', 'Выделения', Object.keys(highlights).length],
-          ['collections', 'Подборки', collections.length],
-          ['history', 'История', p.history.length],
+          ['bookmarks', t('Закладки'), bookmarks.length],
+          ['favorites', t('Любимые стихи'), favorites.length],
+          ['notes', t('Заметки'), noteList.length],
+          ['highlights', t('Выделения'), Object.keys(highlights).length],
+          ['collections', t('Подборки'), collections.length],
+          ['history', t('История'), p.history.length],
         ].map(([k, l, n]) => (
           <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>
             {l} <span className="tab-n">{n}</span>
@@ -168,9 +169,9 @@ export default function BookmarksManager({ pane, payload, onClose }) {
           <button className="continue-card" onClick={() => open(p.ref)}>
             <PlayCircle size={26} className="accent" />
             <span className="continue-text">
-              <span className="continue-title">Продолжить чтение</span>
+              <span className="continue-title">{t('Продолжить чтение')}</span>
               <span className="muted">
-                {bookMeta(p.ref.book).name} {p.ref.chapter}:{p.ref.verse} — последнее место
+                {t('{ref} — последнее место', { ref: `${bookMeta(p.ref.book).name} ${p.ref.chapter}:${p.ref.verse}` })}
               </span>
             </span>
           </button>
@@ -185,15 +186,15 @@ export default function BookmarksManager({ pane, payload, onClose }) {
                     </span>
                     {b.text && <span className="list-text">{b.text}</span>}
                   </button>
-                  <button className="icon-btn subtle" aria-label="Удалить закладку" onClick={() => setBookmarks((bs) => bs.filter((x) => x !== b))}>
+                  <button className="icon-btn subtle" aria-label={t('Удалить закладку')} onClick={() => setBookmarks((bs) => bs.filter((x) => x !== b))}>
                     <Trash2 size={16} />
                   </button>
                 </li>
               ))}
             </ul>
           ) : (
-            <Empty icon={Bookmark} title="Закладок пока нет">
-              Зажмите стих и нажмите «Закладка» — с этого места можно будет продолжить. Закладок может быть сколько угодно.
+            <Empty icon={Bookmark} title={t('Закладок пока нет')}>
+              {t('Зажмите стих и нажмите «Закладка» — с этого места можно будет продолжить. Закладок может быть сколько угодно.')}
             </Empty>
           )}
         </>
@@ -210,15 +211,15 @@ export default function BookmarksManager({ pane, payload, onClose }) {
                   </span>
                   <span className="list-text">{f.text}</span>
                 </button>
-                <button className="icon-btn subtle" aria-label="Убрать из любимых" onClick={() => setFavorites((fs) => fs.filter((x) => x !== f))}>
+                <button className="icon-btn subtle" aria-label={t('Убрать из любимых')} onClick={() => setFavorites((fs) => fs.filter((x) => x !== f))}>
                   <Trash2 size={16} />
                 </button>
               </li>
             ))}
           </ul>
         ) : (
-          <Empty icon={Heart} title="Любимых стихов пока нет">
-            Дважды быстро нажмите на стих — он станет любимым. Или зажмите стих и нажмите сердечко.
+          <Empty icon={Heart} title={t('Любимых стихов пока нет')}>
+            {t('Дважды быстро нажмите на стих — он станет любимым. Или зажмите стих и нажмите сердечко.')}
           </Empty>
         ))}
 
@@ -226,9 +227,9 @@ export default function BookmarksManager({ pane, payload, onClose }) {
         <div className="input-wrap">
           <Search size={18} className="input-icon" />
           <label htmlFor="notes-q" className="sr-only">
-            Поиск по заметкам
+            {t('Поиск по заметкам')}
           </label>
-          <input id="notes-q" type="search" value={nq} onChange={(e) => setNq(e.target.value)} placeholder="Поиск по заметкам" autoComplete="off" />
+          <input id="notes-q" type="search" value={nq} onChange={(e) => setNq(e.target.value)} placeholder={t('Поиск по заметкам')} autoComplete="off" />
         </div>
       )}
       {tab === 'notes' &&
@@ -243,18 +244,18 @@ export default function BookmarksManager({ pane, payload, onClose }) {
                   </span>
                   <span className="list-text">{n.text}</span>
                 </button>
-                <button className="icon-btn subtle" aria-label="Изменить заметку" onClick={() => openSheet('note', pane, { refs: [n.ref], moduleId: p.moduleId })}>
+                <button className="icon-btn subtle" aria-label={t('Изменить заметку')} onClick={() => openSheet('note', pane, { refs: [n.ref], moduleId: p.moduleId })}>
                   <NotebookPen size={16} />
                 </button>
-                <button className="icon-btn subtle" aria-label="Удалить заметку" onClick={() => setNote(n.ref, '')}>
+                <button className="icon-btn subtle" aria-label={t('Удалить заметку')} onClick={() => setNote(n.ref, '')}>
                   <Trash2 size={16} />
                 </button>
               </li>
             ))}
           </ul>
         ) : (
-          <Empty icon={NotebookPen} title="Заметок пока нет">
-            Зажмите стих и нажмите «Заметка».
+          <Empty icon={NotebookPen} title={t('Заметок пока нет')}>
+            {t('Зажмите стих и нажмите «Заметка».')}
           </Empty>
         ))}
 
@@ -274,7 +275,7 @@ export default function BookmarksManager({ pane, payload, onClose }) {
               >
                 <History size={16} />
                 <span className="list-title">{formatRef(r, { full: true })}</span>
-                {i === p.hIndex && <span className="list-meta">сейчас</span>}
+                {i === p.hIndex && <span className="list-meta">{t('сейчас')}</span>}
               </button>
             </li>
           ))}
