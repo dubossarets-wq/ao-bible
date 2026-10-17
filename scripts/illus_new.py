@@ -22,7 +22,18 @@
 Ответы API кэшируются в data-src/illustrations/cache-new/ — повторный запуск сеть не трогает (--refresh
 перезапрашивает списки). Всё скачанное — недоверенные данные: только разбираем текст.
 
-Запуск: python -I scripts/illus_new.py [--refresh] [iconclass] [dore_nt] [tissot_hd] [masters]
+Второй проход (стихи, у которых в модуле ещё нет картинок; список берётся из public/modules/bible-illustrations.json;
+длинная сторона от 1000 px; не больше 4 кандидатов на стих, авторы разные; части не повторяют файлов друг друга):
+  * tissot2.json — рисунки Тиссо к Ветхому Завету («Tissot Drawing NNN»), таблица TISSOT_DRAWINGS;
+  * masters2.json — Блейк (Книга Иова), Гофман, «Библейская галерея Дальзилей», гравюры Метрополитен-музея
+    (таблица MASTERS2, сюжет по названию листа);
+  * iconclass2.json — Викиданные + Iconclass с расширенной таблицей ICONCLASS2;
+  * rijks2.json — Рейксмузеум: поле «Wat» сопоставляется со всеми текстами Iconclass 71/73 (дерево кодов
+    cache-new/iconclass-tree, его обход — iconclass_tree_fetch), код -> стих по ICONCLASS + ICONCLASS2.
+Порядок запуска: tissot2 masters2 iconclass2 rijks2 (последующие учитывают стихи и авторов предыдущих).
+
+Запуск: python -I scripts/illus_new.py [--refresh] [iconclass] [dore_nt] [tissot_hd] [masters] [rijks]
+        python -I scripts/illus_new.py tissot2 masters2 iconclass2 rijks2   (второй проход)
 """
 import hashlib
 import html
@@ -746,6 +757,432 @@ def build_masters():
 
 
 # ---------------------------------------------------------------------------------------------
+# Второй проход: стихи, у которых в модуле ещё нет картинок (tissot2, iconclass2, rijks2)
+# ---------------------------------------------------------------------------------------------
+
+import contextlib
+
+NEW_PARTS = ["tissot2", "masters2", "iconclass2", "rijks2"]     # порядок важен: раньше — приоритетнее при общем лимите на стих
+MIN_SIDE2 = 1000          # во втором проходе достаточно длинной стороны 1000 px
+PER_VERSE2 = 4            # не больше 4 кандидатов на стих (с учётом всех новых частей), авторы разные
+
+
+@contextlib.contextmanager
+def min_side(v):
+    global MIN_SIDE
+    old, MIN_SIDE = MIN_SIDE, v
+    try:
+        yield
+    finally:
+        MIN_SIDE = old
+
+
+def taken_refs(before):
+    """стих -> авторы уже собранных новых частей (части из списка before)."""
+    out = defaultdict(list)
+    for n in before:
+        p = PARTS / f"{n}.json"
+        if p.exists():
+            for e in json.loads(p.read_text(encoding="utf-8")):
+                out[e["ref"]].append(e["author"])
+    return out
+
+
+def cap_new(entries, taken, covered):
+    """Только стихи вне модуля; на стих не больше PER_VERSE2 с учётом taken; разные авторы."""
+    by_ref = defaultdict(list)
+    for e in entries:
+        if e["ref"] not in covered:
+            by_ref[e["ref"]].append(e)
+    out, dropped = [], 0
+    for ref, lst in by_ref.items():
+        lst.sort(key=lambda e: (not re.match(r"Public domain|PD|CC0", e["license"]),
+                                -min(e["w"] * e["h"], 8_000_000)))
+        authors = list(taken.get(ref, []))
+        chosen = []
+        for e in lst:
+            if len(authors) >= PER_VERSE2:
+                break
+            if e["author"] in authors:
+                continue
+            chosen.append(e)
+            authors.append(e["author"])
+        dropped += len(lst) - len(chosen)
+        out += chosen
+    log(f"  новые стихи: оставлено {len(out)} записей, отложено {dropped}")
+    return out
+
+
+_ICTREE = None
+
+
+def ICON_TXT():
+    """код -> английский текст из закэшированного дерева Iconclass 71/73 (cache-new/iconclass-tree)."""
+    global _ICTREE
+    if _ICTREE is None:
+        _ICTREE = {}
+        for path in sorted((CACHE / "iconclass-tree").glob("*.json")):
+            for r in json.loads(path.read_text(encoding="utf-8")).get("result", []):
+                if r:
+                    _ICTREE[r["n"]] = r.get("txt", {}).get("en", "")
+    return _ICTREE
+
+
+def iconclass_tree_fetch():
+    """Обходит дерево Iconclass 71 и 73 (пакетами по 40 кодов, кэш cache-new/iconclass-tree) — нужно один раз."""
+    seen, todo = set(), ["71", "73"]
+    while todo:
+        chunk = [c for c in todo[:40] if c not in seen]
+        todo = todo[40:]
+        if not chunk:
+            continue
+
+        def fetch():
+            url = "https://iconclass.org/json?" + urllib.parse.urlencode([("notation", c) for c in chunk])
+            time.sleep(0.4)
+            return json.loads(http_get(url).decode("utf-8"))
+        d = cached_json("iconclass-tree", "t-" + _h("|".join(chunk)), fetch)
+        for r in d.get("result", []):
+            if r:
+                seen.add(r["n"])
+                todo += [x for x in r.get("c", []) if x not in seen]
+    log(f"  дерево Iconclass: {len(seen)} кодов")
+
+
+def build_tissot2():
+    """Рисунки Тиссо к Ветхому Завету («Tissot Drawing NNN», 1024–4608 px) по таблице TISSOT_DRAWINGS:
+    привязка по названию рисунка; только стихи вне модуля; один рисунок на стих."""
+    import illus_classic as C
+    from illus_new_refs import TISSOT_DRAWINGS
+    C.UA = UA
+    log("Тиссо, рисунки к Ветхому Завету")
+    covered = module_refs()
+    ot = C.category_files("Category:Old Testament by James Tissot", 1)
+    info = C.file_info(ot)
+    have = existing_files(["tissot_hd", "dore_nt", "masters", "iconclass", "rijks"])
+    out, rej = [], Counter()
+    with min_side(MIN_SIDE2):
+        for t in ot:
+            fi = info.get(t)
+            m = re.search(r"Tissot Drawing (\d{3})", t)
+            if not fi or not m:
+                continue
+            low = t.lower()
+            key = next((k for k in TISSOT_DRAWINGS if k.startswith(m.group(1) + "#") and k.split("#")[1] in low),
+                       m.group(1))
+            if key not in TISSOT_DRAWINGS:
+                rej["нет в таблице"] += 1
+                continue
+            ref_s, ru = TISSOT_DRAWINGS[key]
+            ref = parse_ref(ref_s)
+            if not ref or ref in covered:
+                rej["стих уже в модуле"] += 1
+                continue
+            if file_key(t) in have:
+                rej["уже есть"] += 1
+                continue
+            if not license_ok(fi) or max(fi["w"], fi["h"]) < MIN_SIDE:
+                rej["лицензия или меньше 1000 px"] += 1
+                continue
+            name = re.sub(r"^File:Tissot ", "", t).rsplit(".", 1)[0]
+            e = make_entry(fi, ref, ru, "Джеймс Тиссо", "1896–1902", "Джеймс Тиссо", f"tissot:drawing{key.replace('#', '-')}",
+                           f"название рисунка «{name[:110]}» -> {ref_s.lstrip('=')}")
+            if e:
+                out.append(e)
+            else:
+                rej["формат"] += 1
+    log(f"  отброшено: {dict(rej)}")
+    out = cap_new(out, {}, covered)
+    return write_part("tissot2", out)
+
+
+def build_masters2():
+    """Блейк (Иов), Гофман, «Библейская галерея Дальзилей», гравюры Метрополитен-музея: сюжет по названию листа
+    (таблица MASTERS2); только стихи вне модуля."""
+    from illus_new_refs import MASTERS2, MET_AUTHORS
+    log("Блейк, Гофман, Дальзили, Метрополитен-музей")
+    covered = module_refs()
+    have = existing_files(["tissot_hd", "dore_nt", "masters", "iconclass", "rijks", "tissot2"])
+    out, rej = [], Counter()
+    with min_side(MIN_SIDE2):
+        for sec, cfg in MASTERS2.items():
+            files = []
+            for c in cfg["cats"]:
+                files += category_files(c, 0)
+            files = list(dict.fromkeys(files))
+            info = file_info(files)
+            rows = [[p.strip() for p in line.split("|")] for line in cfg["rows"].strip().splitlines() if line.strip()]
+            for t in files:
+                fi = info.get(t)
+                if not fi:
+                    continue
+                low = fi["title"].lower()
+                row = next((r for r in rows if r[0].lower() in low), None)
+                if not row:
+                    continue
+                pat, ref_s, ru = row
+                ref = parse_ref(ref_s)
+                if not ref or ref in covered:
+                    rej["стих уже в модуле"] += 1
+                    continue
+                if file_key(t) in have:
+                    rej["уже есть"] += 1
+                    continue
+                author = cfg["author"]
+                if author is None:
+                    author = next((ru_a for k, ru_a in MET_AUTHORS.items() if k.lower() in fi["artist"].lower()), None)
+                    if not author:
+                        rej["автор не в списке"] += 1
+                        continue
+                year = cfg["year"]
+                if year is None:
+                    m = re.search(r"(1[4-9]\d\d)", fi["date"])
+                    year = m.group(1) if m else ""
+                    if year and int(year) > 1900:
+                        rej["позже 1900 г."] += 1
+                        continue
+                if file_bad(fi) or not license_ok(fi) or max(fi["w"], fi["h"]) < MIN_SIDE:
+                    rej["лицензия / размер / деталь"] += 1
+                    continue
+                label = re.sub(r" MET \S+$", "", t[5:].rsplit(".", 1)[0])[:100]
+                e = make_entry(fi, ref, ru, author, year, cfg["collection"], f"m2:{sec}:{_h(t)[:10]}",
+                               f"название листа «{label}» -> {ref_s.lstrip('=')}")
+                if e:
+                    out.append(e)
+                else:
+                    rej["формат"] += 1
+    log(f"  отброшено: {dict(rej)}")
+    out = cap_new(out, taken_refs(["tissot2"]), covered)
+    return write_part("masters2", out)
+
+
+def build_iconclass2():
+    """Викиданные + Iconclass: коды из ICONCLASS2 (плюс ICONCLASS) -> только стихи, которых нет в модуле."""
+    from illus_new_refs import ICONCLASS, ICONCLASS2, WD_AUTHORS_RU
+    table = {**ICONCLASS, **ICONCLASS2}
+    log("Викиданные + Iconclass, второй проход")
+    rows = sparql(WD_QUERY, "wd-iconclass-v2")
+    items = {}
+    for x in rows:
+        q = x["item"].rsplit("/", 1)[-1]
+        it = items.setdefault(q, {"types": set(), "codes": set(), "img": set(), "cr": {}, "inc": "", "label": ""})
+        it["types"] |= {t.rsplit("/", 1)[-1] for t in x.get("types", "").split("|") if t}
+        it["codes"].add(_ic_base(x["ic"]))
+        it["img"].add(x["img"])
+        it["cr"][x["cr"]] = x.get("crRu") or x["crLabel"]
+        it["inc"] = it["inc"] or x.get("inception", "")[:4].lstrip("+")
+        it["label"] = it["label"] or x.get("label", "")
+    items = {q: it for q, it in items.items() if it["types"] & WD_FLAT and not it["types"] - WD_FLAT}
+    texts = iconclass_texts({c for it in items.values() for c in it["codes"]})
+    covered = module_refs()
+    chosen, skipped = {}, Counter()
+    for q, it in items.items():
+        codes = {c for c in it["codes"] if not any(o != c and o.startswith(c) for o in it["codes"])}
+        mapped = sorted((c for c in codes if c in table), key=len, reverse=True)
+        if not mapped:
+            continue
+        refs = {parse_ref(table[c][0]) for c in mapped}
+        refs.discard(None)
+        if not refs or len({r.rsplit(".", 1)[0] for r in refs}) > 1 or len(it["cr"]) > 1:
+            skipped["нет стиха / несколько сюжетов / авторов"] += 1
+            continue
+        ref = parse_ref(table[mapped[0]][0])
+        if ref in covered:
+            skipped["стих уже в модуле"] += 1
+            continue
+        chosen[q] = (mapped[0], ref)
+    log(f"  произведений на новые стихи: {len(chosen)}; пропущено {dict(skipped)}")
+    have = existing_files(["tissot_hd", "dore_nt", "masters", "iconclass", "rijks", "tissot2", "masters2"])
+    titles = {}
+    for q in chosen:
+        for u in sorted(items[q]["img"]):
+            titles[q] = "File:" + file_key(urllib.parse.unquote(u.rsplit("/", 1)[-1]))
+            break
+    info = file_info(list(titles.values()), light=True)
+    out, used, rej = [], set(), Counter()
+    with min_side(MIN_SIDE2):
+        for q, (code, ref) in sorted(chosen.items(), key=lambda x: int(x[0][1:])):
+            fi = info.get(titles[q])
+            if not fi:
+                rej["нет файла"] += 1
+                continue
+            fk = file_key(titles[q])
+            if fk in have or fk in used:
+                rej["уже есть в частях"] += 1
+                continue
+            if not license_ok(fi):
+                rej["лицензия"] += 1
+                continue
+            if max(fi["w"], fi["h"]) < MIN_SIDE:
+                rej["меньше 1000 px"] += 1
+                continue
+            if file_bad(fi):
+                rej["фото в интерьере / деталь / витраж"] += 1
+                continue
+            it = items[q]
+            if re.search(r"portrait|kitchen|still life|market|allegor|triumph", it["label"], re.I):
+                rej["портрет / кухня / аллегория по названию"] += 1
+                continue
+            why = (f"Iconclass {code}: «{(texts.get(code) or ICON_TXT().get(code, ''))[:160]}» -> "
+                   f"{table[code][0].lstrip('=')}; Викиданные {q} «{it['label'][:100]}»")
+            author = next(iter(it["cr"].values()))
+            e = make_entry(fi, ref, table[code][1], WD_AUTHORS_RU.get(author, author), it["inc"],
+                           "Картины и гравюры старых мастеров", "wd:" + q, why)
+            if e:
+                used.add(fk)
+                out.append(e)
+            else:
+                rej["формат"] += 1
+    log(f"  отброшено: {dict(rej)}")
+    out = cap_new(out, taken_refs(["tissot2", "masters2"]), covered)
+    return write_part("iconclass2", out)
+
+
+
+_GENERIC_NAMES = {"Lord", "God", "Son", "Man", "Old", "Ark", "Kingdom", "Heaven", "Holy", "Spirit", "Passover", "Jews",
+                  "Israelites", "Israel", "Egyptians", "Philistines", "Moabite", "Midianite", "Midianites", "Ghost",
+                  "Testament", "Law", "Book", "Sabbath", "Hebrews", "Pharisees", "Sadducees", "Gentiles"}
+
+
+def _fold(s):
+    import unicodedata
+    return "".join(c for c in unicodedata.normalize("NFKD", s.lower()) if not unicodedata.combining(c))
+
+
+def names_match(en_text, nl_text):
+    """Собственные имена из английского текста Iconclass (Cain, Uriah…) должны встречаться в названии/описании
+    листа Рейксмузеума: по первым трём буквам или по сходству написания (Solomon ~ Salomo). Нет имён — проверка
+    пройдена."""
+    import difflib
+    names = {w for w in re.findall(r"[A-Z][a-z]{2,}", en_text) if w not in _GENERIC_NAMES}
+    if not names:
+        return True
+    words = set(re.findall(r"[a-z]{3,}", _fold(nl_text)))
+    pre = {w[:3] for w in words}
+    for n in map(_fold, names):
+        if n[:3] in pre:
+            return True
+        if len(n) >= 4 and any(len(w) >= 4 and difflib.SequenceMatcher(None, n, w).ratio() >= 0.6 for w in words):
+            return True
+    return False
+
+
+PORTRAIT_TITLE = re.compile(r"^(Apostel |Sint |Heilige |Profeet |Koning |Evangelist )?[A-Z][\w'.-]+\s*(\(.*)?$")
+
+
+def clean_maker(name):
+    """Имя мастера из поля «Vervaardiger»: без вики-разметки и приклеенных ролей («…Collaertuitgever: …»)."""
+    name = re.sub(r"\{\{w\|[^|]*\|", "", name).replace("{{", "").replace("}}", "")
+    name = re.split(r"(?<=[a-zéë.])(?=(?:prentmaker|uitgever|inspirator|verlener|ontwerper|schilder|tekenaar|"
+                    r"naar))|(?:prentmaker|uitgever|inspirator|verlener|ontwerper|naar):", name)[0]
+    name = re.sub(r"(uitgever|verlener|naar|ontwerper|inspirator)$", "", name.strip())
+    return name.strip(" :,;")
+
+
+RIJKS2_CATS = ["Category:Prints of Bible stories", "Category:Prints of Jesus Christ", "Category:New Testament engravings",
+               "Category:Old Testament engravings", "Category:Prints of Adam and Eve", "Category:Prints of Cain and Abel",
+               "Category:Prints of Annunciation", "Category:Prints of Holy Family", "Category:Prints of David (Biblical figure)",
+               "Category:Prints of Aaron", "Category:Prints of Abraham", "Category:Prints of Hagar",
+               "Category:Prints of Bathsheba at her bath", "Category:Prints of Ecce homo", "Category:Prints of Eve"]
+RIJKS_NAME = re.compile(r"RP-[A-Z]-|PK-P|RP-F")
+
+
+def build_rijks2():
+    """Рейксмузеум, второй проход: тексты поля «Wat» сопоставляются со ВСЕМИ текстами Iconclass 71/73
+    (дерево кодов в кэше), код -> стих по ICONCLASS + ICONCLASS2; только стихи вне модуля."""
+    from illus_new_refs import ICONCLASS, ICONCLASS2, RIJKS_AUTHORS
+    table = {**ICONCLASS, **ICONCLASS2}
+    log("Рейксмузеум, второй проход")
+    files = []
+    for c in RIJKS_CATS:
+        files += category_files(c, 3)
+    files = list(dict.fromkeys(files))
+    pages = rijks_pages(files)
+    # листы Рейксмузеума, которых нет в трёх основных категориях, но есть в тематических (имя файла — номер RP-…)
+    seen, extra = set(files), []
+    for c in RIJKS2_CATS:
+        extra += [f for f in category_files(c, 3) if f not in seen and RIJKS_NAME.search(f)]
+    extra = list(dict.fromkeys(extra))
+    log(f"  основных файлов {len(files)}, дополнительных из тематических категорий {len(extra)}")
+    pages.update(rijks_pages(extra))
+    tree = ICON_TXT()
+    by_text = defaultdict(set)
+    for code, t in tree.items():
+        if code[:2] in ("71", "73") and len(t.strip()) >= 12:
+            by_text[t.strip().lower()].add(code)
+    keys = sorted(by_text, key=len, reverse=True)
+    covered = module_refs()
+    have = existing_files(["tissot_hd", "dore_nt", "masters", "iconclass", "rijks", "tissot2", "masters2", "iconclass2"])
+    out, rej = [], Counter()
+    with min_side(MIN_SIDE2):
+        for t, p in pages.items():
+            text = p["text"]
+            wat = _rijks_field(text, "Wat")
+            if not wat:
+                continue
+            year = re.search(r"(1[4-9]\d\d)", _rijks_field(text, "Datering"))
+            if not year or int(year.group(1)) > RIJKS_MAX_YEAR:
+                continue
+            rest, found = wat.lower(), set()
+            for s in keys:
+                if s in rest:
+                    found |= by_text[s]
+                    rest = rest.replace(s, "|")
+            mapped = {c for c in found if c in table}
+            mapped = {c for c in mapped if not any(o != c and o.startswith(c) for o in mapped)}
+            if not mapped:
+                continue
+            # другой отдельный сюжет (код не из таблицы, не предок/потомок выбранных) — серия сцен, пропускаем
+            other = {c for c in found - set(table) if len(c) >= 5 and c.isalnum()
+                     and not any(c.startswith(m) or m.startswith(c) for m in mapped)}
+            if other:
+                rej["в описании есть другой сюжет"] += 1
+                continue
+            refs = {parse_ref(table[c][0]) for c in mapped} - {None}
+            if len(refs) != 1:
+                rej["несколько сюжетов / нет стиха"] += 1
+                continue
+            code = max(mapped, key=len)
+            ref = parse_ref(table[code][0])
+            if ref in covered:
+                rej["стих уже в модуле"] += 1
+                continue
+            if file_key(t) in have:
+                rej["уже есть"] += 1
+                continue
+            if not license_ok(p) or max(p["w"], p["h"]) < MIN_SIDE:
+                rej["лицензия или меньше 1000 px"] += 1
+                continue
+            if file_bad(p):
+                rej["фото / деталь"] += 1
+                continue
+            title_nl = re.sub(r"\{\{w\|[^|}]*\|([^|}]*)[^}]*\}\}", r"", _rijks_field(text, r"Titel\(s\)"))
+            title_nl = re.sub(r"\s*\(titel op object\)", "", title_nl)
+            if PORTRAIT_TITLE.match(title_nl.split(".")[0].strip()):
+                rej["лист-портрет (название — одно имя)"] += 1
+                continue
+            if not names_match(tree.get(code, ""), title_nl + " " + _rijks_field(text, "Omschrijving")):
+                rej["имена из Iconclass не встречаются в названии/описании"] += 1
+                continue
+            maker = _rijks_field(text, "Vervaardiger")
+            m = re.search(r"(?:prentmaker|kunstenaar)[^:]*:\s*(.+?)(?=\s*\(|,|\s+[a-z]+(?:\s[a-z]+)*:|$)", maker)
+            name = clean_maker((m.group(1).strip() if m else "") or "anoniem")
+            author = RIJKS_AUTHORS.get(name, name)
+            obj = title_nl.split(",")[0]
+            why = (f"Рейксмузеум, «Wat»: «{tree.get(code, '')[:140]}» = Iconclass {code} -> "
+                   f"{table[code][0].lstrip('=')}; название: «{obj[:80]}»")
+            key = "rijks:" + re.sub(r"^.*,\s*", "", t.rsplit(".", 1)[0])[:40]
+            e = make_entry(p, ref, table[code][1], author, year.group(1), "Гравюры Рейксмузеума", key, why)
+            if e:
+                out.append(e)
+            else:
+                rej["формат"] += 1
+    log(f"  отброшено: {dict(rej)}")
+    out = cap_new(out, taken_refs(["tissot2", "masters2", "iconclass2"]), covered)
+    return write_part("rijks2", out)
+
+
+# ---------------------------------------------------------------------------------------------
 # Проверка глазами: стих Синодального текста рядом с подписью
 # ---------------------------------------------------------------------------------------------
 
@@ -784,11 +1221,12 @@ def review(names):
 
 # порядок важен: частные части раньше, iconclass и rijks не повторяют их файлов
 BUILDERS = {"tissot_hd": build_tissot_hd, "dore_nt": build_dore_nt, "masters": build_masters,
-            "iconclass": build_iconclass, "rijks": build_rijks}
+            "iconclass": build_iconclass, "rijks": build_rijks,
+            "tissot2": build_tissot2, "masters2": build_masters2, "iconclass2": build_iconclass2, "rijks2": build_rijks2}
 
 
 def main():
-    names = [a for a in sys.argv[1:] if not a.startswith("--")] or list(BUILDERS)
+    names = [a for a in sys.argv[1:] if not a.startswith("--")] or [n for n in BUILDERS if not n.endswith("2")]
     if "--review" in sys.argv:
         review(names)
         return
