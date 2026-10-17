@@ -18,19 +18,37 @@ const isLight = (hex) => {
 };
 
 // Строка цвета: образец, выбор своего цвета, «вернуть цвет темы»
-function ColorRow({ id, label, value, changed, onChange, onReset }) {
+// Пока открыта палитра, вверху экрана виден образец (onLive) — палитра на телефоне закрывает нижнюю часть
+function ColorRow({ id, label, value, changed, onChange, onReset, onLive }) {
   return (
     <div className={`color-row ${changed ? '' : 'same'}`}>
       <label className="field-label" htmlFor={id}>
         {label}
       </label>
-      <input id={id} type="color" value={value} onChange={(e) => onChange(e.target.value)} />
       <button className="icon-btn" onClick={onReset} aria-label={`${label}: цвет темы`} title="Вернуть цвет темы">
         <RotateCcw size={16} />
       </button>
+      <input
+        id={id}
+        type="color"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onClick={() => onLive?.(true)}
+        onFocus={() => onLive?.(true)}
+        onBlur={() => onLive?.(false)}
+      />
     </div>
   );
 }
+
+// Что показать в образце для каждого цвета
+const LIVE = {
+  strong: { sn: true, num: false, view: 'flow' },
+  heading: { head: true, view: 'flow' },
+  bar: { bar: true, num: false, view: 'flow' },
+  barText: { bar: true, num: false, view: 'flow' },
+  verseNum: {},
+};
 
 function Swatches({ id, label, list, value, onPick }) {
   return (
@@ -49,7 +67,9 @@ function Swatches({ id, label, list, value, onPick }) {
 const V16 = [['Ибо', null], ['так', null], ['возлюбил', '25'], ['Бог', '2316'], ['мир,', '2889'], ['что', null], ['отдал', '1325'], ['Сына', '5207'], ['Своего', null], ['Единородного…', '3439']];
 const V17 = 'Ибо не послал Бог Сына Своего в мир, чтобы судить мир, но чтобы мир спасен был чрез Него.';
 
-function Sample({ s, bar, head, num, sn, ui, colors, view = textView(s) }) {
+function Sample({ s: real, bar, head, num, sn, ui, colors, live, view = textView(real) }) {
+  // live — образец при выборе цвета: номера и заголовки видны всегда
+  const s = live ? { ...real, showStrongs: true, showHeadings: true } : real;
   const showNum = num !== false && s.showVerseNumbers && view !== 'book';
   const v16 = V16.map(([w, n], i) => (
     <React.Fragment key={i}>
@@ -109,6 +129,8 @@ export default function AppearanceSettings({ onClose }) {
   const { settings: s, setSettings: set, resetSettings, themeName, modules, hlLabels, setHlLabels } = useApp();
   const commentaries = modules.filter((m) => m.type === 'commentary' && m.enabled !== false);
   const eff = themeColors(s, themeName); // цвета, которые сейчас на экране
+  const [live, setLive] = React.useState(null); // какой цвет сейчас выбирают в палитре
+  const liveFor = (k) => (on) => setLive((cur) => (on ? k : cur === k ? null : cur));
   const over = s.colorOverrides || {};
   const setColor = (k, v) => set({ colorOverrides: { ...over, [k]: v } });
   const resetColor = (k) => {
@@ -127,6 +149,11 @@ export default function AppearanceSettings({ onClose }) {
         </button>
       }
     >
+      {live && (
+        <div className="live-sample" aria-hidden="true">
+          <Sample s={s} live {...(LIVE[live] || { bar: true, head: true, sn: true, ui: true })} />
+        </div>
+      )}
       <section className="settings-group">
         <h4>Тема</h4>
         <Segmented
@@ -230,7 +257,7 @@ export default function AppearanceSettings({ onClose }) {
             ['sub', 'Под строкой'],
           ]}
         />
-        <ColorRow id="c-strong" label="Цвет" value={eff.strong} changed={!!over.strong} onChange={(v) => setColor('strong', v)} onReset={() => resetColor('strong')} />
+        <ColorRow id="c-strong" label="Цвет" value={eff.strong} changed={!!over.strong} onChange={(v) => setColor('strong', v)} onReset={() => resetColor('strong')} onLive={liveFor('strong')} />
         <Sample s={s} sn num={false} view="flow" />
       </section>
 
@@ -238,7 +265,7 @@ export default function AppearanceSettings({ onClose }) {
         <h4>Заголовки разделов</h4>
         <Switch id="set-head" checked={s.showHeadings} onChange={(showHeadings) => set({ showHeadings })} label="Заголовки разделов" />
         <Slider id="set-head-size" label="Размер" value={s.headingSize} min={0.6} max={1.4} step={0.05} onChange={(headingSize) => set({ headingSize })} format={(v) => `${Math.round(v * 100)}%`} />
-        <ColorRow id="c-heading" label="Цвет" value={eff.heading} changed={!!over.heading} onChange={(v) => setColor('heading', v)} onReset={() => resetColor('heading')} />
+        <ColorRow id="c-heading" label="Цвет" value={eff.heading} changed={!!over.heading} onChange={(v) => setColor('heading', v)} onReset={() => resetColor('heading')} onLive={liveFor('heading')} />
         <Sample s={s} head view="flow" />
       </section>
 
@@ -308,7 +335,7 @@ export default function AppearanceSettings({ onClose }) {
         <Swatches id="sw-bar" label="Верхняя панель" list={BARS} value={eff.bar} onPick={(v) => set({ colorOverrides: { ...over, bar: v, barText: isLight(v) ? '#1d1c1a' : '#f3f1ec' } })} />
         <div className="color-list">
           {COLOR_KEYS.filter(([k]) => k !== 'strong' && k !== 'heading').map(([k, label]) => (
-            <ColorRow key={k} id={`c-${k}`} label={label} value={eff[k]} changed={!!over[k]} onChange={(v) => setColor(k, v)} onReset={() => resetColor(k)} />
+            <ColorRow key={k} id={`c-${k}`} label={label} value={eff[k]} changed={!!over[k]} onChange={(v) => setColor(k, v)} onReset={() => resetColor(k)} onLive={liveFor(k)} />
           ))}
         </div>
         {Object.keys(over).length > 0 && (
