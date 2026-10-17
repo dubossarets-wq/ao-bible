@@ -97,13 +97,17 @@ function prefixMatches(keys, prefix, limit = 6) {
   return out;
 }
 
+// Порядок словарей: русский Стронг первым (он открывается по умолчанию), затем другие русские, затем остальные
+const dictRank = (m) => (m.dictionaryKind === 'strongs' && m.language === 'ru' && m.id !== 'rst-symphony' ? 0 : m.language === 'ru' ? 1 : 2);
+const byRank = (list) => list.sort((a, b) => dictRank(a) - dictRank(b));
+
 const strongKey = (s) => {
   const m = /^([HG])0*(\d+)([a-z]?)$/i.exec(s);
   return m ? `${m[1].toUpperCase()}${m[2]}${m[3] || ''}` : s;
 };
 
 export async function lookupWord({ token, ref }) {
-  const modules = (await listModules()).filter((m) => m.type === 'dictionary' && m.enabled !== false);
+  const modules = byRank((await listModules()).filter((m) => m.type === 'dictionary' && m.enabled !== false));
   const testament = testamentOf(ref.book);
   const prefix = testament === 'NT' ? 'G' : 'H';
   const lower = token.text.toLowerCase();
@@ -150,7 +154,7 @@ export async function lookupWord({ token, ref }) {
 
 // Статья по номеру Стронга (переход по ссылке «от H24» внутри статьи)
 export async function lookupStrong(num) {
-  const modules = (await listModules()).filter((m) => m.type === 'dictionary' && m.enabled !== false && m.dictionaryKind === 'strongs');
+  const modules = byRank((await listModules()).filter((m) => m.type === 'dictionary' && m.enabled !== false && m.dictionaryKind === 'strongs'));
   const results = [];
   for (const m of modules) {
     const p = await getPayload(m.id);

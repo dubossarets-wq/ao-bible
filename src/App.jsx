@@ -124,10 +124,13 @@ export default function App() {
           const entry = cat.find((c) => c.id === id);
           if (!entry) continue;
           await repo.installFromCatalog(entry);
+          if (entry.id === 'strongs-ru-greek') continue; // о русском Стронге — одно уведомление на оба модуля
           toast(
             entry.type === 'illustrations'
               ? 'Добавлены иллюстрации к стихам: нажмите на значок картинки в конце стиха'
-              : `Установлен модуль «${entry.name}»: нажмите на название города в стихе, чтобы увидеть его на карте`
+              : entry.id === 'strongs-ru-hebrew'
+                ? 'Добавлен словарь Стронга на русском: нажмите на слово или номер Стронга'
+                : `Установлен модуль «${entry.name}»: нажмите на название города в стихе, чтобы увидеть его на карте`
           );
         }
       })

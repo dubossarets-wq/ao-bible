@@ -214,10 +214,10 @@ export async function importFile(file, onProgress) {
 }
 
 // Первый запуск: ставим базовый набор из каталога, сначала перевод — чтобы сразу можно было читать.
-export const STARTER = ['rst-plus', 'xrefs-rst', 'rst-symphony', 'strongs-hebrew', 'strongs-greek', 'bible-places', 'bible-illustrations'];
+export const STARTER = ['rst-plus', 'xrefs-rst', 'rst-symphony', 'strongs-ru-hebrew', 'strongs-ru-greek', 'bible-places', 'bible-illustrations'];
 
 // Модули, которые один раз доустанавливаются тем, кто начал пользоваться приложением до их появления
-export const LATE_STARTER = ['bible-places', 'bible-illustrations'];
+export const LATE_STARTER = ['bible-places', 'bible-illustrations', 'strongs-ru-hebrew', 'strongs-ru-greek'];
 
 // Модули, собранные в один: многотомный комментарий одного автора стал одним модулем.
 // У кого стоят старые части — ставится общий модуль, части удаляются (см. App.jsx).
