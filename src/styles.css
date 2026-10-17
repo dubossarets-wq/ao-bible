@@ -1150,3 +1150,10 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .sel-inline:not(.part-inline) .btn:not(.sel-listen) svg { flex: none; width: 16px; height: 16px; }
 @media (max-width: 430px) { .sel-inline:not(.part-inline) .btn:not(.sel-listen) svg { display: none; } }
 .il-tr { font-size: .78rem; color: var(--muted); font-style: italic; }
+
+/* Все места слова оригинала */
+.concord { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.concord-row { display: flex; flex-direction: column; gap: 3px; width: 100%; text-align: left; padding: 10px 0; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--text); }
+.concord-ref { font-weight: 700; font-size: .85rem; color: var(--accent); }
+.concord-text { font-family: var(--font-text); font-size: 1rem; line-height: 1.45; }
+.concord-text mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: inherit; border-radius: 3px; padding: 0 2px; }

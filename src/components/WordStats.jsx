@@ -4,7 +4,8 @@ import { Loader2, BarChart3 } from 'lucide-react';
 import { strongStats } from '../core/wordstats.js';
 import { formatRef } from '../core/books.js';
 
-export default function WordStats({ num, onOpenRef }) {
+// onOpenAll — открыть окно «Все места» (текст стихов, выбор по варианту перевода)
+export default function WordStats({ num, onOpenRef, onOpenAll }) {
   const [st, setSt] = useState(null);
   const [all, setAll] = useState(false);
   useEffect(() => {
@@ -46,12 +47,17 @@ export default function WordStats({ num, onOpenRef }) {
             {formatRef(r)}
           </button>
         ))}
-        {!all && st.refs.length > 24 && (
+        {!all && !onOpenAll && st.refs.length > 24 && (
           <button className="chip ghost" onClick={() => setAll(true)}>
             Все {st.refs.length}
           </button>
         )}
       </div>
+      {onOpenAll && (
+        <button className="btn" onClick={onOpenAll}>
+          Все места с текстом стихов ({st.verses})
+        </button>
+      )}
     </section>
   );
 }

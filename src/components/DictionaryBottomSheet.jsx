@@ -33,7 +33,7 @@ function StrongLinks({ text, onOpen }) {
   );
 }
 
-function StrongEntry({ num, entry, module, mapping, orig, onOpenStrong, onOpenRef }) {
+function StrongEntry({ num, entry, module, mapping, orig, onOpenStrong, onOpenRef, onOpenAll }) {
   const isHeb = num.startsWith('H');
   // orig — это слово в оригинале стиха (из подстрочника): точная форма с лицом, числом и падежом
   const exact = orig && orig.num === num.replace(/^([HG])0*/, '$1') ? orig : null;
@@ -147,7 +147,7 @@ function StrongEntry({ num, entry, module, mapping, orig, onOpenStrong, onOpenRe
         </section>
       )}
       {/* Места употребления — после вариантов перевода */}
-      <WordStats num={num} onOpenRef={onOpenRef} />
+      <WordStats num={num} onOpenRef={onOpenRef} onOpenAll={onOpenAll && (() => onOpenAll(num, entry.lemma))} />
       <p className="source-note">
         {module.name}
         {module.language === 'en' ? ' · статья на английском языке' : ''} · {module.license}
@@ -303,7 +303,7 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
           {(() => {
             const f = current.found[Math.min(entryIdx, current.found.length - 1)];
             if (current.module.dictionaryKind === 'strongs')
-              return <StrongEntry num={f.key} entry={f.entry} module={current.module} mapping={top ? null : mapping} orig={top ? null : orig} onOpenStrong={openStrong} onOpenRef={openRef} />;
+              return <StrongEntry num={f.key} entry={f.entry} module={current.module} mapping={top ? null : mapping} orig={top ? null : orig} onOpenAll={(num, lemma) => openSheet('concord', pane, { num, lemma, back: { kind: 'dict', payload } })} onOpenStrong={openStrong} onOpenRef={openRef} />;
             return (
               <article className="entry">
                 <h3 className="entry-word">{f.entry.word || f.key}</h3>
