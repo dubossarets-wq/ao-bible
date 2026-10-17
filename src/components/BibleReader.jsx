@@ -13,7 +13,7 @@ import PlanView from './PlanView.jsx';
 import { useLivePosition } from '../core/livePosition.js';
 import { usePlan } from '../core/planStore.js';
 import { dayUnits, unitDone, readingDone } from '../core/plans.js';
-import { CornerUpLeft, X, Headphones, ScrollText, Heart, Copy, TextSelect } from 'lucide-react';
+import { CornerUpLeft, X, Headphones, ScrollText, Heart, Copy, TextSelect, WholeWord } from 'lucide-react';
 
 // В режиме плана полоса показывает, сколько отрывков дня уже прочитано
 function PlanProgress({ uid, day }) {
@@ -118,13 +118,15 @@ function SelectionInline({ index, module, refs, onDone, onPartStart }) {
   return (
     <div className="sel-inline">
       <button
-        className="btn primary"
+        className="btn primary sel-listen"
         onClick={() => {
           listenFrom(index, module.id, first);
           onDone();
         }}
+        aria-label="Слушать с этого стиха"
+        title="Слушать"
       >
-        <Headphones size={18} /> Слушать
+        <Headphones size={20} />
       </button>
       <button
         className="btn"
@@ -140,6 +142,15 @@ function SelectionInline({ index, module, refs, onDone, onPartStart }) {
           <TextSelect size={17} /> Часть стиха
         </button>
       )}
+      <button
+        className="btn"
+        onClick={() => {
+          openSheet('interlinear', index, { ref: first, moduleId: module.id });
+          onDone();
+        }}
+      >
+        <WholeWord size={17} /> Подстрочник
+      </button>
     </div>
   );
 }
