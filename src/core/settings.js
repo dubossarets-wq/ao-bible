@@ -3,12 +3,12 @@
 export const THEMES = {
   light: {
     label: 'Светлая',
-    bg: '#f6f5f2', text: '#1d1c1a', muted: '#7d7a73', accent: '#9a6a2f', panel: '#ffffff',
+    bg: '#f6f5f2', text: '#1d1c1a', muted: '#68655e', accent: '#9a6a2f', panel: '#ffffff',
     bar: '#38363a', barText: '#f3f1ec', line: '#e3e0d9', hl: '#f6e3a8', verseNum: '#55524c',
   },
   sepia: {
     label: 'Сепия',
-    bg: '#f3e9d7', text: '#3b2f22', muted: '#8a7a64', accent: '#8b5a24', panel: '#faf3e6',
+    bg: '#f3e9d7', text: '#3b2f22', muted: '#6e604c', accent: '#8b5a24', panel: '#faf3e6',
     bar: '#4a3d2f', barText: '#f6ecda', line: '#e2d4bb', hl: '#ebd189', verseNum: '#6b5a44',
   },
   dark: {

@@ -321,7 +321,8 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
     if (act === 'sermon') return openSheet('sermons', index, { open: sermonWith(vref)?.id || null });
     if (act === 'comment') return openSheet('commentary', index, { ref: vref, moduleId: e.target.closest('[data-m]').dataset.m });
     if (act === 'illus') return openSheet('illus', index, { ref: vref, items: illus?.get(`${vref.book}.${vref.chapter}.${vref.verse}`) || [] });
-    if (act === 'verse') return openSheet('verse', index, { ref: vref, text: plainText(text), moduleId: module.id });
+    // Номер стиха — то же, что долгое нажатие: выделение стиха и одна общая панель действий
+    if (act === 'verse') return onSelect?.(vref, 'start');
     const sn = e.target.closest('.sn');
     if (sn) {
       const token = wordAt(text, +sn.dataset.i);

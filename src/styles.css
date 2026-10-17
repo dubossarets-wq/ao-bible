@@ -1157,3 +1157,11 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .concord-ref { font-weight: 700; font-size: .85rem; color: var(--accent); }
 .concord-text { font-family: var(--font-text); font-size: 1rem; line-height: 1.45; }
 .concord-text mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: inherit; border-radius: 3px; padding: 0 2px; }
+
+/* Удобство нажатия: номер стиха — зона 32×32 при прежнем виде; кнопки панелей — 44×44, где хватает места */
+.vn { position: relative; }
+.vn::after { content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, 32px); height: 32px; transform: translate(-50%, -50%); }
+@container (min-width: 400px) {
+  .toolbar .tb-icon { width: 44px; min-width: 44px; height: 44px; }
+}
+.toolbar .tb { min-height: 44px; }

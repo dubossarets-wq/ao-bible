@@ -64,6 +64,28 @@ export default function App() {
 
   const [panes, setPanes] = usePersistentState('panes', () => [newPane(DEFAULT_SETTINGS.primaryModule), null]);
   const [sheet, setSheet] = useState(null);
+  // Кнопка «Назад» телефона (Android) и жест «назад» закрывают открытое окно, а не приложение:
+  // пока окно открыто, в истории браузера лежит одна запись; закрыли окно сами — запись убираем
+  const sheetOpen = !!sheet;
+  const backEntry = useRef(false);
+  useEffect(() => {
+    if (sheetOpen && !backEntry.current) {
+      history.pushState({ aobSheet: 1 }, '');
+      backEntry.current = true;
+    } else if (!sheetOpen && backEntry.current) {
+      backEntry.current = false;
+      if (history.state?.aobSheet) history.back();
+    }
+  }, [sheetOpen]);
+  useEffect(() => {
+    const onPop = () => {
+      if (!backEntry.current) return;
+      backEntry.current = false;
+      setSheet(null);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
   const [popover, setPopover] = useState(null); // выборка словарей над словом
   const [toasts, setToasts] = useState([]);
   const [bookmarks, setBookmarks] = usePersistentState('bookmarks', []);
