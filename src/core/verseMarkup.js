@@ -74,7 +74,7 @@ export function verseHtml(text, { showStrongs = false, highlight = null } = {}) 
     const hl = highlight && highlight.test(t.text);
     if (highlight) highlight.lastIndex = 0;
     out += `<span class="w${t.strongs ? ' s' : ''}${hl ? ' hl' : ''}" data-i="${wi}">${esc(t.text)}</span>`;
-    if (showStrongs && t.strongs) out += `<sup class="sn">${t.strongs.join(' ')}</sup>`;
+    if (showStrongs && t.strongs) out += `<sup class="sn" data-i="${wi}">${t.strongs.join(' ')}</sup>`;
     wi++;
   }
   if (inItalic) out += '</i>';

@@ -17,6 +17,11 @@ data-src/illustrations/parts/*.json.
   * картинка «к главе» (precision "chapter", привязана к первому стиху главы) ставится, только если у этого стиха
     осталось свободное место, и не больше одной на главу; её подпись начинается с «К главе: »;
   * только лицензии Public domain, CC0, CC BY, CC BY-SA и только ссылки на upload.wikimedia.org.
+Проверка глазами (scripts/illus_review.json): каждую картинку сверили с текстом стиха —
+  {id: {"v": "ok" | "move" | "drop", "ref": новый стих при "move", "why": причина}}, id = sha1(img + "|" + ref)[:10].
+  Если файл проверки есть, в модуль идут только проверенные картинки ("ok" и "move").
+  Части из EXCLUDE_PARTS не берутся (sweet — рисунки в детском стиле). Запись с полем "replaces" (тот же лист
+  в лучшем разрешении) вытесняет запись с этим img.
 Модуль записывается через extra_lib.write_module, запись в catalog.json — merge_catalog (по id),
 id добавляется в scripts/approved-modules.json.
 
@@ -24,6 +29,7 @@ id добавляется в scripts/approved-modules.json.
   python -I scripts/build_illustrations.py              # свести части и записать модуль
   python -I scripts/build_illustrations.py --check 100  # плюс HEAD-проверка случайных 100 картинок (img и thumb)
 """
+import hashlib
 import json
 import random
 import re
@@ -166,23 +172,52 @@ def head_ok(url):
     return False
 
 
+EXCLUDE_PARTS = {"sweet"}
+REVIEW_PATH = Path(__file__).with_name("illus_review.json")
+
+
+def review_id(img, ref):
+    return hashlib.sha1(f"{img}|{ref}".encode()).hexdigest()[:10]
+
+
+def apply_review(e, review):
+    """Решение проверки для записи: None — не брать; иначе запись (возможно, с другим стихом)."""
+    if review is None:
+        return e
+    r = review.get(review_id(e["img"], e["ref"]))
+    if not r or r.get("v") not in ("ok", "move"):
+        return None
+    e = dict(e, precision="verse")
+    if r["v"] == "move":
+        e["ref"] = r["ref"]
+    return e
+
+
 def main():
-    parts = sorted(PARTS.glob("*.json"))
+    parts = [p for p in sorted(PARTS.glob("*.json")) if p.stem not in EXCLUDE_PARTS]
+    review = json.loads(REVIEW_PATH.read_text(encoding="utf-8")) if REVIEW_PATH.exists() else None
     if not parts:
         raise SystemExit("Нет частей в data-src/illustrations/parts/")
+    raw = [(p, e) for p in parts for e in json.loads(p.read_text(encoding="utf-8"))]
+    replaced = {e["replaces"] for _, e in raw if e.get("replaces")}
     precise, chapter = defaultdict(list), defaultdict(list)
     loaded, rejected = Counter(), Counter()
-    for p in parts:
-        for e in json.loads(p.read_text(encoding="utf-8")):
-            if not valid(e):
-                rejected[p.stem] += 1
-                continue
-            loaded[p.stem] += 1
-            if e.get("precision") == "chapter":
-                b, c, _ = e["ref"].split(".")
-                chapter[(b, int(c))].append(e)
-            else:
-                precise[e["ref"]].append(e)
+    for p, e in raw:
+        if e["img"] in replaced and not e.get("replaces"):
+            continue
+        e = apply_review(e, review)
+        if e is None:
+            rejected[p.stem + ":проверка"] += 1
+            continue
+        if not valid(e):
+            rejected[p.stem] += 1
+            continue
+        loaded[p.stem] += 1
+        if e.get("precision") == "chapter":
+            b, c, _ = e["ref"].split(".")
+            chapter[(b, int(c))].append(e)
+        else:
+            precise[e["ref"]].append(e)
     log("Части:", dict(loaded), "отброшено:", dict(rejected) or 0)
 
     entries = {}

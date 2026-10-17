@@ -6,7 +6,8 @@ import { bookMeta } from '../core/books.js';
 import { getVerse } from '../core/modules.js';
 import { listenFrom } from '../core/listen.js';
 import { plainText } from '../core/verseMarkup.js';
-import { RefreshCw, Map as MapIcon, PlayCircle, Link2, Headphones, BookOpenText, CalendarCheck } from 'lucide-react';
+import { RefreshCw, Map as MapIcon, PlayCircle, Link2, Headphones, BookOpenText, CalendarCheck, History } from 'lucide-react';
+import { IS_STAGING } from '../core/channel.js';
 import { IS_PWA_BUILD, applyUpdate } from '../core/updates.js';
 import { useLivePosition } from '../core/livePosition.js';
 import { shortName } from '../core/moduleShort.js';
@@ -168,6 +169,8 @@ export default function ReaderToolbar({ index, pane, module }) {
                 <span className="menu-extra badge-new">новая версия</span>
               </button>
             )}
+            {/* Только на тестовом сайте: версии с заметками — что изменилось, обновиться или вернуться */}
+            {IS_STAGING && item(History, 'Обновления', () => openSheet('versions', index), updates.available ? 'есть новая' : null)}
             {item(Palette, 'Оформление', () => openSheet('settings', index))}
             {item(SettingsIcon, 'Настройки', () => openSheet('prefs', index))}
             {m.help && item(BookOpenCheck, 'Инструкция', () => openSheet('help', index))}

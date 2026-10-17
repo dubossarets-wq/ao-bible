@@ -3,19 +3,45 @@ import React from 'react';
 import { RotateCcw } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
-import { THEMES, FONTS, ensureFont } from '../core/settings.js';
+import { FONTS, ensureFont, COLOR_KEYS, themeColors } from '../core/settings.js';
 import { Segmented, Slider, Switch, Hint } from './ui.jsx';
 import { HL_COLORS } from '../core/highlights.js';
 
-function ColorField({ id, label, value, onChange }) {
+// Готовые цвета для быстрого выбора акцента и верхней панели
+const ACCENTS = ['#9a6a2f', '#b4412f', '#c2410c', '#a16207', '#3f7a4a', '#0f766e', '#2563eb', '#4f46e5', '#7c3aed', '#be185d'];
+const BARS = ['#38363a', '#0c0c0d', '#4a3d2f', '#1e3a5f', '#14532d', '#5b2333', '#ffffff', '#f3f1ec'];
+
+// Светлый ли цвет — чтобы подобрать к панели читаемые надписи
+const isLight = (hex) => {
+  const n = parseInt(hex.slice(1), 16);
+  return 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255) > 160;
+};
+
+// Строка цвета: образец, выбор своего цвета, «вернуть цвет темы»
+function ColorRow({ id, label, value, changed, onChange, onReset }) {
   return (
-    <label className="field color-field" htmlFor={id}>
+    <div className={`color-row ${changed ? '' : 'same'}`}>
+      <label className="field-label" htmlFor={id}>
+        {label}
+      </label>
+      <input id={id} type="color" value={value} onChange={(e) => onChange(e.target.value)} />
+      <button className="icon-btn" onClick={onReset} aria-label={`${label}: цвет темы`} title="Вернуть цвет темы">
+        <RotateCcw size={16} />
+      </button>
+    </div>
+  );
+}
+
+function Swatches({ id, label, list, value, onPick }) {
+  return (
+    <div className="field">
       <span className="field-label">{label}</span>
-      <span className="color-input">
-        <input id={id} type="color" value={value} onChange={(e) => onChange(e.target.value)} />
-        <span className="mono small">{value}</span>
-      </span>
-    </label>
+      <div className="swatches" role="group" aria-label={label}>
+        {list.map((c) => (
+          <button key={c} id={`${id}-${c.slice(1)}`} className={`swatch ${value?.toLowerCase() === c ? 'on' : ''}`} style={{ background: c }} onClick={() => onPick(c)} aria-label={c} />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -25,9 +51,12 @@ export const textView = (s) => (s.bookMode ? 'book' : s.continuousVerses ? 'flow
 export default function AppearanceSettings({ onClose }) {
   const { settings: s, setSettings: set, resetSettings, themeName, modules, hlLabels, setHlLabels } = useApp();
   const commentaries = modules.filter((m) => m.type === 'commentary' && m.enabled !== false);
-  const colorsFromTheme = () => {
-    const t = THEMES[themeName];
-    set({ customColors: true, colors: { bg: t.bg, text: t.text, accent: t.accent, panel: t.panel } });
+  const eff = themeColors(s, themeName); // цвета, которые сейчас на экране
+  const over = s.colorOverrides || {};
+  const setColor = (k, v) => set({ colorOverrides: { ...over, [k]: v } });
+  const resetColor = (k) => {
+    const { [k]: _, ...rest } = over;
+    set({ colorOverrides: rest });
   };
 
   return (
@@ -42,8 +71,14 @@ export default function AppearanceSettings({ onClose }) {
       }
     >
       <div className="preview-card" aria-hidden="true">
-        <span className="pv-num">16</span>Ибо так возлюбил Бог мир, что отдал Сына Своего Единородного, дабы всякий верующий в Него, не погиб, но имел жизнь вечную.
-        <span className="pv-xr">[⇅ 5]</span>
+        <div className="pv-bar">
+          <span className="pv-pill">RST+</span> Ин. 3:16
+        </div>
+        <div className="pv-body">
+          <span className="pv-head">Беседа с Никодимом</span>
+          <span className="pv-num">16</span>Ибо так возлюбил<span className="pv-sn">25</span> Бог<span className="pv-sn">2316</span> мир, что отдал Сына Своего Единородного, дабы всякий верующий в Него, не погиб, но имел жизнь вечную.
+          <span className="pv-xr">[⇅ 5]</span>
+        </div>
       </div>
 
       <section className="settings-group">
@@ -112,9 +147,47 @@ export default function AppearanceSettings({ onClose }) {
             ['justify', 'По ширине'],
           ]}
         />
+      </section>
+
+      <section className="settings-group">
+        <h4>Номера стихов</h4>
         <Switch id="set-vn" checked={s.showVerseNumbers} onChange={(showVerseNumbers) => set({ showVerseNumbers })} label="Номера стихов" />
-        <Switch id="set-head" checked={s.showHeadings} onChange={(showHeadings) => set({ showHeadings })} label="Заголовки разделов" />
+        <Slider id="set-vn-size" label="Размер" value={s.verseNumSize} min={0.4} max={1.2} step={0.05} onChange={(verseNumSize) => set({ verseNumSize })} format={(v) => `${Math.round(v * 100)}%`} />
+        <Segmented
+          id="set-vn-pos"
+          label="Положение"
+          value={s.verseNumPos}
+          onChange={(verseNumPos) => set({ verseNumPos })}
+          options={[
+            ['sup', 'Над строкой'],
+            ['inline', 'В строке'],
+          ]}
+        />
+      </section>
+
+      <section className="settings-group">
+        <h4>Номера Стронга</h4>
         <Switch id="set-strong" checked={s.showStrongs} onChange={(showStrongs) => set({ showStrongs })} label="Номера Стронга в тексте" hint="Только для размеченных переводов, например RST+" />
+        <Slider id="set-sn-size" label="Размер" value={s.strongSize} min={0.35} max={1} step={0.05} onChange={(strongSize) => set({ strongSize })} format={(v) => `${Math.round(v * 100)}%`} />
+        <Segmented
+          id="set-sn-pos"
+          label="Положение"
+          value={s.strongPos}
+          onChange={(strongPos) => set({ strongPos })}
+          options={[
+            ['sup', 'Над строкой'],
+            ['inline', 'В строке'],
+            ['sub', 'Под строкой'],
+          ]}
+        />
+        <ColorRow id="c-strong" label="Цвет" value={eff.strong} changed={!!over.strong} onChange={(v) => setColor('strong', v)} onReset={() => resetColor('strong')} />
+      </section>
+
+      <section className="settings-group">
+        <h4>Заголовки разделов</h4>
+        <Switch id="set-head" checked={s.showHeadings} onChange={(showHeadings) => set({ showHeadings })} label="Заголовки разделов" />
+        <Slider id="set-head-size" label="Размер" value={s.headingSize} min={0.6} max={1.4} step={0.05} onChange={(headingSize) => set({ headingSize })} format={(v) => `${Math.round(v * 100)}%`} />
+        <ColorRow id="c-heading" label="Цвет" value={eff.heading} changed={!!over.heading} onChange={(v) => setColor('heading', v)} onReset={() => resetColor('heading')} />
       </section>
 
       <section className="settings-group">
@@ -123,7 +196,9 @@ export default function AppearanceSettings({ onClose }) {
         <Switch id="set-il" checked={s.showIllustrations !== false} onChange={(showIllustrations) => set({ showIllustrations })} label="Значки иллюстраций у стихов" hint="Картинка в конце стиха открывает иллюстрацию к нему" />
         <Switch id="set-focus" checked={s.focusMode} onChange={(focusMode) => set({ focusMode })} label="Режим чтения" hint="Прячет кнопки в тексте, панель скрывается при прокрутке вниз" />
         <Switch id="set-anim" checked={s.animations} onChange={(animations) => set({ animations })} label="Анимации" />
-        <Slider id="set-radius" label="Закругления" value={s.radius} min={0} max={24} step={1} onChange={(radius) => set({ radius })} format={(v) => `${v} px`} />
+        <Slider id="set-uifs" label="Размер шрифта меню и окон" value={s.uiFontSize} min={13} max={20} step={1} onChange={(uiFontSize) => set({ uiFontSize })} format={(v) => `${v} px`} />
+        <Slider id="set-barh" label="Высота верхней панели" value={s.barHeight} min={44} max={72} step={2} onChange={(barHeight) => set({ barHeight })} format={(v) => `${v} px`} />
+        <Slider id="set-radius" label="Закругления" value={s.radius} min={0} max={99} step={1} onChange={(radius) => set({ radius })} format={(v) => `${v} px`} />
         <Segmented
           id="set-split"
           label="Разделённый экран"
@@ -173,15 +248,20 @@ export default function AppearanceSettings({ onClose }) {
       </section>
 
       <section className="settings-group">
-        <h4>Свои цвета</h4>
-        <Switch id="set-custom" checked={s.customColors} onChange={(v) => (v ? colorsFromTheme() : set({ customColors: false }))} label="Использовать свои цвета" hint="Поверх выбранной темы" />
-        {s.customColors && (
-          <div className="color-grid">
-            <ColorField id="c-bg" label="Фон" value={s.colors.bg} onChange={(bg) => set({ colors: { ...s.colors, bg } })} />
-            <ColorField id="c-text" label="Текст" value={s.colors.text} onChange={(text) => set({ colors: { ...s.colors, text } })} />
-            <ColorField id="c-accent" label="Акцент" value={s.colors.accent} onChange={(accent) => set({ colors: { ...s.colors, accent } })} />
-            <ColorField id="c-panel" label="Панели" value={s.colors.panel} onChange={(panel) => set({ colors: { ...s.colors, panel } })} />
-          </div>
+        <h4>
+          Цвета <Hint>Любой цвет можно поменять поверх выбранной темы. Стрелка справа возвращает цвет темы.</Hint>
+        </h4>
+        <Swatches id="sw-accent" label="Акцент интерфейса" list={ACCENTS} value={eff.accent} onPick={(v) => setColor('accent', v)} />
+        <Swatches id="sw-bar" label="Верхняя панель" list={BARS} value={eff.bar} onPick={(v) => set({ colorOverrides: { ...over, bar: v, barText: isLight(v) ? '#1d1c1a' : '#f3f1ec' } })} />
+        <div className="color-list">
+          {COLOR_KEYS.filter(([k]) => k !== 'strong' && k !== 'heading').map(([k, label]) => (
+            <ColorRow key={k} id={`c-${k}`} label={label} value={eff[k]} changed={!!over[k]} onChange={(v) => setColor(k, v)} onReset={() => resetColor(k)} />
+          ))}
+        </div>
+        {Object.keys(over).length > 0 && (
+          <button className="btn" onClick={() => set({ colorOverrides: {} })}>
+            <RotateCcw size={15} /> Все цвета — как в теме
+          </button>
         )}
       </section>
     </BottomSheet>

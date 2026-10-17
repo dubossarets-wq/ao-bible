@@ -8,7 +8,7 @@ export default function ModulePicker({ pane, onClose }) {
   const { bibles, panes, setPaneModule, openSheet, settings, setSettings } = useApp();
   const current = panes[pane]?.moduleId;
   return (
-    <BottomSheet title="Перевод" subtitle={pane === 1 ? 'Вторая панель' : 'Основная панель'} onClose={onClose} initial={0}>
+    <BottomSheet title="Перевод" subtitle={pane === 1 ? 'Вторая панель' : 'Основная панель'} onClose={onClose}>
       <ul className="pick-list">
         {bibles.map((b) => (
           <li key={b.id}>

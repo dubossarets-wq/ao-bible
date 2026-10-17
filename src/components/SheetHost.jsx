@@ -18,6 +18,7 @@ import MapsSheet from './MapsSheet.jsx';
 import NoteSheet from './NoteSheet.jsx';
 import CollectSheet from './CollectSheet.jsx';
 import VerseGuide from './VerseGuide.jsx';
+import InterlinearSheet from './InterlinearSheet.jsx';
 import PlansSheet from './PlansSheet.jsx';
 import PrefsSheet from './PrefsSheet.jsx';
 import SermonsSheet from './SermonsSheet.jsx';
@@ -45,6 +46,7 @@ const KINDS = {
   note: NoteSheet,
   collect: CollectSheet,
   guide: VerseGuide,
+  interlinear: InterlinearSheet,
   plans: PlansSheet,
   prefs: PrefsSheet,
   sermons: SermonsSheet,

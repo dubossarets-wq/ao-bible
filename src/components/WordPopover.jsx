@@ -70,7 +70,8 @@ export default function WordPopover() {
 
   const choose = (it) => {
     closePopover({ keepWord: true });
-    openSheet('dict', popover.pane, { ...popover.payload, preselect: { moduleId: it.module.id, key: it.key }, initial: 0 });
+    // Статья по номеру Стронга — на всю высоту, остальные словари — на половину экрана
+    openSheet('dict', popover.pane, { ...popover.payload, preselect: { moduleId: it.module.id, key: it.key }, initial: it.module.dictionaryKind === 'strongs' ? 'full' : 0 });
   };
 
   return (

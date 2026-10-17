@@ -24,7 +24,7 @@ export default function CollectSheet({ payload, onClose }) {
   const has = (c) => refs.every((r) => c.items.some((x) => x.book === r.book && x.chapter === r.chapter && x.verse === r.verse));
 
   return (
-    <BottomSheet title="В подборку" subtitle={selectionLabel(refs, true)} onClose={onClose} initial={0}>
+    <BottomSheet title="В подборку" subtitle={selectionLabel(refs, true)} onClose={onClose}>
       <form
         className="ref-form"
         onSubmit={(e) => {

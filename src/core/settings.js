@@ -29,7 +29,7 @@ export const FONTS = {
   Georgia: { label: 'Georgia', css: 'Georgia, "Times New Roman", serif' },
 };
 
-export const SETTINGS_VERSION = 2;
+export const SETTINGS_VERSION = 3;
 
 export const DEFAULT_SETTINGS = {
   v: SETTINGS_VERSION,
@@ -48,8 +48,16 @@ export const DEFAULT_SETTINGS = {
   showXrefButtons: true,
   showIllustrations: true, // значок картинки у стихов, к которым есть иллюстрация
   continuousVerses: false, // стихи сплошным абзацем
-  customColors: false,
+  customColors: false, // прежний вариант «своих цветов» (до v3); теперь — colorOverrides
   colors: { bg: '#f6f5f2', text: '#1d1c1a', accent: '#9a6a2f', panel: '#ffffff' },
+  colorOverrides: {}, // свои цвета поверх темы, по одному: { accent: '#…', bar: '#…', strong: '#…' }
+  strongSize: 0.5, // em — номера Стронга
+  strongPos: 'sup', // sup | inline | sub
+  verseNumSize: 0.6, // em
+  verseNumPos: 'sup', // sup | inline
+  headingSize: 0.8, // em — заголовки разделов
+  uiFontSize: 15, // px — меню, окна, кнопки
+  barHeight: 54, // px — верхняя панель
   animations: true,
   radius: 12,
   focusMode: false,
@@ -69,6 +77,8 @@ export const DEFAULT_SETTINGS = {
 export function migrateSettings(s) {
   if (!s || typeof s !== 'object') return s;
   if ((s.v || 1) < 2) s = { ...s, v: 2, theme: !s.theme || s.theme === 'auto' ? 'light' : s.theme };
+  // v3: «свои цвета» стали отдельными для каждого цвета — прежние переносим как есть
+  if (s.v < 3) s = { ...s, v: 3, colorOverrides: s.customColors && s.colors ? { ...s.colors } : s.colorOverrides || {}, customColors: false };
   return s;
 }
 
@@ -88,9 +98,33 @@ export function ensureFont(key) {
   document.head.appendChild(link);
 }
 
-export function applySettings(settings, themeName) {
+// Цвета, которые можно поменять по одному (поверх темы). heading и strong по умолчанию — цвет акцента.
+export const COLOR_KEYS = [
+  ['accent', 'Акцент интерфейса'],
+  ['bar', 'Верхняя панель'],
+  ['barText', 'Надписи на верхней панели'],
+  ['bg', 'Фон страницы'],
+  ['text', 'Текст'],
+  ['muted', 'Бледный текст'],
+  ['panel', 'Окна и карточки'],
+  ['line', 'Линии и рамки'],
+  ['verseNum', 'Номера стихов'],
+  ['heading', 'Заголовки разделов'],
+  ['strong', 'Номера Стронга'],
+];
+
+// Итоговые цвета: тема + свои цвета
+export function themeColors(settings, themeName) {
   const t = { ...THEMES[themeName] };
   if (settings.customColors) Object.assign(t, settings.colors);
+  t.heading = t.accent;
+  t.strong = t.accent;
+  for (const [k, v] of Object.entries(settings.colorOverrides || {})) if (v) t[k] = v;
+  return t;
+}
+
+export function applySettings(settings, themeName) {
+  const t = themeColors(settings, themeName);
   const root = document.documentElement;
   const vars = {
     '--bg': t.bg, '--text': t.text, '--muted': t.muted, '--accent': t.accent, '--panel': t.panel,
@@ -99,7 +133,11 @@ export function applySettings(settings, themeName) {
     '--fs': `${settings.fontSize}px`, '--fw': settings.fontWeight, '--lh': settings.lineHeight,
     '--verse-gap': `${settings.verseSpacing}em`, '--measure': `${settings.textWidth}em`,
     '--align': settings.textAlign, '--chapter-size': `${settings.chapterTitleSize}em`,
-    '--radius': `${settings.radius}px`, '--bar-h': '54px',
+    '--radius': `${settings.radius}px`, '--bar-h': `${settings.barHeight || 54}px`,
+    '--heading': t.heading, '--strong': t.strong, '--heading-size': `${settings.headingSize ?? 0.8}em`,
+    '--sn-size': `${settings.strongSize ?? 0.5}em`, '--sn-va': { inline: 'baseline', sub: 'sub' }[settings.strongPos] || 'super',
+    '--vn-size': `${settings.verseNumSize ?? 0.6}em`, '--vn-top': settings.verseNumPos === 'inline' ? '0' : '-.32em',
+    '--ui-fs': `${settings.uiFontSize || 15}px`,
   };
   for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, String(v));
   root.dataset.appTheme = themeName;

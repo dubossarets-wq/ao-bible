@@ -441,6 +441,13 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     if (act === 'comment') return openSheet('commentary', index, { ref: vref, moduleId: e.target.closest('[data-m]').dataset.m });
     if (act === 'illus') return openSheet('illus', index, { ref: vref, items: illus?.get(`${vref.book}.${vref.chapter}.${vref.verse}`) || [] });
     if (act === 'verse') return openSheet('verse', index, { ref: vref, text: plainText(text), moduleId: module.id });
+    const sn = e.target.closest('.sn');
+    if (sn) {
+      const token = wordAt(text, +sn.dataset.i);
+      if (!token?.strongs) return;
+      closePopover();
+      return openSheet('dict', index, { token: { text: token.text, strongs: token.strongs, morph: token.morph || null }, ref: vref, moduleId: module.id, verseText: plainText(text), initial: 'full' });
+    }
     const w = e.target.closest('.w');
     if (w) {
       // Повторное нажатие на выделенное слово — снимаем выделение, выборку не открываем

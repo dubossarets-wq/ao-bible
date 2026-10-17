@@ -1041,3 +1041,77 @@ html.kb-open .tour-ctrl.top { top: auto; bottom: calc(var(--kb, 0px) + 8px); }
 .iv-caption span { opacity: .8; font-size: .82rem; }
 .iv-caption a { color: inherit; display: inline-flex; align-items: center; gap: 3px; }
 .iv-caption small { opacity: .55; font-size: .76rem; }
+
+/* Ручки для свайпа: полоса вдвое толще, зона захвата почти та же */
+.sheet-grip { height: 26px; }
+.grip-bar { height: 10px; border-radius: 5px; }
+.split.rows .divider { flex-basis: 22px; }
+.split.columns .divider { flex-basis: 18px; }
+.divider-grip { height: 12px; border-radius: 6px; }
+.split.columns .divider-grip { width: 12px; height: 72px; }
+/* Номер Стронга в тексте нажимается — открывает статью */
+.sn { cursor: pointer; }
+
+/* Подстрочник: столбики «оригинал / синодальный / номер Стронга» */
+.il-grid { display: flex; flex-wrap: wrap; gap: 10px 6px; }
+.il-cell { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 2.2em; padding: 4px 5px; border: 0; border-radius: 8px; background: none; color: var(--text); text-align: left; cursor: pointer; }
+.il-grid.hebrew .il-cell { align-items: flex-end; text-align: right; }
+.il-cell:disabled { cursor: default; }
+@media (hover: hover) { .il-cell:not(:disabled):hover { background: color-mix(in srgb, var(--accent) 10%, transparent); } }
+.il-orig { font-size: 1.35rem; line-height: 1.25; }
+.il-grid.hebrew .il-orig { font-family: var(--font-hebrew); font-size: 1.5rem; }
+.il-grid.greek .il-orig { font-family: var(--font-greek); }
+.il-ru { font-size: .95rem; color: var(--accent); font-weight: 600; }
+.il-ru.guess { opacity: .55; font-weight: 400; font-style: italic; }
+.il-num { font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Чёткость текста на iPhone: элементы с размытием фона (backdrop-filter) над прокручиваемым текстом заставляют
+   WebKit рисовать весь текст отдельным слоем — он слегка мылится и на стыках кусков «рвутся» буквы.
+   Поэтому над текстом — только плотный фон без размытия. */
+.listen-fab { -webkit-backdrop-filter: none; backdrop-filter: none; background: color-mix(in srgb, var(--panel) 96%, transparent); }
+.plan-strip { -webkit-backdrop-filter: none; backdrop-filter: none; background: color-mix(in srgb, var(--bg) 97%, transparent); }
+.toast { -webkit-backdrop-filter: none; backdrop-filter: none; background: color-mix(in srgb, var(--bar) 92%, transparent); }
+
+/* Гибкое оформление: размеры и положение номеров, заголовки, размер шрифта интерфейса */
+html { font-size: calc(var(--ui-fs, 15px) * 16 / 15); }
+body, .sheet { font-size: var(--ui-fs, 15px); }
+.sn { font-size: var(--sn-size, .5em); color: var(--strong, var(--accent)); vertical-align: var(--sn-va, super); line-height: 1; }
+.vn, .pv-num { font-size: var(--vn-size, .6em); top: var(--vn-top, -.32em); }
+.section-title { color: var(--heading, var(--accent)); font-size: var(--heading-size, .8em); }
+/* Большие закругления — карточкам и кнопкам; у окон углы не больше 32 px, чтобы не срезать содержимое */
+.sheet { border-radius: min(calc(var(--radius) + 6px), 32px) min(calc(var(--radius) + 6px), 32px) 0 0; }
+.preview-card { border-radius: min(var(--radius), 28px); padding: 0; overflow: hidden; }
+.pv-bar { display: flex; align-items: center; gap: 8px; height: min(var(--bar-h), 64px); padding: 0 12px; background: var(--bar); color: var(--bar-text); font-family: var(--font-ui); font-size: var(--ui-fs, 15px); font-weight: 700; }
+.pv-pill { padding: 4px 10px; border-radius: 999px; background: color-mix(in srgb, var(--bar-text) 14%, var(--bar)); font-size: .85em; }
+.pv-body { padding: 10px 16px 12px; }
+.pv-head { display: block; color: var(--heading, var(--accent)); font-size: var(--heading-size, .8em); font-weight: 650; margin-bottom: .3em; }
+.pv-sn { font-family: var(--font-mono); font-size: var(--sn-size, .5em); color: var(--strong, var(--accent)); vertical-align: var(--sn-va, super); margin-left: .12em; line-height: 1; }
+.color-list { display: flex; flex-direction: column; gap: 2px; }
+.color-row { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.color-row .field-label { flex: 1; min-width: 0; }
+.color-row input[type=color] { width: 44px; height: 32px; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: none; flex: none; }
+.color-row .icon-btn { flex: none; }
+.color-row.same .icon-btn { visibility: hidden; }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.swatch { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--line); padding: 0; }
+.swatch.on { border-color: var(--text); box-shadow: 0 0 0 2px var(--panel) inset; }
+/* Значок подсказки «!» — ровно по центру строки надписи, не раздвигая строку */
+.hint-btn { vertical-align: middle; margin: -6px 0 -6px 2px; }
+h4:has(> .hint-btn), .field-label:has(> .hint-btn), .sheet-h4:has(> .hint-btn) { display: flex; align-items: center; gap: 2px; }
+h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { margin: -6px 0; flex: none; }
+
+/* Сравнение переводов: без карточек — название, строка описания, текст, линия */
+.cmp-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.cmp-item { display: flex; flex-direction: column; gap: 4px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.cmp-item:first-child { padding-top: 2px; }
+.cmp-head { display: flex; align-items: center; gap: 8px; min-height: 36px; }
+.cmp-name { font-weight: 800; flex: none; }
+.cmp-sub { flex: 1; min-width: 0; color: var(--muted); font-size: .85rem; }
+.cmp-par { flex: none; color: var(--accent); margin-right: -8px; }
+.cmp-text { margin: 0; font-family: var(--font-text); font-size: 1.02rem; line-height: 1.5; white-space: pre-line; }
+.cmp-more { align-self: stretch; justify-content: center; margin-top: 4px; }
+.marquee { display: block; overflow: hidden; white-space: nowrap; }
+.marquee-in { display: inline-block; }
+.marquee.run .marquee-in { animation: marquee var(--dur, 10s) ease-in-out infinite alternate; }
+@keyframes marquee { 0%, 15% { transform: translateX(0); } 85%, 100% { transform: translateX(var(--shift)); } }
+.no-anim .marquee.run { text-overflow: ellipsis; } .no-anim .marquee.run .marquee-in { animation: none; }

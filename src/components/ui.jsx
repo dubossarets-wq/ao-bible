@@ -299,3 +299,24 @@ export function Empty({ icon: Icon, title, children }) {
 }
 
 export const fmtSize = (b) => (b > 1048576 ? `${(b / 1048576).toFixed(1)} МБ` : `${Math.max(1, Math.round(b / 1024))} КБ`);
+
+// Строка в одну линию: если не помещается — медленно прокручивается туда и обратно, чтобы успеть прочитать
+export function Marquee({ children, className = '' }) {
+  const box = useRef(null);
+  const inner = useRef(null);
+  const [shift, setShift] = useState(0);
+  useEffect(() => {
+    const measure = () => setShift(Math.max(0, (inner.current?.scrollWidth || 0) - (box.current?.clientWidth || 0)));
+    measure();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    ro?.observe(box.current);
+    return () => ro?.disconnect();
+  }, [children]);
+  return (
+    <span ref={box} className={`marquee ${shift > 2 ? 'run' : ''} ${className}`}>
+      <span ref={inner} className="marquee-in" style={shift > 2 ? { '--shift': `-${shift}px`, '--dur': `${Math.max(6, shift / 18 + 4)}s` } : undefined}>
+        {children}
+      </span>
+    </span>
+  );
+}

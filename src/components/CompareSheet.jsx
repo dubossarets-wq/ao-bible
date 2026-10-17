@@ -5,16 +5,16 @@ import { Columns2, Library, Loader2 } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { selectionLabel, selectionText } from './SelectionBar.jsx';
-import { Empty } from './ui.jsx';
+import { Empty, Marquee } from './ui.jsx';
+import { langName, langRank } from './ModuleLibrary.jsx';
 import { diffWords } from '../core/diff.js';
 
 // Текст перевода с подсветкой слов, которыми он отличается от открытого перевода
 function Diffed({ base, text }) {
-  const { parts, ratio } = diffWords(base, text);
+  const { parts } = diffWords(base, text);
   return (
     <>
       {parts.map((p, i) => (p.diff ? <mark key={i} className="diff">{p.text}</mark> : <React.Fragment key={i}>{p.text}</React.Fragment>))}
-      <span className="diff-ratio">{ratio < 0.005 ? 'совпадает' : `отличается на ${Math.round(ratio * 100)}%`}</span>
     </>
   );
 }
@@ -23,9 +23,13 @@ export default function CompareSheet({ pane, payload, onClose }) {
   const { bibles, openParallel, openSheet } = useApp();
   const { refs, moduleId, pick, copyFallback } = payload;
   const [texts, setTexts] = useState(null);
+  const [lang, setLang] = useState('all');
   const others = bibles.filter((b) => b.id !== moduleId);
   const current = bibles.find((b) => b.id === moduleId);
   const ordered = [current, ...others].filter(Boolean);
+  // Языки установленных переводов: русский первым, дальше по распространённости
+  const langs = [...new Set(ordered.map((b) => b.language || ''))].sort((a, b) => langRank(a) - langRank(b));
+  const shown = ordered.filter((b) => b.id === moduleId || lang === 'all' || (b.language || '') === lang);
 
   useEffect(() => {
     let alive = true;
@@ -68,30 +72,44 @@ export default function CompareSheet({ pane, payload, onClose }) {
         </div>
       )}
       {texts && (
-        <ul className="compare-list">
-          {ordered.map((b) => (
-            <li key={b.id} className={`compare-item ${b.id === moduleId ? 'current' : ''}`}>
-              <div className="compare-head">
-                <span className="compare-name">{b.name}</span>
-                <span className="compare-title">{b.id === moduleId ? 'открыт сейчас' : b.title}</span>
-                {b.id !== moduleId && (
-                  <button className="btn small primary" onClick={() => open(b.id)}>
-                    <Columns2 size={14} /> Параллельно
-                  </button>
-                )}
-              </div>
-              <p className="compare-text">
-                {!texts[b.id] ? (
-                  <span className="muted">В этом переводе нет такого места.</span>
-                ) : b.id !== moduleId && current && texts[moduleId] && (b.language || 'ru') === (current.language || 'ru') ? (
-                  <Diffed base={texts[moduleId]} text={texts[b.id]} />
-                ) : (
-                  texts[b.id]
-                )}
-              </p>
-            </li>
-          ))}
-        </ul>
+        <>
+          {langs.length > 1 && (
+            <div className="chips filter-chips lang-chips" role="group" aria-label="Язык переводов">
+              {[['all', 'Все языки'], ...langs.map((c) => [c, langName(c)])].map(([k, l]) => (
+                <button key={k} className={`chip ${lang === k ? 'on' : ''}`} aria-pressed={lang === k} onClick={() => setLang(k)}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          )}
+          <ul className="cmp-list">
+            {shown.map((b) => (
+              <li key={b.id} className="cmp-item">
+                <div className="cmp-head">
+                  <span className="cmp-name">{b.name}</span>
+                  {b.id === moduleId ? <span className="cmp-sub">открыт сейчас</span> : <Marquee className="cmp-sub">{b.title}</Marquee>}
+                  {b.id !== moduleId && (
+                    <button className="icon-btn cmp-par" onClick={() => open(b.id)} aria-label={`Читать параллельно: ${b.name}`} title="Читать параллельно">
+                      <Columns2 size={20} />
+                    </button>
+                  )}
+                </div>
+                <p className="cmp-text" dir="auto">
+                  {!texts[b.id] ? (
+                    <span className="muted">В этом переводе нет такого места.</span>
+                  ) : b.id !== moduleId && current && texts[moduleId] && (b.language || 'ru') === (current.language || 'ru') ? (
+                    <Diffed base={texts[moduleId]} text={texts[b.id]} />
+                  ) : (
+                    texts[b.id]
+                  )}
+                </p>
+              </li>
+            ))}
+          </ul>
+          <button className="btn cmp-more" onClick={() => openSheet('library', pane, { tab: 'catalog' })}>
+            <Library size={17} /> Установить другие переводы
+          </button>
+        </>
       )}
     </BottomSheet>
   );
