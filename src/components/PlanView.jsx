@@ -356,6 +356,7 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
     () => ({
       showVerseNumbers: settings.showVerseNumbers && !settings.bookMode,
       showStrongs: settings.showStrongs && module.features?.strongs && !settings.bookMode,
+      interlinear: !!module.features?.interlinear,
       showHeadings: settings.showHeadings,
       showXref: settings.showXrefButtons && !settings.focusMode && !settings.bookMode,
       inlineComments: settings.bookMode ? [] : settings.inlineCommentaries,

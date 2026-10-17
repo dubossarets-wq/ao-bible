@@ -7,7 +7,7 @@ import { useApp } from '../App.jsx';
 import { getBook, getVerse } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
 import { formatRef, testamentOf } from '../core/books.js';
-import { ensureOriginal, interlinearVerse, originalFor } from '../core/interlinear.js';
+import { ensureOriginal, ruInterlinear, originalFor } from '../core/interlinear.js';
 
 export default function InterlinearSheet({ pane, payload, onClose }) {
   const { openSheet } = useApp();
@@ -21,7 +21,7 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
       if (!originalFor(ref.book)) return alive && setState({ status: 'none' });
       try {
         await ensureOriginal(ref.book, (p, label) => alive && setState({ status: 'install', label }));
-        const [words, ru] = await Promise.all([interlinearVerse(ref), payload.moduleId ? getVerse(payload.moduleId, ref) : null]);
+        const [words, ru] = await Promise.all([ruInterlinear(ref), payload.moduleId ? getVerse(payload.moduleId, ref) : null]);
         if (alive) setState({ status: 'ok', words, ru: ru ? plainText(ru) : '' });
       } catch (e) {
         if (alive) setState({ status: 'error', message: e.message });
@@ -82,19 +82,22 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
         <>
           {state.ru && <blockquote className="xref-source">{state.ru}</blockquote>}
           {!state.words.length && <p className="muted">В оригинальном тексте этого стиха нет.</p>}
-          <div className={`il-grid ${hebrew ? 'hebrew' : 'greek'}`} dir={hebrew ? 'rtl' : 'ltr'}>
+          <div className={`il-grid ${hebrew ? 'hebrew' : 'greek'}`}>
             {state.words.map((w, i) => (
-              <button key={i} className="il-cell" onClick={() => open(w)} disabled={!w.strongs} dir="ltr">
-                <span className="il-orig" dir={hebrew ? 'rtl' : 'ltr'}>
+              <button key={i} className={`il-cell ${w.italic ? 'added' : ''}`} onClick={() => open(w)} disabled={!w.strongs}>
+                <span className="il-ru">
                   {w.text}
+                  {w.after}
                 </span>
-                <span className={`il-ru ${w.guess ? 'guess' : ''}`}>{w.gloss || ' '}</span>
+                <span className="il-orig" dir={hebrew ? 'rtl' : 'ltr'}>
+                  {w.orig || ' '}
+                </span>
                 <span className="il-num">{w.num ? w.num.slice(1) : ' '}</span>
               </button>
             ))}
           </div>
           <p className="sheet-hint">
-            Под словом — как оно передано в синодальном переводе; бледным — обычный перевод слова, если в этом стихе его нет. Нажмите на слово или номер — откроется статья словаря.
+            Все слова синодального текста; под словом — слово оригинала и номер Стронга. Слова без оригинала добавлены переводчиками. Нажмите на слово — откроется статья словаря.
           </p>
         </>
       )}

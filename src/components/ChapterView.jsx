@@ -81,7 +81,7 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
                     </svg>
                   </span>
                 )}
-                <span className="vt" dangerouslySetInnerHTML={{ __html: verseHtml(text, { showStrongs: opts.showStrongs, highlight: hlRe }) }} />
+                <span className="vt" dangerouslySetInnerHTML={{ __html: verseHtml(text, { showStrongs: opts.showStrongs, highlight: hlRe, interlinear: opts.interlinear }) }} />
                 {mk[v]?.includes('n') && (
                   <button className="note-tag" data-act="note" aria-label="Заметка к стиху" title="Заметка">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -537,6 +537,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       // Режим «как книга»: сплошной текст абзацами по разделам, без номеров, кнопок и пометок
       showVerseNumbers: settings.showVerseNumbers && !settings.bookMode,
       showStrongs: settings.showStrongs && module.features?.strongs && !settings.bookMode,
+      interlinear: !!module.features?.interlinear,
       showHeadings: settings.showHeadings,
       showXref: settings.showXrefButtons && !settings.focusMode && !settings.bookMode,
       inlineComments: settings.bookMode ? [] : settings.inlineCommentaries, // null — все включённые комментарии

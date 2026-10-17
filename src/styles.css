@@ -1127,3 +1127,15 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .pv-btn { padding: 7px 14px; border-radius: min(var(--radius), 999px); background: var(--accent); color: #fff; font-weight: 600; }
 .pv-card { display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; border-radius: var(--radius); background: var(--panel); border: 1px solid var(--line); }
 .pv-muted { color: var(--muted); font-size: .85em; }
+
+/* Подстрочник при чтении: русское слово, под ним оригинал и номер Стронга */
+.vt .iw { display: inline-flex; flex-direction: column; align-items: flex-start; vertical-align: baseline; margin: 0 .1em .35em 0; line-height: 1.15; }
+.iw .io { font-family: var(--font-greek); font-size: .8em; color: var(--muted); white-space: nowrap; }
+.iw .io[lang="he"] { font-family: var(--font-hebrew); font-size: .92em; }
+.iw .sn.in { font-size: var(--sn-size, .5em); margin: 1px 0 0; line-height: 1; vertical-align: baseline; }
+/* Подстрочник в окне: порядок синодального текста — русское слово сверху */
+.il-grid .il-ru { font-size: 1.05rem; color: var(--text); font-weight: 600; font-family: var(--font-text); }
+.il-grid .il-orig { font-size: 1.15rem; color: var(--accent); }
+.il-grid.hebrew .il-orig { font-size: 1.3rem; }
+.il-grid.hebrew .il-cell { align-items: flex-start; text-align: left; }
+.il-cell.added .il-ru { font-style: italic; font-weight: 400; color: var(--muted); }

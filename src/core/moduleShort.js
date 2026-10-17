@@ -18,6 +18,7 @@ const SHORT = {
   goetze: 'Гёце',
   'cuv-t': '和合本繁',
   'jps1917': 'JPS',
+  'rst-interlinear': 'Подстр.',
 };
 
 export function shortName(m) {
