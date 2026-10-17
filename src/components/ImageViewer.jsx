@@ -101,6 +101,7 @@ function Zoomable({ item, onSwipe }) {
       {state === 'error' && <div className="iv-status">Картинка не загрузилась. Проверьте интернет.</div>}
       <img
         src={item.img}
+        crossOrigin="anonymous"
         alt={item.title || ''}
         draggable={false}
         onLoad={() => setState('ok')}
