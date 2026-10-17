@@ -1149,3 +1149,4 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .sel-inline:not(.part-inline) .btn:not(.sel-listen) { padding: 10px 6px; gap: 4px; font-size: .86rem; }
 .sel-inline:not(.part-inline) .btn:not(.sel-listen) svg { flex: none; width: 16px; height: 16px; }
 @media (max-width: 430px) { .sel-inline:not(.part-inline) .btn:not(.sel-listen) svg { display: none; } }
+.il-tr { font-size: .78rem; color: var(--muted); font-style: italic; }

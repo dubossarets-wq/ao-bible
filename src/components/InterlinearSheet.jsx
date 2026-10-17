@@ -8,6 +8,7 @@ import { getBook, getVerse } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
 import { formatRef, testamentOf } from '../core/books.js';
 import { ensureOriginal, ruInterlinear, originalFor } from '../core/interlinear.js';
+import { translit } from '../core/translit.js';
 
 export default function InterlinearSheet({ pane, payload, onClose }) {
   const { openSheet } = useApp();
@@ -52,7 +53,7 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
     setRef({ book: ref.book, chapter, verse });
   };
 
-  const open = (w) => w.strongs && openSheet('dict', pane, { token: { text: w.text, strongs: w.strongs, morph: w.morph ? [w.morph] : null }, ref, moduleId: payload.moduleId, initial: 'full' });
+  const open = (w, i) => w.strongs && openSheet('dict', pane, { token: { text: w.text, strongs: w.strongs, morph: w.morph ? [w.morph] : null }, ref, moduleId: payload.moduleId, wi: i, autoOpen: true, initial: 'full' });
 
   return (
     <BottomSheet
@@ -84,7 +85,7 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
           {!state.words.length && <p className="muted">В оригинальном тексте этого стиха нет.</p>}
           <div className={`il-grid ${hebrew ? 'hebrew' : 'greek'}`}>
             {state.words.map((w, i) => (
-              <button key={i} className={`il-cell ${w.italic ? 'added' : ''}`} onClick={() => open(w)} disabled={!w.strongs}>
+              <button key={i} className={`il-cell ${w.italic ? 'added' : ''}`} onClick={() => open(w, i)} disabled={!w.strongs}>
                 <span className="il-ru">
                   {w.text}
                   {w.after}
@@ -92,12 +93,13 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
                 <span className="il-orig" dir={hebrew ? 'rtl' : 'ltr'}>
                   {w.orig || ' '}
                 </span>
+                <span className="il-tr">{w.orig ? translit(w.orig) : ' '}</span>
                 <span className="il-num">{w.num ? w.num.slice(1) : ' '}</span>
               </button>
             ))}
           </div>
           <p className="sheet-hint">
-            Все слова синодального текста; под словом — слово оригинала и номер Стронга. Слова без оригинала добавлены переводчиками. Нажмите на слово — откроется статья словаря.
+            Все слова синодального текста; под словом — слово оригинала, его приблизительное чтение и номер Стронга. Слова без оригинала добавлены переводчиками. Нажмите на слово — откроется статья словаря.
           </p>
         </>
       )}

@@ -85,7 +85,7 @@ export async function ruInterlinear(ref) {
     let o = null;
     if (k && !(k === prevKey && !gap)) o = take(k) || last.get(k) || null;
     for (const extra of (t.strongs || []).slice(1)) take(strongKey(extra));
-    out.push({ text: before + t.text, after: '', orig: o?.text || '', num: o ? k : null, strongs: t.strongs || null, morph: t.morph?.[0] || null, italic: t.italic });
+    out.push({ text: before + t.text, after: '', orig: o?.text || '', origMorph: o?.morph || null, num: o ? k : null, strongs: t.strongs || null, morph: t.morph?.[0] || null, italic: t.italic });
     prevKey = k;
     gap = false;
     before = '';

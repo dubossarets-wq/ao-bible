@@ -327,7 +327,7 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
       const token = wordAt(text, +sn.dataset.i);
       if (!token?.strongs) return;
       closePopover();
-      return openSheet('dict', index, { token: { text: token.text, strongs: token.strongs, morph: token.morph || null }, ref: vref, moduleId: module.id, verseText: plainText(text), initial: 'full' });
+      return openSheet('dict', index, { token: { text: token.text, strongs: token.strongs, morph: token.morph || null }, ref: vref, moduleId: module.id, verseText: plainText(text), wi: +sn.dataset.i, autoOpen: true, initial: 'full' });
     }
     const w = e.target.closest('.w');
     if (!w) return;
@@ -348,7 +348,7 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
       token: tok,
       ref: vref,
       rect: { left: r.left, top: r.top, bottom: r.bottom, width: r.width },
-      payload: { token: tok, ref: vref, moduleId: module.id, verseText: plainText(text) },
+      payload: { token: tok, ref: vref, moduleId: module.id, verseText: plainText(text), wi: +w.dataset.i },
     });
   };
 

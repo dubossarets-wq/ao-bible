@@ -141,6 +141,9 @@ def pick(cands, already=()):
 # Русские подписи к картинкам, у которых на Commons название не по-русски (переведены вручную)
 _RU_PATH = Path(__file__).with_name("illus_titles_medhurst_ru.json")
 TITLES_RU = json.loads(_RU_PATH.read_text(encoding="utf-8")) if _RU_PATH.exists() else {}
+# Русские имена авторов (латинские имена с Commons, переведены вручную)
+_AU_PATH = Path(__file__).with_name("illus_authors_ru.json")
+AUTHORS_RU = json.loads(_AU_PATH.read_text(encoding="utf-8")) if _AU_PATH.exists() else {}
 
 
 def out_entry(e, chapter=False):
@@ -149,7 +152,7 @@ def out_entry(e, chapter=False):
     if chapter and not title.startswith("К главе: "):
         title = "К главе: " + title
     o = {"img": e["img"], "thumb": e["thumb"], "w": int(e["w"]), "h": int(e["h"]), "title": title,
-         "author": str(e.get("author") or "").strip()}
+         "author": AUTHORS_RU.get(str(e.get("author") or "").strip(), str(e.get("author") or "").strip())}
     if e.get("year"):
         o["year"] = str(e["year"])
     o.update({"license": e["license"], "src": e["src"]})

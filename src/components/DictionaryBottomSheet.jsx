@@ -10,6 +10,7 @@ import { formatRef, parseOsisRef, bookMeta } from '../core/books.js';
 import { Empty } from './ui.jsx';
 import LinkedText from './LinkedText.jsx';
 import WordStats from './WordStats.jsx';
+import { ruInterlinear } from '../core/interlinear.js';
 
 const KIND_LABEL = { strongs: 'по номерам Стронга', words: 'по словам' };
 
@@ -32,9 +33,11 @@ function StrongLinks({ text, onOpen }) {
   );
 }
 
-function StrongEntry({ num, entry, module, mapping, onOpenStrong, onOpenRef }) {
+function StrongEntry({ num, entry, module, mapping, orig, onOpenStrong, onOpenRef }) {
   const isHeb = num.startsWith('H');
-  const morph = mapping?.mode === 'exact' ? mapping.morph : [];
+  // orig — это слово в оригинале стиха (из подстрочника): точная форма с лицом, числом и падежом
+  const exact = orig && orig.num === num.replace(/^([HG])0*/, '$1') ? orig : null;
+  const morph = exact ? [] : mapping?.mode === 'exact' ? mapping.morph : [];
   return (
     <article className="entry">
       {entry.lemma && (
@@ -63,6 +66,17 @@ function StrongEntry({ num, entry, module, mapping, onOpenStrong, onOpenRef }) {
           <dt>Язык</dt>
           <dd>{isHeb ? 'иврит / арамейский (ВЗ)' : 'греческий (НЗ)'}</dd>
         </div>
+        {exact && (
+          <div>
+            <dt>В этом стихе</dt>
+            <dd>
+              <span className={isHeb ? 'hebrew' : 'greek'} lang={isHeb ? 'he' : 'grc'} dir={isHeb ? 'rtl' : 'ltr'}>
+                {exact.orig}
+              </span>
+              {exact.origMorph && describeMorph(exact.origMorph).text ? ` — ${describeMorph(exact.origMorph).text}` : ''}
+            </dd>
+          </div>
+        )}
         {morph.length > 0 &&
           morph.map((m) => {
             const d = describeMorph(m);
@@ -150,6 +164,14 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
   const [selected, setSelected] = useState(payload.preselect?.moduleId || null); // moduleId
   const [stack, setStack] = useState([]); // переходы по ссылкам Стронга внутри статьи
   const [entryIdx, setEntryIdx] = useState(0);
+  const [orig, setOrig] = useState(null); // слово оригинала, которому соответствует нажатое слово
+
+  useEffect(() => {
+    if (payload.wi == null || !ref) return;
+    ruInterlinear(ref)
+      .then((ws) => ws?.[payload.wi]?.orig && setOrig(ws[payload.wi]))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     lookupWord({ token, ref }).then((r) => {
@@ -157,6 +179,11 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
       const pre = payload.preselect;
       const found = pre && r.results.find((x) => x.module.id === pre.moduleId)?.found;
       if (found) setEntryIdx(Math.max(0, found.findIndex((f) => f.key === pre.key)));
+      // Нажали на номер Стронга или слово подстрочника — сразу статья первого словаря Стронга (русский — первым)
+      if (!pre && payload.autoOpen) {
+        const first = r.results.find((x) => x.module.dictionaryKind === 'strongs');
+        if (first) setSelected(first.module.id);
+      }
     });
   }, []);
 
@@ -276,7 +303,7 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
           {(() => {
             const f = current.found[Math.min(entryIdx, current.found.length - 1)];
             if (current.module.dictionaryKind === 'strongs')
-              return <StrongEntry num={f.key} entry={f.entry} module={current.module} mapping={top ? null : mapping} onOpenStrong={openStrong} onOpenRef={openRef} />;
+              return <StrongEntry num={f.key} entry={f.entry} module={current.module} mapping={top ? null : mapping} orig={top ? null : orig} onOpenStrong={openStrong} onOpenRef={openRef} />;
             return (
               <article className="entry">
                 <h3 className="entry-word">{f.entry.word || f.key}</h3>
