@@ -93,8 +93,9 @@ export default function TourOverlay() {
       } else {
         goal = { l: W / 2, t: H / 2, r: W / 2, b: H / 2 }; // места нет — затемнён весь экран
       }
-      // Кнопки — внизу, а если подсвеченное место в нижней части экрана — наверху
-      const wantTop = el ? (goal.t + goal.b) / 2 > H * 0.6 : false;
+      // Кнопки — внизу, а если подсвеченное место в нижней части экрана или доходит до низа (высокое окно) — наверху,
+      // чтобы не закрывать кнопки этого места
+      const wantTop = el ? (goal.t + goal.b) / 2 > H * 0.6 || goal.b > H - ctrl.offsetHeight - 16 : false;
       if (wantTop !== top) {
         top = wantTop;
         setCtrlTop(wantTop);

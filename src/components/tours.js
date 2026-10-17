@@ -52,7 +52,8 @@ export const TOURS = [
       },
       {
         text: N_('Это статья словаря (или карта, если выбрали место). Закрыть — крестиком вверху справа.'),
-        target: () => $('.sheet') || $('.map-pane'),
+        // Подсказка — у крестика: статья Стронга открывается на весь экран, и рамка на всё окно закрыла бы крестик
+        target: () => $(`.sheet [aria-label="${t('Закрыть')}"]`) || $('.map-pane'),
         until: () => !$('.sheet') && !$('.map-pane'),
       },
       { text: N_('Чтобы снять выделение слова, нажмите в любое другое место.'), target: null, before: (api) => (api.reset(), document.querySelector(`.map-pane [aria-label="${t('Закрыть карту')}"]`)?.click()) },
@@ -111,10 +112,10 @@ export const TOURS = [
       { text: N_('Нажмите «В проповедь».'), target: () => byText(P1 + '.sel-inline .btn', 'В проповедь'), before: selectVerse, next: () => click(byText(P1 + '.sel-inline .btn', 'В проповедь')), until: () => $('.sheet #sermon-title') },
       {
         text: N_('Впишите название новой проповеди и нажмите «Создать» — или выберите проповедь из списка. Стих добавится сам.'),
-        target: () => $('.sheet'),
+        target: () => $('.sheet .sermon-new') || $('.sheet'),
         until: () => $('.sermon-done'),
       },
-      { text: N_('Стих добавлен. «Открыть проповедь» — посмотреть её, «Читать дальше» — вернуться к чтению.'), target: () => $('.sheet'), until: () => !$('.sermon-done') },
+      { text: N_('Стих добавлен. «Открыть проповедь» — посмотреть её, «Читать дальше» — вернуться к чтению.'), target: () => $('.sheet .sermon-done') || $('.sheet'), until: () => !$('.sermon-done') },
       { text: N_('Все проповеди — в меню ⋮ → «Проповеди».'), target: menuItem('Проповеди'), before: (api) => (api.reset(), setTimeout(openMenu, 150)), next: (api) => api.openSheet('sermons') },
       { text: N_('В проповеди: «Текст» — своя мысль; порядок меняется перетаскиванием (зажмите блок); «Кафедра» — крупно для служения.'), target: () => $('.sheet'), before: (api) => !$('.sheet') && api.openSheet('sermons') },
     ],
