@@ -1,4 +1,5 @@
 {
+ "Приложение говорит на 22 языках: язык выбирается по языку телефона, сменить можно в Настройки → Язык.": "Aplicația vorbește 22 de limbi: limba se alege după limba telefonului și se schimbă din Setări → Limbă.",
  "Экстренное обновление…": "Actualizare de urgență…",
  "Обновляюсь до новой версии…": "Se actualizează la versiunea nouă…",
  "Доступна новая версия — меню ⋮ → «Обновить приложение»": "Este disponibilă o versiune nouă — meniul ⋮ → „Actualizează aplicația”",
@@ -1133,7 +1134,7 @@
  "Текст на iPhone стал чётче.": "Textul pe iPhone este mai clar.",
  "Иллюстрации к стихам: у многих стихов в конце появился значок картинки. Нажмите на него — откроется картина или гравюра к этому стиху.": "Ilustrații la versete: la sfârșitul multor versete a apărut o pictogramă cu imagine. Atingeți-o — se va deschide o pictură sau o gravură la acest verset.",
  "Картинку можно увеличить: нажмите на неё или разведите двумя пальцами. Если картинок две — листайте в сторону.": "Imaginea poate fi mărită: atingeți-o sau depărtați două degete. Dacă sunt două imagini — glisați în lateral.",
- "Значки можно скрыть: Настройки → Вид → «Значки иллюстраций у стихов».": "Pictogramele pot fi ascunse: Aspect → „Pictograme de ilustrații la versete”.",
+ "Значки можно скрыть: Настройки → Оформление → «Значки иллюстраций у стихов».": "Pictogramele pot fi ascunse: Aspect → „Pictograme de ilustrații la versete”.",
  "Можно выбрать часть стиха: зажмите стих → «Часть стиха» → первое и последнее слово. Её можно добавить в проповедь, в любимые или скопировать.": "Puteți alege o parte de verset: țineți apăsat pe verset → „Parte de verset” → primul și ultimul cuvânt. O puteți adăuga într-o predică, la preferate sau o puteți copia.",
  "Переводы Библии на 20 языках: английский, немецкий, французский, испанский, итальянский, польский, китайский, корейский и другие — в библиотеке модулей.": "Traduceri ale Bibliei în 20 de limbi: engleză, germană, franceză, spaniolă, italiană, poloneză, chineză, coreeană și altele — în biblioteca de module.",
  "Новые словари: Даль, Брокгауз и Ефрон, Православная богословская энциклопедия, Еврейская энциклопедия. Нажмите на слово — словарь найдёт его и в другой форме («благодати» → «благодать»).": "Dicționare noi (în rusă): Dal, Brockhaus și Efron, Enciclopedia teologică ortodoxă, Enciclopedia evreiască. Atingeți un cuvânt — dicționarul îl găsește și în altă formă („благодати” → „благодать”).",

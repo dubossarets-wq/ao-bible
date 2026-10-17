@@ -1,4 +1,5 @@
 {
+ "Приложение говорит на 22 языках: язык выбирается по языку телефона, сменить можно в Настройки → Язык.": "L’application parle désormais 22 langues : elle suit la langue du téléphone, modifiable dans Réglages → Langue.",
  "Экстренное обновление…": "Mise à jour d’urgence…",
  "Обновляюсь до новой версии…": "Mise à jour vers la nouvelle version…",
  "Доступна новая версия — меню ⋮ → «Обновить приложение»": "Une nouvelle version est disponible — menu ⋮ → « Mettre à jour l’application »",
@@ -1131,7 +1132,7 @@
  "Текст на iPhone стал чётче.": "Le texte est plus net sur iPhone.",
  "Иллюстрации к стихам: у многих стихов в конце появился значок картинки. Нажмите на него — откроется картина или гравюра к этому стиху.": "Illustrations des versets : beaucoup de versets ont désormais une icône d’image à la fin. Touchez-la pour ouvrir un tableau ou une gravure illustrant ce verset.",
  "Картинку можно увеличить: нажмите на неё или разведите двумя пальцами. Если картинок две — листайте в сторону.": "On peut agrandir l’image : touchez-la ou écartez deux doigts. S’il y a deux images, balayez sur le côté.",
- "Значки можно скрыть: Настройки → Вид → «Значки иллюстраций у стихов».": "Les icônes peuvent être masquées : Apparence → « Icônes d’illustration aux versets ».",
+ "Значки можно скрыть: Настройки → Оформление → «Значки иллюстраций у стихов».": "Les icônes peuvent être masquées : Apparence → « Icônes d’illustration aux versets ».",
  "Можно выбрать часть стиха: зажмите стих → «Часть стиха» → первое и последнее слово. Её можно добавить в проповедь, в любимые или скопировать.": "Vous pouvez sélectionner une partie d’un verset : appui long sur le verset → « Partie du verset » → le premier et le dernier mot. Vous pouvez l’ajouter à une prédication, aux favoris ou la copier.",
  "Переводы Библии на 20 языках: английский, немецкий, французский, испанский, итальянский, польский, китайский, корейский и другие — в библиотеке модулей.": "Des traductions de la Bible en 20 langues : anglais, allemand, français, espagnol, italien, polonais, chinois, coréen et d’autres — dans la bibliothèque de modules.",
  "Новые словари: Даль, Брокгауз и Ефрон, Православная богословская энциклопедия, Еврейская энциклопедия. Нажмите на слово — словарь найдёт его и в другой форме («благодати» → «благодать»).": "Nouveaux dictionnaires (en russe) : Dahl, Brockhaus et Efron, l’Encyclopédie théologique orthodoxe, l’Encyclopédie juive. Touchez un mot — le dictionnaire le trouve aussi sous une autre forme (« благодати » → « благодать »).",

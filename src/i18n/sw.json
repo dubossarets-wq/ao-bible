@@ -1,4 +1,5 @@
 {
+ "Приложение говорит на 22 языках: язык выбирается по языку телефона, сменить можно в Настройки → Язык.": "Programu sasa inazungumza lugha 22: inafuata lugha ya simu yako, na unaweza kuibadilisha katika Mipangilio → Lugha.",
  "Экстренное обновление…": "Sasisho la dharura…",
  "Обновляюсь до новой версии…": "Inasasisha hadi toleo jipya…",
  "Доступна новая версия — меню ⋮ → «Обновить приложение»": "Toleo jipya linapatikana — menyu ⋮ → “Sasisha programu”",
@@ -1125,7 +1126,7 @@
  "Текст на iPhone стал чётче.": "Maandishi kwenye iPhone ni makali zaidi.",
  "Иллюстрации к стихам: у многих стихов в конце появился значок картинки. Нажмите на него — откроется картина или гравюра к этому стиху.": "Michoro ya mistari: mistari mingi sasa ina ikoni ya picha mwishoni. Igusa — utafunguka mchoro au chapa ya mstari huo.",
  "Картинку можно увеличить: нажмите на неё или разведите двумя пальцами. Если картинок две — листайте в сторону.": "Picha inaweza kukuzwa: igusa au tanua vidole viwili. Kama kuna picha mbili — telezesha pembeni.",
- "Значки можно скрыть: Настройки → Вид → «Значки иллюстраций у стихов».": "Ikoni zinaweza kufichwa: Mwonekano → “Ikoni za michoro kwenye mistari”.",
+ "Значки можно скрыть: Настройки → Оформление → «Значки иллюстраций у стихов».": "Ikoni zinaweza kufichwa: Mwonekano → “Ikoni za michoro kwenye mistari”.",
  "Можно выбрать часть стиха: зажмите стих → «Часть стиха» → первое и последнее слово. Её можно добавить в проповедь, в любимые или скопировать.": "Unaweza kuchagua sehemu ya mstari: bonyeza mstari kwa muda → “Sehemu ya mstari” → neno la kwanza na la mwisho. Unaweza kuiongeza kwenye mahubiri, kwenye pendwa au kuinakili.",
  "Переводы Библии на 20 языках: английский, немецкий, французский, испанский, итальянский, польский, китайский, корейский и другие — в библиотеке модулей.": "Tafsiri za Biblia katika lugha 20: Kiingereza, Kijerumani, Kifaransa, Kihispania, Kiitaliano, Kipolandi, Kichina, Kikorea na nyinginezo — katika maktaba ya moduli.",
  "Новые словари: Даль, Брокгауз и Ефрон, Православная богословская энциклопедия, Еврейская энциклопедия. Нажмите на слово — словарь найдёт его и в другой форме («благодати» → «благодать»).": "Kamusi mpya (kwa Kirusi): Dal, Brockhaus na Efron, Ensaiklopidia ya Theolojia ya Kiorthodoksi, Ensaiklopidia ya Kiyahudi. Gusa neno — kamusi italipata hata katika muundo mwingine (“благодати” → “благодать”).",

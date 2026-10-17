@@ -1,4 +1,5 @@
 {
+ "Приложение говорит на 22 языках: язык выбирается по языку телефона, сменить можно в Настройки → Язык.": "La aplicación ya habla 22 idiomas: sigue el idioma del teléfono y se puede cambiar en Ajustes → Idioma.",
  "Экстренное обновление…": "Actualización urgente…",
  "Обновляюсь до новой версии…": "Actualizando a la nueva versión…",
  "Доступна новая версия — меню ⋮ → «Обновить приложение»": "Hay una nueva versión disponible: menú ⋮ → «Actualizar la aplicación»",
@@ -1131,7 +1132,7 @@
  "Текст на iPhone стал чётче.": "El texto en iPhone se ve más nítido.",
  "Иллюстрации к стихам: у многих стихов в конце появился значок картинки. Нажмите на него — откроется картина или гравюра к этому стиху.": "Ilustraciones de versículos: muchos versículos tienen ahora un icono de imagen al final. Tóquelo para abrir una pintura o un grabado de ese versículo.",
  "Картинку можно увеличить: нажмите на неё или разведите двумя пальцами. Если картинок две — листайте в сторону.": "Puede ampliar la imagen: tóquela o separe dos dedos. Si hay dos imágenes, deslice hacia un lado.",
- "Значки можно скрыть: Настройки → Вид → «Значки иллюстраций у стихов».": "Los iconos se pueden ocultar: Apariencia → «Iconos de ilustración en los versículos».",
+ "Значки можно скрыть: Настройки → Оформление → «Значки иллюстраций у стихов».": "Los iconos se pueden ocultar: Apariencia → «Iconos de ilustración en los versículos».",
  "Можно выбрать часть стиха: зажмите стих → «Часть стиха» → первое и последнее слово. Её можно добавить в проповедь, в любимые или скопировать.": "Puede seleccionar parte de un versículo: mantenga pulsado el versículo → «Parte del versículo» → la primera y la última palabra. Puede añadirla a un sermón, a favoritos o copiarla.",
  "Переводы Библии на 20 языках: английский, немецкий, французский, испанский, итальянский, польский, китайский, корейский и другие — в библиотеке модулей.": "Traducciones de la Biblia en 20 idiomas: inglés, alemán, francés, español, italiano, polaco, chino, coreano y otros, en la biblioteca de módulos.",
  "Новые словари: Даль, Брокгауз и Ефрон, Православная богословская энциклопедия, Еврейская энциклопедия. Нажмите на слово — словарь найдёт его и в другой форме («благодати» → «благодать»).": "Nuevos diccionarios (en ruso): Dal, Brockhaus y Efrón, la Enciclopedia Teológica Ortodoxa y la Enciclopedia Judía. Toque una palabra: el diccionario la encontrará también en otra forma («благодати» → «благодать»).",

@@ -14,10 +14,11 @@ export function wasClosedOnWord(el) {
 }
 
 // Двойное нажатие на стих (два нажатия на один стих быстрее 350 мс) — в любимые
+export const DOUBLE_TAP_MS = 350;
 let lastTap = { key: null, at: 0 };
 export function isDoubleTap(key) {
   const now = Date.now();
-  const hit = lastTap.key === key && now - lastTap.at < 350;
+  const hit = lastTap.key === key && now - lastTap.at < DOUBLE_TAP_MS;
   lastTap = hit ? { key: null, at: 0 } : { key, at: now };
   return hit;
 }

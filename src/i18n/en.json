@@ -1,4 +1,5 @@
 {
+ "Приложение говорит на 22 языках: язык выбирается по языку телефона, сменить можно в Настройки → Язык.": "The app now speaks 22 languages: it follows your phone’s language, and you can change it in Settings → Language.",
  "Экстренное обновление…": "Emergency update…",
  "Обновляюсь до новой версии…": "Updating to the new version…",
  "Доступна новая версия — меню ⋮ → «Обновить приложение»": "A new version is available — menu ⋮ → “Update app”",
@@ -1125,7 +1126,7 @@
  "Текст на iPhone стал чётче.": "Text on iPhone is sharper.",
  "Иллюстрации к стихам: у многих стихов в конце появился значок картинки. Нажмите на него — откроется картина или гравюра к этому стиху.": "Verse illustrations: many verses now have a picture icon at the end. Tap it to open a painting or engraving for that verse.",
  "Картинку можно увеличить: нажмите на неё или разведите двумя пальцами. Если картинок две — листайте в сторону.": "You can zoom into a picture: tap it or spread two fingers. If there are two pictures, swipe sideways.",
- "Значки можно скрыть: Настройки → Вид → «Значки иллюстраций у стихов».": "The icons can be hidden: Appearance → “Illustration icons on verses”.",
+ "Значки можно скрыть: Настройки → Оформление → «Значки иллюстраций у стихов».": "The icons can be hidden: Appearance → “Illustration icons on verses”.",
  "Можно выбрать часть стиха: зажмите стих → «Часть стиха» → первое и последнее слово. Её можно добавить в проповедь, в любимые или скопировать.": "You can select part of a verse: press and hold a verse → “Part of verse” → the first and last word. You can add it to a sermon or to favourites, or copy it.",
  "Переводы Библии на 20 языках: английский, немецкий, французский, испанский, итальянский, польский, китайский, корейский и другие — в библиотеке модулей.": "Bible translations in 20 languages: English, German, French, Spanish, Italian, Polish, Chinese, Korean and more — in the module library.",
  "Новые словари: Даль, Брокгауз и Ефрон, Православная богословская энциклопедия, Еврейская энциклопедия. Нажмите на слово — словарь найдёт его и в другой форме («благодати» → «благодать»).": "New dictionaries (in Russian): Dahl, Brockhaus and Efron, the Orthodox Theological Encyclopedia, the Jewish Encyclopedia. Tap a word — the dictionary will find it in another form too (“благодати” → “благодать”).",

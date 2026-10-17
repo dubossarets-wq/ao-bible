@@ -12,7 +12,7 @@ import { setLivePosition, clearLivePosition } from '../core/livePosition.js';
 import { setDriver, isDriver, onSync, emitSync } from '../core/scrollSync.js';
 import { useAudio } from '../core/audio.js';
 import { verseHtml, wordAt, plainText } from '../core/verseMarkup.js';
-import { wasClosedOnWord, isDoubleTap, pulseFavorite } from '../core/tapState.js';
+import { wasClosedOnWord, isDoubleTap, pulseFavorite, DOUBLE_TAP_MS } from '../core/tapState.js';
 import { logChapter, minSeconds } from '../core/readLog.js';
 import { creditChapter } from '../core/planStore.js';
 import { sermonWith } from '../core/sermons.js';
@@ -158,6 +158,8 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
   const pending = useRef(null);
   const lastY = useRef(0);
   const posTimer = useRef(null);
+  const pendingPop = useRef(0);
+  useEffect(() => () => clearTimeout(pendingPop.current), []);
   const activeWord = useRef(null);
   const ref = pane.ref;
 
@@ -216,11 +218,14 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
   // выделение: это касание больше ничего не делает — новое слово не выделяется, выборка не открывается.
   // Выборка словарей и открытая статья — не «мимо»: там выделение показывает, о каком слове речь.
   const swallowTap = useRef(false);
+  const wordTapAt = useRef(0); // когда последний раз нажали на слово
   useEffect(() => {
     const onDown = (e) => {
       const w = activeWord.current;
       swallowTap.current = false;
       if (!w || w.contains(e.target) || e.target.closest?.('.word-pop, .sheet, .tour')) return;
+      // Быстрое второе касание в тот же стих — это двойное касание (в любимые), а не «мимо слова»
+      if (Date.now() - wordTapAt.current < DOUBLE_TAP_MS && w.closest('.verse')?.contains(e.target)) return;
       w.classList.remove('active');
       activeWord.current = null;
       swallowTap.current = true;
@@ -431,6 +436,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     const act = e.target.closest('[data-act]')?.dataset.act;
     // Двойное нажатие на стих — в любимые (повторное — убрать)
     if (!act && isDoubleTap(`${book.id}.${c}.${v}`)) {
+      clearTimeout(pendingPop.current);
       closePopover();
       activeWord.current?.classList.remove('active');
       activeWord.current = null;
@@ -464,15 +470,22 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       activeWord.current?.classList.remove('active');
       w.classList.add('active');
       activeWord.current = w;
+      wordTapAt.current = Date.now();
       const tok = { text: token.text, strongs: token.strongs || null, morph: token.morph || null };
-      const r = w.getBoundingClientRect();
-      openPopover({
-        pane: index,
-        token: tok,
-        ref: vref,
-        rect: { left: r.left, top: r.top, bottom: r.bottom, width: r.width },
-        payload: { token: tok, ref: vref, moduleId: module.id, verseText: plainText(text), wi: +w.dataset.i },
-      });
+      // Окошко словарей — после паузы двойного касания: иначе оно успевает открыться над пальцем
+      // и второе касание попадает в него, а не в стих (двойное касание — в любимые)
+      clearTimeout(pendingPop.current);
+      pendingPop.current = setTimeout(() => {
+        if (activeWord.current !== w) return;
+        const r = w.getBoundingClientRect();
+        openPopover({
+          pane: index,
+          token: tok,
+          ref: vref,
+          rect: { left: r.left, top: r.top, bottom: r.bottom, width: r.width },
+          payload: { token: tok, ref: vref, moduleId: module.id, verseText: plainText(text), wi: +w.dataset.i },
+        });
+      }, DOUBLE_TAP_MS);
     }
   };
 

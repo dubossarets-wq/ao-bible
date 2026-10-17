@@ -1,4 +1,5 @@
 {
+ "Приложение говорит на 22 языках: язык выбирается по языку телефона, сменить можно в Настройки → Язык.": "Aplikacja mówi w 22 językach: język dobierany jest według języka telefonu, zmienisz go w Ustawienia → Język.",
  "Экстренное обновление…": "Pilna aktualizacja…",
  "Обновляюсь до новой версии…": "Aktualizuję do nowej wersji…",
  "Доступна новая версия — меню ⋮ → «Обновить приложение»": "Dostępna jest nowa wersja — menu ⋮ → „Aktualizuj aplikację”",
@@ -1141,7 +1142,7 @@
  "Текст на iPhone стал чётче.": "Tekst na iPhonie jest wyraźniejszy.",
  "Иллюстрации к стихам: у многих стихов в конце появился значок картинки. Нажмите на него — откроется картина или гравюра к этому стиху.": "Ilustracje do wersetów: przy wielu wersetach na końcu pojawiła się ikona obrazka. Dotknij jej — otworzy się obraz lub rycina do tego wersetu.",
  "Картинку можно увеличить: нажмите на неё или разведите двумя пальцами. Если картинок две — листайте в сторону.": "Obrazek można powiększyć: dotknij go lub rozsuń dwa palce. Jeśli są dwa obrazki, przesuń w bok.",
- "Значки можно скрыть: Настройки → Вид → «Значки иллюстраций у стихов».": "Ikony można ukryć: Wygląd → „Ikony ilustracji przy wersetach”.",
+ "Значки можно скрыть: Настройки → Оформление → «Значки иллюстраций у стихов».": "Ikony można ukryć: Wygląd → „Ikony ilustracji przy wersetach”.",
  "Можно выбрать часть стиха: зажмите стих → «Часть стиха» → первое и последнее слово. Её можно добавить в проповедь, в любимые или скопировать.": "Można zaznaczyć fragment wersetu: przytrzymaj werset → „Fragment wersetu” → pierwsze i ostatnie słowo. Można go dodać do kazania, do ulubionych albo skopiować.",
  "Переводы Библии на 20 языках: английский, немецкий, французский, испанский, итальянский, польский, китайский, корейский и другие — в библиотеке модулей.": "Przekłady Biblii w 20 językach: angielskim, niemieckim, francuskim, hiszpańskim, włoskim, polskim, chińskim, koreańskim i innych — w bibliotece modułów.",
  "Новые словари: Даль, Брокгауз и Ефрон, Православная богословская энциклопедия, Еврейская энциклопедия. Нажмите на слово — словарь найдёт его и в другой форме («благодати» → «благодать»).": "Nowe słowniki (po rosyjsku): Dal, Brockhaus i Efron, Prawosławna encyklopedia teologiczna, Encyklopedia żydowska. Dotknij słowa — słownik znajdzie je także w innej formie („благодати” → „благодать”).",

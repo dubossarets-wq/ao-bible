@@ -1,4 +1,5 @@
 {
+ "Приложение говорит на 22 языках: язык выбирается по языку телефона, сменить можно в Настройки → Язык.": "Aplikace mluví 22 jazyky: jazyk se řídí jazykem telefonu, změnit ho lze v Nastavení → Jazyk.",
  "Экстренное обновление…": "Nouzová aktualizace…",
  "Обновляюсь до новой версии…": "Aktualizuji na novou verzi…",
  "Доступна новая версия — меню ⋮ → «Обновить приложение»": "K dispozici je nová verze — nabídka ⋮ → „Aktualizovat aplikaci“",
@@ -1141,7 +1142,7 @@
  "Текст на iPhone стал чётче.": "Text na iPhonu je ostřejší.",
  "Иллюстрации к стихам: у многих стихов в конце появился значок картинки. Нажмите на него — откроется картина или гравюра к этому стиху.": "Ilustrace k veršům: u mnoha veršů se na konci objevila ikona obrázku. Klepněte na ni — otevře se obraz nebo rytina k tomuto verši.",
  "Картинку можно увеличить: нажмите на неё или разведите двумя пальцами. Если картинок две — листайте в сторону.": "Obrázek lze zvětšit: klepněte na něj nebo roztáhněte dva prsty. Pokud jsou obrázky dva, listujte do strany.",
- "Значки можно скрыть: Настройки → Вид → «Значки иллюстраций у стихов».": "Ikony lze skrýt: Vzhled → „Ikony ilustrací u veršů“.",
+ "Значки можно скрыть: Настройки → Оформление → «Значки иллюстраций у стихов».": "Ikony lze skrýt: Vzhled → „Ikony ilustrací u veršů“.",
  "Можно выбрать часть стиха: зажмите стих → «Часть стиха» → первое и последнее слово. Её можно добавить в проповедь, в любимые или скопировать.": "Můžete vybrat část verše: podržte verš → „Část verše“ → první a poslední slovo. Lze ji přidat do kázání, do oblíbených nebo zkopírovat.",
  "Переводы Библии на 20 языках: английский, немецкий, французский, испанский, итальянский, польский, китайский, корейский и другие — в библиотеке модулей.": "Překlady Bible ve 20 jazycích: angličtina, němčina, francouzština, španělština, italština, polština, čínština, korejština a další — v knihovně modulů.",
  "Новые словари: Даль, Брокгауз и Ефрон, Православная богословская энциклопедия, Еврейская энциклопедия. Нажмите на слово — словарь найдёт его и в другой форме («благодати» → «благодать»).": "Nové slovníky (v ruštině): Dal, Brockhaus a Jefron, Pravoslavná teologická encyklopedie, Židovská encyklopedie. Klepněte na slovo — slovník ho najde i v jiném tvaru („благодати“ → „благодать“).",
