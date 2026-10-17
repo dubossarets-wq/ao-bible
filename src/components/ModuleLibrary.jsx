@@ -233,10 +233,54 @@ function Sections({ items, mode, catalog, busy, onInstall, filter }) {
   ));
 }
 
-// Языки модулей: код → название; порядок показа. В русском интерфейсе — эти названия,
-// в остальных — название языка от браузера (Intl.DisplayNames) на языке интерфейса.
-export const LANGS = { ru: N_('Русский'), cu: N_('Церковнославянский'), uk: N_('Українська'), en: N_('English'), he: N_('Иврит'), grc: N_('Греческий') };
-const langName = (code) => {
+// Языки модулей: код → название; порядок показа — русский, затем живые языки по числу говорящих в мире,
+// в конце древние языки Писания. Названия — для русского интерфейса; в остальных — название языка от браузера
+// (Intl.DisplayNames) на языке интерфейса, а эти — лишь запасной вариант для старых браузеров.
+// i18n-ignore-start
+export const LANGS = {
+  ru: 'Русский',
+  en: 'English',
+  zh: 'Китайский',
+  hi: 'Хинди',
+  es: 'Испанский',
+  ar: 'Арабский',
+  fr: 'Французский',
+  pt: 'Португальский',
+  id: 'Индонезийский',
+  de: 'Немецкий',
+  ja: 'Японский',
+  tr: 'Турецкий',
+  sw: 'Суахили',
+  vi: 'Вьетнамский',
+  tl: 'Тагальский',
+  ko: 'Корейский',
+  fa: 'Персидский',
+  it: 'Итальянский',
+  pl: 'Польский',
+  uk: 'Українська',
+  ro: 'Румынский',
+  nl: 'Нидерландский',
+  el: 'Новогреческий',
+  sv: 'Шведский',
+  cs: 'Чешский',
+  sr: 'Сербский',
+  sq: 'Албанский',
+  hy: 'Армянский',
+  hr: 'Хорватский',
+  da: 'Датский',
+  nb: 'Норвежский',
+  be: 'Белорусский',
+  eo: 'Эсперанто',
+  he: 'Иврит',
+  grc: 'Греческий',
+  la: 'Латынь',
+  cu: 'Церковнославянский',
+  syr: 'Сирийский',
+};
+// i18n-ignore-end
+const ORDER = Object.keys(LANGS);
+export const langRank = (code) => (ORDER.includes(code) ? ORDER.indexOf(code) : ORDER.length + (code ? 0 : 1));
+export const langName = (code) => {
   if (!code) return t('Другие');
   if (getLang() !== 'ru') {
     try {
@@ -246,13 +290,13 @@ const langName = (code) => {
       /* старый браузер — ниже запасной вариант */
     }
   }
-  return LANGS[code] ? t(LANGS[code]) : code.toUpperCase();
+  return LANGS[code] || code.toUpperCase();
 };
 
 function LangFilter({ value, onChange, items }) {
   const counts = {};
   items.forEach((m) => (counts[m.language || ''] = (counts[m.language || ''] || 0) + 1));
-  const codes = Object.keys(counts).sort((a, b) => Object.keys(LANGS).indexOf(a) - Object.keys(LANGS).indexOf(b));
+  const codes = Object.keys(counts).sort((a, b) => langRank(a) - langRank(b) || a.localeCompare(b));
   if (codes.length < 2) return null;
   return (
     <div className="chips filter-chips lang-chips" role="group" aria-label={t('Язык модулей')}>
@@ -323,7 +367,8 @@ export default function ModuleLibrary({ payload, onClose }) {
   const [mq, setMq] = useState('');
   const q = mq.trim().toLowerCase().replace(/ё/g, 'е');
   const base = tab === 'installed' ? modules : catalog || [];
-  const list = base.filter((m) => (lang === 'all' || (m.language || '') === lang) && matches(m, q));
+  // Сначала русские модули, дальше — в порядке языков (внутри языка — как в каталоге)
+  const list = base.filter((m) => (lang === 'all' || (m.language || '') === lang) && matches(m, q)).sort((a, b) => langRank(a.language || '') - langRank(b.language || ''));
   const counts = useMemo(() => Object.fromEntries(MODULE_SECTIONS.map(([type]) => [type, list.filter((m) => m.type === type).length])), [list]);
 
   return (

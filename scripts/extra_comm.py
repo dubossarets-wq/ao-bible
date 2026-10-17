@@ -7,19 +7,20 @@ from extra_lib import (BOOK_ORDER, SRC, fmt_ref, html_to_text, iter_sword_verses
                        parse_osis_ref, parse_ref_list)
 
 
-def _syn_key(refs):
+def _syn_key(refs, mapper=kjv2syn):
     """Список стихов KJV одной статьи -> ключ OSIS в синодальной нумерации (стих или диапазон)."""
-    syn = [kjv2syn(b, c, max(v, 1)) for b, c, v in refs]
+    syn = [mapper(b, c, max(v, 1)) for b, c, v in refs]
     b = syn[0][0]
     syn = [x for x in syn if x[0] == b]
     lo, hi = min((c, v) for _, c, v in syn), max((c, v) for _, c, v in syn)
     return fmt_ref(b, lo[0], lo[1], hi[0], hi[1])
 
 
-def sword_commentary(name, books=None, intro_title="Введение"):
-    """entries {"Gen.1.1-5": "текст"}; стих 0 (вступление к главе/книге) — отдельная статья с заголовком."""
+def sword_commentary(name, books=None, intro_title="Введение", versification="kjv", mapper=kjv2syn):
+    """entries {"Gen.1.1-5": "текст"}; стих 0 (вступление к главе/книге) — отдельная статья с заголовком.
+    versification — схема модуля (поле Versification), mapper — её перевод в синодальную (по умолчанию KJV)."""
     runs = OrderedDict()
-    for b, c, v, raw, ident in iter_sword_verses(name, "kjv"):
+    for b, c, v, raw, ident in iter_sword_verses(name, versification):
         if books and b not in books:
             continue
         key = ident if v > 0 else ("intro", b, c)
@@ -34,10 +35,10 @@ def sword_commentary(name, books=None, intro_title="Введение"):
         refs = r["refs"]
         if key[0] == "intro":
             b, c, _ = refs[0]
-            k = fmt_ref(*kjv2syn(b, c, 1))
+            k = fmt_ref(*mapper(b, c, 1))
             val = {"title": intro_title, "text": text}
         else:
-            k = _syn_key(refs)
+            k = _syn_key(refs, mapper)
             val = text
         if k in entries:  # совпал ключ (например, вступление и статья к первому стиху)
             old = entries[k]

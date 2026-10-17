@@ -7,6 +7,7 @@ import { useApp } from '../App.jsx';
 import { getBook } from '../core/modules.js';
 import { crossrefCounts } from '../core/crossrefs.js';
 import { commentaryIndex } from '../core/commentary.js';
+import { illustrationIndex } from '../core/illustrations.js';
 import { setLivePosition, clearLivePosition } from '../core/livePosition.js';
 import { wordAt, plainText } from '../core/verseMarkup.js';
 import { wasClosedOnWord, isDoubleTap, pulseFavorite } from '../core/tapState.js';
@@ -16,6 +17,7 @@ import { usePlan, markUnits, creditChapter } from '../core/planStore.js';
 import { logChapter, minSeconds } from '../core/readLog.js';
 import { Chapter, marksFor, selectedIn, afterProps, LONG_PRESS_MS } from './ChapterView.jsx';
 import { usePinchFont } from './usePinchFont.js';
+import { drawPart, clearPart } from './partShape.js';
 import { sermonWith } from '../core/sermons.js';
 import { t } from '../core/i18n.js';
 
@@ -46,7 +48,7 @@ function nextAfter(r, module, books) {
   return nb ? { ref: { book: nb.id, chapter: 1, verse: 1 }, label: `${full(nb.id)} 1` } : null;
 }
 
-export default function PlanView({ index, pane, module, selection, onSelect, selActions }) {
+export default function PlanView({ index, pane, module, selection, onSelect, selActions, part, onPart }) {
   const { settings, openSheet, openPopover, closePopover, toggleFavorite, popover, sheet, reportPosition, navigate, marks, toast, modules, exitPlan, settlePlan, openPlanDay } = useApp();
   const { uid, day } = pane.plan;
   const plan = usePlan(uid);
@@ -61,6 +63,7 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
 
   const [counts, setCounts] = useState(null);
   const [comments, setComments] = useState(null);
+  const [illus, setIllus] = useState(null);
   useEffect(() => {
     crossrefCounts().then(setCounts);
     commentaryIndex().then((m) => setComments(m.size ? m : null));
@@ -77,6 +80,7 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
       Promise.all(bookIds.map((b) => (module.books.some((x) => x.id === b) ? getBook(module.id, b) : null))),
       crossrefCounts().then(setCounts),
       commentaryIndex().then((m) => setComments(m.size ? m : null)),
+      illustrationIndex().then((m) => setIllus(m.size ? m : null)),
     ]).then(([list]) => {
       if (alive) setBooks(Object.fromEntries(bookIds.map((b, i) => [b, list[i]])));
     });
@@ -208,6 +212,24 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
     return () => document.removeEventListener('pointerdown', onDown, true);
   }, []);
 
+  // Слова выбранной части стиха и любимых частей — отмечаем классами прямо в тексте
+  const { favParts } = useApp();
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    el.querySelectorAll('.w.fav-part').forEach((w) => w.classList.remove('fav-part'));
+    clearPart(el); // прежняя подложка выбранной части
+    const mark = (b, c, v, from, to, cls) =>
+      el.querySelectorAll(`.verse[data-b="${b}"][data-c="${c}"][data-v="${v}"] .w`).forEach((w) => +w.dataset.i >= from && +w.dataset.i <= to && w.classList.add(cls));
+    for (const [k, verses] of favParts) {
+      const [b, c] = k.split('.');
+      for (const [v, [from, to]] of Object.entries(verses)) mark(b, c, v, from, to, 'fav-part');
+    }
+    if (part?.from != null) {
+      drawPart(el, part); // выбранная часть — одной цельной плашкой под текстом
+    }
+  });
+
   // Снимаем подсветку слова, когда закрыты и выборка словарей, и окно статьи
   useEffect(() => {
     if (!sheet && !popover && activeWord.current) {
@@ -278,6 +300,12 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
     }
     const vref = verseRefOf(e.target);
     if (!vref || !books?.[vref.book]) return;
+    // Выбор части стиха: нажатия по словам этого стиха задают начало и конец
+    if (part && `${vref.book}.${vref.chapter}.${vref.verse}` === part.key) {
+      const w = e.target.closest('.w');
+      if (w) onPart?.(+w.dataset.i);
+      return;
+    }
     if (selection?.size) return onSelect?.(vref, 'toggle');
     const text = books[vref.book].chapters[vref.chapter - 1][vref.verse - 1];
     const act = e.target.closest('[data-act]')?.dataset.act;
@@ -293,7 +321,16 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
     if (act === 'note') return openSheet('note', index, { refs: [vref], moduleId: module.id });
     if (act === 'sermon') return openSheet('sermons', index, { open: sermonWith(vref)?.id || null });
     if (act === 'comment') return openSheet('commentary', index, { ref: vref, moduleId: e.target.closest('[data-m]').dataset.m });
-    if (act === 'verse') return openSheet('verse', index, { ref: vref, text: plainText(text), moduleId: module.id });
+    if (act === 'illus') return openSheet('illus', index, { ref: vref, items: illus?.get(`${vref.book}.${vref.chapter}.${vref.verse}`) || [] });
+    // Номер стиха — то же, что долгое нажатие: выделение стиха и одна общая панель действий
+    if (act === 'verse') return onSelect?.(vref, 'start');
+    const sn = e.target.closest('.sn');
+    if (sn) {
+      const token = wordAt(text, +sn.dataset.i);
+      if (!token?.strongs) return;
+      closePopover();
+      return openSheet('dict', index, { token: { text: token.text, strongs: token.strongs, morph: token.morph || null }, ref: vref, moduleId: module.id, verseText: plainText(text), wi: +sn.dataset.i, autoOpen: true, initial: 'full' });
+    }
     const w = e.target.closest('.w');
     if (!w) return;
     if (wasClosedOnWord(w) || (w === activeWord.current && !popover && !sheet)) {
@@ -313,7 +350,7 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
       token: tok,
       ref: vref,
       rect: { left: r.left, top: r.top, bottom: r.bottom, width: r.width },
-      payload: { token: tok, ref: vref, moduleId: module.id, verseText: plainText(text) },
+      payload: { token: tok, ref: vref, moduleId: module.id, verseText: plainText(text), wi: +w.dataset.i },
     });
   };
 
@@ -321,12 +358,14 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
     () => ({
       showVerseNumbers: settings.showVerseNumbers && !settings.bookMode,
       showStrongs: settings.showStrongs && module.features?.strongs && !settings.bookMode,
+      interlinear: !!module.features?.interlinear,
       showHeadings: settings.showHeadings,
       showXref: settings.showXrefButtons && !settings.focusMode && !settings.bookMode,
       inlineComments: settings.bookMode ? [] : settings.inlineCommentaries,
       continuous: settings.continuousVerses || settings.bookMode,
+      showIllus: settings.showIllustrations !== false && !settings.bookMode,
     }),
-    [settings.showVerseNumbers, settings.showStrongs, settings.showHeadings, settings.showXrefButtons, settings.focusMode, settings.continuousVerses, settings.inlineCommentaries, settings.bookMode, module]
+    [settings.showVerseNumbers, settings.showStrongs, settings.showHeadings, settings.showXrefButtons, settings.focusMode, settings.continuousVerses, settings.inlineCommentaries, settings.bookMode, settings.showIllustrations, module]
   );
 
   if (!plan || !readings.length)
@@ -434,6 +473,7 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
                         xrefs={data.xrefs}
                         counts={counts}
                         comments={comments}
+                        illus={illus}
                         opts={opts}
                         hlRe={null}
                         isPsalm={u.book === 'Ps'}

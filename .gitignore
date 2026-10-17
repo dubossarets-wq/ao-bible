@@ -16,3 +16,5 @@ data-src/audio/
 # Исходники фонов «картинки со стихом» — пересобираются scripts/build_verse_bg.py
 data-src/verse-bg-src/
 .pylib-img/
+# Метаданные иллюстраций (кэш API Commons и части по собраниям) — пересобираются scripts/illus_*.py
+data-src/illustrations/

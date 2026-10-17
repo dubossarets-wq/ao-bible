@@ -33,10 +33,11 @@ export function tokenize(text) {
         pushPlain(text.slice(i));
         break;
       }
-      const [word, s = '', m = ''] = text.slice(i + 1, end).split('|');
+      // {слово|номера Стронга|морфология|слово оригинала (в подстрочнике)}
+      const [word, s = '', m = '', o = ''] = text.slice(i + 1, end).split('|');
       const strongs = s.split(/\s+/).filter(Boolean);
       const morph = m.split(/\s+/).filter(Boolean);
-      if (strongs.length) tokens.push({ kind: 'w', text: word, strongs, morph, italic });
+      if (strongs.length) tokens.push({ kind: 'w', text: word, strongs, morph, orig: o || null, italic });
       else pushPlain(word);
       i = end + 1;
     } else {
@@ -57,24 +58,44 @@ const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
 const esc = (s) => s.replace(/[&<>"]/g, (c) => ESC[c]);
 
 // HTML стиха со словами-кнопками. Делегирование событий: по data-i ищем токен заново.
-export function verseHtml(text, { showStrongs = false, highlight = null } = {}) {
+// interlinear — подстрочник: под словом его оригинал и номер Стронга
+export function verseHtml(text, { showStrongs = false, highlight = null, interlinear = false } = {}) {
   const tokens = tokenize(text);
   let out = '';
   let wi = 0;
   let inItalic = false;
+  // Подстрочник: знаки препинания сразу после слова ставим в строку русского слова (iwWord), а не после столбика
+  let iwEnd = -1;
+  let iwStart = 0;
+  let iwWord = 0;
   for (const t of tokens) {
     if (t.italic !== inItalic) {
       out += t.italic ? '<i class="add">' : '</i>';
       inItalic = t.italic;
     }
     if (t.kind === 't') {
-      out += esc(t.text);
+      const punct = interlinear && iwEnd === out.length ? /^[^\s«(„“‘[]+/.exec(t.text)?.[0] : null;
+      if (punct) {
+        out = `${out.slice(0, iwStart)}${out.slice(iwStart, iwWord)}<span class="ip">${esc(punct)}</span>${out.slice(iwWord)}`;
+        out += esc(t.text.slice(punct.length));
+      } else out += esc(t.text);
       continue;
     }
     const hl = highlight && highlight.test(t.text);
     if (highlight) highlight.lastIndex = 0;
-    out += `<span class="w${t.strongs ? ' s' : ''}${hl ? ' hl' : ''}" data-i="${wi}">${esc(t.text)}</span>`;
-    if (showStrongs && t.strongs) out += `<sup class="sn">${t.strongs.join(' ')}</sup>`;
+    const w = `<span class="w${t.strongs ? ' s' : ''}${hl ? ' hl' : ''}" data-i="${wi}">${esc(t.text)}</span>`;
+    if (interlinear) {
+      const heb = t.orig && /[֐-׿]/.test(t.orig);
+      iwStart = out.length;
+      iwWord = iwStart + `<span class="iw"><span class="ir">${w}`.length;
+      out +=
+        `<span class="iw"><span class="ir">${w}</span><span class="io"${heb ? ' dir="rtl" lang="he"' : t.orig ? ' lang="grc"' : ''}>${t.orig ? esc(t.orig) : '&nbsp;'}</span>` +
+        `<span class="sn in" data-i="${wi}">${t.strongs && t.orig ? t.strongs[0].replace(/^[HG]0*/, '') : '&nbsp;'}</span></span>`;
+      iwEnd = out.length;
+    } else {
+      out += w;
+      if (showStrongs && t.strongs) out += `<sup class="sn" data-i="${wi}">${t.strongs.join(' ')}</sup>`;
+    }
     wi++;
   }
   if (inItalic) out += '</i>';

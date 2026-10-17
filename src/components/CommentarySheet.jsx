@@ -25,7 +25,7 @@ export default function CommentarySheet({ pane, payload, onClose }) {
 
   const cur = res?.find((x) => x.module.id === sel);
   return (
-    <BottomSheet title={t('Комментарий · {ref}', { ref: formatRef(ref) })} subtitle={cur?.module.title || cur?.module.name} onClose={onClose} initial={0}>
+    <BottomSheet title={t('Комментарий · {ref}', { ref: formatRef(ref) })} subtitle={cur?.module.title || cur?.module.name} onClose={onClose}>
       {!res && (
         <div className="loading">
           <Loader2 className="spin" size={20} /> {t('Загрузка…')}

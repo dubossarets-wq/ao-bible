@@ -7,6 +7,9 @@
 // Термины — по-русски (ключи словарей интерфейса), на другие языки переводятся при показе: t(термин).
 import DATA from './morphData.json';
 import { t, N_ } from './i18n.js';
+// Греческие коды Стронга TVM из RST+ (TG5656…) → форма по Робинсону без лица и числа; выведено из текстов:
+// для каждого кода — форма, которой соответствует греческое слово стиха (сопоставление по номерам Стронга)
+import GREEK_TVM from './greekTvm.json';
 
 const FORMS = [N_('перфект'), N_('имперфект'), N_('повелительное наклонение'), N_('инфинитив'), N_('действительное причастие'), N_('страдательное причастие'), N_('причастие')];
 const GRID = {
@@ -124,7 +127,11 @@ export function describeMorph(code) {
   const tvm = /^T?([HG])(\d+)$/.exec(code);
   if (tvm) {
     const n = +tvm[2];
-    return { code, text: tvm[1] === 'H' && TVM.has(n) ? TVM.get(n).map((x) => t(x)).join(', ') : null };
+    if (tvm[1] === 'H') return { code, text: TVM.has(n) ? TVM.get(n).map((x) => t(x)).join(', ') : null };
+    // В коде TVM нет лица, числа и падежа — разбираем только время, залог и наклонение
+    const rob = GREEK_TVM[n];
+    const slots = rob && matchForm(DATA.greek, { slots: ['tense', 'voice', 'mood'] }, rob.split('-')[1]);
+    return { code, text: slots ? [DATA.greek.pos.V.ru, ...slots.filter(([, , v]) => v).map(([, , v]) => v.ru)].map((x) => t(x)).join(', ') : null };
   }
   try {
     const hebrew = /^[HA][A-Za-z0-9/]*$/.test(code) && !code.includes('-') && !(code in DATA.greek.pos);

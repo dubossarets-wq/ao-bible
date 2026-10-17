@@ -7,6 +7,7 @@ import { useApp } from '../App.jsx';
 import { getBook } from '../core/modules.js';
 import { crossrefCounts } from '../core/crossrefs.js';
 import { commentaryIndex } from '../core/commentary.js';
+import { illustrationIndex } from '../core/illustrations.js';
 import { setLivePosition, clearLivePosition } from '../core/livePosition.js';
 import { setDriver, isDriver, onSync, emitSync } from '../core/scrollSync.js';
 import { useAudio } from '../core/audio.js';
@@ -18,6 +19,7 @@ import { sermonWith } from '../core/sermons.js';
 import { formatRef } from '../core/books.js';
 import { usePinchFont } from './usePinchFont.js';
 import { t, useLang } from '../core/i18n.js';
+import { drawPart, clearPart } from './partShape.js';
 
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -33,7 +35,7 @@ export function highlightRegex(query) {
 
 // from/to — показать только часть главы (отрывок плана), idp — приставка к id стихов (на странице плана
 // одна и та же глава может встретиться дважды), noBookTitle/noChapterTitle — без заголовков (их заменяет заголовок отрывка)
-export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, xrefs, counts, comments, opts, hlRe, flashVerse, isPsalm, selected, marks, from = 1, to = null, idp = '', noBookTitle = false, noChapterTitle = false, afterVerse = null, afterNode = null }) {
+export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, xrefs, counts, comments, illus, opts, hlRe, flashVerse, isPsalm, selected, marks, from = 1, to = null, idp = '', noBookTitle = false, noChapterTitle = false, afterVerse = null, afterNode = null }) {
   useLang(); // глава в memo — подписи (номер главы, кнопки) обновляются при смене языка
   const sel = selected ? new Set(selected.split(',').map(Number)) : null;
   const mk = marks ? Object.fromEntries(marks.split(',').map((x) => x.split(':'))) : {};
@@ -74,14 +76,14 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
                     </svg>
                   </button>
                 )}
-                {mk[v]?.includes('f') && (
-                  <span className="vmark fav-heart" title={t('Любимый стих')} aria-label={t('Любимый стих')}>
+                {/[fp]/.test(mk[v] || '') && (
+                  <span className={`vmark fav-heart${mk[v].includes('p') ? ' part' : ''}`} title={mk[v].includes('p') ? t('Любимая часть стиха') : t('Любимый стих')} aria-label={mk[v].includes('p') ? t('Любимая часть стиха') : t('Любимый стих')}>
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M12 21s-7.6-4.7-9.7-9.4C.8 8.3 3 4.4 6.8 4.4c2.2 0 3.7 1.2 5.2 3 1.5-1.8 3-3 5.2-3 3.8 0 6 3.9 4.5 7.2C19.6 16.3 12 21 12 21z" fill="currentColor" />
                     </svg>
                   </span>
                 )}
-                <span className="vt" dangerouslySetInnerHTML={{ __html: verseHtml(text, { showStrongs: opts.showStrongs, highlight: hlRe }) }} />
+                <span className="vt" dangerouslySetInnerHTML={{ __html: verseHtml(text, { showStrongs: opts.showStrongs, highlight: hlRe, interlinear: opts.interlinear }) }} />
                 {mk[v]?.includes('n') && (
                   <button className="note-tag" data-act="note" aria-label={t('Заметка к стиху')} title={t('Заметка')}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -93,6 +95,16 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
                 {opts.showXref && n > 0 && (
                   <button className="xr" data-act="xref" aria-label={t('Параллельные места: {n}', { n })}>
                     [⇅&nbsp;{n}]
+                  </button>
+                )}
+                {opts.showIllus && illus?.has(`${bookId}.${c}.${v}`) && (
+                  <button className="il" data-act="illus" aria-label={t('Иллюстрация к стиху')} title={t('Иллюстрация')}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <circle cx="9" cy="9" r="2" />
+                      <path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" />
+                    </svg>
+                    {illus.get(`${bookId}.${c}.${v}`).length > 1 && <span>2</span>}
                   </button>
                 )}
                 {comments
@@ -135,7 +147,7 @@ export function selectedIn(selection, bookId, c) {
 }
 
 // selection — Set ключей «Книга.глава.стих»; onSelect(ref, 'start' | 'toggle') — выделение стихов
-export default function ChapterView({ index, pane, module, onScrollDirection, selection, onSelect, selActions }) {
+export default function ChapterView({ index, pane, module, onScrollDirection, selection, onSelect, selActions, part, onPart }) {
   const { settings, openSheet, openPopover, closePopover, popover, reportPosition, navigate, sheet, modules, marks, toast, toggleFavorite } = useApp();
   const scroller = useRef(null);
   usePinchFont(scroller);
@@ -151,9 +163,11 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
 
   // Счётчики параллельных мест (пересчитываются при включении/выключении модулей)
   const [comments, setComments] = useState(null);
+  const [illus, setIllus] = useState(null);
   useEffect(() => {
     crossrefCounts().then(setCounts);
     commentaryIndex().then((m) => setComments(m.size ? m : null));
+    illustrationIndex().then((m) => setIllus(m.size ? m : null));
   }, [modules]);
 
   // Навигация: загрузить книгу и прокрутить к стиху
@@ -214,6 +228,24 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     document.addEventListener('pointerdown', onDown, true);
     return () => document.removeEventListener('pointerdown', onDown, true);
   }, []);
+
+  // Слова выбранной части стиха и любимых частей — отмечаем классами прямо в тексте
+  const { favParts } = useApp();
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    el.querySelectorAll('.w.fav-part').forEach((w) => w.classList.remove('fav-part'));
+    clearPart(el); // прежняя подложка выбранной части
+    const mark = (b, c, v, from, to, cls) =>
+      el.querySelectorAll(`.verse[data-b="${b}"][data-c="${c}"][data-v="${v}"] .w`).forEach((w) => +w.dataset.i >= from && +w.dataset.i <= to && w.classList.add(cls));
+    for (const [k, verses] of favParts) {
+      const [b, c] = k.split('.');
+      for (const [v, [from, to]] of Object.entries(verses)) mark(b, c, v, from, to, 'fav-part');
+    }
+    if (part?.from != null) {
+      drawPart(el, part); // выбранная часть — одной цельной плашкой под текстом
+    }
+  });
 
   // Снимаем подсветку слова, когда закрыты и выборка словарей, и окно статьи
   useEffect(() => {
@@ -388,6 +420,12 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     const v = +verseEl.dataset.v;
     const vref = { book: book.id, chapter: c, verse: v };
     // В режиме выделения нажатие на стих добавляет или убирает его из выделения
+    // Выбор части стиха: нажатия по словам этого стиха задают начало и конец
+    if (part && `${vref.book}.${vref.chapter}.${vref.verse}` === part.key) {
+      const w = e.target.closest('.w');
+      if (w) onPart?.(+w.dataset.i);
+      return;
+    }
     if (selection?.size) return onSelect?.(vref, 'toggle');
     const text = book.data.chapters[c - 1][v - 1];
     const act = e.target.closest('[data-act]')?.dataset.act;
@@ -403,7 +441,16 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     if (act === 'note') return openSheet('note', index, { refs: [vref], moduleId: module.id });
     if (act === 'sermon') return openSheet('sermons', index, { open: sermonWith(vref)?.id || null });
     if (act === 'comment') return openSheet('commentary', index, { ref: vref, moduleId: e.target.closest('[data-m]').dataset.m });
-    if (act === 'verse') return openSheet('verse', index, { ref: vref, text: plainText(text), moduleId: module.id });
+    if (act === 'illus') return openSheet('illus', index, { ref: vref, items: illus?.get(`${vref.book}.${vref.chapter}.${vref.verse}`) || [] });
+    // Номер стиха — то же, что долгое нажатие: выделение стиха и одна общая панель действий
+    if (act === 'verse') return onSelect?.(vref, 'start');
+    const sn = e.target.closest('.sn');
+    if (sn) {
+      const token = wordAt(text, +sn.dataset.i);
+      if (!token?.strongs) return;
+      closePopover();
+      return openSheet('dict', index, { token: { text: token.text, strongs: token.strongs, morph: token.morph || null }, ref: vref, moduleId: module.id, verseText: plainText(text), wi: +sn.dataset.i, autoOpen: true, initial: 'full' });
+    }
     const w = e.target.closest('.w');
     if (w) {
       // Повторное нажатие на выделенное слово — снимаем выделение, выборку не открываем
@@ -424,7 +471,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
         token: tok,
         ref: vref,
         rect: { left: r.left, top: r.top, bottom: r.bottom, width: r.width },
-        payload: { token: tok, ref: vref, moduleId: module.id, verseText: plainText(text) },
+        payload: { token: tok, ref: vref, moduleId: module.id, verseText: plainText(text), wi: +w.dataset.i },
       });
     }
   };
@@ -493,12 +540,14 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       // Режим «как книга»: сплошной текст абзацами по разделам, без номеров, кнопок и пометок
       showVerseNumbers: settings.showVerseNumbers && !settings.bookMode,
       showStrongs: settings.showStrongs && module.features?.strongs && !settings.bookMode,
+      interlinear: !!module.features?.interlinear,
       showHeadings: settings.showHeadings,
       showXref: settings.showXrefButtons && !settings.focusMode && !settings.bookMode,
       inlineComments: settings.bookMode ? [] : settings.inlineCommentaries, // null — все включённые комментарии
       continuous: settings.continuousVerses || settings.bookMode,
+      showIllus: settings.showIllustrations !== false && !settings.bookMode,
     }),
-    [settings.showVerseNumbers, settings.showStrongs, settings.showHeadings, settings.showXrefButtons, settings.focusMode, settings.continuousVerses, settings.inlineCommentaries, settings.bookMode, module]
+    [settings.showVerseNumbers, settings.showStrongs, settings.showHeadings, settings.showXrefButtons, settings.focusMode, settings.continuousVerses, settings.inlineCommentaries, settings.bookMode, settings.showIllustrations, module]
   );
   const hlRe = useMemo(() => highlightRegex(pane.highlight), [pane.highlight]);
   const flash = pane.flash ? pane.flash.split('.') : null;
@@ -549,6 +598,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
                 xrefs={book.data.xrefs}
                 counts={counts}
                 comments={comments}
+                illus={illus}
                 opts={opts}
                 hlRe={hlRe}
                 isPsalm={book.id === 'Ps'}

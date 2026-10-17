@@ -4,12 +4,12 @@ import { N_ } from './i18n.js';
 export const THEMES = {
   light: {
     label: N_('Светлая'),
-    bg: '#f6f5f2', text: '#1d1c1a', muted: '#7d7a73', accent: '#9a6a2f', panel: '#ffffff',
+    bg: '#f6f5f2', text: '#1d1c1a', muted: '#68655e', accent: '#9a6a2f', panel: '#ffffff',
     bar: '#38363a', barText: '#f3f1ec', line: '#e3e0d9', hl: '#f6e3a8', verseNum: '#55524c',
   },
   sepia: {
     label: N_('Сепия'),
-    bg: '#f3e9d7', text: '#3b2f22', muted: '#8a7a64', accent: '#8b5a24', panel: '#faf3e6',
+    bg: '#f3e9d7', text: '#3b2f22', muted: '#6e604c', accent: '#8b5a24', panel: '#faf3e6',
     bar: '#4a3d2f', barText: '#f6ecda', line: '#e2d4bb', hl: '#ebd189', verseNum: '#6b5a44',
   },
   dark: {
@@ -30,7 +30,7 @@ export const FONTS = {
   Georgia: { label: 'Georgia', css: 'Georgia, "Times New Roman", serif' },
 };
 
-export const SETTINGS_VERSION = 2;
+export const SETTINGS_VERSION = 3;
 
 export const DEFAULT_SETTINGS = {
   v: SETTINGS_VERSION,
@@ -47,11 +47,19 @@ export const DEFAULT_SETTINGS = {
   showStrongs: false,
   showHeadings: true,
   showXrefButtons: true,
+  showIllustrations: true, // значок картинки у стихов, к которым есть иллюстрация
   continuousVerses: false, // стихи сплошным абзацем
-  customColors: false,
+  customColors: false, // прежний вариант «своих цветов» (до v3); теперь — colorOverrides
   colors: { bg: '#f6f5f2', text: '#1d1c1a', accent: '#9a6a2f', panel: '#ffffff' },
+  colorOverrides: {}, // свои цвета поверх темы, по одному: { accent: '#…', bar: '#…', strong: '#…' }
+  strongSize: 0.5, // em — номера Стронга
+  strongPos: 'sup', // sup | inline | sub
+  verseNumSize: 0.6, // em
+  verseNumPos: 'sup', // sup | inline
+  headingSize: 0.8, // em — заголовки разделов
+  uiFontSize: 15, // px — меню, окна, кнопки
+  barHeight: 54, // px — верхняя панель
   animations: true,
-  radius: 12,
   focusMode: false,
   splitLayout: 'auto', // auto | rows | columns
   splitRatio: 0.5,
@@ -69,6 +77,8 @@ export const DEFAULT_SETTINGS = {
 export function migrateSettings(s) {
   if (!s || typeof s !== 'object') return s;
   if ((s.v || 1) < 2) s = { ...s, v: 2, theme: !s.theme || s.theme === 'auto' ? 'light' : s.theme };
+  // v3: «свои цвета» стали отдельными для каждого цвета — прежние переносим как есть
+  if (s.v < 3) s = { ...s, v: 3, colorOverrides: s.customColors && s.colors ? { ...s.colors } : s.colorOverrides || {}, customColors: false };
   return s;
 }
 
@@ -88,9 +98,33 @@ export function ensureFont(key) {
   document.head.appendChild(link);
 }
 
-export function applySettings(settings, themeName) {
+// Цвета, которые можно поменять по одному (поверх темы). heading и strong по умолчанию — цвет акцента.
+export const COLOR_KEYS = [
+  ['accent', N_('Акцент интерфейса')],
+  ['bar', N_('Верхняя панель')],
+  ['barText', N_('Надписи на верхней панели')],
+  ['bg', N_('Фон страницы')],
+  ['text', N_('Текст')],
+  ['muted', N_('Бледный текст')],
+  ['panel', N_('Окна и карточки')],
+  ['line', N_('Линии и рамки')],
+  ['verseNum', N_('Номера стихов')],
+  ['heading', N_('Заголовки разделов')],
+  ['strong', N_('Номера Стронга')],
+];
+
+// Итоговые цвета: тема + свои цвета
+export function themeColors(settings, themeName) {
   const t = { ...THEMES[themeName] };
   if (settings.customColors) Object.assign(t, settings.colors);
+  t.heading = t.accent;
+  t.strong = t.accent;
+  for (const [k, v] of Object.entries(settings.colorOverrides || {})) if (v) t[k] = v;
+  return t;
+}
+
+export function applySettings(settings, themeName) {
+  const t = themeColors(settings, themeName);
   const root = document.documentElement;
   const vars = {
     '--bg': t.bg, '--text': t.text, '--muted': t.muted, '--accent': t.accent, '--panel': t.panel,
@@ -99,7 +133,11 @@ export function applySettings(settings, themeName) {
     '--fs': `${settings.fontSize}px`, '--fw': settings.fontWeight, '--lh': settings.lineHeight,
     '--verse-gap': `${settings.verseSpacing}em`, '--measure': `${settings.textWidth}em`,
     '--align': settings.textAlign, '--chapter-size': `${settings.chapterTitleSize}em`,
-    '--radius': `${settings.radius}px`, '--bar-h': '54px',
+    '--radius': '12px', '--bar-h': `${settings.barHeight || 54}px`,
+    '--heading': t.heading, '--strong': t.strong, '--heading-size': `${settings.headingSize ?? 0.8}em`,
+    '--sn-size': `${settings.strongSize ?? 0.5}em`, '--sn-va': { inline: 'baseline', sub: 'sub' }[settings.strongPos] || 'super',
+    '--vn-size': `${settings.verseNumSize ?? 0.6}em`, '--vn-top': settings.verseNumPos === 'inline' ? '0' : '-.32em',
+    '--ui-fs': `${settings.uiFontSize || 15}px`,
   };
   for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, String(v));
   root.dataset.appTheme = themeName;

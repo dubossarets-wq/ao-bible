@@ -22,7 +22,9 @@ OUT = ROOT / "public" / "modules"
 BOOKS = json.loads((ROOT / "src" / "core" / "books.json").read_text(encoding="utf-8"))
 BOOK_BY_ID = {b["id"]: b for b in BOOKS}
 BOOK_ORDER = {b["id"]: i for i, b in enumerate(BOOKS)}
-MAX_SIZE = 15_000_000
+# Предел размера модуля (несжатый JSON). Объединённые многотомные комментарии (Лопухин ~26 МБ) больше прежних
+# 15 МБ; приложение загружает gz-версию (в 3–4 раза меньше).
+MAX_SIZE = 40_000_000
 
 
 def log(*a):
@@ -41,16 +43,30 @@ def _parse_c_array(text, name):
 
 
 class Synodal:
-    """Синодальная схема: список книг, число стихов в главах и правила соответствия с KJV."""
+    """Синодальная схема: список книг, число стихов в главах и правила соответствия с KJV.
+    Тот же разбор подходит для других схем SWORD с таблицей соответствия (vulg, segond, calvin, darbyfr,
+    nrsv — файлы sword-src/trunk/canon_<имя>.h): Synodal("vulg"). Если своего списка книг у схемы нет,
+    берётся список KJV из canon.h."""
 
-    def __init__(self):
-        h = (SRC / "sword-src" / "canon_synodal.h").read_text(encoding="utf-8", errors="replace")
+    def __init__(self, suffix="synodal"):
+        if suffix == "synodal":
+            h = (SRC / "sword-src" / "canon_synodal.h").read_text(encoding="utf-8", errors="replace")
+        else:
+            h = (SRC / "sword-src" / "trunk" / f"canon_{suffix}.h").read_text(encoding="utf-8", errors="replace")
+        self.name = suffix
+        kjv_h = None
         books = []
-        for arr in ("otbooks_synodal", "ntbooks_synodal"):
-            for m in re.finditer(r'\{"([^"]*)",\s*"([^"]*)",\s*"([^"]*)",\s*(\d+)\}', _parse_c_array(h, arr)):
+        for arr in (f"otbooks_{suffix}", f"ntbooks_{suffix}"):
+            if not re.search(r"%s\[\]\s*=" % re.escape(arr), h):
+                if kjv_h is None:
+                    kjv_h = (SRC / "sword-src" / "trunk" / "canon.h").read_text(encoding="utf-8", errors="replace")
+                body = _parse_c_array(kjv_h, arr.split("_")[0])
+            else:
+                body = _parse_c_array(h, arr)
+            for m in re.finditer(r'\{"([^"]*)",\s*"([^"]*)",\s*"([^"]*)",\s*(\d+)\}', body):
                 if int(m.group(4)):
                     books.append((m.group(2), int(m.group(4))))
-        vm = [int(x) for x in re.findall(r"\d+", _parse_c_array(h, "vm_synodal"))]
+        vm = [int(x) for x in re.findall(r"\d+", _parse_c_array(h, f"vm_{suffix}"))]
         self.books = [b for b, _ in books]
         self.verses = {}  # book -> [число стихов в главе]
         i = 0
@@ -58,7 +74,7 @@ class Synodal:
             self.verses[b] = vm[i:i + n]
             i += n
         # Байты таблицы: сначала имена «лишних» книг (C-строки), пустая строка, затем правила по 7 чисел
-        raw = _parse_c_array(h, "mappings_synodal")
+        raw = _parse_c_array(h, f"mappings_{suffix}")
         vals = []
         for tok in re.findall(r"'(\\?.)'|(\d+)", raw):
             vals.append(ord(tok[0][-1]) if tok[0] else int(tok[1]))
@@ -179,28 +195,30 @@ def iter_sword_verses(name, versification, with_zero=True):
     ident — (testament, buf, start, len): одинаковый у стихов, ссылающихся на одну запись (ссылки SWORD)."""
     path, conf = _module_dir(name)
     drv = conf.get("ModDrv", "zText").lower()
-    typ = "ztext"
-    # zCom4/zText4 хранят длину записи в 4 байтах; проверяем по размеру .bzv
-    if drv.endswith("4"):
-        typ = "ztext4"
+    # RawText/RawCom — несжатые модули (индекс .vss), zText/zCom — сжатые (.bzv);
+    # варианты «4» хранят длину записи в 4 байтах
+    raw_mod = drv.startswith("raw")
+    typ = ("rawtext" if raw_mod else "ztext") + ("4" if drv.endswith("4") else "")
     enc = "utf-8" if conf.get("Encoding", "").upper() == "UTF-8" else "cp1252"
     block = conf.get("BlockType", "BOOK").upper()
     try:
         bible = SwordBible(str(path), typ, versification, enc, "OSIS", block)
     except Exception:
-        bible = SwordBible(str(path), "ztext" if typ == "ztext4" else "ztext4", versification, enc, "OSIS", block)
+        alt = typ[:-1] if typ.endswith("4") else typ + "4"
+        bible = SwordBible(str(path), alt, versification, enc, "OSIS", block)
     # pysword распаковывает блок (часто целую книгу) заново для каждого стиха — кэшируем последний блок
-    orig = bible._decompressed_text
-    cache = {}
+    if hasattr(bible, "_decompressed_text"):
+        orig = bible._decompressed_text
+        cache = {}
 
-    def cached(testament, buf_num):
-        key = (testament, buf_num)
-        if key not in cache:
-            cache.clear()
-            cache[key] = orig(testament, buf_num)
-        return cache[key]
+        def cached(testament, buf_num):
+            key = (testament, buf_num)
+            if key not in cache:
+                cache.clear()
+                cache[key] = orig(testament, buf_num)
+            return cache[key]
 
-    bible._decompressed_text = cached
+        bible._decompressed_text = cached
 
     # В некоторых модулях (Barnes) при Encoding=UTF-8 встречаются записи в cp1252 (°, £, †) — декодируем
     # каждую запись отдельно: UTF-8, иначе cp1252, иначе latin-1 (без символов-заменителей U+FFFD)
@@ -218,16 +236,18 @@ def iter_sword_verses(name, versification, with_zero=True):
         if t not in bible._testaments:
             continue
         tes = bible._testaments[t]
+        idx_file = tes.v2l_name if raw_mod else tes.v2b_name
+        idx_size = tes.v2l_size if raw_mod else tes.v2b_size
         for book in st.get_books().get(t, []):
             off = st._book_offset(book.name)
             for c in range(1, book.num_chapters + 1):
                 for v in range(0 if with_zero else 1, book.chapter_lengths[c - 1] + 1):
                     idx = off + book.chapter_offset(c - 1) + v - 1
-                    if rec_size * (idx + 1) > tes.v2b_size:
+                    if rec_size * (idx + 1) > idx_size:
                         continue
-                    tes.v2b_name.seek(rec_size * idx)
-                    rec = struct.unpack(rec_fmt, tes.v2b_name.read(rec_size))
-                    if rec[2] == 0:
+                    idx_file.seek(rec_size * idx)
+                    rec = struct.unpack(rec_fmt, idx_file.read(rec_size))
+                    if rec[-1] == 0:
                         continue
                     raw = bible._text_for_index(t, idx)
                     if raw and raw.strip():
@@ -454,7 +474,7 @@ def kjv_range_to_syn(book, c1, v1, c2, v2):
 # ---------------------------------------------------------------------------------------------
 
 CATALOG_KEYS = ("id", "type", "name", "title", "description", "language", "version", "author", "source", "license",
-                "dictionaryKind", "features", "versification")
+                "dictionaryKind", "features", "versification", "replaces")
 
 
 def write_module(module):
@@ -462,7 +482,7 @@ def write_module(module):
     data = json.dumps(module, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     text = data.decode("utf-8")
     assert "�" not in text, f"{mid}: в тексте есть U+FFFD"
-    assert len(data) <= MAX_SIZE, f"{mid}: {len(data)/1e6:.1f} МБ > 15 МБ"
+    assert len(data) <= MAX_SIZE, f"{mid}: {len(data)/1e6:.1f} МБ > {MAX_SIZE/1e6:.0f} МБ"
     (OUT / f"{mid}.json").write_bytes(data)
     gz = gzip.compress(data, 9)
     (OUT / f"{mid}.json.gz").write_bytes(gz)
@@ -483,8 +503,10 @@ def merge_catalog(entries, in_place=False):
             cat["modules"][pos[e["id"]]] = e
         entries = [e for e in entries if e["id"] not in pos]
     ids = {e["id"] for e in entries}
+    # Модуль, объединивший прежние части («replaces»), вытесняет их записи из каталога
+    ids |= {old for e in entries for old in e.get("replaces", [])}
     mods = [m for m in cat["modules"] if m["id"] not in ids]
-    order = ["bible", "commentary", "dictionary", "maps", "crossrefs"]
+    order = ["bible", "commentary", "dictionary", "maps", "illustrations", "crossrefs"]
     for e in entries:
         pos = len(mods)
         # после последнего модуля того же типа (недоступные «заглушки» остаются в конце)

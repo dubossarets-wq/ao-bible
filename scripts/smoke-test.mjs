@@ -108,7 +108,7 @@ async function run(label, viewport, isMobile) {
   const title = await page.textContent('.sheet-title');
   check(`${label}: словарная панель`, title.includes('Господь'), title);
   const sheetH = await page.evaluate(() => document.querySelector('.sheet').getBoundingClientRect().height / window.innerHeight);
-  check(`${label}: окно статьи на пол-экрана`, sheetH > 0.45 && sheetH < 0.56, sheetH.toFixed(2));
+  check(`${label}: статья Стронга на всю высоту`, sheetH > 0.9, sheetH.toFixed(2));
   const lemma = await page.textContent('.orig.hebrew');
   check(`${label}: статья с ивритом`, /[\u0590-\u05FF]/.test(lemma), lemma);
   // Переключение на другой словарь, не закрывая панель

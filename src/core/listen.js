@@ -5,7 +5,7 @@ import { load } from './storage.js';
 import { t } from './i18n.js';
 
 export async function listenFrom(pane, moduleId, ref) {
-  const { recorded, otherRecorded, tts } = await audioSourcesFor(moduleId, ref);
+  const { recorded, tts } = await audioSourcesFor(moduleId, ref);
   // Если записей к переводу несколько — та, что слушали раньше
   const pref = load('audioSource', null);
   const source = recorded.some((m) => m.id === pref) ? pref : recorded[0]?.id || null;
@@ -16,8 +16,6 @@ export async function listenFrom(pane, moduleId, ref) {
     moduleId,
     ref,
     offerTts: tts,
-    error: otherRecorded.length
-      ? t('Для этого перевода нет аудиозаписи (есть к переводу {name}).', { name: otherRecorded[0].name })
-      : t('Для этой главы нет аудиозаписи.'),
+    error: t('Для этой главы нет аудиозаписи.'),
   });
 }

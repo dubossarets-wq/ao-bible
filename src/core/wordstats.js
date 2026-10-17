@@ -25,14 +25,14 @@ export async function strongStats(num) {
         if (!v || !v.includes(esc)) return;
         re.lastIndex = 0;
         let m;
-        let found = false;
+        const words = [];
         while ((m = re.exec(v))) {
           n++;
-          found = true;
           const w = m[1].trim().toLowerCase();
+          words.push(w);
           renderings.set(w, (renderings.get(w) || 0) + 1);
         }
-        if (found) refs.push({ book: b.id, chapter: ci + 1, verse: vi + 1 });
+        if (words.length) refs.push({ book: b.id, chapter: ci + 1, verse: vi + 1, words });
       })
     );
     if (n) byBook.push({ book: b.id, name: b.name, short: b.short, n });
@@ -40,10 +40,11 @@ export async function strongStats(num) {
   }
   const res = {
     module: mod.name,
+    moduleId: mod.id,
     total,
     verses: refs.length,
     byBook,
-    renderings: [...renderings.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12),
+    renderings: [...renderings.entries()].sort((a, b) => b[1] - a[1]),
     refs,
   };
   cache.set(num, res);

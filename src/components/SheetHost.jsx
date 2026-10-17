@@ -18,12 +18,16 @@ import MapsSheet from './MapsSheet.jsx';
 import NoteSheet from './NoteSheet.jsx';
 import CollectSheet from './CollectSheet.jsx';
 import VerseGuide from './VerseGuide.jsx';
+import InterlinearSheet from './InterlinearSheet.jsx';
+import ConcordanceSheet from './ConcordanceSheet.jsx';
 import PlansSheet from './PlansSheet.jsx';
 import PrefsSheet from './PrefsSheet.jsx';
 import SermonsSheet from './SermonsSheet.jsx';
 import SermonAddSheet from './SermonAddSheet.jsx';
 import VerseImageSheet from './VerseImageSheet.jsx';
 import HelpSheet from './HelpSheet.jsx';
+import NewsSheet from './NewsSheet.jsx';
+import ImageViewer from './ImageViewer.jsx';
 
 const KINDS = {
   dict: DictionaryBottomSheet,
@@ -43,12 +47,16 @@ const KINDS = {
   note: NoteSheet,
   collect: CollectSheet,
   guide: VerseGuide,
+  interlinear: InterlinearSheet,
+  concord: ConcordanceSheet,
   plans: PlansSheet,
   prefs: PrefsSheet,
   sermons: SermonsSheet,
   'sermon-add': SermonAddSheet,
   'verse-image': VerseImageSheet,
   help: HelpSheet,
+  news: NewsSheet,
+  illus: ImageViewer,
 };
 
 export default function SheetHost() {

@@ -43,8 +43,11 @@ for (const file of await walk(src)) {
     keys.get(k).add(rel);
   }
   if (args.includes('--raw')) {
+    let skip = false; // между «i18n-ignore-start» и «i18n-ignore-end» — данные по-русски, не подписи
     text.split(/\r?\n/).forEach((line, i) => {
-      if (/^\s*(\/\/|\*|\/\*)/.test(line) || line.includes('i18n-ignore')) return;
+      if (line.includes('i18n-ignore-start')) skip = true;
+      if (line.includes('i18n-ignore-end')) skip = false;
+      if (skip || /^\s*(\/\/|\*|\/\*)/.test(line) || line.includes('i18n-ignore')) return;
       const rest = line.replace(CALL, '').replace(/\{\/\*.*?\*\/\}/g, '').replace(/\/\/.*$/, '');
       if (/[А-Яа-яЁё]/.test(rest)) raw.push(`${rel}:${i + 1}: ${line.trim().slice(0, 160)}`);
     });

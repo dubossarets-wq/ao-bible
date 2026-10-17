@@ -6,10 +6,13 @@ import { bookMeta } from '../core/books.js';
 import { getVerse } from '../core/modules.js';
 import { listenFrom } from '../core/listen.js';
 import { plainText } from '../core/verseMarkup.js';
-import { RefreshCw, Map as MapIcon, PlayCircle, Link2, Headphones, BookOpenText, CalendarCheck } from 'lucide-react';
+import { RefreshCw, Map as MapIcon, PlayCircle, Link2, Headphones, BookOpenText, CalendarCheck, History } from 'lucide-react';
+import { IS_STAGING } from '../core/channel.js';
 import { IS_PWA_BUILD, applyUpdate } from '../core/updates.js';
 import { useLivePosition } from '../core/livePosition.js';
 import { t } from '../core/i18n.js';
+import { shortName } from '../core/moduleShort.js';
+import { swallowNextClick } from './ui.jsx';
 
 // Стрелки «←…» и «→…» как на скриншоте: стрелка с многоточием (история переходов)
 function HistoryArrow({ dir }) {
@@ -45,7 +48,11 @@ export default function ReaderToolbar({ index, pane, module }) {
 
   useEffect(() => {
     if (!menu) return;
-    const off = (e) => !menuRef.current?.contains(e.target) && !e.target.closest?.('.tour') && setMenu(false);
+    const off = (e) => {
+      if (menuRef.current?.contains(e.target) || e.target.closest?.('.tour')) return;
+      setMenu(false);
+      swallowNextClick(); // нажатие мимо меню только закрывает его
+    };
     const esc = (e) => e.key === 'Escape' && setMenu(false);
     document.addEventListener('pointerdown', off);
     document.addEventListener('keydown', esc);
@@ -74,7 +81,7 @@ export default function ReaderToolbar({ index, pane, module }) {
     <header className="toolbar topbar">
       {/* Перевод — «таблетка» слева, место — по центру; действия — круглые кнопки справа */}
       <button className="tb tb-module" onClick={() => openSheet('modules', index)} aria-label={t('Перевод: {name}. Сменить перевод', { name: module?.name })}>
-        <span className="tb-module-name">{module?.name || '—'}</span>
+        <span className="tb-module-name">{shortName(module)}</span>
         <ChevronDown size={14} className="tb-chev" />
       </button>
       <button className="tb tb-ref" onClick={() => openSheet('nav', index)} aria-label={t('{ref}. Выбрать место', { ref: `${bookMeta(ref.book).name} ${ref.chapter}:${ref.verse}` })}>
@@ -163,6 +170,8 @@ export default function ReaderToolbar({ index, pane, module }) {
                 <span className="menu-extra badge-new">{t('новая версия')}</span>
               </button>
             )}
+            {/* Только на тестовом сайте: версии с заметками — что изменилось, обновиться или вернуться */}
+            {IS_STAGING && item(History, t('Обновления'), () => openSheet('versions', index), updates.available ? t('есть новая') : null)}
             {item(Palette, t('Оформление'), () => openSheet('settings', index))}
             {item(SettingsIcon, t('Настройки'), () => openSheet('prefs', index))}
             {m.help && item(BookOpenCheck, t('Инструкция'), () => openSheet('help', index))}

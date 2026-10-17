@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { usePersistentState, useEvent, load, save } from './core/storage.js';
 import { DEFAULT_SETTINGS, applySettings, resolveTheme, migrateSettings } from './core/settings.js';
 import * as repo from './core/modules.js';
@@ -11,6 +11,7 @@ import AudioBar from './components/AudioBar.jsx';
 import TourOverlay from './components/TourOverlay.jsx';
 import { fitsTranslation, detachFollow, audioState } from './core/audio.js';
 import { useSermons } from './core/sermons.js';
+import { pendingNews } from './core/whatsNew.js';
 import { useUpdates, applyUpdate } from './core/updates.js';
 import { IS_STAGING } from './core/channel.js';
 import { Toasts } from './components/ui.jsx';
@@ -65,6 +66,28 @@ export default function App() {
 
   const [panes, setPanes] = usePersistentState('panes', () => [newPane(DEFAULT_SETTINGS.primaryModule), null]);
   const [sheet, setSheet] = useState(null);
+  // Кнопка «Назад» телефона (Android) и жест «назад» закрывают открытое окно, а не приложение:
+  // пока окно открыто, в истории браузера лежит одна запись; закрыли окно сами — запись убираем
+  const sheetOpen = !!sheet;
+  const backEntry = useRef(false);
+  useEffect(() => {
+    if (sheetOpen && !backEntry.current) {
+      history.pushState({ aobSheet: 1 }, '');
+      backEntry.current = true;
+    } else if (!sheetOpen && backEntry.current) {
+      backEntry.current = false;
+      if (history.state?.aobSheet) history.back();
+    }
+  }, [sheetOpen]);
+  useEffect(() => {
+    const onPop = () => {
+      if (!backEntry.current) return;
+      backEntry.current = false;
+      setSheet(null);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
   const [popover, setPopover] = useState(null); // выборка словарей над словом
   const [toasts, setToasts] = useState([]);
   const [bookmarks, setBookmarks] = usePersistentState('bookmarks', []);
@@ -79,10 +102,15 @@ export default function App() {
 
   const updates = useUpdates();
 
+  // Уведомление внизу — одно: новое заменяет предыдущее. Короткое показывается 1,6 с,
+  // длинное — чуть дольше, чтобы его успели прочитать (не дольше 3,2 с)
+  const toastTimer = useRef(0);
   const toast = useCallback((text, kind = 'info') => {
     const id = Math.random();
-    setToasts((t) => [...t, { id, text, kind }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3200);
+    setToasts([{ id, text, kind }]);
+    clearTimeout(toastTimer.current);
+    const ms = Math.min(3200, 1600 + Math.max(0, String(text).length - 40) * 20);
+    toastTimer.current = setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), ms);
   }, []);
 
   // Автообновление (по умолчанию) и экстренное обновление: переходим на новую версию сразу,
@@ -113,15 +141,64 @@ export default function App() {
     repo
       .fetchCatalog()
       .then(async (cat) => {
+        // Модуля ещё нет в каталоге — не отмечаем его, поставим при следующем запуске
+        const missing = todo.filter((id) => !cat.some((c) => c.id === id));
+        if (missing.length) save('lateStarter', [...done, ...todo.filter((id) => !missing.includes(id))]);
         for (const id of todo) {
           const entry = cat.find((c) => c.id === id);
           if (!entry) continue;
           await repo.installFromCatalog(entry);
-          toast(t('Установлен модуль «{name}»: нажмите на название города в стихе, чтобы увидеть его на карте', { name: entry.name }));
+          if (entry.id === 'strongs-ru-greek') continue; // о русском Стронге — одно уведомление на оба модуля
+          toast(
+            entry.type === 'illustrations'
+              ? t('Добавлены иллюстрации к стихам: нажмите на значок картинки в конце стиха')
+              : entry.id === 'strongs-ru-hebrew'
+                ? t('Добавлен словарь Стронга на русском: нажмите на слово или номер Стронга')
+                : t('Установлен модуль «{name}»: нажмите на название города в стихе, чтобы увидеть его на карте', { name: entry.name })
+          );
         }
       })
       .catch(() => save('lateStarter', done));
   }, [modules, bibles.length]);
+
+  const merging = useRef(false);
+  // После обновления — один раз «Что нового» (когда приложение готово и не открыто другое окно)
+  const ready0 = modules !== null && bibles.length > 0;
+  useEffect(() => {
+    if (!ready0) return;
+    const items = pendingNews();
+    if (!items.length) return;
+    const t = setTimeout(() => setSheet((s) => s || { kind: 'news', pane: 0, payload: { items }, id: Date.now() }), 1200);
+    return () => clearTimeout(t);
+  }, [ready0]);
+
+  // Объединённые модули: вместо частей одного автора («Лопухин 1/2/3») ставим общий модуль, части убираем,
+  // выбор «какие комментарии показывать в тексте» переносим на новый id. Нет общего в каталоге — ничего не трогаем.
+  useEffect(() => {
+    if (!modules || !navigator.onLine) return;
+    const old = modules.filter((m) => repo.MERGED[m.id]);
+    if (!old.length || merging.current) return;
+    merging.current = true;
+    repo
+      .fetchCatalog()
+      .then(async (cat) => {
+        for (const target of [...new Set(old.map((m) => repo.MERGED[m.id]))]) {
+          const entry = cat.find((c) => c.id === target);
+          if (!entry) continue;
+          if (!modules.some((m) => m.id === target)) await repo.installFromCatalog(entry);
+          const parts = old.filter((m) => repo.MERGED[m.id] === target).map((m) => m.id);
+          for (const id of parts) await repo.removeModule(id);
+          setSettings((s) => {
+            const list = s.inlineCommentaries;
+            if (!list || !list.some((id) => parts.includes(id))) return s;
+            return { ...s, inlineCommentaries: [...new Set(list.map((id) => repo.MERGED[id] || id))] };
+          });
+          toast(t('«{name}» теперь одним модулем вместо нескольких частей', { name: entry.name }));
+        }
+      })
+      .catch(() => {})
+      .finally(() => (merging.current = false));
+  }, [!!modules && modules.map((m) => m.id).join()]);
 
   // Аудиокниги ставятся вместе с переводом: к каждому установленному переводу — его записи из каталога.
   // Уже установленные обновляются сами, когда в каталоге появилась новая версия.
@@ -333,6 +410,22 @@ export default function App() {
     }
   });
 
+  // Любимая часть стиха: слова from..to (номера слов в стихе); заменяет прежнюю отметку этого стиха
+  const addFavoritePart = useEvent((ref, text, from, to) => {
+    setFavorites((fs) => [{ book: ref.book, chapter: ref.chapter, verse: ref.verse, text, part: { from, to }, at: Date.now() }, ...fs.filter((b) => !(b.book === ref.book && b.chapter === ref.chapter && b.verse === ref.verse))]);
+    toast(t('♥ Часть стиха — в любимых'));
+  });
+  // «Книга.глава» → { стих: [from, to] } — какие слова подчеркнуть как любимую часть
+  const favParts = useMemo(() => {
+    const m = new Map();
+    for (const f of favorites)
+      if (f.part) {
+        const k = `${f.book}.${f.chapter}`;
+        m.set(k, { ...m.get(k), [f.verse]: [f.part.from, f.part.to] });
+      }
+    return m;
+  }, [favorites]);
+
   const noteKey = (ref) => `${ref.book}.${ref.chapter}.${ref.verse}`;
   const setNote = useEvent((ref, text, label) => {
     const key = noteKey(ref);
@@ -354,7 +447,7 @@ export default function App() {
       row[v] = (row[v] || '') + flag;
       m.set(k, row);
     };
-    favorites.forEach((r) => add(r.book, r.chapter, r.verse, 'f'));
+    favorites.forEach((r) => add(r.book, r.chapter, r.verse, r.part ? 'p' : 'f')); // p — любимая только часть стиха
     bookmarks.forEach((r) => add(r.book, r.chapter, r.verse, 'b'));
     Object.keys(notes).forEach((k) => {
       const [b, c, v] = k.split('.');
@@ -438,6 +531,8 @@ export default function App() {
     toggleBookmark,
     isFavorite,
     toggleFavorite,
+    addFavoritePart,
+    favParts,
     notes,
     setNote,
     marks,

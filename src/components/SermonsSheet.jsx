@@ -33,6 +33,36 @@ function AutoText({ value, onChange, placeholder, autoFocus }) {
 function Pulpit({ sermon, onClose }) {
   const [size, setSize] = useState(() => load('pulpitSize', 26));
   useEffect(() => save('pulpitSize', size), [size]);
+  // Размер букв двумя пальцами: развести — крупнее, свести — мельче
+  const body = useRef(null);
+  useEffect(() => {
+    const el = body.current;
+    if (!el) return;
+    let g = null;
+    const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    const start = (e) => {
+      if (e.touches.length === 2) g = { d: dist(e.touches), s: Number(el.style.fontSize.replace('px', '')) || 26 };
+    };
+    const move = (e) => {
+      if (!g || e.touches.length !== 2) return;
+      e.preventDefault();
+      setSize(Math.round(Math.max(18, Math.min(60, g.s * (dist(e.touches) / g.d)))));
+    };
+    const end = (e) => e.touches.length < 2 && (g = null);
+    const noZoom = (e) => e.preventDefault();
+    el.addEventListener('touchstart', start, { passive: true });
+    el.addEventListener('touchmove', move, { passive: false });
+    el.addEventListener('touchend', end);
+    el.addEventListener('touchcancel', end);
+    el.addEventListener('gesturestart', noZoom);
+    return () => {
+      el.removeEventListener('touchstart', start);
+      el.removeEventListener('touchmove', move);
+      el.removeEventListener('touchend', end);
+      el.removeEventListener('touchcancel', end);
+      el.removeEventListener('gesturestart', noZoom);
+    };
+  }, []);
   useEffect(() => {
     let lock = null;
     let alive = true;
@@ -64,7 +94,7 @@ function Pulpit({ sermon, onClose }) {
           <Minus size={20} />
         </button>
         <Type size={18} aria-hidden="true" />
-        <button className="icon-btn" onClick={() => setSize((v) => Math.min(48, v + 2))} aria-label={t('Крупнее')}>
+        <button className="icon-btn" onClick={() => setSize((v) => Math.min(60, v + 2))} aria-label={t('Крупнее')}>
           <Plus size={20} />
         </button>
         <span className="pulpit-title">{sermon.title}</span>
@@ -72,7 +102,7 @@ function Pulpit({ sermon, onClose }) {
           <X size={22} />
         </button>
       </div>
-      <div className="pulpit-body" style={{ fontSize: `${size}px` }}>
+      <div className="pulpit-body" ref={body} lang="ru" style={{ fontSize: `${size}px` }}>
         <h1>{sermon.title}</h1>
         {sermon.date && <div className="pulpit-date">{fmtDate(sermon.date)}</div>}
         {sermon.blocks.map((b) =>
@@ -227,7 +257,7 @@ function Editor({ sermon, pane, moduleId, onBackToList }) {
       {!sermon.blocks.length && (
         <div className="sermon-hint">
           <p>
-            <strong>{t('Как добавить стих:')}</strong> {t('в тексте Библии зажмите стих пальцем — он выделится — и нажмите внизу «В проповедь». Или введите ссылку ниже.')}
+            <strong>{t('Как добавить стих:')}</strong> {t('в тексте Библии зажмите стих пальцем — он выделится — и нажмите под ним «В проповедь». Или введите ссылку ниже.')}
           </p>
           <p>
             <strong>{t('Свой текст')}</strong> {t('— кнопка «Текст»: вступление, пояснения, примеры, вывод. Порядок меняется перетаскиванием: зажмите стих или текст и ведите.')}
@@ -319,7 +349,7 @@ export default function SermonsSheet({ pane, payload, onClose }) {
   };
 
   return (
-    <BottomSheet title={sermon ? t('Проповедь') : t('Проповеди')} onClose={onClose} onBack={sermon ? () => setOpenId(null) : null} initial={2}>
+    <BottomSheet title={sermon ? t('Проповедь') : t('Проповеди')} onClose={onClose} onBack={sermon && !(payload.open && openId === payload.open) ? () => setOpenId(null) : null} variant="page">
       {sermon ? (
         <Editor sermon={sermon} pane={pane} moduleId={moduleId} onBackToList={() => setOpenId(null)} />
       ) : (
@@ -332,7 +362,7 @@ export default function SermonsSheet({ pane, payload, onClose }) {
           </form>
           {!sermons.length ? (
             <Empty icon={ScrollText} title={t('Проповедей пока нет')}>
-              {t('Создайте проповедь, а потом добавляйте в неё стихи прямо во время чтения: зажмите стих и нажмите внизу «В проповедь».')}
+              {t('Создайте проповедь, а потом добавляйте в неё стихи прямо во время чтения: зажмите стих и нажмите под ним «В проповедь».')}
             </Empty>
           ) : (
             <div className="sermon-pick">

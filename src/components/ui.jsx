@@ -4,6 +4,22 @@ import { createPortal } from 'react-dom';
 import { CircleAlert } from 'lucide-react';
 import { t } from '../core/i18n.js';
 
+// Нажатие мимо открытого меню только закрывает его: следующий щелчок (по слову, стиху) гасим.
+// Если вместо щелчка была прокрутка — через мгновение снимаем запрет, чтобы не съесть настоящее нажатие.
+export function swallowNextClick() {
+  const block = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    done();
+  };
+  const done = () => {
+    document.removeEventListener('click', block, true);
+    clearTimeout(t);
+  };
+  document.addEventListener('click', block, true);
+  const t = setTimeout(done, 700);
+}
+
 export function Toasts({ items }) {
   return (
     <div className="toasts" role="status" aria-live="polite">
@@ -284,3 +300,24 @@ export function Empty({ icon: Icon, title, children }) {
 }
 
 export const fmtSize = (b) => (b > 1048576 ? t('{n} МБ', { n: (b / 1048576).toFixed(1) }) : t('{n} КБ', { n: Math.max(1, Math.round(b / 1024)) }));
+
+// Строка в одну линию: если не помещается — медленно прокручивается туда и обратно, чтобы успеть прочитать
+export function Marquee({ children, className = '' }) {
+  const box = useRef(null);
+  const inner = useRef(null);
+  const [shift, setShift] = useState(0);
+  useEffect(() => {
+    const measure = () => setShift(Math.max(0, (inner.current?.scrollWidth || 0) - (box.current?.clientWidth || 0)));
+    measure();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    ro?.observe(box.current);
+    return () => ro?.disconnect();
+  }, [children]);
+  return (
+    <span ref={box} className={`marquee ${shift > 2 ? 'run' : ''} ${className}`}>
+      <span ref={inner} className="marquee-in" style={shift > 2 ? { '--shift': `-${shift}px`, '--dur': `${Math.max(6, shift / 18 + 4)}s` } : undefined}>
+        {children}
+      </span>
+    </span>
+  );
+}

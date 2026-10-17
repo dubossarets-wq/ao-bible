@@ -1,14 +1,26 @@
 // Нижняя панель (Bottom Sheet): плавно выезжает снизу, высота меняется перетаскиванием ручки,
 // закрывается свайпом вниз, кнопкой, кликом по фону или клавишей Escape.
 // На широком экране выглядит как модальное окно у нижнего края (variant="wide" — почти на весь экран).
+// variant="page" — отдельная страница во весь экран: выезжает справа, вверху стрелка «назад» (без ручки и крестика).
+// initial="full" — окно на всю высоту: свайп вниз за ручку закрывает его, короткий — возвращает наверх.
 import React, { useEffect, useRef, useState } from 'react';
 import { X, ChevronLeft } from 'lucide-react';
 import { t } from '../core/i18n.js';
 
-const SNAPS = [0.5, 0.7, 0.92]; // первая ступень — половина экрана
+const SNAPS = [0.5, 0.7, 0.92]; // первая ступень — половина экрана; вторая — до верхней панели (см. belowBar)
+
+const vh = () => window.visualViewport?.height || window.innerHeight;
+// Обычное окно открывается до нижнего края верхней панели — она остаётся видна
+const belowBar = () => {
+  const bottom = document.querySelector('.pane-slot.first .toolbar')?.getBoundingClientRect().bottom;
+  return bottom ? Math.min(0.97, Math.max(0.5, 1 - (bottom + 4) / vh())) : 0.86;
+};
+const snaps = () => [SNAPS[0], belowBar(), SNAPS[2]];
 
 export default function BottomSheet({ title, subtitle, onClose, onBack, children, initial = 1, variant = 'normal', headerExtra, footer }) {
-  const [height, setHeight] = useState(variant === 'wide' ? SNAPS[2] : SNAPS[initial]);
+  const full = initial === 'full';
+  // Высота при открытии: на всю высоту (full), почти весь экран (wide), половина (0) или до верхней панели (остальные)
+  const [height, setHeight] = useState(() => (full ? 1 : variant === 'wide' ? SNAPS[2] : initial === 0 ? SNAPS[0] : belowBar()));
   const [closing, setClosing] = useState(false);
   const [dragging, setDragging] = useState(false);
   const drag = useRef(null);
@@ -33,7 +45,6 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const vh = () => window.visualViewport?.height || window.innerHeight;
 
   const onPointerDown = (e) => {
     if (e.button !== undefined && e.button !== 0) return;
@@ -44,7 +55,7 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
   const onPointerMove = (e) => {
     if (!drag.current) return;
     const dy = drag.current.y - e.clientY;
-    setHeight(Math.max(0.12, Math.min(0.96, drag.current.h + dy / vh())));
+    setHeight(Math.max(0.12, Math.min(full ? 1 : 0.96, drag.current.h + dy / vh())));
   };
   const onPointerUp = (e) => {
     if (!drag.current) return;
@@ -53,7 +64,8 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
     drag.current = null;
     setDragging(false);
     if (height < 0.28 || velocity < -1.2) return close();
-    const target = velocity > 1 ? SNAPS[2] : SNAPS.reduce((a, b) => (Math.abs(b - height) < Math.abs(a - height) ? b : a));
+    if (full) return height < 0.85 || velocity < -0.5 ? close() : setHeight(1);
+    const target = velocity > 1 ? SNAPS[2] : snaps().reduce((a, b) => (Math.abs(b - height) < Math.abs(a - height) ? b : a));
     setHeight(target);
   };
 
@@ -67,14 +79,16 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
         aria-modal="true"
         aria-label={typeof title === 'string' ? title : undefined}
         className={`sheet ${variant} ${dragging ? 'dragging' : ''}`}
-        style={{ '--sheet-h': `${Math.round(height * 100)}` }}
+        style={{ '--sheet-h': `${(height * 100).toFixed(2)}` }}
       >
-        <div className="sheet-grip" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
-          <span className="grip-bar" />
-        </div>
+        {variant !== 'page' && (
+          <div className="sheet-grip" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
+            <span className="grip-bar" />
+          </div>
+        )}
         <header className="sheet-head">
-          {onBack && (
-            <button className="icon-btn" onClick={onBack} aria-label={t('Назад')}>
+          {(onBack || variant === 'page') && (
+            <button className="icon-btn" onClick={onBack || close} aria-label={onBack ? t('Назад') : t('Назад к чтению')}>
               <ChevronLeft size={22} />
             </button>
           )}
@@ -83,9 +97,11 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
             {subtitle && <div className="sheet-sub">{subtitle}</div>}
           </div>
           {headerExtra}
-          <button className="icon-btn" onClick={close} aria-label={t('Закрыть')}>
-            <X size={22} />
-          </button>
+          {variant !== 'page' && (
+            <button className="icon-btn" onClick={close} aria-label={t('Закрыть')}>
+              <X size={22} />
+            </button>
+          )}
         </header>
         <div className="sheet-body">{children}</div>
         {footer && <div className="sheet-foot">{footer}</div>}

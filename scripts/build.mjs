@@ -169,8 +169,12 @@ ${FONTS}
   await writeFile(path.join(dir, 'version.json'), JSON.stringify({ version: VERSION, build: BUILD, date: BUILT_AT.toISOString() }));
   // Имя кэша оболочки — со своим префиксом канала: тест и основное приложение живут на одном домене
   const shellPrefix = STAGING ? 'aobs-shell-' : 'aob-shell-';
+  // Просмотренные иллюстрации (upload.wikimedia.org) — в отдельном кэше, не больше ILLUS_MAX последних:
+  // открываются без сети и не стираются обновлениями
   const sw = `const CACHE = '${shellPrefix}${BUILD}';
 const PREFIX = '${shellPrefix}';
+const ILLUS = '${STAGING ? 'aobs-illus' : 'aob-illus'}';
+const ILLUS_MAX = 120;
 const SHELL = ${JSON.stringify(shell)};
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -188,6 +192,14 @@ self.addEventListener('fetch', (e) => {
   // Страница и каталог: сначала сеть мимо HTTP-кэша (GitHub Pages кэширует на 10 минут), при офлайне — кэш
   if (url.origin === location.origin && (url.pathname.endsWith('/') || url.pathname.endsWith('.html') || url.pathname.endsWith('catalog.json'))) {
     e.respondWith(fetch(e.request, { cache: 'no-store' }).then((r) => { const copy = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); return r; }).catch(() => caches.match(e.request, { ignoreSearch: true })));
+    return;
+  }
+  // Иллюстрации: из кэша, иначе из сети с сохранением; самые старые вытесняются
+  if (url.host === 'upload.wikimedia.org') {
+    e.respondWith(caches.open(ILLUS).then((c) => c.match(e.request).then((hit) => hit || fetch(e.request).then((r) => {
+      if (r.ok && r.type !== 'opaque') c.put(e.request, r.clone()).then(() => c.keys()).then((keys) => Promise.all(keys.slice(0, Math.max(0, keys.length - ILLUS_MAX)).map((k) => c.delete(k))));
+      return r;
+    }))));
     return;
   }
   // Остальное (иконки, шрифты, модули) — из кэша, иначе из сети с сохранением

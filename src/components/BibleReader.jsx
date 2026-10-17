@@ -13,8 +13,8 @@ import PlanView from './PlanView.jsx';
 import { useLivePosition } from '../core/livePosition.js';
 import { usePlan } from '../core/planStore.js';
 import { dayUnits, unitDone, readingDone } from '../core/plans.js';
-import { CornerUpLeft, X, Headphones, ScrollText } from 'lucide-react';
 import { t } from '../core/i18n.js';
+import { CornerUpLeft, X, Headphones, ScrollText, Heart, Copy, TextSelect, WholeWord } from 'lucide-react';
 
 // В режиме плана полоса показывает, сколько отрывков дня уже прочитано
 function PlanProgress({ uid, day }) {
@@ -59,21 +59,75 @@ function ListenFab({ index, module, pane }) {
   );
 }
 
+// Текст выбранной части стиха — прямо из страницы: от первого до последнего выбранного слова (с запятыми между ними)
+function partText(index, part) {
+  if (part?.from == null) return '';
+  const [b, c, v] = part.key.split('.');
+  const verse = document.querySelector(`.pane-slot.${index === 0 ? 'first' : 'second'} .verse[data-b="${b}"][data-c="${c}"][data-v="${v}"]`);
+  const a = verse?.querySelector(`.w[data-i="${Math.min(part.from, part.to)}"]`);
+  const z = verse?.querySelector(`.w[data-i="${Math.max(part.from, part.to)}"]`);
+  if (!a || !z) return '';
+  const r = document.createRange();
+  r.setStartBefore(a);
+  r.setEndAfter(z);
+  return r.toString().replace(/\s+/g, ' ').trim();
+}
+
+// Часть стиха: нажмите первое и последнее слово — и действия только для этих слов
+function PartInline({ index, module, refs, part, setPart, onDone }) {
+  const { openSheet, addFavoritePart, toast } = useApp();
+  const [text, setText] = useState('');
+  useEffect(() => setText(partText(index, part)), [part]);
+  const ref = refs[0];
+  const ready = part.from != null && text;
+  const copy = async () => {
+    const s = `«${text}» (${formatRef(ref)})`;
+    try {
+      await navigator.clipboard.writeText(s);
+      toast(t('Часть стиха скопирована'));
+    } catch {
+      toast(s);
+    }
+    onDone();
+  };
+  return (
+    <div className="sel-inline part-inline">
+      <p className="part-hint">{ready ? `«${text}»` : t('Нажмите на первое слово нужной части, потом на последнее.')}</p>
+      <div className="part-btns">
+        <button className="btn primary" disabled={!ready} onClick={() => (openSheet('sermon-add', index, { refs: [ref], moduleId: module.id, fragment: { text } }), onDone())}>
+          <ScrollText size={17} /> {t('В проповедь')}
+        </button>
+        <button className="btn" disabled={!ready} onClick={() => (addFavoritePart(ref, text, Math.min(part.from, part.to), Math.max(part.from, part.to)), onDone())} aria-label={t('В любимые')}>
+          <Heart size={17} />
+        </button>
+        <button className="btn" disabled={!ready} onClick={copy} aria-label={t('Копировать')}>
+          <Copy size={17} />
+        </button>
+        <button className="btn" onClick={() => setPart(null)}>
+          {t('Отмена')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // Выделен стих — прямо под ним: главная кнопка «Слушать» (с первого выделенного стиха)
-// и «В проповедь» (выбор проповеди или новая, стихи добавляются сами)
-function SelectionInline({ index, module, refs, onDone }) {
+// и «В проповедь» (выбор проповеди или новая, стихи добавляются сами); один стих — ещё «Часть стиха»
+function SelectionInline({ index, module, refs, onDone, onPartStart }) {
   const { openSheet } = useApp();
   const first = refs[0];
   return (
     <div className="sel-inline">
       <button
-        className="btn primary"
+        className="btn primary sel-listen"
         onClick={() => {
           listenFrom(index, module.id, first);
           onDone();
         }}
+        aria-label={t('Слушать с этого стиха')}
+        title={t('Слушать')}
       >
-        <Headphones size={18} /> {t('Слушать с {ref}', { ref: formatRef(first) })}
+        <Headphones size={20} />
       </button>
       <button
         className="btn"
@@ -83,6 +137,20 @@ function SelectionInline({ index, module, refs, onDone }) {
         }}
       >
         <ScrollText size={17} /> {t('В проповедь')}
+      </button>
+      {refs.length === 1 && (
+        <button className="btn" onClick={onPartStart}>
+          <TextSelect size={17} /> {t('Часть стиха')}
+        </button>
+      )}
+      <button
+        className="btn"
+        onClick={() => {
+          openSheet('interlinear', index, { ref: first, moduleId: module.id });
+          onDone();
+        }}
+      >
+        <WholeWord size={17} /> {t('Подстрочник')}
       </button>
     </div>
   );
@@ -132,6 +200,18 @@ export default function BibleReader({ index }) {
 
   // Переход в другое место или смена перевода снимает выделение
   useEffect(() => setSelection(new Set()), [pane?.nav, module?.id]);
+  // Выбор части стиха: { key: 'Книга.глава.стих', from, to } — номера слов; сбрасывается вместе с выделением
+  const [part, setPart] = useState(null);
+  useEffect(() => setPart(null), [selection]);
+  const onPart = useCallback(
+    (i) =>
+      setPart((p) => {
+        if (!p) return p;
+        if (p.from == null || p.done) return { ...p, from: i, to: i, done: false }; // первое слово (или начать заново)
+        return { ...p, to: i, done: true }; // последнее слово
+      }),
+    []
+  );
 
   useEffect(() => {
     if (!selection.size || sheet) return;
@@ -156,7 +236,17 @@ export default function BibleReader({ index }) {
   if (pane.kind === 'map') return <MapPane pane={pane} />;
   // Кнопки под последним выделенным стихом
   const selRefs = selection.size ? sortedRefs(selection) : null;
-  const selActions = selRefs ? { last: selRefs[selRefs.length - 1], node: <SelectionInline index={index} module={module} refs={selRefs} onDone={() => setSelection(new Set())} /> } : null;
+  const done = () => setSelection(new Set());
+  const selActions = selRefs
+    ? {
+        last: selRefs[selRefs.length - 1],
+        node: part ? (
+          <PartInline index={index} module={module} refs={selRefs} part={part} setPart={setPart} onDone={done} />
+        ) : (
+          <SelectionInline index={index} module={module} refs={selRefs} onDone={done} onPartStart={() => setPart({ key: `${selRefs[0].book}.${selRefs[0].chapter}.${selRefs[0].verse}`, from: null, to: null })} />
+        ),
+      }
+    : null;
   return (
     <section className={`reader ${settings.focusMode && barHidden && !selection.size ? 'bar-hidden' : ''}`} aria-label={index === 0 ? t('Основная панель') : t('Вторая панель')}>
       {selection.size ? (
@@ -166,7 +256,7 @@ export default function BibleReader({ index }) {
       )}
       {pane.plan ? <PlanProgress uid={pane.plan.uid} day={pane.plan.day} /> : <ReadingProgress module={module} index={index} fallback={pane.ref} />}
       {pane.plan ? (
-        <PlanView index={index} pane={pane} module={module} selection={selection} onSelect={onSelect} selActions={selActions} />
+        <PlanView index={index} pane={pane} module={module} selection={selection} onSelect={onSelect} selActions={selActions} part={part} onPart={onPart} />
       ) : (
         <ChapterView
           index={index}
@@ -175,6 +265,8 @@ export default function BibleReader({ index }) {
           selection={selection}
           onSelect={onSelect}
           selActions={selActions}
+          part={part}
+          onPart={onPart}
           onScrollDirection={(down) => settings.focusMode && setBarHidden(down)}
         />
       )}

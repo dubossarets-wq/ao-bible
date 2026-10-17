@@ -11,6 +11,7 @@ import { Empty } from './ui.jsx';
 import LinkedText from './LinkedText.jsx';
 import WordStats from './WordStats.jsx';
 import { t, N_ } from '../core/i18n.js';
+import { ruInterlinear } from '../core/interlinear.js';
 
 const KIND_LABEL = { strongs: N_('по номерам Стронга'), words: N_('по словам') };
 
@@ -33,9 +34,11 @@ function StrongLinks({ text, onOpen }) {
   );
 }
 
-function StrongEntry({ num, entry, module, mapping, onOpenStrong, onOpenRef }) {
+function StrongEntry({ num, entry, module, mapping, orig, onOpenStrong, onOpenRef, onOpenAll }) {
   const isHeb = num.startsWith('H');
-  const morph = mapping?.mode === 'exact' ? mapping.morph : [];
+  // orig — это слово в оригинале стиха (из подстрочника): точная форма с лицом, числом и падежом
+  const exact = orig && orig.num === num.replace(/^([HG])0*/, '$1') ? orig : null;
+  const morph = exact ? [] : mapping?.mode === 'exact' ? mapping.morph : [];
   return (
     <article className="entry">
       {entry.lemma && (
@@ -64,6 +67,17 @@ function StrongEntry({ num, entry, module, mapping, onOpenStrong, onOpenRef }) {
           <dt>{t('Язык')}</dt>
           <dd>{isHeb ? t('иврит / арамейский (ВЗ)') : t('греческий (НЗ)')}</dd>
         </div>
+        {exact && (
+          <div>
+            <dt>{t('В этом стихе')}</dt>
+            <dd>
+              <span className={isHeb ? 'hebrew' : 'greek'} lang={isHeb ? 'he' : 'grc'} dir={isHeb ? 'rtl' : 'ltr'}>
+                {exact.orig}
+              </span>
+              {exact.origMorph && describeMorph(exact.origMorph).text ? ` — ${describeMorph(exact.origMorph).text}` : ''}
+            </dd>
+          </div>
+        )}
         {morph.length > 0 &&
           morph.map((m) => {
             const d = describeMorph(m);
@@ -99,7 +113,6 @@ function StrongEntry({ num, entry, module, mapping, onOpenStrong, onOpenRef }) {
           <p>{entry.kjv}</p>
         </section>
       )}
-      <WordStats num={num} onOpenRef={onOpenRef} />
       {entry.renderings && (
         <section>
           <h4>{t('Как переведено в синодальном тексте · {n} употр.', { n: entry.count })}</h4>
@@ -134,6 +147,8 @@ function StrongEntry({ num, entry, module, mapping, onOpenStrong, onOpenRef }) {
           </div>
         </section>
       )}
+      {/* Места употребления — после вариантов перевода */}
+      <WordStats num={num} onOpenRef={onOpenRef} onOpenAll={onOpenAll && (() => onOpenAll(num, entry.lemma))} />
       <p className="source-note">
         {module.name}
         {module.language === 'en' ? ` · ${t('статья на английском языке')}` : ''} · {module.license}
@@ -150,6 +165,14 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
   const [selected, setSelected] = useState(payload.preselect?.moduleId || null); // moduleId
   const [stack, setStack] = useState([]); // переходы по ссылкам Стронга внутри статьи
   const [entryIdx, setEntryIdx] = useState(0);
+  const [orig, setOrig] = useState(null); // слово оригинала, которому соответствует нажатое слово
+
+  useEffect(() => {
+    if (payload.wi == null || !ref) return;
+    ruInterlinear(ref)
+      .then((ws) => ws?.[payload.wi]?.orig && setOrig(ws[payload.wi]))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     lookupWord({ token, ref }).then((r) => {
@@ -157,6 +180,11 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
       const pre = payload.preselect;
       const found = pre && r.results.find((x) => x.module.id === pre.moduleId)?.found;
       if (found) setEntryIdx(Math.max(0, found.findIndex((f) => f.key === pre.key)));
+      // Нажали на номер Стронга или слово подстрочника — сразу статья первого словаря Стронга (русский — первым)
+      if (!pre && payload.autoOpen) {
+        const first = r.results.find((x) => x.module.dictionaryKind === 'strongs');
+        if (first) setSelected(first.module.id);
+      }
     });
   }, []);
 
@@ -275,11 +303,12 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
           {(() => {
             const f = current.found[Math.min(entryIdx, current.found.length - 1)];
             if (current.module.dictionaryKind === 'strongs')
-              return <StrongEntry num={f.key} entry={f.entry} module={current.module} mapping={top ? null : mapping} onOpenStrong={openStrong} onOpenRef={openRef} />;
+              return <StrongEntry num={f.key} entry={f.entry} module={current.module} mapping={top ? null : mapping} orig={top ? null : orig} onOpenAll={(num, lemma) => openSheet('concord', pane, { num, lemma, back: { kind: 'dict', payload } })} onOpenStrong={openStrong} onOpenRef={openRef} />;
             return (
               <article className="entry">
                 <h3 className="entry-word">{f.entry.word || f.key}</h3>
                 {f.match === 'stem' && <p className="warn small">{t('Найдено по основе слова «{word}» — проверьте, что это та же лексема.', { word: token.text })}</p>}
+                {f.match === 'root' && <p className="warn small">{t('Найдено по корню слова «{word}» (без приставки).', { word: token.text })}</p>}
                 {f.entry.original && <div className="orig">{f.entry.original}</div>}
                 <p className="prewrap">
                   <LinkedText text={f.entry.text || f.entry.definition} onOpen={openRef} />
