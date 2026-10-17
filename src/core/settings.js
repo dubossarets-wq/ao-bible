@@ -59,7 +59,6 @@ export const DEFAULT_SETTINGS = {
   uiFontSize: 15, // px — меню, окна, кнопки
   barHeight: 54, // px — верхняя панель
   animations: true,
-  radius: 12,
   focusMode: false,
   splitLayout: 'auto', // auto | rows | columns
   splitRatio: 0.5,
@@ -133,7 +132,7 @@ export function applySettings(settings, themeName) {
     '--fs': `${settings.fontSize}px`, '--fw': settings.fontWeight, '--lh': settings.lineHeight,
     '--verse-gap': `${settings.verseSpacing}em`, '--measure': `${settings.textWidth}em`,
     '--align': settings.textAlign, '--chapter-size': `${settings.chapterTitleSize}em`,
-    '--radius': `${settings.radius}px`, '--bar-h': `${settings.barHeight || 54}px`,
+    '--radius': '12px', '--bar-h': `${settings.barHeight || 54}px`,
     '--heading': t.heading, '--strong': t.strong, '--heading-size': `${settings.headingSize ?? 0.8}em`,
     '--sn-size': `${settings.strongSize ?? 0.5}em`, '--sn-va': { inline: 'baseline', sub: 'sub' }[settings.strongPos] || 'super',
     '--vn-size': `${settings.verseNumSize ?? 0.6}em`, '--vn-top': settings.verseNumPos === 'inline' ? '0' : '-.32em',

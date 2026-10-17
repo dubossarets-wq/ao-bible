@@ -278,7 +278,6 @@ export default function AppearanceSettings({ onClose }) {
         <Switch id="set-anim" checked={s.animations} onChange={(animations) => set({ animations })} label="Анимации" />
         <Slider id="set-uifs" label="Размер шрифта меню и окон" value={s.uiFontSize} min={13} max={20} step={1} onChange={(uiFontSize) => set({ uiFontSize })} format={(v) => `${v} px`} />
         <Slider id="set-barh" label="Высота верхней панели" value={s.barHeight} min={44} max={72} step={2} onChange={(barHeight) => set({ barHeight })} format={(v) => `${v} px`} />
-        <Slider id="set-radius" label="Закругления" value={s.radius} min={0} max={99} step={1} onChange={(radius) => set({ radius })} format={(v) => `${v} px`} />
         <Segmented
           id="set-split"
           label="Разделённый экран"
