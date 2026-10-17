@@ -64,14 +64,15 @@ function Swatches({ id, label, list, value, onPick }) {
 }
 
 // Образец под разделом настроек: показывает ровно то, что меняет раздел, и обновляется сразу
-const V16 = [['Ибо', null], ['так', null], ['возлюбил', '25'], ['Бог', '2316'], ['мир,', '2889'], ['что', null], ['отдал', '1325'], ['Сына', '5207'], ['Своего', null], ['Единородного…', '3439']];
-const V17 = 'Ибо не послал Бог Сына Своего в мир, чтобы судить мир, но чтобы мир спасен был чрез Него.';
+// Быт 1:1–2 с заголовком, который стоит над ними в синодальном тексте
+const V1 = [['В', null], ['начале', '7225'], ['сотворил', '1254'], ['Бог', '430'], ['небо', '8064'], ['и', '853'], ['землю.', '776']];
+const V2 = 'Земля же была безвидна и пуста, и тьма над бездною, и Дух Божий носился над водою.';
 
 function Sample({ s: real, bar, head, num, sn, ui, colors, live, view = textView(real) }) {
   // live — образец при выборе цвета: номера и заголовки видны всегда
   const s = live ? { ...real, showStrongs: true, showHeadings: true } : real;
   const showNum = num !== false && s.showVerseNumbers && view !== 'book';
-  const v16 = V16.map(([w, n], i) => (
+  const v1 = V1.map(([w, n], i) => (
     <React.Fragment key={i}>
       {i ? ' ' : ''}
       {w}
@@ -82,30 +83,30 @@ function Sample({ s: real, bar, head, num, sn, ui, colors, live, view = textView
     view === 'verses' ? (
       <>
         <span className="pv-verse">
-          {showNum && <span className="pv-num">16</span>}
-          {v16}
+          {showNum && <span className="pv-num">1</span>}
+          {v1}
         </span>
         <span className="pv-verse">
-          {showNum && <span className="pv-num">17</span>}
-          {V17}
+          {showNum && <span className="pv-num">2</span>}
+          {V2}
         </span>
       </>
     ) : (
       <span className="pv-verse">
-        {showNum && <span className="pv-num">16</span>}
-        {v16} {showNum && <span className="pv-num">17</span>}
-        {V17}
+        {showNum && <span className="pv-num">1</span>}
+        {v1} {showNum && <span className="pv-num">2</span>}
+        {V2}
       </span>
     );
   return (
     <div className={`preview-card sample ${colors ? 'colors' : ''}`} aria-hidden="true">
       {bar && (
         <div className="pv-bar">
-          <span className="pv-pill">RST+</span> Ин. 3:16
+          <span className="pv-pill">RST+</span> Быт. 1:1
         </div>
       )}
       <div className="pv-body">
-        {head && <span className={`pv-head ${s.showHeadings ? '' : 'off'}`}>Беседа с Никодимом</span>}
+        {head && <span className={`pv-head ${s.showHeadings ? '' : 'off'}`}>Сотворение неба и земли</span>}
         {verses}
         {sn && !s.showStrongs && <span className="pv-note">Номера Стронга в тексте выключены — так они будут выглядеть, если включить</span>}
         {head && !s.showHeadings && <span className="pv-note">Заголовки выключены — так они будут выглядеть, если включить</span>}
