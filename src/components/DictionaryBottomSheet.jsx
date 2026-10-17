@@ -98,7 +98,6 @@ function StrongEntry({ num, entry, module, mapping, onOpenStrong, onOpenRef }) {
           <p>{entry.kjv}</p>
         </section>
       )}
-      <WordStats num={num} onOpenRef={onOpenRef} />
       {entry.renderings && (
         <section>
           <h4>Как переведено в синодальном тексте · {entry.count} употр.</h4>
@@ -133,6 +132,8 @@ function StrongEntry({ num, entry, module, mapping, onOpenStrong, onOpenRef }) {
           </div>
         </section>
       )}
+      {/* Места употребления — после вариантов перевода */}
+      <WordStats num={num} onOpenRef={onOpenRef} />
       <p className="source-note">
         {module.name}
         {module.language === 'en' ? ' · статья на английском языке' : ''} · {module.license}

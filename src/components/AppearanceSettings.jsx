@@ -45,6 +45,63 @@ function Swatches({ id, label, list, value, onPick }) {
   );
 }
 
+// Образец под разделом настроек: показывает ровно то, что меняет раздел, и обновляется сразу
+const V16 = [['Ибо', null], ['так', null], ['возлюбил', '25'], ['Бог', '2316'], ['мир,', '2889'], ['что', null], ['отдал', '1325'], ['Сына', '5207'], ['Своего', null], ['Единородного…', '3439']];
+const V17 = 'Ибо не послал Бог Сына Своего в мир, чтобы судить мир, но чтобы мир спасен был чрез Него.';
+
+function Sample({ s, bar, head, num, sn, ui, colors, view = textView(s) }) {
+  const showNum = num !== false && s.showVerseNumbers && view !== 'book';
+  const v16 = V16.map(([w, n], i) => (
+    <React.Fragment key={i}>
+      {i ? ' ' : ''}
+      {w}
+      {sn && n && <span className={`pv-sn ${s.showStrongs ? '' : 'off'}`}>{n}</span>}
+    </React.Fragment>
+  ));
+  const verses =
+    view === 'verses' ? (
+      <>
+        <span className="pv-verse">
+          {showNum && <span className="pv-num">16</span>}
+          {v16}
+        </span>
+        <span className="pv-verse">
+          {showNum && <span className="pv-num">17</span>}
+          {V17}
+        </span>
+      </>
+    ) : (
+      <span className="pv-verse">
+        {showNum && <span className="pv-num">16</span>}
+        {v16} {showNum && <span className="pv-num">17</span>}
+        {V17}
+      </span>
+    );
+  return (
+    <div className={`preview-card sample ${colors ? 'colors' : ''}`} aria-hidden="true">
+      {bar && (
+        <div className="pv-bar">
+          <span className="pv-pill">RST+</span> Ин. 3:16
+        </div>
+      )}
+      <div className="pv-body">
+        {head && <span className={`pv-head ${s.showHeadings ? '' : 'off'}`}>Беседа с Никодимом</span>}
+        {verses}
+        {sn && !s.showStrongs && <span className="pv-note">Номера Стронга в тексте выключены — так они будут выглядеть, если включить</span>}
+        {head && !s.showHeadings && <span className="pv-note">Заголовки выключены — так они будут выглядеть, если включить</span>}
+        {(ui || colors) && (
+          <span className="pv-ui">
+            <span className="pv-btn">Кнопка</span>
+            <span className="pv-card">
+              Окно или карточка<span className="pv-muted">бледный текст</span>
+            </span>
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Вид текста — один выбор вместо трёх переключателей (хранится в прежних полях, чтобы ничего не сбилось)
 export const textView = (s) => (s.bookMode ? 'book' : s.continuousVerses ? 'flow' : 'verses');
 
@@ -70,17 +127,6 @@ export default function AppearanceSettings({ onClose }) {
         </button>
       }
     >
-      <div className="preview-card" aria-hidden="true">
-        <div className="pv-bar">
-          <span className="pv-pill">RST+</span> Ин. 3:16
-        </div>
-        <div className="pv-body">
-          <span className="pv-head">Беседа с Никодимом</span>
-          <span className="pv-num">16</span>Ибо так возлюбил<span className="pv-sn">25</span> Бог<span className="pv-sn">2316</span> мир, что отдал Сына Своего Единородного, дабы всякий верующий в Него, не погиб, но имел жизнь вечную.
-          <span className="pv-xr">[⇅ 5]</span>
-        </div>
-      </div>
-
       <section className="settings-group">
         <h4>Тема</h4>
         <Segmented
@@ -94,6 +140,7 @@ export default function AppearanceSettings({ onClose }) {
             ['auto', 'Как в системе'],
           ]}
         />
+        <Sample s={s} bar head num sn />
       </section>
 
       <section className="settings-group">
@@ -110,6 +157,7 @@ export default function AppearanceSettings({ onClose }) {
             ['book', 'Как книга'],
           ]}
         />
+        <Sample s={s} />
       </section>
 
       <section className="settings-group">
@@ -147,6 +195,7 @@ export default function AppearanceSettings({ onClose }) {
             ['justify', 'По ширине'],
           ]}
         />
+        <Sample s={s} head />
       </section>
 
       <section className="settings-group">
@@ -163,6 +212,7 @@ export default function AppearanceSettings({ onClose }) {
             ['inline', 'В строке'],
           ]}
         />
+        <Sample s={s} />
       </section>
 
       <section className="settings-group">
@@ -181,6 +231,7 @@ export default function AppearanceSettings({ onClose }) {
           ]}
         />
         <ColorRow id="c-strong" label="Цвет" value={eff.strong} changed={!!over.strong} onChange={(v) => setColor('strong', v)} onReset={() => resetColor('strong')} />
+        <Sample s={s} sn num={false} view="flow" />
       </section>
 
       <section className="settings-group">
@@ -188,6 +239,7 @@ export default function AppearanceSettings({ onClose }) {
         <Switch id="set-head" checked={s.showHeadings} onChange={(showHeadings) => set({ showHeadings })} label="Заголовки разделов" />
         <Slider id="set-head-size" label="Размер" value={s.headingSize} min={0.6} max={1.4} step={0.05} onChange={(headingSize) => set({ headingSize })} format={(v) => `${Math.round(v * 100)}%`} />
         <ColorRow id="c-heading" label="Цвет" value={eff.heading} changed={!!over.heading} onChange={(v) => setColor('heading', v)} onReset={() => resetColor('heading')} />
+        <Sample s={s} head view="flow" />
       </section>
 
       <section className="settings-group">
@@ -210,6 +262,7 @@ export default function AppearanceSettings({ onClose }) {
             ['rows', 'Друг над другом'],
           ]}
         />
+        <Sample s={s} bar ui num={false} view="flow" />
       </section>
 
       {commentaries.length > 0 && (
@@ -263,6 +316,7 @@ export default function AppearanceSettings({ onClose }) {
             <RotateCcw size={15} /> Все цвета — как в теме
           </button>
         )}
+        <Sample s={s} bar head sn colors />
       </section>
     </BottomSheet>
   );

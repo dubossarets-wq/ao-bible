@@ -1115,3 +1115,15 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .marquee.run .marquee-in { animation: marquee var(--dur, 10s) ease-in-out infinite alternate; }
 @keyframes marquee { 0%, 15% { transform: translateX(0); } 85%, 100% { transform: translateX(var(--shift)); } }
 .no-anim .marquee.run { text-overflow: ellipsis; } .no-anim .marquee.run .marquee-in { animation: none; }
+
+/* Образцы под разделами оформления */
+.preview-card.sample { margin-top: 2px; }
+.pv-body { display: flex; flex-direction: column; gap: var(--verse-gap, .55em); }
+.pv-verse { display: block; }
+.pv-head { margin-bottom: 0; }
+.pv-head.off, .pv-sn.off { opacity: .4; }
+.pv-note { font-family: var(--font-ui); font-size: .72rem; color: var(--muted); line-height: 1.3; }
+.pv-ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-family: var(--font-ui); font-size: var(--ui-fs, 15px); line-height: 1.3; }
+.pv-btn { padding: 7px 14px; border-radius: min(var(--radius), 999px); background: var(--accent); color: #fff; font-weight: 600; }
+.pv-card { display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; border-radius: var(--radius); background: var(--panel); border: 1px solid var(--line); }
+.pv-muted { color: var(--muted); font-size: .85em; }
