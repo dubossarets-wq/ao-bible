@@ -1073,7 +1073,7 @@
  "Язык переводов": "Język przekładów",
  "Читать параллельно: {name}": "Czytaj równolegle: {name}",
  "Читать параллельно": "Czytaj równolegle",
- "Все места": "Wszystkie wystąpienia",
+ "Все места": "Wystąpienia",
  "{n} раз|{n} раза|{n} раз": {
   "one": "{n} raz",
   "few": "{n} razy",
@@ -1133,7 +1133,7 @@
  "Нажатие на номер стиха выделяет стих — те же действия, что и при долгом нажатии.": "Dotknięcie numeru wersetu zaznacza werset — z tymi samymi działaniami co przy długim przytrzymaniu.",
  "Кнопка «Назад» на Android закрывает открытое окно, а не приложение.": "Przycisk „Wstecz” na Androidzie zamyka otwarte okno, a nie aplikację.",
  "Бледный текст стал темнее и лучше читается; номер стиха и кнопки панели легче нажимать.": "Blady tekst jest ciemniejszy i lepiej czytelny; numery wersetów i przyciski paska łatwiej dotknąć.",
- "Все места слова оригинала: в статье Стронга кнопка «Все места» — стихи с выделенным словом, можно выбрать, как оно переведено («возлюбил», «любит»…).": "Wszystkie wystąpienia słowa oryginału: w haśle Stronga przycisk „Wszystkie wystąpienia” pokazuje wersety z zaznaczonym słowem; można wybrać, jak je przetłumaczono („возлюбил”, „любит”…).",
+ "Все места слова оригинала: в статье Стронга кнопка «Все места» — стихи с выделенным словом, можно выбрать, как оно переведено («возлюбил», «любит»…).": "Wszystkie wystąpienia słowa oryginału: w haśle Stronga przycisk „Wystąpienia” pokazuje wersety z zaznaczonym słowem; można wybrać, jak je przetłumaczono („возлюбил”, „любит”…).",
  "Оформление можно настроить под себя: цвет верхней панели, акцента, фона, номеров стихов и Стронга, их размер и положение, размер шрифта меню и высоту панели. Настройки → Оформление.": "Wygląd można dopasować do siebie: kolor górnego paska, akcentu, tła, numerów wersetów i Stronga, ich rozmiar i położenie, rozmiar czcionki menu i wysokość paska. Ustawienia → Wygląd.",
  "Окна открываются до верхней панели — она остаётся видна.": "Okna otwierają się do górnego paska — pozostaje on widoczny.",
  "Полоски для смахивания у окон и между двумя панелями стали заметнее.": "Uchwyty do przesuwania okien i między dwoma panelami są lepiej widoczne.",

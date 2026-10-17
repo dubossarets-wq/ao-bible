@@ -1067,7 +1067,7 @@
  "Язык переводов": "Idioma das traduções",
  "Читать параллельно: {name}": "Ler em paralelo: {name}",
  "Читать параллельно": "Ler em paralelo",
- "Все места": "Todas as ocorrências",
+ "Все места": "Ocorrências",
  "{n} раз|{n} раза|{n} раз": {
   "one": "{n} vez",
   "other": "{n} vezes"
@@ -1123,7 +1123,7 @@
  "Нажатие на номер стиха выделяет стих — те же действия, что и при долгом нажатии.": "Tocar no número de um versículo o seleciona — com as mesmas ações do toque longo.",
  "Кнопка «Назад» на Android закрывает открытое окно, а не приложение.": "O botão Voltar do Android fecha a janela aberta, e não o aplicativo.",
  "Бледный текст стал темнее и лучше читается; номер стиха и кнопки панели легче нажимать.": "O texto claro ficou mais escuro e fácil de ler; os números dos versículos e os botões da barra ficaram mais fáceis de tocar.",
- "Все места слова оригинала: в статье Стронга кнопка «Все места» — стихи с выделенным словом, можно выбрать, как оно переведено («возлюбил», «любит»…).": "Todas as ocorrências de uma palavra original: no verbete de Strong, o botão “Todas as ocorrências” mostra os versículos com a palavra destacada, e você pode escolher como ela foi traduzida (“возлюбил”, “любит”…).",
+ "Все места слова оригинала: в статье Стронга кнопка «Все места» — стихи с выделенным словом, можно выбрать, как оно переведено («возлюбил», «любит»…).": "Todas as ocorrências de uma palavra original: no verbete de Strong, o botão “Ocorrências” mostra os versículos com a palavra destacada, e você pode escolher como ela foi traduzida (“возлюбил”, “любит”…).",
  "Оформление можно настроить под себя: цвет верхней панели, акцента, фона, номеров стихов и Стронга, их размер и положение, размер шрифта меню и высоту панели. Настройки → Оформление.": "Você pode personalizar a aparência: cor da barra superior, do destaque, do fundo, dos números dos versículos e de Strong, o tamanho e a posição deles, o tamanho da fonte dos menus e a altura da barra. Configurações → Aparência.",
  "Окна открываются до верхней панели — она остаётся видна.": "As janelas abrem até a barra superior, que continua visível.",
  "Полоски для смахивания у окон и между двумя панелями стали заметнее.": "As alças para deslizar nas janelas e entre os dois painéis ficaram mais visíveis.",

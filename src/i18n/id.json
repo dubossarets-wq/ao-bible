@@ -1055,7 +1055,7 @@
  "Язык переводов": "Bahasa terjemahan",
  "Читать параллельно: {name}": "Baca berdampingan: {name}",
  "Читать параллельно": "Baca berdampingan",
- "Все места": "Semua kemunculan",
+ "Все места": "Kemunculan",
  "{n} раз|{n} раза|{n} раз": {
   "other": "{n} kali"
  },
@@ -1109,7 +1109,7 @@
  "Нажатие на номер стиха выделяет стих — те же действия, что и при долгом нажатии.": "Mengetuk nomor ayat memilih ayat itu — dengan tindakan yang sama seperti tekan lama.",
  "Кнопка «Назад» на Android закрывает открытое окно, а не приложение.": "Tombol Kembali di Android menutup jendela yang terbuka, bukan aplikasinya.",
  "Бледный текст стал темнее и лучше читается; номер стиха и кнопки панели легче нажимать.": "Teks pudar kini lebih gelap dan lebih mudah dibaca; nomor ayat dan tombol bilah lebih mudah diketuk.",
- "Все места слова оригинала: в статье Стронга кнопка «Все места» — стихи с выделенным словом, можно выбрать, как оно переведено («возлюбил», «любит»…).": "Semua kemunculan kata asli: di artikel Strong, tombol “Semua kemunculan” menampilkan ayat dengan kata yang disorot, dan Anda dapat memilih cara kata itu diterjemahkan (“возлюбил”, “любит”…).",
+ "Все места слова оригинала: в статье Стронга кнопка «Все места» — стихи с выделенным словом, можно выбрать, как оно переведено («возлюбил», «любит»…).": "Semua kemunculan kata asli: di artikel Strong, tombol “Kemunculan” menampilkan ayat dengan kata yang disorot, dan Anda dapat memilih cara kata itu diterjemahkan (“возлюбил”, “любит”…).",
  "Оформление можно настроить под себя: цвет верхней панели, акцента, фона, номеров стихов и Стронга, их размер и положение, размер шрифта меню и высоту панели. Настройки → Оформление.": "Tampilan dapat diatur sesuai selera: warna bilah atas, aksen, latar, nomor ayat dan nomor Strong, ukuran dan posisinya, ukuran huruf menu, dan tinggi bilah. Pengaturan → Tampilan.",
  "Окна открываются до верхней панели — она остаётся видна.": "Jendela terbuka hingga bilah atas — bilah itu tetap terlihat.",
  "Полоски для смахивания у окон и между двумя панелями стали заметнее.": "Pegangan geser pada jendela dan di antara dua panel kini lebih terlihat.",

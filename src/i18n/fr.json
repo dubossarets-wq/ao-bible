@@ -1067,7 +1067,7 @@
  "Язык переводов": "Langue des traductions",
  "Читать параллельно: {name}": "Lire en parallèle : {name}",
  "Читать параллельно": "Lire en parallèle",
- "Все места": "Toutes les occurrences",
+ "Все места": "Occurrences",
  "{n} раз|{n} раза|{n} раз": {
   "one": "{n} fois",
   "other": "{n} fois"
@@ -1123,7 +1123,7 @@
  "Нажатие на номер стиха выделяет стих — те же действия, что и при долгом нажатии.": "Toucher le numéro d’un verset le sélectionne — avec les mêmes actions qu’un appui long.",
  "Кнопка «Назад» на Android закрывает открытое окно, а не приложение.": "Le bouton Retour d’Android ferme la fenêtre ouverte, et non plus l’application.",
  "Бледный текст стал темнее и лучше читается; номер стиха и кнопки панели легче нажимать.": "Le texte pâle est plus foncé et plus lisible ; les numéros de versets et les boutons de la barre sont plus faciles à toucher.",
- "Все места слова оригинала: в статье Стронга кнопка «Все места» — стихи с выделенным словом, можно выбрать, как оно переведено («возлюбил», «любит»…).": "Toutes les occurrences d’un mot original : dans l’article Strong, le bouton « Toutes les occurrences » affiche les versets avec le mot surligné, et vous pouvez choisir comment il est traduit (« возлюбил », « любит »…).",
+ "Все места слова оригинала: в статье Стронга кнопка «Все места» — стихи с выделенным словом, можно выбрать, как оно переведено («возлюбил», «любит»…).": "Toutes les occurrences d’un mot original : dans l’article Strong, le bouton « Occurrences » affiche les versets avec le mot surligné, et vous pouvez choisir comment il est traduit (« возлюбил », « любит »…).",
  "Оформление можно настроить под себя: цвет верхней панели, акцента, фона, номеров стихов и Стронга, их размер и положение, размер шрифта меню и высоту панели. Настройки → Оформление.": "L’apparence se personnalise : couleur de la barre supérieure, de l’accent, du fond, des numéros de versets et Strong, leur taille et leur position, taille du texte des menus et hauteur de la barre. Paramètres → Apparence.",
  "Окна открываются до верхней панели — она остаётся видна.": "Les fenêtres s’ouvrent jusqu’à la barre supérieure, qui reste visible.",
  "Полоски для смахивания у окон и между двумя панелями стали заметнее.": "Les poignées de balayage des fenêtres et entre les deux volets sont plus visibles.",

@@ -102,7 +102,9 @@ async function inspect(code) {
     ({ allowList, rus, code }) => {
       const RE = new RegExp(rus || '[А-Яа-яЁё]', 'i');
       // Текст Библии и словарных статей — не интерфейс
-      const SKIP = '.vt, .xref-text, .xref-source, .list-text, .compare-text, .sermon-verse-text, .pulpit-verse, .renderings, .entry .prewrap, .entry-word, .dict-desc, .gw-ru, .orig, .wp-key, .version-notes, .tb-place-name, .place-card-title b, .preview-card, textarea, input, .sermon-text-input, .lang-row, .copy-area, .code';
+      // подстрочник (синодальный текст и чтение кириллицей), тексты стихов в «Всех местах» и сравнении, варианты перевода
+      // в «Всех местах» (русские слова синодального текста), названия иллюстраций — данные, не интерфейс
+      const SKIP = '.vt, .xref-text, .xref-source, .list-text, .compare-text, .cmp-text, .sermon-verse-text, .pulpit-verse, .renderings, .entry .prewrap, .entry-word, .dict-desc, .gw-ru, .orig, .wp-key, .version-notes, .tb-place-name, .place-card-title b, .preview-card .pv-pill, textarea, input, .sermon-text-input, .lang-row, .copy-area, .code, .il-grid, .concord-text, .sheet:has(.concord) .filter-chips, .iv-caption strong, .section-title, .entry section > p:not([class])';
       const strip = (s) => {
         let x = ` ${s} `;
         for (const a of allowList) if (x.includes(a)) x = x.split(a).join(' ');
@@ -134,7 +136,8 @@ async function inspect(code) {
       const over = new Set();
       const SCROLLS = '.tabs, .chips, .plan-strip-chips, .vimg-bgs, .menu, .sheet-body, .scroller';
       for (const el of document.querySelectorAll('button, .menu-item, .chip, .btn, .pref-row, [role=tab], .badge, .sheet-title, .tour-bubble, .tour-ctrl, .audio-bar, .selection-bar, .topbar, .field-label, h4, .segmented, .lang-row')) {
-        if (!visible(el)) continue;
+        // .vn — номер стиха: узкая кнопка с подписью только в aria-label, текст — сама цифра
+        if (!visible(el) || el.matches('.vn')) continue;
         const r = el.getBoundingClientRect();
         const label = (el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 50);
         const inScroller = el.parentElement?.closest(SCROLLS);
@@ -337,6 +340,55 @@ for (const code of langs) {
     await prefs('refresh-cw');
     await page.click('.sheet .pref-row:has(svg.lucide-history)');
     await page.waitForSelector('.versions', { timeout: 15000 });
+  });
+  await screen(code, '26-verse-part', async () => {
+    await fresh();
+    await selectVerse();
+    await page.click('.pane-slot.first .sel-inline .btn:has(svg.lucide-text-select)');
+    await page.waitForSelector('.part-inline');
+  });
+  await screen(code, '27-interlinear', async () => {
+    await fresh();
+    await selectVerse();
+    await page.click('.pane-slot.first .sel-inline .btn:has(svg.lucide-whole-word)');
+    await page.waitForSelector('.il-grid .il-cell', { timeout: 90000 });
+    await page.waitForTimeout(500);
+  });
+  await screen(code, '28-interlinear-word', async () => {
+    await page.click('.il-grid .il-cell:not([disabled])');
+    await page.waitForSelector('.entry', { timeout: 15000 });
+    await page.waitForTimeout(500);
+  });
+  await screen(code, '29-concordance', async () => {
+    await page.click('.word-stats > .btn');
+    await page.waitForSelector('.concord li', { timeout: 30000 });
+    await page.waitForTimeout(1200);
+  });
+  await screen(code, '30-compare', async () => {
+    await fresh();
+    await selectVerse();
+    await page.click('.pane-slot.first .selection-bar .tb-more');
+    await page.click('.menu .menu-item:has(svg.lucide-book-copy)');
+    await page.waitForSelector('.cmp-list', { timeout: 15000 });
+    await page.waitForTimeout(600);
+  });
+  await screen(code, '31-illustration', async () => {
+    await fresh();
+    await page.click('.pane-slot.first .tb-ref');
+    await page.waitForSelector('#ref-input');
+    await page.fill('#ref-input', 'Быт 1:3');
+    await page.press('#ref-input', 'Enter');
+    await page.waitForSelector('.pane-slot.first #v-1-3 .il', { timeout: 15000 });
+    await page.click('.pane-slot.first #v-1-3 .il');
+    await page.waitForSelector('.iv-caption', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+  });
+  await screen(code, '32-news', async () => {
+    await page.keyboard.press('Escape');
+    await fresh();
+    await prefs('refresh-cw');
+    await page.click('.sheet .pref-row:has(svg.lucide-sparkles)');
+    await page.waitForSelector('.news-list');
   });
   const s = summary[code];
   log(`\n== ${code}: экранов ${s?.screens || 0}, русских строк: ${s?.ru.size || 0}, проблем с местом: ${s?.over.size || 0}`);
