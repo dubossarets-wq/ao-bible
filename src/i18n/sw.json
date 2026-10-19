@@ -1183,5 +1183,12 @@
  "Поле, в котором вы пишете, всегда видно над клавиатурой.": "Sehemu unayoandikia huonekana kila wakati juu ya kibodi.",
  "Толковая Библия Лопухина и комментарий Барнса — одним модулем вместо нескольких частей.": "Biblia ya Maelezo ya Lopukhin na ufafanuzi wa Barnes sasa kila moja ni moduli moja badala ya sehemu kadhaa.",
  "Планы чтения: правильный первый день, план М’Чейна в новом году идёт заново.": "Mipango ya kusoma: siku ya kwanza imerekebishwa, na mpango wa M’Cheyne huanza upya katika mwaka mpya.",
- "Уведомления внизу — по одному и короче.": "Arifa za chini huja moja moja na ni fupi zaidi."
+ "Уведомления внизу — по одному и короче.": "Arifa za chini huja moja moja na ni fupi zaidi.",
+ "Греческий текст Септуагинты (издание Свита) и значения слов по словарю": "Maandishi ya Kigiriki ya Septuaginta (toleo la Swete) na maana za maneno kwa kamusi",
+ "Еврейский": "Kiebrania",
+ "Септуагинта": "Septuaginta",
+ "Под словами — значения по словарю Стронга, а не перевод Септуагинты.": "Chini ya maneno kuna maana kutoka kamusi ya Strong, si tafsiri ya Septuaginta.",
+ "Септуагинта — греческий перевод Ветхого Завета (издание Г. Б. Свита). Слова по порядку, слева направо; под словом — его чтение, значение по словарю Стронга (подобрано по словам синодального стиха; бледным — это не перевод данного места) и номер Стронга. У слов, которых нет в Новом Завете, номера нет. Нажмите на слово — откроется статья словаря.": "Septuaginta ni tafsiri ya Kigiriki ya Agano la Kale (toleo la H. B. Swete). Maneno kwa mpangilio, kutoka kushoto kwenda kulia; chini ya kila neno — usomaji, maana kutoka kamusi ya Strong (iliyochaguliwa kulingana na maneno ya mstari wa Sinodi; imefifia kwa sababu si tafsiri ya kifungu hiki) na namba ya Strong. Maneno yasiyopatikana katika Agano Jipya hayana namba. Gusa neno ili kufungua makala ya kamusi.",
+ "В подстрочнике Ветхого Завета — вкладка «Септуагинта»: греческий текст Ветхого Завета (издание Свита), под каждым словом — его значение по словарю Стронга. Текст загружается сам при первом выборе.": "Katika tafsiri ya neno kwa neno ya Agano la Kale kuna kichupo “Septuaginta”: maandishi ya Kigiriki ya Agano la Kale (toleo la Swete), chini ya kila neno — maana yake kwa kamusi ya Strong. Maandishi hupakuliwa yenyewe unapoyachagua mara ya kwanza.",
+ "В библиотеке — Септуагинта (LXX): греческий Ветхий Завет с номерами Стронга в синодальной нумерации, его можно читать рядом с синодальным переводом.": "Mpya katika maktaba: Septuaginta (LXX) — Agano la Kale la Kigiriki lenye namba za Strong kwa mpangilio wa mistari wa Sinodi, linaloweza kusomwa sambamba na tafsiri ya Sinodi."
 }

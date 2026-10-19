@@ -1199,5 +1199,12 @@
  "Поле, в котором вы пишете, всегда видно над клавиатурой.": "Pole, do kterého píšete, je vždy vidět nad klávesnicí.",
  "Толковая Библия Лопухина и комментарий Барнса — одним модулем вместо нескольких частей.": "Lopuchinova Výkladová Bible a Barnesův komentář jsou nyní každý jedním modulem místo několika částí.",
  "Планы чтения: правильный первый день, план М’Чейна в новом году идёт заново.": "Plány čtení: správný první den, plán M’Cheyne v novém roce začíná znovu.",
- "Уведомления внизу — по одному и короче.": "Oznámení dole — po jednom a kratší."
+ "Уведомления внизу — по одному и короче.": "Oznámení dole — po jednom a kratší.",
+ "Греческий текст Септуагинты (издание Свита) и значения слов по словарю": "Řecký text Septuaginty (Sweteovo vydání) a významy slov podle slovníku",
+ "Еврейский": "Hebrejský",
+ "Септуагинта": "Septuaginta",
+ "Под словами — значения по словарю Стронга, а не перевод Септуагинты.": "Pod slovy jsou významy ze Strongova slovníku, nikoli překlad Septuaginty.",
+ "Септуагинта — греческий перевод Ветхого Завета (издание Г. Б. Свита). Слова по порядку, слева направо; под словом — его чтение, значение по словарю Стронга (подобрано по словам синодального стиха; бледным — это не перевод данного места) и номер Стронга. У слов, которых нет в Новом Завете, номера нет. Нажмите на слово — откроется статья словаря.": "Septuaginta je řecký překlad Starého zákona (vydání H. B. Sweteho). Slova v pořadí, zleva doprava; pod slovem jeho čtení, význam ze Strongova slovníku (vybraný podle slov synodálního verše; světle — není to překlad tohoto místa) a Strongovo číslo. Slova, která se v Novém zákoně nevyskytují, číslo nemají. Klepněte na slovo — otevře se heslo slovníku.",
+ "В подстрочнике Ветхого Завета — вкладка «Септуагинта»: греческий текст Ветхого Завета (издание Свита), под каждым словом — его значение по словарю Стронга. Текст загружается сам при первом выборе.": "V meziřádkovém překladu Starého zákona je karta „Septuaginta“: řecký text Starého zákona (Sweteovo vydání), pod každým slovem jeho význam ze Strongova slovníku. Text se stáhne sám při prvním výběru.",
+ "В библиотеке — Септуагинта (LXX): греческий Ветхий Завет с номерами Стронга в синодальной нумерации, его можно читать рядом с синодальным переводом.": "V knihovně je Septuaginta (LXX): řecký Starý zákon se Strongovými čísly v synodálním číslování; lze ji číst vedle Synodálního překladu."
 }

@@ -1199,5 +1199,12 @@
  "Поле, в котором вы пишете, всегда видно над клавиатурой.": "Pole, w którym piszesz, jest zawsze widoczne nad klawiaturą.",
  "Толковая Библия Лопухина и комментарий Барнса — одним модулем вместо нескольких частей.": "Biblia z objaśnieniami Łopuchina i komentarz Barnesa to teraz po jednym module zamiast kilku części.",
  "Планы чтения: правильный первый день, план М’Чейна в новом году идёт заново.": "Plany czytania: właściwy pierwszy dzień, a plan M’Cheyne’a w nowym roku zaczyna się od nowa.",
- "Уведомления внизу — по одному и короче.": "Powiadomienia na dole pojawiają się pojedynczo i są krótsze."
+ "Уведомления внизу — по одному и короче.": "Powiadomienia na dole pojawiają się pojedynczo i są krótsze.",
+ "Греческий текст Септуагинты (издание Свита) и значения слов по словарю": "Grecki tekst Septuaginty (wydanie Swete’a) i znaczenia słów według słownika",
+ "Еврейский": "Hebrajski",
+ "Септуагинта": "Septuaginta",
+ "Под словами — значения по словарю Стронга, а не перевод Септуагинты.": "Pod słowami są znaczenia ze słownika Stronga, a nie przekład Septuaginty.",
+ "Септуагинта — греческий перевод Ветхого Завета (издание Г. Б. Свита). Слова по порядку, слева направо; под словом — его чтение, значение по словарю Стронга (подобрано по словам синодального стиха; бледным — это не перевод данного места) и номер Стронга. У слов, которых нет в Новом Завете, номера нет. Нажмите на слово — откроется статья словаря.": "Septuaginta to grecki przekład Starego Testamentu (wydanie H. B. Swete’a). Słowa po kolei, od lewej do prawej; pod słowem jego odczyt, znaczenie ze słownika Stronga (dobrane według słów wersetu synodalnego; blado, bo to nie jest przekład tego miejsca) i numer Stronga. Słowa, których nie ma w Nowym Testamencie, nie mają numeru. Dotknij słowa — otworzy się hasło słownika.",
+ "В подстрочнике Ветхого Завета — вкладка «Септуагинта»: греческий текст Ветхого Завета (издание Свита), под каждым словом — его значение по словарю Стронга. Текст загружается сам при первом выборе.": "W przekładzie interlinearnym Starego Testamentu jest karta „Septuaginta”: grecki tekst Starego Testamentu (wydanie Swete’a), pod każdym słowem jego znaczenie według słownika Stronga. Tekst pobiera się sam przy pierwszym wyborze.",
+ "В библиотеке — Септуагинта (LXX): греческий Ветхий Завет с номерами Стронга в синодальной нумерации, его можно читать рядом с синодальным переводом.": "Nowość w bibliotece: Septuaginta (LXX) — grecki Stary Testament z numerami Stronga w numeracji synodalnej, który można czytać obok Przekładu Synodalnego."
 }

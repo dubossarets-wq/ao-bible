@@ -10,6 +10,7 @@ const SHORT = {
   'rus-sergievsky': 'Серг',
   'rst-interlinear': 'Подст',
   'vin-interlinear': 'Винок',
+  'lxx-swete': 'LXX',
   goetze: 'Гёце',
   'ukr-ogienko': 'Огієн',
   'cornilescu-cyr': 'Корн',

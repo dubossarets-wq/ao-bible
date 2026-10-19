@@ -1183,5 +1183,12 @@
  "Поле, в котором вы пишете, всегда видно над клавиатурой.": "Das Feld, in das Sie schreiben, ist immer über der Tastatur zu sehen.",
  "Толковая Библия Лопухина и комментарий Барнса — одним модулем вместо нескольких частей.": "Lopuchins Erklärende Bibel und der Kommentar von Barnes sind jetzt je ein Modul statt mehrerer Teile.",
  "Планы чтения: правильный первый день, план М’Чейна в новом году идёт заново.": "Lesepläne: richtiger erster Tag, und der M’Cheyne-Plan beginnt im neuen Jahr von vorn.",
- "Уведомления внизу — по одному и короче.": "Benachrichtigungen unten erscheinen einzeln und sind kürzer."
+ "Уведомления внизу — по одному и короче.": "Benachrichtigungen unten erscheinen einzeln und sind kürzer.",
+ "Греческий текст Септуагинты (издание Свита) и значения слов по словарю": "Griechischer Text der Septuaginta (Ausgabe von Swete) und Wortbedeutungen nach dem Wörterbuch",
+ "Еврейский": "Hebräisch",
+ "Септуагинта": "Septuaginta",
+ "Под словами — значения по словарю Стронга, а не перевод Септуагинты.": "Unter den Wörtern stehen Bedeutungen aus dem Strong-Wörterbuch, keine Übersetzung der Septuaginta.",
+ "Септуагинта — греческий перевод Ветхого Завета (издание Г. Б. Свита). Слова по порядку, слева направо; под словом — его чтение, значение по словарю Стронга (подобрано по словам синодального стиха; бледным — это не перевод данного места) и номер Стронга. У слов, которых нет в Новом Завете, номера нет. Нажмите на слово — откроется статья словаря.": "Die Septuaginta ist die griechische Übersetzung des Alten Testaments (Ausgabe von H. B. Swete). Die Wörter der Reihe nach, von links nach rechts; darunter Lesung, eine Bedeutung aus dem Strong-Wörterbuch (passend zu den Wörtern des Synodalverses gewählt; blass, weil es keine Übersetzung dieser Stelle ist) und die Strong-Nummer. Wörter, die im Neuen Testament nicht vorkommen, haben keine Nummer. Tippen Sie auf ein Wort, um den Wörterbucheintrag zu öffnen.",
+ "В подстрочнике Ветхого Завета — вкладка «Септуагинта»: греческий текст Ветхого Завета (издание Свита), под каждым словом — его значение по словарю Стронга. Текст загружается сам при первом выборе.": "In der Interlinearübersetzung des Alten Testaments gibt es den Reiter „Septuaginta“: den griechischen Text des Alten Testaments (Ausgabe von Swete), unter jedem Wort seine Bedeutung aus dem Strong-Wörterbuch. Der Text wird bei der ersten Auswahl automatisch geladen.",
+ "В библиотеке — Септуагинта (LXX): греческий Ветхий Завет с номерами Стронга в синодальной нумерации, его можно читать рядом с синодальным переводом.": "Neu in der Bibliothek: die Septuaginta (LXX) — das griechische Alte Testament mit Strong-Nummern in synodaler Verszählung, lesbar neben der Synodalübersetzung."
 }

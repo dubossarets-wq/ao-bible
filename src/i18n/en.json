@@ -1183,5 +1183,12 @@
  "Поле, в котором вы пишете, всегда видно над клавиатурой.": "The field you are typing in is always visible above the keyboard.",
  "Толковая Библия Лопухина и комментарий Барнса — одним модулем вместо нескольких частей.": "Lopukhin’s Explanatory Bible and Barnes’ commentary are now single modules instead of several parts.",
  "Планы чтения: правильный первый день, план М’Чейна в новом году идёт заново.": "Reading plans: the correct first day, and the M’Cheyne plan starts again in the new year.",
- "Уведомления внизу — по одному и короче.": "Notifications at the bottom appear one at a time and are shorter."
+ "Уведомления внизу — по одному и короче.": "Notifications at the bottom appear one at a time and are shorter.",
+ "Греческий текст Септуагинты (издание Свита) и значения слов по словарю": "Greek text of the Septuagint (Swete’s edition) and dictionary meanings of the words",
+ "Еврейский": "Hebrew",
+ "Септуагинта": "Septuagint",
+ "Под словами — значения по словарю Стронга, а не перевод Септуагинты.": "Under the words are meanings from Strong’s dictionary, not a translation of the Septuagint.",
+ "Септуагинта — греческий перевод Ветхого Завета (издание Г. Б. Свита). Слова по порядку, слева направо; под словом — его чтение, значение по словарю Стронга (подобрано по словам синодального стиха; бледным — это не перевод данного места) и номер Стронга. У слов, которых нет в Новом Завете, номера нет. Нажмите на слово — откроется статья словаря.": "The Septuagint is the Greek translation of the Old Testament (edition by H. B. Swete). Words in order, left to right; under each — its reading, a meaning from Strong’s dictionary (chosen to match the words of the Synodal verse; shown pale because it is not a translation of this passage) and the Strong’s number. Words that do not occur in the New Testament have no number. Tap a word to open its dictionary entry.",
+ "В подстрочнике Ветхого Завета — вкладка «Септуагинта»: греческий текст Ветхого Завета (издание Свита), под каждым словом — его значение по словарю Стронга. Текст загружается сам при первом выборе.": "The Old Testament interlinear has a “Septuagint” tab: the Greek text of the Old Testament (Swete’s edition), with each word’s meaning from Strong’s dictionary underneath. The text downloads automatically the first time you choose it.",
+ "В библиотеке — Септуагинта (LXX): греческий Ветхий Завет с номерами Стронга в синодальной нумерации, его можно читать рядом с синодальным переводом.": "The Septuagint (LXX) is now in the library: the Greek Old Testament with Strong’s numbers in Synodal verse numbering, which you can read side by side with the Synodal Translation."
 }

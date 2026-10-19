@@ -1175,5 +1175,12 @@
  "Поле, в котором вы пишете, всегда видно над клавиатурой.": "Kolom tempat Anda menulis selalu terlihat di atas papan ketik.",
  "Толковая Библия Лопухина и комментарий Барнса — одним модулем вместо нескольких частей.": "Tafsiran Alkitab Lopukhin dan tafsiran Barnes kini masing-masing satu modul, bukan beberapa bagian.",
  "Планы чтения: правильный первый день, план М’Чейна в новом году идёт заново.": "Rencana baca: hari pertama kini tepat, dan rencana M’Cheyne dimulai lagi dari awal di tahun baru.",
- "Уведомления внизу — по одному и короче.": "Notifikasi di bawah muncul satu per satu dan lebih singkat."
+ "Уведомления внизу — по одному и короче.": "Notifikasi di bawah muncul satu per satu dan lebih singkat.",
+ "Греческий текст Септуагинты (издание Свита) и значения слов по словарю": "Teks Yunani Septuaginta (edisi Swete) dan arti kata menurut kamus",
+ "Еврейский": "Ibrani",
+ "Септуагинта": "Septuaginta",
+ "Под словами — значения по словарю Стронга, а не перевод Септуагинты.": "Di bawah kata-kata ada arti dari kamus Strong, bukan terjemahan Septuaginta.",
+ "Септуагинта — греческий перевод Ветхого Завета (издание Г. Б. Свита). Слова по порядку, слева направо; под словом — его чтение, значение по словарю Стронга (подобрано по словам синодального стиха; бледным — это не перевод данного места) и номер Стронга. У слов, которых нет в Новом Завете, номера нет. Нажмите на слово — откроется статья словаря.": "Septuaginta adalah terjemahan Yunani Perjanjian Lama (edisi H. B. Swete). Kata-kata berurutan, dari kiri ke kanan; di bawahnya cara baca, arti dari kamus Strong (dipilih sesuai kata-kata ayat Sinodal; ditampilkan pucat karena bukan terjemahan bagian ini), dan nomor Strong. Kata yang tidak ada dalam Perjanjian Baru tidak memiliki nomor. Ketuk kata untuk membuka artikel kamus.",
+ "В подстрочнике Ветхого Завета — вкладка «Септуагинта»: греческий текст Ветхого Завета (издание Свита), под каждым словом — его значение по словарю Стронга. Текст загружается сам при первом выборе.": "Di terjemahan interlinear Perjanjian Lama ada tab “Septuaginta”: teks Yunani Perjanjian Lama (edisi Swete), di bawah setiap kata artinya menurut kamus Strong. Teks diunduh otomatis saat pertama kali dipilih.",
+ "В библиотеке — Септуагинта (LXX): греческий Ветхий Завет с номерами Стронга в синодальной нумерации, его можно читать рядом с синодальным переводом.": "Baru di perpustakaan: Septuaginta (LXX), Perjanjian Lama Yunani dengan nomor Strong dalam penomoran Sinodal, yang bisa dibaca berdampingan dengan Terjemahan Sinodal."
 }

@@ -1191,5 +1191,12 @@
  "Поле, в котором вы пишете, всегда видно над клавиатурой.": "Câmpul în care scrieți se vede mereu deasupra tastaturii.",
  "Толковая Библия Лопухина и комментарий Барнса — одним модулем вместо нескольких частей.": "Biblia explicativă a lui Lopuhin și comentariul lui Barnes sunt acum câte un singur modul în loc de mai multe părți.",
  "Планы чтения: правильный первый день, план М’Чейна в новом году идёт заново.": "Planuri de citire: prima zi corectă, iar planul M’Cheyne o ia de la capăt în noul an.",
- "Уведомления внизу — по одному и короче.": "Notificările de jos apar câte una și sunt mai scurte."
+ "Уведомления внизу — по одному и короче.": "Notificările de jos apar câte una și sunt mai scurte.",
+ "Греческий текст Септуагинты (издание Свита) и значения слов по словарю": "Textul grec al Septuagintei (ediția Swete) și sensurile cuvintelor după dicționar",
+ "Еврейский": "Ebraic",
+ "Септуагинта": "Septuaginta",
+ "Под словами — значения по словарю Стронга, а не перевод Септуагинты.": "Sub cuvinte sunt sensuri din dicționarul Strong, nu o traducere a Septuagintei.",
+ "Септуагинта — греческий перевод Ветхого Завета (издание Г. Б. Свита). Слова по порядку, слева направо; под словом — его чтение, значение по словарю Стронга (подобрано по словам синодального стиха; бледным — это не перевод данного места) и номер Стронга. У слов, которых нет в Новом Завете, номера нет. Нажмите на слово — откроется статья словаря.": "Septuaginta este traducerea greacă a Vechiului Testament (ediția lui H. B. Swete). Cuvintele în ordine, de la stânga la dreapta; sub cuvânt — citirea, un sens din dicționarul Strong (ales după cuvintele versetului sinodal; palid, pentru că nu este traducerea acestui loc) și numărul Strong. Cuvintele care nu apar în Noul Testament nu au număr. Atingeți un cuvânt — se deschide articolul din dicționar.",
+ "В подстрочнике Ветхого Завета — вкладка «Септуагинта»: греческий текст Ветхого Завета (издание Свита), под каждым словом — его значение по словарю Стронга. Текст загружается сам при первом выборе.": "În traducerea interliniară a Vechiului Testament există fila „Septuaginta”: textul grec al Vechiului Testament (ediția Swete), sub fiecare cuvânt — sensul lui după dicționarul Strong. Textul se descarcă singur la prima alegere.",
+ "В библиотеке — Септуагинта (LXX): греческий Ветхий Завет с номерами Стронга в синодальной нумерации, его можно читать рядом с синодальным переводом.": "Nou în bibliotecă: Septuaginta (LXX) — Vechiul Testament grec cu numere Strong în numerotarea sinodală, care poate fi citit alături de traducerea sinodală."
 }

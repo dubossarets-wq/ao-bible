@@ -1,6 +1,8 @@
 // Подстрочник стиха в порядке оригинала (Ветхий Завет — справа налево): слово оригинала, его чтение, под ним —
 // как оно передано в синодальном переводе, ниже — номер Стронга. Нажатие на слово открывает статью словаря
 // с точной формой этого слова. Стрелки — к соседним стихам. Окно на всю высоту.
+// Ветхий Завет можно смотреть и по Септуагинте (греческий текст Свита, слева направо): под словом — значение
+// по словарю Стронга, подобранное по синодальному стиху. Записей чтения для Септуагинты нет.
 import React, { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Loader2, Volume2, Square } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
@@ -8,7 +10,7 @@ import { useApp } from '../App.jsx';
 import { getBook, getVerse } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
 import { formatRef, testamentOf } from '../core/books.js';
-import { ensureOriginal, origInterlinear, originalFor, vinInterlinear } from '../core/interlinear.js';
+import { ensureOriginal, origInterlinear, originalFor, vinInterlinear, lxxInterlinear, LXX } from '../core/interlinear.js';
 import { usePersistentState } from '../core/storage.js';
 import { Segmented } from './ui.jsx';
 import { translit } from '../core/translit.js';
@@ -19,10 +21,15 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
   const { openSheet } = useApp();
   const [ref, setRef] = useState(payload.ref);
   const [state, setState] = useState({ status: 'loading' });
-  const hebrew = testamentOf(ref.book) === 'OT';
+  const ot = testamentOf(ref.book) === 'OT';
   // Новый Завет: «Синодальный» (греческий Робинсона — Пирпонта, перевод из синодального) или подстрочник Винокурова
   const [source, setSource] = usePersistentState('ilSource', 'syn');
-  const vin = !hebrew && source === 'vin';
+  // Ветхий Завет: «Еврейский» (OSHB) или «Септуагинта» (греческий текст Свита, значения по словарю)
+  const [otSource, setOtSource] = usePersistentState('ilSourceOT', 'heb');
+  const vin = !ot && source === 'vin';
+  const lxx = ot && otSource === 'lxx';
+  const hebrew = ot && !lxx;
+  const noSound = vin || lxx; // записей чтения нет
   // Живое чтение стиха: playing — 'loading' | true | false; cur — звучащее слово
   const [playing, setPlaying] = useState(false);
   const [cur, setCur] = useState(-1);
@@ -33,7 +40,7 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
     setPlaying(false);
     setCur(-1);
     setNoAudio(false);
-  }, [ref.book, ref.chapter, ref.verse]);
+  }, [ref.book, ref.chapter, ref.verse, lxx]);
 
   // Запись стиха и начала слов — один раз на стих (для «Слушать» и для отдельных слов)
   const segRef = React.useRef(null);
@@ -88,9 +95,13 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
     (async () => {
       if (!originalFor(ref.book)) return alive && setState({ status: 'none' });
       try {
-        await ensureOriginal(ref.book, (p, label) => alive && setState({ status: 'install', label }));
-        const [words, ru] = await Promise.all([vin ? vinInterlinear(ref) : origInterlinear(ref), payload.moduleId ? getVerse(payload.moduleId, ref) : null]);
-        if (alive) setState({ status: 'ok', words, ru: ru ? plainText(ru) : '' });
+        const progress = (p, label) => alive && setState({ status: 'install', label });
+        if (!lxx) await ensureOriginal(ref.book, progress);
+        const [words, ru] = await Promise.all([
+          lxx ? lxxInterlinear(ref, progress) : vin ? vinInterlinear(ref) : origInterlinear(ref),
+          payload.moduleId ? getVerse(payload.moduleId, ref) : null,
+        ]);
+        if (alive) setState({ status: 'ok', words: words || [], ru: ru ? plainText(ru) : '' });
       } catch (e) {
         if (alive) setState({ status: 'error', message: e.message });
       }
@@ -98,11 +109,11 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
     return () => {
       alive = false;
     };
-  }, [ref.book, ref.chapter, ref.verse, vin]);
+  }, [ref.book, ref.chapter, ref.verse, vin, lxx]);
 
   // Соседний стих по оригинальному тексту (с переходом через главу)
   const step = async (d) => {
-    const id = originalFor(ref.book);
+    const id = lxx ? LXX : originalFor(ref.book);
     const book = id && (await getBook(id, ref.book));
     if (!book) return;
     const ch = book.chapters;
@@ -122,17 +133,27 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
 
   const open = (w) => w.strongs && openSheet('dict', pane, { token: { text: w.gloss || w.text, strongs: w.strongs, morph: w.morph ? [w.morph] : null }, ref, moduleId: payload.moduleId, origWord: w, autoOpen: true, initial: 'full' });
 
+  const subtitle = lxx
+    ? t('Греческий текст Септуагинты (издание Свита) и значения слов по словарю')
+    : hebrew
+      ? t('Еврейский текст (OSHB) и синодальный перевод')
+      : vin
+        ? t('Греческий текст (Робинсон — Пирпонт) и подстрочник А. Винокурова')
+        : t('Греческий текст (Робинсон — Пирпонт) и синодальный перевод');
+
   return (
     <BottomSheet
       title={t('Подстрочник · {ref}', { ref: formatRef(ref) })}
-      subtitle={hebrew ? t('Еврейский текст (OSHB) и синодальный перевод') : vin ? t('Греческий текст (Робинсон — Пирпонт) и подстрочник А. Винокурова') : t('Греческий текст (Робинсон — Пирпонт) и синодальный перевод')}
+      subtitle={subtitle}
       onClose={onClose}
       initial="full"
       headerExtra={
         <>
-          <button className={`icon-btn ${playing ? 'on' : ''}`} onClick={listen} aria-label={playing ? t('Остановить') : t('Слушать стих')} title={playing ? t('Остановить') : t('Слушать стих')}>
-            {playing === 'loading' ? <Loader2 className="spin" size={20} /> : playing ? <Square size={18} /> : <Volume2 size={21} />}
-          </button>
+          {!noSound && (
+            <button className={`icon-btn ${playing ? 'on' : ''}`} onClick={listen} aria-label={playing ? t('Остановить') : t('Слушать стих')} title={playing ? t('Остановить') : t('Слушать стих')}>
+              {playing === 'loading' ? <Loader2 className="spin" size={20} /> : playing ? <Square size={18} /> : <Volume2 size={21} />}
+            </button>
+          )}
           <button className="icon-btn" onClick={() => step(-1)} aria-label={t('Предыдущий стих')}>
             <ChevronLeft size={22} />
           </button>
@@ -151,7 +172,17 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
       {state.status === 'error' && <p className="warn">{state.message}</p>}
       {state.status === 'ok' && (
         <>
-          {!hebrew && (
+          {ot ? (
+            <Segmented
+              id="il-source-ot"
+              value={lxx ? 'lxx' : 'heb'}
+              onChange={setOtSource}
+              options={[
+                ['heb', t('Еврейский')],
+                ['lxx', t('Септуагинта')],
+              ]}
+            />
+          ) : (
             <Segmented
               id="il-source"
               value={vin ? 'vin' : 'syn'}
@@ -165,35 +196,42 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
           {state.ru && <blockquote className="xref-source">{state.ru}</blockquote>}
           {noAudio && <p className="muted small">{t('Для этого стиха пока нет записи чтения.')}</p>}
           {!state.words.length && <p className="muted">{t('В оригинальном тексте этого стиха нет.')}</p>}
+          {lxx && state.words.length > 0 && <p className="muted small">{t('Под словами — значения по словарю Стронга, а не перевод Септуагинты.')}</p>}
           <div className={`il-grid ${hebrew ? 'hebrew' : 'greek'}`} dir={hebrew ? 'rtl' : 'ltr'}>
             {state.words.map((w, i) => (
               <div key={i} className={`il-cell ${i === cur ? 'speaking' : ''}`}>
-                <span className={`il-line ${hebrew ? '' : 'say-after'}`} dir="ltr">
-                  {!vin && <button className="il-say" onClick={() => sayWord(i)} aria-label={t('Послушать слово')} title={t('Послушать слово')}>
-                    <Volume2 size={15} />
-                  </button>}
+                <span className={`il-line ${hebrew || noSound ? '' : 'say-after'}`} dir="ltr">
+                  {!noSound && (
+                    <button className="il-say" onClick={() => sayWord(i)} aria-label={t('Послушать слово')} title={t('Послушать слово')}>
+                      <Volume2 size={15} />
+                    </button>
+                  )}
                   <button className="il-orig" dir={hebrew ? 'rtl' : 'ltr'} lang={hebrew ? 'he' : 'grc'} onClick={() => open(w)} disabled={!w.strongs}>
                     {w.text}
                   </button>
                 </span>
                 <button className="il-rest" onClick={() => open(w)} disabled={!w.strongs}>
                   <span className="il-tr" dir="ltr">
-                    {translit(w.text) || ' '}
+                    {translit(w.text) || ' '}
                   </span>
                   <span className={`il-ru ${w.guess ? 'guess' : ''}`} dir="ltr">
-                    {w.gloss || ' '}
+                    {w.gloss || ' '}
                   </span>
                   <span className="il-num" dir="ltr">
-                    {w.num ? w.num.slice(1) : ' '}
+                    {w.num ? w.num.slice(1) : ' '}
                   </span>
                 </button>
               </div>
             ))}
           </div>
           {vin && <p className="sheet-hint">{t('Подстрочный перевод Нового Завета А. Винокурова — с разрешения автора. Слова греческого текста по порядку; под словом — его чтение, перевод Винокурова и номер Стронга.')}</p>}
-          <p className="sheet-hint" hidden={vin}>
-            {t('Слова оригинала по порядку (еврейский текст — справа налево); под словом — его чтение, перевод из синодального текста и номер Стронга. Бледным — обычный перевод слова, если в этом стихе его нет. Нажмите на слово — откроется статья словаря.')}
-          </p>
+          {lxx && <p className="sheet-hint">{t('Септуагинта — греческий перевод Ветхого Завета (издание Г. Б. Свита). Слова по порядку, слева направо; под словом — его чтение, значение по словарю Стронга (подобрано по словам синодального стиха; бледным — это не перевод данного места) и номер Стронга. У слов, которых нет в Новом Завете, номера нет. Нажмите на слово — откроется статья словаря.')}</p>}
+          {/* не hidden: у .sheet-hint свой display, атрибут hidden его не перебивает */}
+          {!vin && !lxx && (
+            <p className="sheet-hint">
+              {t('Слова оригинала по порядку (еврейский текст — справа налево); под словом — его чтение, перевод из синодального текста и номер Стронга. Бледным — обычный перевод слова, если в этом стихе его нет. Нажмите на слово — откроется статья словаря.')}
+            </p>
+          )}
         </>
       )}
     </BottomSheet>
