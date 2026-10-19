@@ -14,13 +14,18 @@
 Стихи, которых нет в UBS3 (есть в византийском тексте), остаются пустыми.
 Номера Стронга на сайте у омографов местами перепутаны (ἡ -> 1510, οὐ -> 3739, ὃ -> 3588 и т. п.) —
 такие слова исправляются таблицей STRONG_FIX по написанию слова.
-Запуск: python -I scripts/build_vin.py [--fetch]
+Запуск: python -I scripts/build_vin.py [--fetch] [--ubs]
+По умолчанию греческий текст — свободный византийский (byz-rp2018), русские слова Винокурова сопоставляются ему по номерам
+Стронга и по написанию слова (align()); слова Винокурова, которых нет в византийском тексте, не выводятся. Режим --ubs —
+прежний подстрочник в порядке UBS3 (греческий текст защищён, публиковать нельзя).
 """
+import difflib
 import html
 import json
 import re
 import sys
 import time
+import unicodedata
 import urllib.request
 from pathlib import Path
 
@@ -119,6 +124,101 @@ def verse_text(words):
     return " ".join(parts)
 
 
+# Группы номеров Стронга, считающихся одним словом (как SAME в src/core/interlinear.js) + формы местоимений
+SAME = [
+    ["1510", "2258", "2071", "2070", "2075", "2076", "2468", "5600", "1488", "1526", "2277"],
+    ["3004", "2036", "2046", "4483"],
+    ["3708", "1492", "3700"],
+    ["2068", "5315"],
+    ["5143", "1408"],
+    ["1473", "1700", "1691", "3427", "1698", "1700", "4771", "4675", "4571", "4671", "4674"],
+    ["846", "1438", "1683", "4572", "1438"],
+    ["3739", "3748", "3745"],
+]
+GROUP = {}
+for _i, _g in enumerate(SAME):
+    for _n in _g:
+        GROUP.setdefault(_n, _i)
+
+
+def same_num(a, b):
+    if not a or not b:
+        return False
+    return a == b or (a in GROUP and GROUP.get(a) == GROUP.get(b))
+
+
+def norm_greek(w):
+    w = unicodedata.normalize("NFD", w.lower())
+    w = "".join(c for c in w if not unicodedata.combining(c)).replace("ς", "σ")
+    return re.sub(r"[^α-ω]", "", w)
+
+
+BYZ_TOKEN = re.compile(r"\{([^|{}]*)\|([^|{}]*)\|[^{}]*\}([^{]*)")
+
+
+def parse_byz(text):
+    """[(греческое, номер Стронга без G или '', знаки после слова)]"""
+    out = []
+    for m in BYZ_TOKEN.finditer(text):
+        nums = re.findall(r"G0*(\d+)", m.group(2))
+        out.append((m.group(1), nums[0] if nums else "", m.group(3).strip()))
+    return out
+
+
+def align(byz_words, vin_words):
+    """Для каждого слова byz — индекс слова Винокурова или None. Возвращает (список, число неиспользованных слов Винокурова)."""
+    nb, nv = len(byz_words), len(vin_words)
+    res = [None] * nb
+    used = [False] * nv
+    # 1) совпадение нормализованного греческого слова, монотонно (самая длинная общая подпоследовательность)
+    kb = [norm_greek(w[0]) for w in byz_words]
+    kv = [norm_greek(w[2]) for w in vin_words]
+    for blk in difflib.SequenceMatcher(None, kb, kv, autojunk=False).get_matching_blocks():
+        for d in range(blk.size):
+            res[blk.a + d] = blk.b + d
+            used[blk.b + d] = True
+    # 2) остальные — по номеру Стронга (k-е вхождение), сначала в промежутке между опорными словами, потом по всему стиху
+    for i in range(nb):
+        if res[i] is not None or not byz_words[i][1]:
+            continue
+        lo = max((res[j] for j in range(i) if res[j] is not None), default=-1)
+        hi = min((res[j] for j in range(i + 1, nb) if res[j] is not None), default=nv)
+        cand = [k for k in range(lo + 1, hi) if not used[k] and vin_words[k][1] == byz_words[i][1]]
+        if not cand:
+            cand = [k for k in range(lo + 1, hi) if not used[k] and same_num(vin_words[k][1], byz_words[i][1])]
+        if not cand:
+            cand = [k for k in range(nv) if not used[k] and vin_words[k][1] == byz_words[i][1]]
+        if not cand:
+            cand = [k for k in range(nv) if not used[k] and same_num(vin_words[k][1], byz_words[i][1])]
+        if cand:
+            res[i] = cand[0]
+            used[cand[0]] = True
+    return res, used
+
+
+def byz_verse_text(bt, vin_words, stats):
+    bw = parse_byz(bt)
+    res, used = align(bw, vin_words)
+    parts = []
+    for (greek, num, punct), k in zip(bw, res):
+        rus = "·"
+        if k is not None:
+            r = vin_words[k][0]
+            while len(r) > 1 and r[-1] in ",.;:··;!?":
+                r = r[:-1]  # знаки — из византийского текста
+            rus = r.replace("{", "(").replace("}", ")").replace("|", "/") or "·"
+            if rus != "·":
+                stats["ru"] += 1
+        stats["words"] += 1
+        stats["paired"] += k is not None
+        parts.append("{" + f"{rus}|{'G' + num if num else ''}||{greek}" + "}" + punct)
+    lost = [vin_words[k] for k in range(len(vin_words)) if not used[k]]
+    stats["vin"] += len(vin_words)
+    stats["lost"] += len(lost)
+    stats["lost_list"].extend(lost)
+    return " ".join(parts)
+
+
 def main():
     byz = {b["id"]: b for b in json.loads((MOD / "byz-rp2018.json").read_text(encoding="utf-8"))["books"]}
     rst = {b["id"]: b for b in json.loads((MOD / "rst.json").read_text(encoding="utf-8"))["books"]}
@@ -137,7 +237,10 @@ def main():
         moved = parsed[(b1, c1)].pop(v1, [])
         old = parsed[(b2, c2)].get(v2, [])
         parsed[(b2, c2)][v2] = moved + old if pre else old + moved
+    ubs = "--ubs" in sys.argv
     books, words, numbered, diffs, nverses = [], 0, 0, [], 0
+    st = {"words": 0, "paired": 0, "ru": 0, "vin": 0, "lost": 0, "lost_list": []}
+    per_book = {}
     for bid in CODES:
         chapters = []
         ref = rst[bid]["chapters"]
@@ -152,7 +255,15 @@ def main():
             row = []
             for v in range(1, nv + 1):
                 w = ch.get(v, [])
-                row.append(verse_text(w))
+                if ubs:
+                    row.append(verse_text(w))
+                else:
+                    bt = byz[bid]["chapters"][ci][v - 1] if v <= len(byz[bid]["chapters"][ci]) else ""
+                    b0 = (st["words"], st["ru"], st["vin"], st["lost"])
+                    row.append(byz_verse_text(bt, [x for x in w if x[2]], st))
+                    pb = per_book.setdefault(bid, [0, 0, 0, 0])
+                    for q in range(4):
+                        pb[q] += (st["words"], st["ru"], st["vin"], st["lost"])[q] - b0[q]
                 words += len(w)
                 numbered += sum(1 for x in w if x[1])
                 nverses += bool(w)
@@ -164,14 +275,20 @@ def main():
         "name": "Подстрочник (Винокуров)",
         "title": "Подстрочный перевод греческого текста Нового Завета А. Винокурова",
         "language": "ru", "versification": "synodal",
-        "description": "Подстрочный перевод греческого текста Нового Завета Алексея Винокурова (2015). Слова идут в порядке "
-                       "греческого текста: под каждым греческим словом — русское соответствие и номер Стронга. Квадратные "
-                       "скобки — слова, добавленные для связности русской фразы; точка «·» — слово без русского перевода "
-                       "(например, артикль).",
-        "version": "2015",
-        "author": "Алексей Винокуров (подстрочный перевод, 2015); греческий текст — UBS3/NA26",
+        "description": ("Подстрочный перевод греческого текста Нового Завета Алексея Винокурова (2015). Слова идут в порядке "
+                        "греческого текста: под каждым греческим словом — русское соответствие и номер Стронга. Квадратные "
+                        "скобки — слова, добавленные для связности русской фразы; точка «·» — слово без русского перевода "
+                        "(например, артикль).") if ubs else
+                       ("Греческий текст — византийский (Робинсон — Пирпонт, 2018, общественное достояние); русские слова — "
+                        "подстрочный перевод А. Винокурова (с разрешения автора), сопоставлены по номерам Стронга. Слова идут "
+                        "в порядке греческого текста; квадратные скобки — слова, добавленные для связности русской фразы; "
+                        "точка «·» — слово без русского перевода (например, артикль)."),
+        "version": "2015" if ubs else "2015 / RP2018",
+        "author": ("Алексей Винокуров (подстрочный перевод, 2015); греческий текст — UBS3/NA26" if ubs else
+                   "Алексей Винокуров (русские слова подстрочника, 2015); Maurice A. Robinson, William G. Pierpont (греческий текст, 2018)"),
         "source": "https://azbyka.ru/biblia/podstrochnik",
-        "license": "Используется с разрешения автора для бесплатного некоммерческого приложения",
+        "license": ("Используется с разрешения автора для бесплатного некоммерческого приложения" if ubs else
+                    "Греческий текст — Public Domain; русские слова А. Винокурова — с разрешения автора, для бесплатного некоммерческого приложения"),
         "features": {"strongs": True, "interlinear": True},
         "books": books,
     }
@@ -181,6 +298,15 @@ def main():
     if "vin-interlinear" not in approved["ids"]:
         approved["ids"].append("vin-interlinear")
         APPROVED.write_text(json.dumps(approved, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    if not ubs:
+        print(f"слов byz: {st['words']}, с русским словом: {st['ru']} ({st['ru'] / st['words']:.1%}), "
+              f"в паре с «·»/артиклем: {st['paired'] - st['ru']}, без пары: {st['words'] - st['paired']}")
+        print(f"слов Винокурова: {st['vin']}, потеряно (нет в byz): {st['lost']} ({st['lost'] / st['vin']:.1%})")
+        for bid, (w, r, vn, lo) in per_book.items():
+            print(f"  {bid}: {r / max(1, w):.1%} byz-слов с русским; потеряно слов Винокурова {lo}/{vn}")
+        from collections import Counter
+        c = Counter((x[2], x[0]) for x in st["lost_list"])
+        print("частые потерянные:", c.most_common(25))
     print(f"стихов: {nverses}, слов: {words}, с номером Стронга: {numbered} ({numbered / max(1, words):.1%})")
     print("расхождения с синодальной нумерацией (rst.json):", *diffs, sep="\n  ")
 

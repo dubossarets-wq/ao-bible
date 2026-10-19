@@ -73,7 +73,7 @@ export default function MapPane({ pane }) {
           alive && setState('ready');
         });
         m.on('error', (e) => console.warn('Карта:', e?.error?.message || e)); // i18n-ignore: для разработчика
-        marker.current = new ml.Marker({ color: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#9a6a2f' })
+        marker.current = new ml.Marker({ color: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#8c5e28' })
           .setLngLat([place.lng, place.lat])
           .addTo(m);
         map.current = m;

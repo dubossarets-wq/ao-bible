@@ -125,7 +125,7 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
   return (
     <BottomSheet
       title={t('Подстрочник · {ref}', { ref: formatRef(ref) })}
-      subtitle={hebrew ? t('Еврейский текст (OSHB) и синодальный перевод') : vin ? t('Греческий текст (UBS) и подстрочник А. Винокурова') : t('Греческий текст (Робинсон — Пирпонт) и синодальный перевод')}
+      subtitle={hebrew ? t('Еврейский текст (OSHB) и синодальный перевод') : vin ? t('Греческий текст (Робинсон — Пирпонт) и подстрочник А. Винокурова') : t('Греческий текст (Робинсон — Пирпонт) и синодальный перевод')}
       onClose={onClose}
       initial="full"
       headerExtra={

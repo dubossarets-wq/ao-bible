@@ -1,9 +1,9 @@
 /* Раскладка: верхняя графитовая панель как в мобильной читалке, под ней — колонка текста на «бумаге».
    Цвета и типографика — CSS-переменные; JS (core/settings.js) переопределяет их по настройкам. */
 :root {
-  --bg: #f6f5f2; --text: #1d1c1a; --muted: #7d7a73; --accent: #9a6a2f; --panel: #ffffff;
+  --bg: #f6f5f2; --text: #1d1c1a; --muted: #7d7a73; --accent: #8c5e28; --panel: #ffffff;
   --bar: #38363a; --bar-text: #f3f1ec; --line: #e3e0d9; --hl: #f6e3a8; --verse-num: #55524c;
-  --danger: #b4412f; --ok: #3f7a4a;
+  --danger: #b4412f; --ok: #2f6339;
   --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-text: var(--font-ui);
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -1212,3 +1212,10 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .say-btn { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); flex: none; }
 .say-btn.on { background: var(--accent); color: #fff; }
 .il-line.say-after { flex-direction: row-reverse; }
+/* Тёмная тема: «хорошо» и «ошибка» — светлее, чтобы читались на тёмном (контраст не ниже 4,5:1) */
+[data-app-theme="dark"] { --ok: #7cc68a; --danger: #ef8a78; }
+
+/* О приложении: лицензии и авторы */
+.lic-group { display: flex; flex-direction: column; gap: 6px; }
+.lic-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; }
+.lic-line { display: block; color: var(--muted); font-size: .88em; overflow-wrap: anywhere; }

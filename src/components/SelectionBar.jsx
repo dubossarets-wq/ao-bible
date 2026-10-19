@@ -144,7 +144,7 @@ export default function SelectionBar({ index, module, selection, onDone }) {
   );
 
   return (
-    <header className="toolbar selection-bar" role="toolbar" aria-label={t('Действия с выделенными стихами')}>
+    <div className="toolbar selection-bar" role="toolbar" aria-label={t('Действия с выделенными стихами')}>
       <button className="tb tb-icon" onClick={onDone} aria-label={t('Готово, снять выделение')} title={t('Готово')}>
         <Check size={24} />
       </button>
@@ -216,6 +216,6 @@ export default function SelectionBar({ index, module, selection, onDone }) {
           </div>
         )}
       </div>
-    </header>
+    </div>
   );
 }

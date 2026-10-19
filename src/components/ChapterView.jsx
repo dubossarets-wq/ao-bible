@@ -58,7 +58,7 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
                 data-c={c}
                 data-v={v}
                 id={`${idp}v-${c}-${v}`}
-                aria-selected={sel ? sel.has(v) : undefined}
+                aria-current={sel?.has(v) ? 'true' : undefined}
               >
                 {opts.showVerseNumbers && (
                   <button className="vn" data-act="verse" aria-label={t('Стих {n}: действия', { n: v })}>

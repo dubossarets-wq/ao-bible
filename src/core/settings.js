@@ -4,7 +4,7 @@ import { N_ } from './i18n.js';
 export const THEMES = {
   light: {
     label: N_('Светлая'),
-    bg: '#f6f5f2', text: '#1d1c1a', muted: '#68655e', accent: '#9a6a2f', panel: '#ffffff',
+    bg: '#f6f5f2', text: '#1d1c1a', muted: '#68655e', accent: '#8c5e28', panel: '#ffffff',
     bar: '#38363a', barText: '#f3f1ec', line: '#e3e0d9', hl: '#f6e3a8', verseNum: '#55524c',
   },
   sepia: {
@@ -50,7 +50,7 @@ export const DEFAULT_SETTINGS = {
   showIllustrations: true, // значок картинки у стихов, к которым есть иллюстрация
   continuousVerses: false, // стихи сплошным абзацем
   customColors: false, // прежний вариант «своих цветов» (до v3); теперь — colorOverrides
-  colors: { bg: '#f6f5f2', text: '#1d1c1a', accent: '#9a6a2f', panel: '#ffffff' },
+  colors: { bg: '#f6f5f2', text: '#1d1c1a', accent: '#8c5e28', panel: '#ffffff' },
   colorOverrides: {}, // свои цвета поверх темы, по одному: { accent: '#…', bar: '#…', strong: '#…' }
   strongSize: 0.5, // em — номера Стронга
   strongPos: 'sup', // sup | inline | sub
