@@ -83,7 +83,8 @@ export function verseHtml(text, { showStrongs = false, highlight = null, interli
     }
     const hl = highlight && highlight.test(t.text);
     if (highlight) highlight.lastIndex = 0;
-    const w = `<span class="w${t.strongs ? ' s' : ''}${hl ? ' hl' : ''}" data-i="${wi}">${esc(t.text)}</span>`;
+    // «·» в подстрочнике — слово оригинала без перевода (обычно артикль): над ним пусто
+    const w = `<span class="w${t.strongs ? ' s' : ''}${hl ? ' hl' : ''}" data-i="${wi}">${interlinear && t.text === '·' ? '&nbsp;' : esc(t.text)}</span>`;
     if (interlinear) {
       const heb = t.orig && /[֐-׿]/.test(t.orig);
       iwStart = out.length;

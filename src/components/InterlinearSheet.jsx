@@ -8,7 +8,9 @@ import { useApp } from '../App.jsx';
 import { getBook, getVerse } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
 import { formatRef, testamentOf } from '../core/books.js';
-import { ensureOriginal, origInterlinear, originalFor } from '../core/interlinear.js';
+import { ensureOriginal, origInterlinear, originalFor, vinInterlinear } from '../core/interlinear.js';
+import { usePersistentState } from '../core/storage.js';
+import { Segmented } from './ui.jsx';
 import { translit } from '../core/translit.js';
 import { verseAudio, playSegment, stopVerse, wordStarts } from '../core/origAudio.js';
 import { t } from '../core/i18n.js';
@@ -18,6 +20,9 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
   const [ref, setRef] = useState(payload.ref);
   const [state, setState] = useState({ status: 'loading' });
   const hebrew = testamentOf(ref.book) === 'OT';
+  // Новый Завет: «Синодальный» (греческий Робинсона — Пирпонта, перевод из синодального) или подстрочник Винокурова
+  const [source, setSource] = usePersistentState('ilSource', 'syn');
+  const vin = !hebrew && source === 'vin';
   // Живое чтение стиха: playing — 'loading' | true | false; cur — звучащее слово
   const [playing, setPlaying] = useState(false);
   const [cur, setCur] = useState(-1);
@@ -84,7 +89,7 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
       if (!originalFor(ref.book)) return alive && setState({ status: 'none' });
       try {
         await ensureOriginal(ref.book, (p, label) => alive && setState({ status: 'install', label }));
-        const [words, ru] = await Promise.all([origInterlinear(ref), payload.moduleId ? getVerse(payload.moduleId, ref) : null]);
+        const [words, ru] = await Promise.all([vin ? vinInterlinear(ref) : origInterlinear(ref), payload.moduleId ? getVerse(payload.moduleId, ref) : null]);
         if (alive) setState({ status: 'ok', words, ru: ru ? plainText(ru) : '' });
       } catch (e) {
         if (alive) setState({ status: 'error', message: e.message });
@@ -93,7 +98,7 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
     return () => {
       alive = false;
     };
-  }, [ref.book, ref.chapter, ref.verse]);
+  }, [ref.book, ref.chapter, ref.verse, vin]);
 
   // Соседний стих по оригинальному тексту (с переходом через главу)
   const step = async (d) => {
@@ -120,7 +125,7 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
   return (
     <BottomSheet
       title={t('Подстрочник · {ref}', { ref: formatRef(ref) })}
-      subtitle={hebrew ? t('Еврейский текст (OSHB) и синодальный перевод') : t('Греческий текст (Робинсон — Пирпонт) и синодальный перевод')}
+      subtitle={hebrew ? t('Еврейский текст (OSHB) и синодальный перевод') : vin ? t('Греческий текст (UBS) и подстрочник А. Винокурова') : t('Греческий текст (Робинсон — Пирпонт) и синодальный перевод')}
       onClose={onClose}
       initial="full"
       headerExtra={
@@ -146,6 +151,17 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
       {state.status === 'error' && <p className="warn">{state.message}</p>}
       {state.status === 'ok' && (
         <>
+          {!hebrew && (
+            <Segmented
+              id="il-source"
+              value={vin ? 'vin' : 'syn'}
+              onChange={setSource}
+              options={[
+                ['syn', t('Синодальный')],
+                ['vin', t('Винокуров')],
+              ]}
+            />
+          )}
           {state.ru && <blockquote className="xref-source">{state.ru}</blockquote>}
           {noAudio && <p className="muted small">{t('Для этого стиха пока нет записи чтения.')}</p>}
           {!state.words.length && <p className="muted">{t('В оригинальном тексте этого стиха нет.')}</p>}
@@ -153,9 +169,9 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
             {state.words.map((w, i) => (
               <div key={i} className={`il-cell ${i === cur ? 'speaking' : ''}`}>
                 <span className="il-line" dir="ltr">
-                  <button className="il-say" onClick={() => sayWord(i)} aria-label={t('Послушать слово')} title={t('Послушать слово')}>
+                  {!vin && <button className="il-say" onClick={() => sayWord(i)} aria-label={t('Послушать слово')} title={t('Послушать слово')}>
                     <Volume2 size={15} />
-                  </button>
+                  </button>}
                   <button className="il-orig" dir={hebrew ? 'rtl' : 'ltr'} lang={hebrew ? 'he' : 'grc'} onClick={() => open(w)} disabled={!w.strongs}>
                     {w.text}
                   </button>
@@ -174,7 +190,8 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
               </div>
             ))}
           </div>
-          <p className="sheet-hint">
+          {vin && <p className="sheet-hint">{t('Подстрочный перевод Нового Завета А. Винокурова — с разрешения автора. Слова греческого текста по порядку; под словом — его чтение, перевод Винокурова и номер Стронга.')}</p>}
+          <p className="sheet-hint" hidden={vin}>
             {t('Слова оригинала по порядку (еврейский текст — справа налево); под словом — его чтение, перевод из синодального текста и номер Стронга. Бледным — обычный перевод слова, если в этом стихе его нет. Нажмите на слово — откроется статья словаря.')}
           </p>
         </>

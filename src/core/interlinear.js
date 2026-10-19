@@ -129,3 +129,20 @@ export async function origInterlinear(ref) {
     return { ...w, gloss, guess };
   });
 }
+
+// Подстрочник А. Винокурова (Новый Завет, с разрешения автора): слова в порядке греческого текста UBS,
+// под каждым — русское слово Винокурова. Модуль ставится сам при первом открытии вкладки.
+export const VIN = 'vin-interlinear';
+export async function vinInterlinear(ref) {
+  if (testamentOf(ref.book) !== 'NT') return null;
+  if (!(await listModules()).some((m) => m.id === VIN)) {
+    const entry = (await fetchCatalog()).find((c) => c.id === VIN);
+    if (!entry) return null;
+    await installFromCatalog(entry);
+  }
+  const raw = await getVerse(VIN, ref);
+  if (raw == null) return [];
+  return tokenize(raw)
+    .filter((tk) => tk.kind === 'w')
+    .map((tk) => ({ text: tk.orig || '', gloss: tk.text === '·' ? '' : tk.text, num: tk.strongs?.length ? strongKey(tk.strongs[0]) : null, strongs: tk.strongs || null, morph: null, guess: false }));
+}
