@@ -2,11 +2,14 @@
 // before(api) — подготовить экран при входе в шаг; next(api) — сделать действие за человека по кнопке «Далее»
 // (если человек сам нажал на подсвеченное место — считается, что сделал); until() — шаг выполнен сам.
 // Тексты помечены N_() и переводятся при показе; нужные кнопки ищутся по переведённым подписям.
+// На телефоне (нижняя панель вкладок) часть кнопок в другом месте: поиск, «Планы», «Закладки» — вкладки внизу,
+// пункты меню ⋮ — в листе «Ещё». Такие уроки собирают шаги при показе: L(телефон, компьютер).
 import {
   BookOpen, MousePointerClick, Highlighter, Link2, Columns2, Search, Heart, ScrollText, CalendarCheck, Headphones, Image as ImageIcon,
   Type, Map as MapIcon, Library, HardDrive, Smartphone, RefreshCw,
 } from 'lucide-react';
 import { t, N_ } from '../core/i18n.js';
+import { isPhoneLayout } from '../core/layout.js';
 
 const P1 = '.pane-slot.first ';
 const $ = (s) => document.querySelector(s);
@@ -18,9 +21,15 @@ const firstVisible = (sel) => [...document.querySelectorAll(sel)].find(inView) |
 const byText = (sel, text) => [...document.querySelectorAll(sel)].find((e) => e.textContent.includes(t(text))) || null;
 const click = (el) => el?.click();
 const verse = () => firstVisible(P1 + '.verse');
-const menuItem = (text) => () => byText('.menu .menu-item', text);
+const phone = () => isPhoneLayout() && !!$('.tabbar');
+const L = (onPhone, onWide) => (phone() ? onPhone : onWide);
+const tab = (id) => $(`.tabbar .tab-${id}`);
+// Пункт меню ⋮ (компьютер) или листа «Ещё» (телефон)
+const menuItem = (text) => () => byText('.menu .menu-item, .sheet .more-list .menu-item', text);
 const prefRow = (text) => () => byText('.sheet .pref-row', text);
-const openMenu = () => !$('.menu') && click($(P1 + '.tb-more'));
+const menuOpen = () => $('.menu') || $('.sheet .more-list');
+const openMenu = () => !menuOpen() && click(phone() ? tab('more') : $(P1 + '.tb-more'));
+const menuButton = () => (phone() ? tab('more') : $(P1 + '.tb-more'));
 export function selectVerse() {
   const v = verse();
   if (!v || $('.selection-bar')) return;
@@ -93,21 +102,26 @@ export const TOURS = [
   {
     id: 'search', icon: Search, title: N_('Поиск'), group: N_('Основное'),
     steps: [
-      { text: N_('Нажмите на лупу.'), target: () => $(P1 + `[aria-label="${t('Поиск')}"]`), next: (api) => api.openSheet('search'), until: () => $('.sheet input') },
+      { text: N_('Нажмите на лупу.'), target: () => (phone() ? tab('search') : $(P1 + `[aria-label="${t('Поиск')}"]`)), next: (api) => api.openSheet('search'), until: () => $('.sheet input') },
       { text: N_('Введите слово — места появятся сразу. Можно ввести и ссылку: «Ин 3:16».'), target: () => $('.sheet input'), before: (api) => !$('.sheet input') && api.openSheet('search') },
     ],
   },
   {
     id: 'saved', icon: Heart, title: N_('Закладки, заметки, любимые'), group: N_('Мои записи'),
-    steps: [
-      { text: N_('Откройте меню — три точки вверху справа.'), target: () => $(P1 + '.tb-more'), next: openMenu, until: () => $('.menu') },
-      { text: N_('«Закладка на это место» — запомнить, где вы читаете. Закладок может быть сколько угодно.'), target: menuItem('Закладка на это место'), before: openMenu },
-      { text: N_('Здесь все закладки, заметки, любимые стихи и выделения.'), target: menuItem('Закладки, заметки, любимые стихи'), before: openMenu, next: (api) => api.openSheet('bookmarks') },
-    ],
+    get steps() {
+      return [
+        { text: L(N_('Откройте «Ещё» — правая кнопка на нижней панели.'), N_('Откройте меню — три точки вверху справа.')), target: menuButton, next: openMenu, until: menuOpen },
+        { text: N_('«Закладка на это место» — запомнить, где вы читаете. Закладок может быть сколько угодно.'), target: menuItem('Закладка на это место'), before: openMenu },
+        phone()
+          ? { text: N_('Все закладки, заметки, любимые стихи и выделения — на вкладке «Закладки» внизу.'), target: () => tab('saved'), before: (api) => api.closeSheet(), next: (api) => api.openSheet('bookmarks', { navTab: 'saved' }) }
+          : { text: N_('Здесь все закладки, заметки, любимые стихи и выделения.'), target: menuItem('Закладки, заметки, любимые стихи'), before: openMenu, next: (api) => api.openSheet('bookmarks') },
+      ];
+    },
   },
   {
     id: 'sermons', icon: ScrollText, title: N_('Проповеди'), group: N_('Мои записи'),
-    steps: [
+    get steps() {
+      return [
       { text: N_('Читая, зажмите понравившийся стих.'), target: verse, next: selectVerse, until: () => $('.sel-inline') },
       { text: N_('Нажмите «В проповедь».'), target: () => byText(P1 + '.sel-inline .btn', 'В проповедь'), before: selectVerse, next: () => click(byText(P1 + '.sel-inline .btn', 'В проповедь')), until: () => $('.sheet #sermon-title') },
       {
@@ -116,16 +130,21 @@ export const TOURS = [
         until: () => $('.sermon-done'),
       },
       { text: N_('Стих добавлен. «Открыть проповедь» — посмотреть её, «Читать дальше» — вернуться к чтению.'), target: () => $('.sheet .sermon-done') || $('.sheet'), until: () => !$('.sermon-done') },
-      { text: N_('Все проповеди — в меню ⋮ → «Проповеди».'), target: menuItem('Проповеди'), before: (api) => (api.reset(), setTimeout(openMenu, 150)), next: (api) => api.openSheet('sermons') },
+      { text: L(N_('Все проповеди — «Ещё» → «Проповеди».'), N_('Все проповеди — в меню ⋮ → «Проповеди».')), target: menuItem('Проповеди'), before: (api) => (api.reset(), setTimeout(openMenu, 150)), next: (api) => api.openSheet('sermons') },
       { text: N_('В проповеди: «Текст» — своя мысль; порядок меняется перетаскиванием (зажмите блок); «Кафедра» — крупно для служения.'), target: () => $('.sheet'), before: (api) => !$('.sheet') && api.openSheet('sermons') },
-    ],
+      ];
+    },
   },
   {
     id: 'plans', icon: CalendarCheck, title: N_('Планы чтения'), group: N_('Чтение'),
-    steps: [
-      { text: N_('Меню ⋮ → «Планы чтения».'), target: menuItem('Планы чтения'), before: openMenu, next: (api) => api.openSheet('plans') },
+    get steps() {
+      return [
+      phone()
+        ? { text: N_('Нажмите «Планы» на нижней панели.'), target: () => tab('plans'), next: (api) => api.openSheet('plans', { navTab: 'plans' }), until: () => $('.sheet') }
+        : { text: N_('Меню ⋮ → «Планы чтения».'), target: menuItem('Планы чтения'), before: openMenu, next: (api) => api.openSheet('plans') },
       { text: N_('Выберите план и нажмите «Начать». Потом каждый день — «Читать»: все отрывки дня на одной странице, отметки ставятся сами.'), target: () => $('.sheet'), before: (api) => !$('.sheet') && api.openSheet('plans') },
-    ],
+      ];
+    },
   },
   {
     id: 'audio', icon: Headphones, title: N_('Слушать Библию'), group: N_('Чтение'),
@@ -146,17 +165,21 @@ export const TOURS = [
   },
   {
     id: 'font', icon: Type, title: N_('Размер букв и оформление'), group: N_('Настройка'),
-    steps: [
+    get steps() {
+      return [
       { text: N_('Поставьте два пальца на текст и разведите — буквы станут крупнее. Сведите — мельче.'), target: () => $(P1 + '.scroller'), before: (api) => api.reset() },
-      { text: N_('Тема, шрифт и интервалы — меню ⋮ → «Оформление».'), target: menuItem('Оформление'), before: openMenu, next: (api) => api.openSheet('settings') },
-    ],
+      { text: L(N_('Тема, шрифт и интервалы — «Ещё» → «Оформление».'), N_('Тема, шрифт и интервалы — меню ⋮ → «Оформление».')), target: menuItem('Оформление'), before: openMenu, next: (api) => api.openSheet('settings') },
+      ];
+    },
   },
   {
     id: 'maps', icon: MapIcon, title: N_('Карты'), group: N_('Настройка'),
-    steps: [
+    get steps() {
+      return [
       { text: N_('Нажмите в тексте на название города или места — в списке будет «Карта». Место покажется во второй половине экрана.'), target: verse },
-      { text: N_('Все карты — меню ⋮ → «Карты».'), target: menuItem('Карты'), before: openMenu, next: (api) => api.openSheet('maps') },
-    ],
+      { text: L(N_('Все карты — «Ещё» → «Карты».'), N_('Все карты — меню ⋮ → «Карты».')), target: menuItem('Карты'), before: openMenu, next: (api) => api.openSheet('maps') },
+      ];
+    },
   },
   {
     id: 'library', icon: Library, title: N_('Переводы и словари'), group: N_('Настройка'),

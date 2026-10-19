@@ -14,7 +14,7 @@ import { useLivePosition } from '../core/livePosition.js';
 import { usePlan } from '../core/planStore.js';
 import { dayUnits, unitDone, readingDone } from '../core/plans.js';
 import { t } from '../core/i18n.js';
-import { CornerUpLeft, X, Headphones, ScrollText, Heart, Copy, TextSelect, WholeWord } from 'lucide-react';
+import { CornerUpLeft, X, Headphones, ScrollText, Heart, Copy, TextSelect, WholeWord, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // В режиме плана полоса показывает, сколько отрывков дня уже прочитано
 function PlanProgress({ uid, day }) {
@@ -56,6 +56,35 @@ function ListenFab({ index, module, pane }) {
     <button ref={btn} className="listen-fab" onClick={() => listenFrom(index, module.id, ref)} aria-label={t('Слушать с этого места: {ref}', { ref: formatRef(ref) })} title={t('Слушать с {ref}', { ref: formatRef(ref) })}>
       <Headphones size={20} />
     </button>
+  );
+}
+
+// Соседняя глава: круглые стрелки ‹ › внизу слева и справа (через границу книги — в соседнюю книгу).
+// В режиме чтения уходят вместе с панелями при прокрутке вниз (класс bar-hidden у панели чтения).
+function ChapterNav({ index, module, pane }) {
+  const { navigate } = useApp();
+  const ref = useLivePosition(index, pane.ref);
+  const books = module?.books || [];
+  const bi = books.findIndex((b) => b.id === ref.book);
+  if (bi < 0) return null;
+  const chapters = books[bi].verses.length;
+  const prev = ref.chapter > 1 ? { book: ref.book, chapter: ref.chapter - 1 } : bi > 0 ? { book: books[bi - 1].id, chapter: books[bi - 1].verses.length } : null;
+  const next = ref.chapter < chapters ? { book: ref.book, chapter: ref.chapter + 1 } : bi < books.length - 1 ? { book: books[bi + 1].id, chapter: 1 } : null;
+  const go = (r) => navigate(index, { ...r, verse: 1 }, { flash: false });
+  const name = (r) => formatRef({ ...r, verse: 1 }).replace(/:1$/, '');
+  return (
+    <>
+      {prev && (
+        <button className="chap-nav prev" onClick={() => go(prev)} aria-label={t('Предыдущая глава: {ref}', { ref: name(prev) })} title={name(prev)}>
+          <ChevronLeft size={24} />
+        </button>
+      )}
+      {next && (
+        <button className="chap-nav next" onClick={() => go(next)} aria-label={t('Следующая глава: {ref}', { ref: name(next) })} title={name(next)}>
+          <ChevronRight size={24} />
+        </button>
+      )}
+    </>
   );
 }
 
@@ -232,6 +261,16 @@ export default function BibleReader({ index }) {
     setBarHidden(false);
   }, []);
 
+  // Режим чтения: верхняя панель уходит при прокрутке вниз — с ней и нижняя панель вкладок (по первой панели чтения).
+  // Пока открыто окно или выделен стих — панели на месте.
+  const hidden = !!(pane && pane.kind !== 'map' && settings.focusMode && barHidden && !selection.size);
+  useEffect(() => {
+    if (index !== 0) return;
+    const root = document.documentElement;
+    root.classList.toggle('reading-hidden', hidden && !sheet);
+    return () => root.classList.remove('reading-hidden');
+  }, [index, hidden, !!sheet]);
+
   if (!pane) return null;
   if (pane.kind === 'map') return <MapPane pane={pane} />;
   // Кнопки под последним выделенным стихом
@@ -248,7 +287,7 @@ export default function BibleReader({ index }) {
       }
     : null;
   return (
-    <section className={`reader ${settings.focusMode && barHidden && !selection.size ? 'bar-hidden' : ''}`} aria-label={index === 0 ? t('Основная панель') : t('Вторая панель')}>
+    <section className={`reader ${hidden ? 'bar-hidden' : ''}`} aria-label={index === 0 ? t('Основная панель') : t('Вторая панель')}>
       {selection.size ? (
         <SelectionBar index={index} module={module} selection={selection} onDone={() => setSelection(new Set())} />
       ) : (
@@ -271,6 +310,7 @@ export default function BibleReader({ index }) {
         />
       )}
       {!pane.plan && pane.lastPlan && !selection.size && <PlanReturn index={index} lastPlan={pane.lastPlan} />}
+      {!pane.plan && !selection.size && <ChapterNav index={index} module={module} pane={pane} />}
       {!selection.size && <ListenFab index={index} module={module} pane={pane} />}
     </section>
   );

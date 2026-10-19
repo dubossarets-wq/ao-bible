@@ -43,6 +43,21 @@ const check = (name, ok, extra = '') => {
   results.push(`${ok ? 'OK  ' : 'FAIL'} ${name}${extra ? ' — ' + extra : ''}`);
 };
 
+// Навигация: на телефоне (уже 900 px) — нижняя панель вкладок, пункты меню ⋮ — в листе «Ещё»;
+// на компьютере — поиск и ⋮ в верхней панели. Помощники работают с обеими.
+const SEARCH = '.tabbar .tab-search, .pane-slot.first .tb-search';
+const MORE = '.tabbar .tab-more, .pane-slot.first .tb-more';
+const menuItem = (text) => `.menu .menu-item:has-text("${text}"), .sheet .more-list .menu-item:has-text("${text}")`;
+async function menu(page, text) {
+  await page.click(MORE);
+  await page.click(menuItem(text));
+}
+// «Закладки, заметки, любимые стихи»: на телефоне — вкладка «Закладки», на компьютере — пункт меню
+async function openSaved(page) {
+  if (await page.locator('.tabbar').count()) await page.click('.tabbar .tab-saved');
+  else await menu(page, 'Закладки, заметки');
+}
+
 async function run(label, viewport, isMobile) {
   // Язык браузера — русский: проверки опираются на русские подписи (при первом запуске язык берётся из браузера)
   const ctx = await browser.newContext({ viewport, isMobile, hasTouch: isMobile, deviceScaleFactor: 2, serviceWorkers: 'block', colorScheme: 'dark', locale: 'ru-RU' });
@@ -63,6 +78,39 @@ async function run(label, viewport, isMobile) {
   await page.screenshot({ path: `${shots}/${label}-1-reader.png` });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   check(`${label}: нет горизонтальной прокрутки`, overflow <= 0, `${overflow}px`);
+
+  // Навигация: телефон — вкладки внизу, верхняя панель без поиска и ⋮; компьютер — как раньше, без вкладок
+  const nav = await page.evaluate(() => ({
+    tabs: [...document.querySelectorAll('.tabbar .tab-label')].map((e) => e.textContent).join('|'),
+    top: [...document.querySelectorAll('.pane-slot.first .toolbar > *')].map((e) => e.className).join(' '),
+  }));
+  if (isMobile) check(`${label}: панель вкладок и простая верхняя панель`, nav.tabs === 'Библия|Планы|Поиск|Закладки|Ещё' && !/tb-more|tb-search/.test(nav.top), `${nav.tabs}; ${nav.top}`);
+  else check(`${label}: на широком экране без вкладок, поиск и ⋮ наверху`, !nav.tabs && /tb-search/.test(nav.top) && /tb-menu-wrap/.test(nav.top), nav.top);
+  // Круглые стрелки соседней главы; «Слушать» — над правой стрелкой, всё — над вкладками
+  const geo = await page.evaluate(() => {
+    const r = (s) => document.querySelector(s)?.getBoundingClientRect();
+    const tab = r('.tabbar');
+    return { next: r('.chap-nav.next'), prev: r('.chap-nav.prev'), fab: r('.listen-fab'), tabTop: tab ? tab.top : innerHeight };
+  });
+  check(`${label}: стрелки глав`, !!geo.next && !!geo.prev && geo.next.bottom <= geo.tabTop && geo.fab.bottom <= geo.next.top + 1, JSON.stringify({ next: Math.round(geo.next?.bottom), fab: Math.round(geo.fab?.bottom), tab: Math.round(geo.tabTop) }));
+  await page.click('.pane-slot.first .chap-nav.next');
+  await page.waitForTimeout(700);
+  const nextRef = await page.textContent('.pane-slot.first .tb-ref');
+  await page.click('.pane-slot.first [aria-label="Назад по истории"]');
+  await page.waitForTimeout(700);
+  check(`${label}: стрелка › — следующая глава, «назад» возвращает`, nextRef.includes('Нав. 14:1') && (await page.textContent('.pane-slot.first .tb-ref')).includes('Нав. 13:3'), nextRef);
+  if (isMobile) {
+    // Вкладки открывают свои окна, активная подсвечена, «Библия» возвращает к чтению
+    await page.click('.tabbar .tab-plans');
+    await page.waitForSelector('.sheet');
+    await page.waitForTimeout(500); // окно выезжает снизу
+    const plansOn = await page.locator('.tabbar .tab-plans.on').count();
+    const sheetAbove = await page.evaluate(() => document.querySelector('.sheet').getBoundingClientRect().bottom <= document.querySelector('.tabbar').getBoundingClientRect().top + 1);
+    await page.click('.tabbar .tab-bible');
+    await page.waitForSelector('.sheet', { state: 'detached' });
+    check(`${label}: вкладки открывают окна над панелью`, plansOn === 1 && sheetAbove && (await page.locator('.tabbar .tab-bible.on').count()) === 1, `планы подсвечены: ${plansOn}, окно над вкладками: ${sheetAbove}`);
+    await page.screenshot({ path: `${shots}/${label}-1a-tabs.png` });
+  }
 
   // По умолчанию светлая тема, даже если в системе тёмная (контекст создан с colorScheme: 'dark')
   const LIGHT = 'rgb(255, 255, 255)';
@@ -159,7 +207,7 @@ async function run(label, viewport, isMobile) {
   check(`${label}: закрытие второй панели`, after === 1 && ref0.includes('Нав. 13:3'), ref0);
 
   // Поиск
-  await page.click('.tb-icon[aria-label="Поиск"]');
+  await page.click(SEARCH);
   // Ссылка через пробел — карточка перехода с текстом стиха
   await page.fill('#search-input', 'Ин 3 6');
   await page.waitForSelector('.ref-hit', { timeout: 5000 });
@@ -190,8 +238,7 @@ async function run(label, viewport, isMobile) {
   check(`${label}: назад по истории`, ref3.includes('Нав.'), ref3);
 
   // Долгое нажатие на стих → панель действий → тот же стих параллельно в другом переводе
-  await page.click('.tb-more');
-  await page.click('.menu-item:has-text("Настройки")');
+  await menu(page, 'Настройки');
   await page.click('.pref-row:has-text("Библиотека модулей")');
   await page.click('.tabs [role=tab]:has-text("Каталог")');
   const rstCard = page.locator('.mod-row').filter({ has: page.locator('.mod-name', { hasText: /^RST$/ }) });
@@ -242,12 +289,12 @@ async function run(label, viewport, isMobile) {
   await page.evaluate((b) => { localStorage.setItem('aob.autoUpdate2', '0'); localStorage.setItem('aob.activeBuild', b); }, build);
   await page.route('**/versions.json*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify(fakeVersions) }));
   await page.evaluate(() => window.dispatchEvent(new Event('focus')));
-  await page.waitForSelector('.pane-slot.first .update-dot', { timeout: 10000 });
+  await page.waitForSelector('.tabbar .update-dot, .pane-slot.first .update-dot', { timeout: 10000 });
   check(`${label}: не обновляется само`, (await page.evaluate(() => localStorage.getItem('aob.activeBuild'))) === build && !page.url().includes('versions/'), build);
-  await page.click('.pane-slot.first .tb-more');
-  const upd = await page.textContent('.menu .menu-item:has-text("Обновить приложение")');
+  await page.click(MORE);
+  const upd = await page.textContent(menuItem('Обновить приложение'));
   check(`${label}: есть обновление — точка и пункт меню`, upd.includes('Обновить приложение') && upd.includes('новая версия'), upd);
-  await page.click('.menu-item:has-text("Настройки")');
+  await page.click(menuItem('Настройки'));
   await page.click('.pref-row:has-text("Обновления")');
   await page.click('.pref-row:has-text("Версии приложения")');
   await page.waitForSelector('.version', { timeout: 10000 });
@@ -268,8 +315,7 @@ async function run(label, viewport, isMobile) {
   await page.waitForTimeout(500);
 
   // Неканонические книги: модуль из каталога, переход к Товиту, звёздочка в навигаторе
-  await page.click('.pane-slot.first .tb-more');
-  await page.click('.menu-item:has-text("Настройки")');
+  await menu(page, 'Настройки');
   await page.click('.pref-row:has-text("Библиотека модулей")');
   await page.click('.tabs [role=tab]:has-text("Каталог")');
   const dcCard = page.locator('.mod-row').filter({ has: page.locator('.mod-name', { hasText: /^RST НК$/ }) });
@@ -296,9 +342,8 @@ async function run(label, viewport, isMobile) {
   // Личный модуль с апокрифами — импорт файла
   const local = path.join(root, 'local-modules/rst-bibles-org-uk.json.gz');
   if (await readFile(local).then(() => true, () => false)) {
-    await page.click('.pane-slot.first .tb-more');
-    await page.click('.menu-item:has-text("Настройки")');
-  await page.click('.pref-row:has-text("Библиотека модулей")');
+    await menu(page, 'Настройки');
+    await page.click('.pref-row:has-text("Библиотека модулей")');
     await page.click('.tabs [role=tab]:has-text("Импорт")');
     await page.setInputFiles('#import-file', local);
     await page.locator('.mod-card button:has-text("Установить")').click({ timeout: 60000 });
@@ -331,8 +376,7 @@ async function run(label, viewport, isMobile) {
   // Комментарий: импорт JSON → пометка у стиха → окно с текстом
   const cmFile = path.join(shots, 'test-commentary.json');
   await writeFile(cmFile, JSON.stringify({ format: 'aob-module', formatVersion: 1, type: 'commentary', id: 'test-comm', name: 'Тест-к', title: 'Тестовый комментарий', license: 'тест', entries: { 'Josh.13.33': { title: 'О левитах', text: 'Удел левитов — Сам Господь.' } } }));
-  await page.click('.pane-slot.first .tb-more');
-  await page.click('.menu-item:has-text("Настройки")');
+  await menu(page, 'Настройки');
   await page.click('.pref-row:has-text("Библиотека модулей")');
   await page.click('.tabs [role=tab]:has-text("Импорт")');
   await page.setInputFiles('#import-file', cmFile);
@@ -413,8 +457,7 @@ async function run(label, viewport, isMobile) {
   const noteVal = await page.inputValue('#note-text');
   await page.keyboard.press('Escape');
   await page.waitForSelector('.sheet', { state: 'detached' });
-  await page.click('.pane-slot.first .tb-more');
-  await page.click('.menu-item:has-text("Закладки, заметки")');
+  await openSaved(page);
   const cont = await page.textContent('.continue-card');
   const bmText = await page.textContent('.list .list-text');
   check(`${label}: закладки «продолжить отсюда» и заметка открывается`, noteVal.includes('левитах') && cont.includes('Продолжить чтение') && bmText.length > 10, `${noteVal}; ${bmText.slice(0, 40)}`);
@@ -432,9 +475,28 @@ async function run(label, viewport, isMobile) {
   await page.keyboard.press('Enter');
   await page.waitForTimeout(600);
 
+  // Режим чтения: прокрутка вниз прячет верхнюю панель, вкладки и стрелки глав, вверх — возвращает
+  await page.evaluate(() => { const st = JSON.parse(localStorage.getItem('aob.settings') || '{}'); st.focusMode = true; localStorage.setItem('aob.settings', JSON.stringify(st)); });
+  await page.reload();
+  await page.waitForSelector('.verse', { timeout: 30000 });
+  await page.waitForTimeout(600);
+  await page.evaluate(() => { const sc = document.querySelector('.pane-slot.first .scroller'); sc.scrollTop += 400; sc.dispatchEvent(new Event('scroll')); });
+  await page.waitForTimeout(500);
+  const hid = await page.evaluate(() => ({ bar: document.querySelector('.pane-slot.first .reader').classList.contains('bar-hidden'), tabs: document.documentElement.classList.contains('reading-hidden'), arrows: getComputedStyle(document.querySelector('.chap-nav.next')).opacity }));
+  await page.evaluate(() => { const sc = document.querySelector('.pane-slot.first .scroller'); sc.scrollTop -= 200; sc.dispatchEvent(new Event('scroll')); });
+  await page.waitForTimeout(500);
+  const back = await page.evaluate(() => !document.querySelector('.pane-slot.first .reader').classList.contains('bar-hidden') && !document.documentElement.classList.contains('reading-hidden'));
+  check(`${label}: режим чтения прячет панели при прокрутке вниз`, hid.bar && (isMobile ? hid.tabs : true) && hid.arrows === '0' && back, JSON.stringify({ ...hid, back }));
+  await page.evaluate(() => { const st = JSON.parse(localStorage.getItem('aob.settings') || '{}'); st.focusMode = false; localStorage.setItem('aob.settings', JSON.stringify(st)); });
+  await page.reload();
+  await page.waitForSelector('.verse', { timeout: 30000 });
+  await page.click('.pane-slot.first .tb-ref');
+  await page.fill('#ref-input', 'Нав 13:32');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(600);
+
   // Настройки: тёмная тема и размер шрифта
-  await page.click('.tb-more');
-  await page.click('.menu-item:has-text("Оформление")');
+  await menu(page, 'Оформление');
   await page.click('.sheet .pref-row:has-text("Тема")');
   await page.click('.theme-tile:has-text("Тёмная")');
   const bg = await page.evaluate(() => getComputedStyle(document.querySelector('.reader')).backgroundColor);
@@ -472,8 +534,7 @@ async function run(label, viewport, isMobile) {
   await page.evaluate(() => { localStorage.setItem('aob.settings', JSON.stringify({ fontSize: 13 })); localStorage.setItem('aob.bookmarks', '[]'); });
   await page.reload();
   await page.waitForSelector('.verse', { timeout: 30000 });
-  await page.click('.pane-slot.first .tb-more');
-  await page.click('.menu-item:has-text("Настройки")');
+  await menu(page, 'Настройки');
   await page.click('.pref-row:has-text("Обновления")');
   await page.click('.pref-row:has-text("Версии приложения")');
   await page.locator('.version button:has-text("Восстановить эту копию")').first().click();
