@@ -1179,3 +1179,7 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
   .toolbar .tb-icon { width: 44px; min-width: 44px; height: 44px; }
 }
 .toolbar .tb { min-height: 44px; }
+/* Подстрочник по оригиналу: столбик по центру — оригинал, чтение, перевод, номер */
+.il-grid .il-cell, .il-grid.hebrew .il-cell { align-items: center; text-align: center; }
+.il-grid .il-orig { color: var(--text); }
+.il-grid .il-ru { color: var(--accent); font-family: var(--font-ui); font-size: .92rem; }

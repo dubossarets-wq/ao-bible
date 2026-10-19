@@ -1,7 +1,7 @@
 // Подстрочник: все слова синодального текста (RST+), под каждым — слово оригинала (Ветхий Завет — еврейский OSHB,
 // Новый — греческий текст Робинсона — Пирпонта), сопоставленное по номерам Стронга.
 // Оригинальные тексты ставятся сами при первом открытии подстрочника — добавлять их не нужно.
-import { listModules, getVerse, fetchCatalog, installFromCatalog } from './modules.js';
+import { listModules, getVerse, getPayload, fetchCatalog, installFromCatalog } from './modules.js';
 import { tokenize } from './verseMarkup.js';
 import { testamentOf } from './books.js';
 import { t } from './i18n.js';
@@ -36,24 +36,28 @@ export async function ensureOriginal(bookId, onProgress) {
   return id;
 }
 
-// Подстрочник в порядке синодального текста: все русские слова, под каждым — его оригинал (если есть).
-// Сопоставление то же, что в модуле «Подстрочник» (scripts/build_interlinear.py).
+// Сопоставление слов стиха по номерам Стронга — одно на оба порядка: ru — все слова синодального текста с их
+// оригиналом (как в модуле «Подстрочник», scripts/build_interlinear.py), orig — все слова оригинала с русским переводом.
 const CANTILLATION = /[֑-ֽ֯׀]/g;
 
-export async function ruInterlinear(ref) {
+async function alignVerse(ref) {
   const id = originalFor(ref.book);
   if (!id) return null;
   const mods = await listModules();
   const tagged = mods.find((m) => m.type === 'bible' && m.features?.strongs && m.language === 'ru' && !m.features?.interlinear) || mods.find((m) => m.id === 'rst-plus');
   const [orig, ru] = await Promise.all([getVerse(id, ref), tagged ? getVerse(tagged.id, ref) : null]);
-  if (ru == null) return [];
+  const origWords = [];
   const queues = new Map();
   for (const t of tokenize(orig || '')) {
-    if (t.kind !== 'w' || !t.strongs?.length) continue;
-    const k = strongKey(t.strongs[0]);
+    if (t.kind !== 'w') continue;
+    const k = t.strongs?.length ? strongKey(t.strongs[0]) : null;
+    const w = { text: t.text.replace(CANTILLATION, ''), num: k, strongs: t.strongs || null, morph: t.morph?.[0] || null, gloss: [] };
+    origWords.push(w);
+    if (!k) continue;
     if (!queues.has(k)) queues.set(k, []);
-    queues.get(k).push({ text: t.text.replace(CANTILLATION, ''), num: k, morph: t.morph?.[0] || null });
+    queues.get(k).push(w);
   }
+  if (ru == null) return { ru: [], orig: origWords };
   const last = new Map();
   const take = (k) => {
     for (const n of ALIASES.get(k) || [k]) {
@@ -68,6 +72,7 @@ export async function ruInterlinear(ref) {
   };
   const out = [];
   let prevKey = null;
+  let prevOrig = null; // оригинал предыдущего русского слова — для «будет говорить» (два слова на одно)
   let gap = false; // между словами был знак препинания
   let before = ''; // открывающие кавычки и скобки — к следующему слову
   for (const t of tokenize(ru)) {
@@ -84,12 +89,43 @@ export async function ruInterlinear(ref) {
     }
     const k = t.strongs?.length ? strongKey(t.strongs[0]) : null;
     let o = null;
-    if (k && !(k === prevKey && !gap)) o = take(k) || last.get(k) || null;
+    if (k && k === prevKey && !gap) prevOrig?.gloss.push(t.text);
+    else if (k) {
+      const fresh = take(k);
+      if (fresh) fresh.gloss.push(t.text);
+      o = fresh || last.get(k) || null;
+      prevOrig = fresh;
+    }
     for (const extra of (t.strongs || []).slice(1)) take(strongKey(extra));
     out.push({ text: before + t.text, after: '', orig: o?.text || '', origMorph: o?.morph || null, num: o ? k : null, strongs: t.strongs || null, morph: t.morph?.[0] || null, italic: t.italic });
     prevKey = k;
     gap = false;
     before = '';
   }
-  return out;
+  return { ru: out, orig: origWords };
+}
+
+// Подстрочник в порядке синодального текста: все русские слова, под каждым — его оригинал (если есть)
+export async function ruInterlinear(ref) {
+  return (await alignVerse(ref))?.ru ?? null;
+}
+
+// Служебные слова без отдельного перевода: греческий артикль и еврейская частица прямого дополнения
+const SILENT = new Set(['G3588', 'H853']);
+
+// Подстрочник в порядке оригинала (Ветхий Завет — справа налево): под каждым словом — как оно передано
+// в синодальном стихе; если в стихе его нет — обычный перевод из «Симфонии RST+» (guess — показывается бледнее)
+export async function origInterlinear(ref) {
+  const a = await alignVerse(ref);
+  if (!a) return null;
+  const sym = a.orig.some((w) => !w.gloss.length) ? await getPayload('rst-symphony').catch(() => null) : null;
+  return a.orig.map((w) => {
+    let gloss = w.gloss.join(' ');
+    let guess = false;
+    if (!gloss && w.num && !SILENT.has(w.num) && !ALIASES.has(w.num)) {
+      gloss = sym?.entries?.[w.num]?.renderings?.[0]?.[0] || '';
+      guess = !!gloss;
+    }
+    return { ...w, gloss, guess };
+  });
 }

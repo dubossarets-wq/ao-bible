@@ -1,4 +1,5 @@
 {
+ "Подстрочник стиха — в порядке оригинала: еврейский текст справа налево, под каждым словом — его чтение, перевод и номер Стронга.": "Tafsiri ya mstari kwa mstari sasa inafuata maandiko asilia: Kiebrania kulia kwenda kushoto, chini ya kila neno — usomaji, tafsiri na namba ya Strong.",
  "Приложение говорит на 22 языках: язык выбирается по языку телефона, сменить можно в Настройки → Язык.": "Programu sasa inazungumza lugha 22: inafuata lugha ya simu yako, na unaweza kuibadilisha katika Mipangilio → Lugha.",
  "Экстренное обновление…": "Sasisho la dharura…",
  "Обновляюсь до новой версии…": "Inasasisha hadi toleo jipya…",
@@ -1089,7 +1090,7 @@
  "Загружаю оригинальный текст…": "Inapakia maandishi ya asili…",
  "Для этой книги нет оригинального текста с номерами Стронга.": "Hakuna maandishi ya asili yenye namba za Strong kwa kitabu hiki.",
  "В оригинальном тексте этого стиха нет.": "Mstari huu haumo katika maandishi ya asili.",
- "Все слова синодального текста; под словом — слово оригинала, его приблизительное чтение и номер Стронга. Слова без оригинала добавлены переводчиками. Нажмите на слово — откроется статья словаря.": "Maneno yote ya maandishi ya Sinodi; chini ya kila neno — neno la asili, matamshi yake ya kukadiria na namba ya Strong. Maneno yasiyo na asili yaliongezwa na watafsiri. Gusa neno ili kufungua makala ya kamusi.",
+ "Слова оригинала по порядку (еврейский текст — справа налево); под словом — его чтение, перевод из синодального текста и номер Стронга. Бледным — обычный перевод слова, если в этом стихе его нет. Нажмите на слово — откроется статья словаря.": "Maneno ya maandiko asilia kwa mpangilio (Kiebrania husomwa kulia kwenda kushoto); chini ya kila neno — usomaji wake, tafsiri kutoka maandiko ya Sinodi na namba ya Strong. Rangi hafifu — tafsiri ya kawaida ikiwa neno halimo katika mstari huu. Gusa neno kufungua makala ya kamusi.",
  "Что нового": "Mapya",
  "Обновление от {date}": "Sasisho la {date}",
  "Что изменилось в последнем обновлении": "Kilichobadilika katika sasisho la mwisho",

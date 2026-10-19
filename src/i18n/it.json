@@ -1,4 +1,5 @@
 {
+ "Подстрочник стиха — в порядке оригинала: еврейский текст справа налево, под каждым словом — его чтение, перевод и номер Стронга.": "L’interlineare del versetto ora segue l’originale: l’ebraico da destra a sinistra e, sotto ogni parola, lettura, traduzione e numero Strong.",
  "Приложение говорит на 22 языках: язык выбирается по языку телефона, сменить можно в Настройки → Язык.": "L’app ora parla 22 lingue: segue la lingua del telefono e si può cambiare in Impostazioni → Lingua.",
  "Экстренное обновление…": "Aggiornamento urgente…",
  "Обновляюсь до новой версии…": "Aggiornamento alla nuova versione…",
@@ -1095,7 +1096,7 @@
  "Загружаю оригинальный текст…": "Caricamento del testo originale…",
  "Для этой книги нет оригинального текста с номерами Стронга.": "Per questo libro non c’è un testo originale con i numeri Strong.",
  "В оригинальном тексте этого стиха нет.": "Questo versetto non c’è nel testo originale.",
- "Все слова синодального текста; под словом — слово оригинала, его приблизительное чтение и номер Стронга. Слова без оригинала добавлены переводчиками. Нажмите на слово — откроется статья словаря.": "Tutte le parole del testo sinodale; sotto ogni parola, la parola originale, la sua pronuncia approssimativa e il numero Strong. Le parole senza originale sono state aggiunte dai traduttori. Tocca una parola per aprire la voce del dizionario.",
+ "Слова оригинала по порядку (еврейский текст — справа налево); под словом — его чтение, перевод из синодального текста и номер Стронга. Бледным — обычный перевод слова, если в этом стихе его нет. Нажмите на слово — откроется статья словаря.": "Le parole dell’originale in ordine (l’ebraico si legge da destra a sinistra); sotto ogni parola — la lettura, la traduzione dal testo sinodale e il numero Strong. In chiaro — la traduzione usuale se la parola non è in questo versetto. Tocca una parola per aprire la voce del dizionario.",
  "Что нового": "Novità",
  "Обновление от {date}": "Aggiornamento del {date}",
  "Что изменилось в последнем обновлении": "Cosa è cambiato nell’ultimo aggiornamento",

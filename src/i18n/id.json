@@ -1,4 +1,5 @@
 {
+ "Подстрочник стиха — в порядке оригинала: еврейский текст справа налево, под каждым словом — его чтение, перевод и номер Стронга.": "Terjemahan antarbaris ayat kini mengikuti teks asli: Ibrani dari kanan ke kiri, di bawah tiap kata — cara baca, terjemahan, dan nomor Strong.",
  "Приложение говорит на 22 языках: язык выбирается по языку телефона, сменить можно в Настройки → Язык.": "Aplikasi kini tersedia dalam 22 bahasa: mengikuti bahasa ponsel dan dapat diubah di Pengaturan → Bahasa.",
  "Экстренное обновление…": "Pembaruan darurat…",
  "Обновляюсь до новой версии…": "Memperbarui ke versi baru…",
@@ -1081,7 +1082,7 @@
  "Загружаю оригинальный текст…": "Memuat teks asli…",
  "Для этой книги нет оригинального текста с номерами Стронга.": "Tidak ada teks asli dengan nomor Strong untuk kitab ini.",
  "В оригинальном тексте этого стиха нет.": "Ayat ini tidak ada dalam teks asli.",
- "Все слова синодального текста; под словом — слово оригинала, его приблизительное чтение и номер Стронга. Слова без оригинала добавлены переводчиками. Нажмите на слово — откроется статья словаря.": "Semua kata teks Sinodal; di bawah setiap kata ada kata aslinya, perkiraan pelafalannya, dan nomor Strong. Kata tanpa padanan asli ditambahkan oleh penerjemah. Ketuk kata untuk membuka artikel kamus.",
+ "Слова оригинала по порядку (еврейский текст — справа налево); под словом — его чтение, перевод из синодального текста и номер Стронга. Бледным — обычный перевод слова, если в этом стихе его нет. Нажмите на слово — откроется статья словаря.": "Kata-kata teks asli secara berurutan (teks Ibrani dari kanan ke kiri); di bawah tiap kata — cara membacanya, terjemahan dari teks Sinodal, dan nomor Strong. Pucat — terjemahan biasa kata itu bila tidak ada di ayat ini. Ketuk kata untuk membuka entri kamus.",
  "Что нового": "Yang baru",
  "Обновление от {date}": "Pembaruan {date}",
  "Что изменилось в последнем обновлении": "Apa yang berubah pada pembaruan terakhir",

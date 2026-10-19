@@ -168,6 +168,8 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
   const [orig, setOrig] = useState(null); // слово оригинала, которому соответствует нажатое слово
 
   useEffect(() => {
+    // Из подстрочника по оригиналу слово оригинала известно сразу
+    if (payload.origWord) return void setOrig({ orig: payload.origWord.text, origMorph: payload.origWord.morph, num: payload.origWord.num });
     if (payload.wi == null || !ref) return;
     ruInterlinear(ref)
       .then((ws) => ws?.[payload.wi]?.orig && setOrig(ws[payload.wi]))

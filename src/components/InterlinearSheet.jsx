@@ -1,5 +1,6 @@
-// Подстрочник стиха: слово оригинала, под ним — как оно передано в синодальном переводе, ниже — номер Стронга.
-// Нажатие на слово или номер открывает статью словаря. Стрелки — к соседним стихам. Окно на всю высоту.
+// Подстрочник стиха в порядке оригинала (Ветхий Завет — справа налево): слово оригинала, его чтение, под ним —
+// как оно передано в синодальном переводе, ниже — номер Стронга. Нажатие на слово открывает статью словаря
+// с точной формой этого слова. Стрелки — к соседним стихам. Окно на всю высоту.
 import React, { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
@@ -7,7 +8,7 @@ import { useApp } from '../App.jsx';
 import { getBook, getVerse } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
 import { formatRef, testamentOf } from '../core/books.js';
-import { ensureOriginal, ruInterlinear, originalFor } from '../core/interlinear.js';
+import { ensureOriginal, origInterlinear, originalFor } from '../core/interlinear.js';
 import { translit } from '../core/translit.js';
 import { t } from '../core/i18n.js';
 
@@ -23,7 +24,7 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
       if (!originalFor(ref.book)) return alive && setState({ status: 'none' });
       try {
         await ensureOriginal(ref.book, (p, label) => alive && setState({ status: 'install', label }));
-        const [words, ru] = await Promise.all([ruInterlinear(ref), payload.moduleId ? getVerse(payload.moduleId, ref) : null]);
+        const [words, ru] = await Promise.all([origInterlinear(ref), payload.moduleId ? getVerse(payload.moduleId, ref) : null]);
         if (alive) setState({ status: 'ok', words, ru: ru ? plainText(ru) : '' });
       } catch (e) {
         if (alive) setState({ status: 'error', message: e.message });
@@ -54,7 +55,7 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
     setRef({ book: ref.book, chapter, verse });
   };
 
-  const open = (w, i) => w.strongs && openSheet('dict', pane, { token: { text: w.text, strongs: w.strongs, morph: w.morph ? [w.morph] : null }, ref, moduleId: payload.moduleId, wi: i, autoOpen: true, initial: 'full' });
+  const open = (w) => w.strongs && openSheet('dict', pane, { token: { text: w.gloss || w.text, strongs: w.strongs, morph: w.morph ? [w.morph] : null }, ref, moduleId: payload.moduleId, origWord: w, autoOpen: true, initial: 'full' });
 
   return (
     <BottomSheet
@@ -84,23 +85,26 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
         <>
           {state.ru && <blockquote className="xref-source">{state.ru}</blockquote>}
           {!state.words.length && <p className="muted">{t('В оригинальном тексте этого стиха нет.')}</p>}
-          <div className={`il-grid ${hebrew ? 'hebrew' : 'greek'}`}>
+          <div className={`il-grid ${hebrew ? 'hebrew' : 'greek'}`} dir={hebrew ? 'rtl' : 'ltr'}>
             {state.words.map((w, i) => (
-              <button key={i} className={`il-cell ${w.italic ? 'added' : ''}`} onClick={() => open(w, i)} disabled={!w.strongs}>
-                <span className="il-ru">
+              <button key={i} className="il-cell" onClick={() => open(w)} disabled={!w.strongs}>
+                <span className="il-orig" dir={hebrew ? 'rtl' : 'ltr'} lang={hebrew ? 'he' : 'grc'}>
                   {w.text}
-                  {w.after}
                 </span>
-                <span className="il-orig" dir={hebrew ? 'rtl' : 'ltr'}>
-                  {w.orig || ' '}
+                <span className="il-tr" dir="ltr">
+                  {translit(w.text) || ' '}
                 </span>
-                <span className="il-tr">{w.orig ? translit(w.orig) : ' '}</span>
-                <span className="il-num">{w.num ? w.num.slice(1) : ' '}</span>
+                <span className={`il-ru ${w.guess ? 'guess' : ''}`} dir="ltr">
+                  {w.gloss || ' '}
+                </span>
+                <span className="il-num" dir="ltr">
+                  {w.num ? w.num.slice(1) : ' '}
+                </span>
               </button>
             ))}
           </div>
           <p className="sheet-hint">
-            {t('Все слова синодального текста; под словом — слово оригинала, его приблизительное чтение и номер Стронга. Слова без оригинала добавлены переводчиками. Нажмите на слово — откроется статья словаря.')}
+            {t('Слова оригинала по порядку (еврейский текст — справа налево); под словом — его чтение, перевод из синодального текста и номер Стронга. Бледным — обычный перевод слова, если в этом стихе его нет. Нажмите на слово — откроется статья словаря.')}
           </p>
         </>
       )}

@@ -1,4 +1,5 @@
 {
+ "Подстрочник стиха — в порядке оригинала: еврейский текст справа налево, под каждым словом — его чтение, перевод и номер Стронга.": "L’interlinéaire du verset suit désormais l’original : l’hébreu de droite à gauche, et sous chaque mot sa lecture, sa traduction et son numéro Strong.",
  "Приложение говорит на 22 языках: язык выбирается по языку телефона, сменить можно в Настройки → Язык.": "L’application parle désormais 22 langues : elle suit la langue du téléphone, modifiable dans Réglages → Langue.",
  "Экстренное обновление…": "Mise à jour d’urgence…",
  "Обновляюсь до новой версии…": "Mise à jour vers la nouvelle version…",
@@ -1095,7 +1096,7 @@
  "Загружаю оригинальный текст…": "Chargement du texte original…",
  "Для этой книги нет оригинального текста с номерами Стронга.": "Il n’y a pas de texte original avec numéros Strong pour ce livre.",
  "В оригинальном тексте этого стиха нет.": "Ce verset n’existe pas dans le texte original.",
- "Все слова синодального текста; под словом — слово оригинала, его приблизительное чтение и номер Стронга. Слова без оригинала добавлены переводчиками. Нажмите на слово — откроется статья словаря.": "Tous les mots du texte synodal ; sous chaque mot : le mot original, sa prononciation approximative et son numéro Strong. Les mots sans original ont été ajoutés par les traducteurs. Touchez un mot pour ouvrir l’article du dictionnaire.",
+ "Слова оригинала по порядку (еврейский текст — справа налево); под словом — его чтение, перевод из синодального текста и номер Стронга. Бледным — обычный перевод слова, если в этом стихе его нет. Нажмите на слово — откроется статья словаря.": "Les mots de l’original dans l’ordre (l’hébreu se lit de droite à gauche) ; sous chaque mot — sa lecture, la traduction du texte synodal et le numéro Strong. En pâle — la traduction habituelle si le mot n’est pas dans ce verset. Touchez un mot pour ouvrir l’article du dictionnaire.",
  "Что нового": "Nouveautés",
  "Обновление от {date}": "Mise à jour du {date}",
  "Что изменилось в последнем обновлении": "Ce qui a changé dans la dernière mise à jour",
