@@ -30,6 +30,28 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
     setNoAudio(false);
   }, [ref.book, ref.chapter, ref.verse]);
 
+  // Запись стиха и начала слов — один раз на стих (для «Слушать» и для отдельных слов)
+  const segRef = React.useRef(null);
+  useEffect(() => {
+    segRef.current = null;
+  }, [ref.book, ref.chapter, ref.verse]);
+  const loadSeg = async () => {
+    if (segRef.current) return segRef.current;
+    const seg = await verseAudio(ref).catch(() => null);
+    if (!seg || state.status !== 'ok') return null;
+    segRef.current = { seg, starts: wordStarts(seg, state.words.map((w) => w.text)) };
+    return segRef.current;
+  };
+  // Одно слово: от его начала до начала следующего
+  const sayWord = async (i) => {
+    const a = await loadSeg();
+    if (!a) return setNoAudio(true);
+    const { seg, starts } = a;
+    setPlaying(false);
+    setCur(i);
+    playSegment({ url: seg.url, start: Math.max(seg.start, starts[i] - 0.04), end: i + 1 < starts.length ? starts[i + 1] : seg.end }, { onEnd: () => setCur(-1) });
+  };
+
   const listen = async () => {
     if (playing) {
       stopVerse();
@@ -38,13 +60,13 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
       return;
     }
     setPlaying('loading');
-    const seg = await verseAudio(ref).catch(() => null);
-    if (!seg || state.status !== 'ok') {
+    const a = await loadSeg();
+    if (!a) {
       setPlaying(false);
       setNoAudio(true);
       return;
     }
-    const starts = wordStarts(seg, state.words.map((w) => w.text));
+    const { seg, starts } = a;
     setPlaying(true);
     playSegment(seg, {
       onTime: (t) => {
@@ -129,20 +151,27 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
           {!state.words.length && <p className="muted">{t('В оригинальном тексте этого стиха нет.')}</p>}
           <div className={`il-grid ${hebrew ? 'hebrew' : 'greek'}`} dir={hebrew ? 'rtl' : 'ltr'}>
             {state.words.map((w, i) => (
-              <button key={i} className={`il-cell ${i === cur ? 'speaking' : ''}`} onClick={() => open(w)} disabled={!w.strongs}>
-                <span className="il-orig" dir={hebrew ? 'rtl' : 'ltr'} lang={hebrew ? 'he' : 'grc'}>
-                  {w.text}
+              <div key={i} className={`il-cell ${i === cur ? 'speaking' : ''}`}>
+                <span className="il-line" dir="ltr">
+                  <button className="il-say" onClick={() => sayWord(i)} aria-label={t('Послушать слово')} title={t('Послушать слово')}>
+                    <Volume2 size={15} />
+                  </button>
+                  <button className="il-orig" dir={hebrew ? 'rtl' : 'ltr'} lang={hebrew ? 'he' : 'grc'} onClick={() => open(w)} disabled={!w.strongs}>
+                    {w.text}
+                  </button>
                 </span>
-                <span className="il-tr" dir="ltr">
-                  {translit(w.text) || ' '}
-                </span>
-                <span className={`il-ru ${w.guess ? 'guess' : ''}`} dir="ltr">
-                  {w.gloss || ' '}
-                </span>
-                <span className="il-num" dir="ltr">
-                  {w.num ? w.num.slice(1) : ' '}
-                </span>
-              </button>
+                <button className="il-rest" onClick={() => open(w)} disabled={!w.strongs}>
+                  <span className="il-tr" dir="ltr">
+                    {translit(w.text) || ' '}
+                  </span>
+                  <span className={`il-ru ${w.guess ? 'guess' : ''}`} dir="ltr">
+                    {w.gloss || ' '}
+                  </span>
+                  <span className="il-num" dir="ltr">
+                    {w.num ? w.num.slice(1) : ' '}
+                  </span>
+                </button>
+              </div>
             ))}
           </div>
           <p className="sheet-hint">

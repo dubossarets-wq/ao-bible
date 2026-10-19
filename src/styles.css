@@ -1195,3 +1195,13 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .strong-more { font-size: .85rem; color: var(--accent); margin-top: 2px; }
 .il-cell.speaking { background: color-mix(in srgb, var(--accent) 18%, transparent); }
 .sheet-head .icon-btn.on { color: var(--accent); }
+/* Подстрочник: слева от слова оригинала — значок «послушать слово» */
+.il-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 5px; border-radius: 8px; }
+.il-line { display: inline-flex; align-items: center; gap: 2px; }
+.il-say { display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--accent); opacity: .75; flex: none; }
+.il-say:active { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+.il-orig, .il-rest { border: 0; background: none; padding: 0; color: inherit; font: inherit; cursor: pointer; }
+.il-rest { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.il-grid .il-orig { font-size: 1.35rem; line-height: 1.25; }
+.il-grid.hebrew .il-orig { font-family: var(--font-hebrew); font-size: 1.5rem; }
+.il-grid.greek .il-orig { font-family: var(--font-greek); }
