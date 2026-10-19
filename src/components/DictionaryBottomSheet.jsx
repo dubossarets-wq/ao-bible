@@ -1,7 +1,7 @@
 // Нижняя словарная панель: слово → список словарей, где есть статья → статья выбранного словаря.
 // Переключение между словарями — вкладками, не закрывая панель.
 import React, { useEffect, useState } from 'react';
-import { BookText, AlertTriangle, Link2, Loader2, Library } from 'lucide-react';
+import { BookText, AlertTriangle, Link2, Loader2, Library, Volume2 } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { lookupWord, lookupStrong } from '../core/lexicon.js';
@@ -12,6 +12,7 @@ import LinkedText from './LinkedText.jsx';
 import WordStats from './WordStats.jsx';
 import { t, N_ } from '../core/i18n.js';
 import { ruInterlinear } from '../core/interlinear.js';
+import { playStrongWord, stopVerse } from '../core/origAudio.js';
 
 const KIND_LABEL = { strongs: N_('по номерам Стронга'), words: N_('по словам') };
 
@@ -34,7 +35,24 @@ function StrongLinks({ text, onOpen }) {
   );
 }
 
-function StrongEntry({ num, entry, module, mapping, orig, onOpenStrong, onOpenRef, onOpenAll }) {
+// Слово живым голосом (из этого стиха или из первого места, где оно есть в записи)
+function SayButton({ num, verseRef }) {
+  const [st, setSt] = useState('idle'); // idle | loading | playing | none
+  const say = async () => {
+    if (st === 'playing') return (stopVerse(), setSt('idle'));
+    setSt('loading');
+    const ok = await playStrongWord(num, verseRef, { onEnd: () => setSt('idle') }).catch(() => false);
+    setSt(ok ? 'playing' : 'none');
+  };
+  useEffect(() => () => stopVerse(), []);
+  return (
+    <button className={`say-btn ${st === 'playing' ? 'on' : ''}`} onClick={say} disabled={st === 'none'} aria-label={st === 'none' ? t('Записи этого слова пока нет') : t('Послушать слово')} title={st === 'none' ? t('Записи этого слова пока нет') : t('Послушать слово')}>
+      {st === 'loading' ? <Loader2 className="spin" size={20} /> : <Volume2 size={22} />}
+    </button>
+  );
+}
+
+function StrongEntry({ num, entry, module, mapping, orig, verseRef, onOpenStrong, onOpenRef, onOpenAll }) {
   const isHeb = num.startsWith('H');
   // orig — это слово в оригинале стиха (из подстрочника): точная форма с лицом, числом и падежом
   const exact = orig && orig.num === num.replace(/^([HG])0*/, '$1') ? orig : null;
@@ -42,8 +60,13 @@ function StrongEntry({ num, entry, module, mapping, orig, onOpenStrong, onOpenRe
   return (
     <article className="entry">
       {entry.lemma && (
-        <div className={`orig ${isHeb ? 'hebrew' : 'greek'}`} lang={isHeb ? 'he' : 'grc'} dir={isHeb ? 'rtl' : 'ltr'}>
-          {entry.lemma}
+        // Кнопка «послушать» — перед словом по направлению письма: у еврейского (справа налево) — слева, у греческого — справа
+        <div className={`orig-row ${isHeb ? 'rtl' : 'ltr'}`}>
+          {isHeb && <SayButton num={num} verseRef={verseRef} />}
+          <div className={`orig ${isHeb ? 'hebrew' : 'greek'}`} lang={isHeb ? 'he' : 'grc'} dir={isHeb ? 'rtl' : 'ltr'}>
+            {entry.lemma}
+          </div>
+          {!isHeb && <SayButton num={num} verseRef={verseRef} />}
         </div>
       )}
       <dl className="facts">
@@ -305,7 +328,7 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
           {(() => {
             const f = current.found[Math.min(entryIdx, current.found.length - 1)];
             if (current.module.dictionaryKind === 'strongs')
-              return <StrongEntry num={f.key} entry={f.entry} module={current.module} mapping={top ? null : mapping} orig={top ? null : orig} onOpenAll={(num, lemma) => openSheet('concord', pane, { num, lemma, back: { kind: 'dict', payload } })} onOpenStrong={openStrong} onOpenRef={openRef} />;
+              return <StrongEntry num={f.key} entry={f.entry} module={current.module} mapping={top ? null : mapping} orig={top ? null : orig} verseRef={top ? null : ref} onOpenAll={(num, lemma) => openSheet('concord', pane, { num, lemma, back: { kind: 'dict', payload } })} onOpenStrong={openStrong} onOpenRef={openRef} />;
             return (
               <article className="entry">
                 <h3 className="entry-word">{f.entry.word || f.key}</h3>

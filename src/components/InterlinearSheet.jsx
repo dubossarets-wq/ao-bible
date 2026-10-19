@@ -168,7 +168,7 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
           <div className={`il-grid ${hebrew ? 'hebrew' : 'greek'}`} dir={hebrew ? 'rtl' : 'ltr'}>
             {state.words.map((w, i) => (
               <div key={i} className={`il-cell ${i === cur ? 'speaking' : ''}`}>
-                <span className="il-line" dir="ltr">
+                <span className={`il-line ${hebrew ? '' : 'say-after'}`} dir="ltr">
                   {!vin && <button className="il-say" onClick={() => sayWord(i)} aria-label={t('Послушать слово')} title={t('Послушать слово')}>
                     <Volume2 size={15} />
                   </button>}

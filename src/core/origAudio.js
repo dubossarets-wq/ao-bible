@@ -69,3 +69,33 @@ export function wordStarts(seg, words) {
   }
   return out;
 }
+
+// Отрезок записи с одним словом стиха (i — номер слова в порядке оригинала)
+export async function wordSegment(ref, i, words) {
+  const seg = await verseAudio(ref);
+  if (!seg) return null;
+  const st = wordStarts(seg, words);
+  return { url: seg.url, start: Math.max(seg.start, st[i] - 0.04), end: i + 1 < st.length ? st[i + 1] : seg.end };
+}
+
+// Слово по номеру Стронга живым голосом: сначала в этом стихе, иначе — первое место, где оно есть в записи
+export async function playStrongWord(num, ref, opts) {
+  const { origInterlinear, ensureOriginal } = await import('./interlinear.js');
+  const { strongStats } = await import('./wordstats.js');
+  const key = num.replace(/^([HG])0*/, '$1');
+  // Для поиска слова в стихе нужен текст оригинала — ставится сам (как в подстрочнике)
+  await ensureOriginal(key.startsWith('H') ? 'Gen' : 'Matt').catch(() => null);
+  const tryRef = async (r) => {
+    const ws = await origInterlinear(r).catch(() => null);
+    const i = ws ? ws.findIndex((w) => w.num === key) : -1;
+    if (i < 0) return false;
+    const s = await wordSegment(r, i, ws.map((w) => w.text));
+    if (!s) return false;
+    playSegment(s, opts);
+    return true;
+  };
+  if (ref && (await tryRef(ref))) return true;
+  const st = await strongStats(key).catch(() => null);
+  for (const r of (st?.refs || []).slice(0, 6)) if (await tryRef(r)) return true;
+  return false;
+}
