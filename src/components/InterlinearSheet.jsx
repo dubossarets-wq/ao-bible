@@ -2,7 +2,7 @@
 // как оно передано в синодальном переводе, ниже — номер Стронга. Нажатие на слово открывает статью словаря
 // с точной формой этого слова. Стрелки — к соседним стихам. Окно на всю высоту.
 import React, { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Volume2, Square } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { getBook, getVerse } from '../core/modules.js';
@@ -10,6 +10,7 @@ import { plainText } from '../core/verseMarkup.js';
 import { formatRef, testamentOf } from '../core/books.js';
 import { ensureOriginal, origInterlinear, originalFor } from '../core/interlinear.js';
 import { translit } from '../core/translit.js';
+import { verseAudio, playSegment, stopVerse, wordStarts } from '../core/origAudio.js';
 import { t } from '../core/i18n.js';
 
 export default function InterlinearSheet({ pane, payload, onClose }) {
@@ -17,6 +18,43 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
   const [ref, setRef] = useState(payload.ref);
   const [state, setState] = useState({ status: 'loading' });
   const hebrew = testamentOf(ref.book) === 'OT';
+  // Живое чтение стиха: playing — 'loading' | true | false; cur — звучащее слово
+  const [playing, setPlaying] = useState(false);
+  const [cur, setCur] = useState(-1);
+  const [noAudio, setNoAudio] = useState(false);
+  useEffect(() => () => stopVerse(), []);
+  useEffect(() => {
+    stopVerse();
+    setPlaying(false);
+    setCur(-1);
+    setNoAudio(false);
+  }, [ref.book, ref.chapter, ref.verse]);
+
+  const listen = async () => {
+    if (playing) {
+      stopVerse();
+      setPlaying(false);
+      setCur(-1);
+      return;
+    }
+    setPlaying('loading');
+    const seg = await verseAudio(ref).catch(() => null);
+    if (!seg || state.status !== 'ok') {
+      setPlaying(false);
+      setNoAudio(true);
+      return;
+    }
+    const starts = wordStarts(seg, state.words.map((w) => w.text));
+    setPlaying(true);
+    playSegment(seg, {
+      onTime: (t) => {
+        let i = 0;
+        while (i + 1 < starts.length && starts[i + 1] <= t) i++;
+        setCur(i);
+      },
+      onEnd: () => (setPlaying(false), setCur(-1)),
+    });
+  };
 
   useEffect(() => {
     let alive = true;
@@ -65,6 +103,9 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
       initial="full"
       headerExtra={
         <>
+          <button className={`icon-btn ${playing ? 'on' : ''}`} onClick={listen} aria-label={playing ? t('Остановить') : t('Слушать стих')} title={playing ? t('Остановить') : t('Слушать стих')}>
+            {playing === 'loading' ? <Loader2 className="spin" size={20} /> : playing ? <Square size={18} /> : <Volume2 size={21} />}
+          </button>
           <button className="icon-btn" onClick={() => step(-1)} aria-label={t('Предыдущий стих')}>
             <ChevronLeft size={22} />
           </button>
@@ -84,10 +125,11 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
       {state.status === 'ok' && (
         <>
           {state.ru && <blockquote className="xref-source">{state.ru}</blockquote>}
+          {noAudio && <p className="muted small">{t('Для этого стиха пока нет записи чтения.')}</p>}
           {!state.words.length && <p className="muted">{t('В оригинальном тексте этого стиха нет.')}</p>}
           <div className={`il-grid ${hebrew ? 'hebrew' : 'greek'}`} dir={hebrew ? 'rtl' : 'ltr'}>
             {state.words.map((w, i) => (
-              <button key={i} className="il-cell" onClick={() => open(w)} disabled={!w.strongs}>
+              <button key={i} className={`il-cell ${i === cur ? 'speaking' : ''}`} onClick={() => open(w)} disabled={!w.strongs}>
                 <span className="il-orig" dir={hebrew ? 'rtl' : 'ltr'} lang={hebrew ? 'he' : 'grc'}>
                   {w.text}
                 </span>

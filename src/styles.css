@@ -1193,3 +1193,5 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .strong-lemma.greek { font-family: var(--font-greek); }
 .strong-def { font-size: .92rem; line-height: 1.4; }
 .strong-more { font-size: .85rem; color: var(--accent); margin-top: 2px; }
+.il-cell.speaking { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+.sheet-head .icon-btn.on { color: var(--accent); }

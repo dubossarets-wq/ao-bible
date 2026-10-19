@@ -348,6 +348,16 @@ function normalizeAudio(json, warnings) {
   }
   if (bad) warnings.push(t('Пропущено глав без адреса записи или разметки стихов: {n}.', { n: bad }));
   if (!Object.keys(chapters).length) throw new ModuleError(t('В аудиомодуле нет ни одной главы с записью и разметкой стихов.'));
+  // Необязательно: разметка каждого стиха — files: [адрес записи], segments: {"Gen.1.1": [номер файла, начало, конец, [начала слов]]}
+  // (для подстрочника: стих целиком, даже если синодальная глава собрана из двух записей)
+  if (Array.isArray(json.files) && isObj(json.segments)) {
+    const files = json.files.filter((u) => typeof u === 'string' && /^https?:/.test(u));
+    const segments = {};
+    for (const [k, s] of Object.entries(json.segments)) {
+      if (/^[1-4]?[A-Za-z]+\.\d+\.\d+$/.test(k) && Array.isArray(s) && files[s[0]] && isFinite(s[1]) && isFinite(s[2])) segments[k] = s;
+    }
+    if (Object.keys(segments).length) return { chapters, files, segments };
+  }
   return { chapters };
 }
 
