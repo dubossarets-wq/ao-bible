@@ -8,7 +8,12 @@
 MP3 в ePub и на archive.org — одни и те же файлы (совпадают размеры), поэтому время подходит без пересчёта.
 Нумерация масоретская -> синодальная — как у текста OSHB (extra_bibles.oshb_mapper).
 
-Запуск: python -I scripts/build_audio_hbo.py
+Начала слов внутри стиха (4-й элемент segments) считает build_audio_orig.py hbo-words выравниванием записи
+с текстом; итог он кладёт в data-src/audio/hbo/words.json, и этот скрипт при пересборке берёт оттуда начала
+слов для стихов, отрезок которых не изменился, — пересборка их не стирает.
+
+Запуск: python -I scripts/build_audio_hbo.py          (затем, если записи или разметка менялись:
+        python -I scripts/build_audio_orig.py hbo-words)
 """
 import json
 import re
@@ -27,6 +32,7 @@ from extra_bibles import USFM_BOOKS, oshb_mapper  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 CACHE = ROOT / "data-src" / "audio" / "hbo-smil"
+WORDS = ROOT / "data-src" / "audio" / "hbo" / "words.json"  # начала слов (build_audio_orig.py hbo-words)
 APPROVED = ROOT / "scripts" / "approved-modules.json"
 EPUB_INDEX = "https://ebible.org/multimedia/hbo/"
 ITEM = "HebBible_AShmuelof"
@@ -141,6 +147,14 @@ def main():
             if sv not in ch["verses"] or beg < ch["verses"][sv]:
                 ch["verses"][sv] = beg
         print(n, flush=True)
+    words = json.loads(WORDS.read_text(encoding="utf-8")) if WORDS.exists() else {}
+    segs = {}
+    for k, v in segments.items():
+        seg = [v[0], round(v[1], 2), round(v[2], 2)]
+        w = words.get(k)
+        if w and w[0] == seg[1] and w[1] == seg[2]:
+            seg.append(w[2])
+        segs[k] = seg
     out = {}
     for k in sorted(chapters, key=lambda x: (x.split(".")[0], int(x.split(".")[1]))):
         ch = chapters[k]
@@ -156,15 +170,17 @@ def main():
         "source": f"https://archive.org/details/{ITEM}",
         "license": "CC BY-NC-ND 4.0 (записи не изменяются, проигрываются с archive.org)",
         "translation": "oshb", "versification": "synodal", "chapters": out,
-        "files": list(files), "segments": {k: [v[0], round(v[1], 2), round(v[2], 2)] for k, v in segments.items()},
+        "files": list(files), "segments": segs,
     }
     entry = write_module(module)
+    # В каталоге нужен translation: без него приложение подключает запись к любому переводу при запуске
+    entry["translation"] = module["translation"]
     merge_catalog([entry])
     approved = json.loads(APPROVED.read_text(encoding="utf-8"))
     if module["id"] not in approved["ids"]:
         approved["ids"].append(module["id"])
         APPROVED.write_text(json.dumps(approved, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    print(f"глав: {len(out)}, стихов в главах: {sum(len(c['verses']) for c in out.values())}, стихов с разметкой: {len(segments)}, пропущено частей (другая запись): {skipped}")
+    print(f"глав: {len(out)}, стихов в главах: {sum(len(c['verses']) for c in out.values())}, стихов с разметкой: {len(segments)}, с началами слов: {sum(len(s) > 3 for s in segs.values())}, пропущено частей (другая запись): {skipped}")
 
 
 if __name__ == "__main__":
