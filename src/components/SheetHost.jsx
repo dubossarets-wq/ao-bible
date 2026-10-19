@@ -27,6 +27,7 @@ import SermonAddSheet from './SermonAddSheet.jsx';
 import VerseImageSheet from './VerseImageSheet.jsx';
 import HelpSheet from './HelpSheet.jsx';
 import NewsSheet from './NewsSheet.jsx';
+import Welcome from './Welcome.jsx';
 import ImageViewer from './ImageViewer.jsx';
 
 const KINDS = {
@@ -55,6 +56,7 @@ const KINDS = {
   'sermon-add': SermonAddSheet,
   'verse-image': VerseImageSheet,
   help: HelpSheet,
+  welcome: Welcome,
   news: NewsSheet,
   illus: ImageViewer,
 };

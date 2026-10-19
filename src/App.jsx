@@ -11,7 +11,7 @@ import AudioBar from './components/AudioBar.jsx';
 import TourOverlay from './components/TourOverlay.jsx';
 import { fitsTranslation, detachFollow, audioState } from './core/audio.js';
 import { useSermons } from './core/sermons.js';
-import { pendingNews } from './core/whatsNew.js';
+import { pendingNews, markNewsSeen } from './core/whatsNew.js';
 import { useUpdates, applyUpdate } from './core/updates.js';
 import { IS_STAGING } from './core/channel.js';
 import { Toasts } from './components/ui.jsx';
@@ -166,6 +166,12 @@ export default function App() {
   const ready0 = modules !== null && bibles.length > 0;
   useEffect(() => {
     if (!ready0) return;
+    // Новый человек (первая установка поставила отметку) — приветствие вместо «Что нового»
+    if (load('welcomePending', false)) {
+      markNewsSeen();
+      const t = setTimeout(() => setSheet((s) => s || { kind: 'welcome', pane: 0, payload: {}, id: Date.now() }), 1200);
+      return () => clearTimeout(t);
+    }
     const items = pendingNews();
     if (!items.length) return;
     const t = setTimeout(() => setSheet((s) => s || { kind: 'news', pane: 0, payload: { items }, id: Date.now() }), 1200);

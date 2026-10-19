@@ -16,6 +16,7 @@ export default function Bootstrap() {
   const run = async () => {
     // Первую установку делает только этот экран — автодоустановка в App её не дублирует
     save('lateStarter', repo.LATE_STARTER);
+    save('welcomePending', true); // когда библиотека будет готова, App покажет приветствие
     setState({ phase: 'run', label: t('Подключаю каталог…'), p: 0 });
     try {
       const catalog = await repo.fetchCatalog();
@@ -71,7 +72,7 @@ export default function Bootstrap() {
           <>
             <p>{t('Нет ни одного установленного перевода. Установите перевод из каталога или импортируйте JSON-файл.')}</p>
             <div className="row-actions">
-              <button className="btn primary" onClick={run}>{t('Установить RST+ и словари')}</button>
+              <button className="btn primary" onClick={run}>{t('Установить Синодальный перевод и словари')}</button>
               <button className="btn" onClick={() => openSheet('library', 0, { tab: 'catalog' })}>
                 <Library size={16} /> {t('Библиотека модулей')}
               </button>

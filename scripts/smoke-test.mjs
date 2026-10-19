@@ -53,7 +53,11 @@ async function run(label, viewport, isMobile) {
   page.on('response', (r) => r.status() >= 400 && errors.push(`${r.status()} ${r.url()}`));
   await page.goto(url);
   await page.waitForSelector('.verse', { timeout: 60000 });
-  await page.waitForTimeout(800);
+  // Новый человек: при первом запуске — приветствие (один раз)
+  const welcome = await page.waitForSelector('.welcome-step', { timeout: 8000 }).then(() => true, () => false);
+  check(`${label}: приветствие при первом запуске`, welcome);
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(500);
   const refLabel = await page.textContent('.tb-ref');
   check(`${label}: стартовая позиция`, refLabel.includes('13:3'), refLabel);
   await page.screenshot({ path: `${shots}/${label}-1-reader.png` });
