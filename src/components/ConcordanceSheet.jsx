@@ -25,20 +25,29 @@ function Verse({ raw, num }) {
   );
 }
 
-export default function ConcordanceSheet({ pane, payload, onClose }) {
-  const { openInOther, openSheet } = useApp();
-  const { num, lemma, back } = payload;
+// Места слова оригинала: выбор по варианту перевода, стихи с выделенным словом, «Показать ещё».
+// filter — какие места показывать (часть Библии в поиске); onOpen — нажатие на место.
+export function StrongPlaces({ num, filter, onOpen }) {
   const [st, setSt] = useState(null);
   const [word, setWord] = useState(null); // выбранный вариант перевода
   const [shown, setShown] = useState(PAGE);
   const [texts, setTexts] = useState({});
 
   useEffect(() => {
+    setSt(null);
+    setWord(null);
+    setShown(PAGE);
     strongStats(num).then((r) => setSt(r || { total: 0, refs: [], renderings: [] }));
   }, [num]);
 
-  const list = useMemo(() => (st ? st.refs.filter((r) => !word || r.words.includes(word)) : []), [st, word]);
+  const all = useMemo(() => (st ? st.refs.filter((r) => !filter || filter(r)) : []), [st, filter]);
+  const list = useMemo(() => all.filter((r) => !word || r.words.includes(word)), [all, word]);
   const page = list.slice(0, shown);
+  const renderings = useMemo(() => {
+    const m = new Map();
+    for (const r of all) for (const w of new Set(r.words)) m.set(w, (m.get(w) || 0) + 1);
+    return [...m.entries()].sort((a, b) => b[1] - a[1]);
+  }, [all]);
 
   // Тексты стихов подгружаем только для показанных мест
   useEffect(() => {
@@ -50,7 +59,55 @@ export default function ConcordanceSheet({ pane, payload, onClose }) {
     return () => {
       alive = false;
     };
-  }, [st, word, shown]);
+  }, [st, list, shown]);
+
+  if (!st)
+    return (
+      <div className="loading">
+        <Loader2 className="spin" size={20} /> {t('Ищу все места…')}
+      </div>
+    );
+  if (!st.total) return <p className="muted">{t('В переводе со Стронгом этого слова нет.')}</p>;
+  if (!all.length) return <p className="muted">{t('В этой части Библии мест нет.')}</p>;
+  return (
+    <>
+      <div className="chips filter-chips" role="group" aria-label={t('Как переведено')}>
+        <button className={`chip ${!word ? 'on' : ''}`} aria-pressed={!word} onClick={() => (setWord(null), setShown(PAGE))}>
+          {t('Все')} <span className="tab-n">{all.length}</span>
+        </button>
+        {renderings.slice(0, 14).map(([w, n]) => (
+          <button key={w} className={`chip ${word === w ? 'on' : ''}`} aria-pressed={word === w} onClick={() => (setWord(w), setShown(PAGE))}>
+            {w} <span className="tab-n">{n}</span>
+          </button>
+        ))}
+      </div>
+      <ul className="concord">
+        {page.map((r) => (
+          <li key={key(r)}>
+            <button className="concord-row" onClick={() => onOpen(r)}>
+              <span className="concord-ref">{formatRef(r)}</span>
+              <span className="concord-text">{texts[key(r)] == null ? '…' : <Verse raw={texts[key(r)]} num={num} />}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      {list.length > shown && (
+        <button className="btn" onClick={() => setShown((n) => n + PAGE)}>
+          {t('Показать ещё ({n})', { n: list.length - shown })}
+        </button>
+      )}
+    </>
+  );
+}
+
+export default function ConcordanceSheet({ pane, payload, onClose }) {
+  const { openInOther, openSheet } = useApp();
+  const { num, lemma, back } = payload;
+  const [st, setSt] = useState(null);
+
+  useEffect(() => {
+    strongStats(num).then((r) => setSt(r || { total: 0 }));
+  }, [num]);
 
   const go = (r) => {
     onClose();
@@ -65,41 +122,7 @@ export default function ConcordanceSheet({ pane, payload, onClose }) {
       onBack={back ? () => openSheet(back.kind, pane, back.payload) : null}
       initial="full"
     >
-      {!st && (
-        <div className="loading">
-          <Loader2 className="spin" size={20} /> {t('Ищу все места…')}
-        </div>
-      )}
-      {st && !st.total && <p className="muted">{t('В переводе со Стронгом этого слова нет.')}</p>}
-      {st?.total > 0 && (
-        <>
-          <div className="chips filter-chips" role="group" aria-label={t('Как переведено')}>
-            <button className={`chip ${!word ? 'on' : ''}`} aria-pressed={!word} onClick={() => (setWord(null), setShown(PAGE))}>
-              {t('Все')} <span className="tab-n">{st.verses}</span>
-            </button>
-            {st.renderings.slice(0, 14).map(([w, n]) => (
-              <button key={w} className={`chip ${word === w ? 'on' : ''}`} aria-pressed={word === w} onClick={() => (setWord(w), setShown(PAGE))}>
-                {w} <span className="tab-n">{n}</span>
-              </button>
-            ))}
-          </div>
-          <ul className="concord">
-            {page.map((r) => (
-              <li key={key(r)}>
-                <button className="concord-row" onClick={() => go(r)}>
-                  <span className="concord-ref">{formatRef(r)}</span>
-                  <span className="concord-text">{texts[key(r)] == null ? '…' : <Verse raw={texts[key(r)]} num={num} />}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-          {list.length > shown && (
-            <button className="btn" onClick={() => setShown((n) => n + PAGE)}>
-              {t('Показать ещё ({n})', { n: list.length - shown })}
-            </button>
-          )}
-        </>
-      )}
+      <StrongPlaces num={num} onOpen={go} />
     </BottomSheet>
   );
 }

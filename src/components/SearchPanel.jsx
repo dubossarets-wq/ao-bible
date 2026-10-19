@@ -4,14 +4,51 @@ import { Search, X, CornerDownLeft, Clock, Loader2 } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { search, queryRegex } from '../core/search.js';
-import { parseHumanRef, formatRef, bookMeta } from '../core/books.js';
+import { parseHumanRef, formatRef, bookMeta, testamentOf } from '../core/books.js';
 import { getVerse } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
 import { usePersistentState } from '../core/storage.js';
 import { Segmented, Switch, Progress } from './ui.jsx';
+import { StrongPlaces } from './ConcordanceSheet.jsx';
+import { lookupStrong } from '../core/lexicon.js';
 import { t } from '../core/i18n.js';
 
 const PAGE = 200;
+
+// Номер Стронга в строке поиска: G26, H7225, «Г26», «Н7225»/«Е7225» (еврейский) или просто 3056 (оба Завета)
+export function strongQuery(q) {
+  const m = /^\s*([HGhgНнГгЕе]?)\s*0*(\d{1,4})\s*$/.exec(q);
+  if (!m || +m[2] === 0) return null;
+  const l = m[1].toUpperCase();
+  const pre = l === 'G' || l === 'Г' ? ['G'] : l ? ['H'] : ['H', 'G'];
+  return pre.map((x) => x + +m[2]);
+}
+
+// Карточка номера Стронга: слово оригинала, чтение, краткое значение (нажатие — статья) и все места
+function StrongCard({ num, filter, onOpen, onArticle }) {
+  const [e, setE] = useState(undefined);
+  useEffect(() => {
+    lookupStrong(num).then((r) => setE(r.find((x) => x.module.dictionaryKind === 'strongs' && x.module.id !== 'rst-symphony')?.found[0]?.entry || null));
+  }, [num]);
+  if (e === null) return null; // такого номера нет в словарях
+  const heb = num.startsWith('H');
+  return (
+    <section className="strong-card">
+      <button className="strong-head" onClick={onArticle}>
+        <span className="strong-num">{t('Номер Стронга')} {num}</span>
+        {e?.lemma && (
+          <span className={`strong-lemma ${heb ? 'hebrew' : 'greek'}`} dir={heb ? 'rtl' : 'ltr'} lang={heb ? 'he' : 'grc'}>
+            {e.lemma}
+          </span>
+        )}
+        {e?.xlit && <span className="muted"> {e.xlit}</span>}
+        {e?.definition && <span className="strong-def">{e.definition.length > 160 ? e.definition.slice(0, 160) + '…' : e.definition}</span>}
+        <span className="strong-more">{t('Статья словаря')} →</span>
+      </button>
+      <StrongPlaces num={num} filter={filter} onOpen={onOpen} />
+    </section>
+  );
+}
 
 function Highlighted({ text, re }) {
   if (!re) return text;
@@ -28,7 +65,7 @@ function Highlighted({ text, re }) {
 }
 
 export default function SearchPanel({ pane, onClose }) {
-  const { panes, bibles, navigate } = useApp();
+  const { panes, bibles, navigate, openSheet } = useApp();
   const p = panes[pane];
   const module = bibles.find((b) => b.id === p.moduleId) || bibles[0];
   const [query, setQuery] = useState('');
@@ -50,6 +87,7 @@ export default function SearchPanel({ pane, onClose }) {
   // Поиск по мере ввода: короткая пауза после нажатия клавиши, прежний поиск отменяется.
   // Ссылка («Ин 3 6», «Быт 1:1») вместо поиска показывает карточку перехода с текстом стиха.
   const [refHit, setRefHit] = useState(null);
+  const [strongHit, setStrongHit] = useState(null); // номера Стронга из строки поиска
   const stop = () => {
     abort.current?.abort();
     setResults(null);
@@ -88,6 +126,14 @@ export default function SearchPanel({ pane, onClose }) {
     const q = query.trim();
     const timer = setTimeout(
       async () => {
+        const sq = strongQuery(q);
+        if (sq) {
+          stop();
+          setRefHit(null);
+          setStrongHit(sq);
+          return;
+        }
+        setStrongHit(null);
         const r = /\d/.test(q) ? parseHumanRef(q) : null;
         if (r && module.books.some((b) => b.id === r.book)) {
           stop();
@@ -128,6 +174,17 @@ export default function SearchPanel({ pane, onClose }) {
     navigate(pane, r, { highlight: ran });
   };
 
+  // Места номера Стронга — в выбранной части Библии
+  const strongFilter = useMemo(
+    () => (scope === 'all' ? null : scope === 'book' ? (r) => r.book === p.ref.book : (r) => testamentOf(r.book) === scope),
+    [scope, p.ref.book]
+  );
+  const openStrongPlace = (r) => {
+    remember(query.trim());
+    onClose();
+    navigate(pane, r);
+  };
+
   return (
     <BottomSheet title={t('Поиск')} subtitle={`${module.name} · ${module.title || ''}`} onClose={onClose} initial={2}>
       <form
@@ -148,7 +205,7 @@ export default function SearchPanel({ pane, onClose }) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('Слово, фраза или ссылка (Ин 3:16)')}
+            placeholder={t('Слово, ссылка (Ин 3:16) или номер Стронга (G26)')}
             autoComplete="off"
             enterKeyHint="search"
           />
@@ -183,9 +240,18 @@ export default function SearchPanel({ pane, onClose }) {
           {refHit.text ? <span className="xref-text">{refHit.text}</span> : <span className="muted">{t('В переводе {module} нет такого стиха.', { module: module.name })}</span>}
         </button>
       )}
+      {strongHit?.map((num) => (
+        <StrongCard
+          key={num}
+          num={num}
+          filter={strongFilter}
+          onOpen={openStrongPlace}
+          onArticle={() => (remember(query.trim()), openSheet('dict', pane, { token: { text: num, strongs: [num] }, ref: p.ref, autoOpen: true, initial: 'full' }))}
+        />
+      ))}
       {progress && <Progress value={progress.p} label={progress.label} />}
 
-      {results === null && !refHit && history.length > 0 && (
+      {results === null && !refHit && !strongHit && history.length > 0 && (
         <section className="nav-group">
           <h4>{t('Недавние запросы')}</h4>
           <div className="chips">

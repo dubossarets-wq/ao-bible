@@ -150,7 +150,8 @@ ${FONTS}
         start_url: './',
         scope: './',
         display: 'standalone',
-        orientation: 'any',
+        // orientation не задаём: с 'any' Android поворачивает установленное приложение по датчику,
+        // даже когда автоповорот в телефоне выключен; без поля — как в системе
         background_color: '#f6f5f2',
         theme_color: '#38363a',
         icons: [

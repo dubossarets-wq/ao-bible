@@ -1,4 +1,9 @@
 {
+ "В поиске можно ввести номер Стронга (G26, H7225): покажутся слово оригинала, его значение и все места.": "Na pesquisa pode digitar um número Strong (G26, H7225): aparecem a palavra original, o seu significado e todas as passagens.",
+ "Приложение больше не поворачивается само, когда автоповорот в телефоне выключен.": "O aplicativo não gira mais sozinho quando a rotação automática está desligada.",
+ "Статья словаря": "Verbete do dicionário",
+ "В этой части Библии мест нет.": "Não há passagens nesta parte da Bíblia.",
+ "Слово, ссылка (Ин 3:16) или номер Стронга (G26)": "Palavra, referência (Jo 3:16) ou número Strong (G26)",
  "Подстрочник стиха — в порядке оригинала: еврейский текст справа налево, под каждым словом — его чтение, перевод и номер Стронга.": "O interlinear do versículo agora segue o original: o hebraico da direita para a esquerda e, sob cada palavra, a leitura, a tradução e o número Strong.",
  "Приложение говорит на 22 языках: язык выбирается по языку телефона, сменить можно в Настройки → Язык.": "O aplicativo agora fala 22 idiomas: segue o idioma do telefone e pode ser alterado em Configurações → Idioma.",
  "Экстренное обновление…": "Atualização de emergência…",
@@ -518,7 +523,6 @@
  "новая версия": "nova versão",
  "Поиск…": "Pesquisar…",
  "Слово, фраза или ссылка": "Palavra, frase ou referência",
- "Слово, фраза или ссылка (Ин 3:16)": "Palavra, frase ou referência (John 3:16)",
  "Очистить": "Limpar",
  "Искать": "Pesquisar",
  "Вся Библия": "Toda a Bíblia",
