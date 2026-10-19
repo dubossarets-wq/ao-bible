@@ -8,7 +8,7 @@ import { N_ } from './i18n.js';
 export const CATEGORIES = [
   { id: 'law', name: N_('Пятикнижие'), color: '#b07a2e', books: ['Gen', 'Exod', 'Lev', 'Num', 'Deut'] },
   { id: 'hist', name: N_('Исторические книги'), color: '#6b8e4e', books: ['Josh', 'Judg', 'Ruth', '1Sam', '2Sam', '1Kgs', '2Kgs', '1Chr', '2Chr', 'Ezra', 'Neh', 'Esth'] },
-  { id: 'wis', name: N_('Учительные книги'), color: '#3f7fa6', books: ['Job', 'Ps', 'Prov', 'Eccl', 'Song'] },
+  { id: 'wis', name: N_('Поэтические книги'), color: '#3f7fa6', books: ['Job', 'Ps', 'Prov', 'Eccl', 'Song'] },
   { id: 'major', name: N_('Большие пророки'), color: '#8b4a7d', books: ['Isa', 'Jer', 'Lam', 'Ezek', 'Dan'] },
   { id: 'minor', name: N_('Малые пророки'), color: '#b0688f', books: ['Hos', 'Joel', 'Amos', 'Obad', 'Jonah', 'Mic', 'Nah', 'Hab', 'Zeph', 'Hag', 'Zech', 'Mal'] },
   { id: 'dc', name: N_('Неканонические книги'), color: '#8a8172', books: [] }, // книги с пометкой dc
