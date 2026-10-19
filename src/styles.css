@@ -1207,6 +1207,8 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .il-grid .il-orig { font-size: 1.35rem; line-height: 1.25; }
 .il-grid.hebrew .il-orig { font-family: var(--font-hebrew); font-size: 1.5rem; }
 .il-grid.greek .il-orig { font-family: var(--font-greek); }
+/* Вульгата: слова не нажимаются (нет номеров Стронга), но латинское слово не притеняется — бледное только значение */
+.il-grid.latin .il-orig:disabled, .il-grid.latin .il-rest:disabled { opacity: 1; }
 /* Кнопка «послушать слово» — перед словом по направлению письма */
 .orig-row { display: flex; align-items: center; gap: 8px; }
 .orig-row.rtl { justify-content: flex-end; }

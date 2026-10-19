@@ -152,6 +152,24 @@ export async function vinInterlinear(ref) {
     .map((tk) => ({ text: tk.orig || '', gloss: tk.text === '·' ? '' : tk.text, num: tk.strongs?.length ? strongKey(tk.strongs[0]) : null, strongs: tk.strongs || null, morph: null, guess: false }));
 }
 
+// Подстрочник по латинской Вульгате (Климентина; модуль ставится сам при первом выборе вкладки): слова в порядке
+// Вульгаты, у каждого — начальная форма (лемма) и краткое значение по словарю. Значения подобраны при сборке модуля
+// (scripts/build_vulg_il.py) по словам синодального стиха, поэтому показываются бледными (guess), как у Септуагинты.
+// Слово в модуле: «форма|лемма|значение» через пробел; пробелы в значении записаны «_».
+export const VULG = 'vulg-interlinear';
+export async function vulgInterlinear(ref, onProgress) {
+  if (!(await ensureModule(VULG, onProgress))) throw new Error(t('Подстрочник к Вульгате пока недоступен.'));
+  const raw = await getVerse(VULG, ref);
+  if (raw == null) return [];
+  return raw
+    .split(' ')
+    .filter(Boolean)
+    .map((cell) => {
+      const [text, lemma = '', gloss = ''] = cell.split('|');
+      return { text, lemma, gloss: gloss.replace(/_/g, ' '), num: null, strongs: null, morph: null, guess: true };
+    });
+}
+
 // Подстрочник Ветхого Завета по Септуагинте (издание Свита, модуль ставится сам при первом выборе): греческие слова
 // в порядке LXX, под каждым — значение по номеру Стронга. Значение подбирается по словам синодального стиха: из
 // вариантов перевода этого слова в синодальном Новом Завете («Симфония RST+») берётся тот, что есть в стихе (сначала

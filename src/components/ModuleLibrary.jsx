@@ -112,7 +112,7 @@ function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle })
         <RefreshCw size={20} />
       </button>
     );
-  else if (mode === 'installed' && installed?.type === 'bible')
+  else if (mode === 'installed' && installed?.type === 'bible' && !installed.features?.helper)
     action = (
       <button
         className={`row-act ${isPrimary ? 'accent' : 'muted'}`}
@@ -163,7 +163,7 @@ function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle })
           <Details m={installed ? { ...cat, ...installed } : m} />
           {busy && <div className="progress-label">{busy.label}</div>}
           <div className="row-actions">
-            {installed?.type === 'bible' && !isPrimary && (
+            {installed?.type === 'bible' && !installed.features?.helper && !isPrimary && (
               <button className="btn small" onClick={() => (setSettings({ primaryModule: installed.id }), toast(t('{name} — основной перевод', { name: installed.name })))}>
                 <Star size={14} /> {t('Сделать основным')}
               </button>

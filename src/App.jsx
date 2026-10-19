@@ -82,7 +82,8 @@ export default function App() {
     repo.listModules().then(update);
     return repo.subscribe(update);
   }, []);
-  const bibles = useMemo(() => (modules || []).filter((m) => m.type === 'bible'), [modules]);
+  // Служебные модули (features.helper — подстрочник к Вульгате) читает только окно «Подстрочник», в переводах их нет
+  const bibles = useMemo(() => (modules || []).filter((m) => m.type === 'bible' && !m.features?.helper), [modules]);
 
   const [panes, setPanes] = usePersistentState('panes', () => [newPane(DEFAULT_SETTINGS.primaryModule), null]);
   const [sheet, setSheet] = useState(null);

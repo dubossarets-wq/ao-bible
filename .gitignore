@@ -18,3 +18,5 @@ data-src/verse-bg-src/
 .pylib-img/
 # Метаданные иллюстраций (кэш API Commons и части по собраниям) — пересобираются scripts/illus_*.py
 data-src/illustrations/
+# Исходники подстрочника к Вульгате (Викисловарь kaikki.org, частоты Collatinus) — scripts/build_vulg_il.py
+data-src/vulg/
