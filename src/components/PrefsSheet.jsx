@@ -12,6 +12,7 @@ import { listOffline, removeBook } from '../core/offlineAudio.js';
 import { bookMeta } from '../core/books.js';
 import { t, N_, LANGS, getLang, setLang, langInfo, fmtDate, locale } from '../core/i18n.js';
 import Flag from './Flag.jsx';
+import { usePhoneLayout } from '../core/layout.js';
 
 // Строка-переход в другой раздел
 function Row({ icon: Icon, children, sub, onClick, extra }) {
@@ -187,6 +188,7 @@ const CurrentFlag = () => (
 
 export default function PrefsSheet({ pane, onClose }) {
   const { settings: s, setSettings: set, openSheet, updates, toast } = useApp();
+  const phone = usePhoneLayout(); // на телефоне меню ⋮ — это лист «Ещё» на нижней панели
   const [page, setPage] = useState(null);
   const [checking, setChecking] = useState(false);
   const setMenu = (k, v) => set({ menu: { ...s.menu, [k]: v } });
@@ -218,7 +220,7 @@ export default function PrefsSheet({ pane, onClose }) {
           <Row icon={AlignLeft} onClick={() => setPage('view')} sub={t(VIEW_NAMES[textView(s)]) + (s.focusMode ? ` · ${t('режим чтения')}` : '')}>
             {t('Вид текста')}
           </Row>
-          <Row icon={MoreVertical} onClick={() => setPage('menu')} sub={t('Что показывать в меню «три точки»')}>
+          <Row icon={MoreVertical} onClick={() => setPage('menu')} sub={phone ? t('Что показывать в разделе «Ещё»') : t('Что показывать в меню «три точки»')}>
             {t('Меню ⋮')}
           </Row>
           <Row icon={Headphones} onClick={() => setPage('audio')} sub={t('ИИ-диктор, книги без интернета')}>
@@ -266,7 +268,11 @@ export default function PrefsSheet({ pane, onClose }) {
 
       {page === 'menu' && (
         <section className="settings-group">
-          <p className="pref-note">{t('Отметьте, что показывать в меню «три точки» вверху справа. Остальное всегда есть здесь, в настройках.')}</p>
+          <p className="pref-note">
+            {phone
+              ? t('Отметьте, что показывать в разделе «Ещё» на нижней панели. Остальное всегда есть здесь, в настройках.')
+              : t('Отметьте, что показывать в меню «три точки» вверху справа. Остальное всегда есть здесь, в настройках.')}
+          </p>
           {MENU_ITEMS.map(([k, label, hint]) => (
             <Switch key={k} id={`menu-${k}`} checked={!!s.menu[k]} onChange={(v) => setMenu(k, v)} label={t(label)} hint={hint && t(hint)} />
           ))}

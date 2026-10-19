@@ -9,7 +9,14 @@ import { t } from '../core/i18n.js';
 
 const SNAPS = [0.5, 0.7, 0.92]; // первая ступень — половина экрана; вторая — до верхней панели (см. belowBar)
 
-const vh = () => window.visualViewport?.height || window.innerHeight;
+// Нижняя панель вкладок (телефон): окно стоит над ней, высота окна — доля места над ней
+const tabbarH = () => {
+  const el = document.querySelector('.tabbar');
+  const root = document.documentElement;
+  // В режиме чтения спрятанная панель возвращается, как только открыто окно
+  return el && !root.classList.contains('kb-open') ? el.getBoundingClientRect().height : 0;
+};
+const vh = () => (window.visualViewport?.height || window.innerHeight) - tabbarH();
 // Обычное окно открывается до нижнего края верхней панели — она остаётся видна
 const belowBar = () => {
   const bottom = document.querySelector('.pane-slot.first .toolbar')?.getBoundingClientRect().bottom;

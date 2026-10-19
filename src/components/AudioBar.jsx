@@ -1,6 +1,6 @@
 // Нижняя панель «аудиокниги»: ▶/⏸, предыдущий/следующий стих, текущее место, скорость, таймер сна,
 // кнопка «скачать книгу» для прослушивания без интернета. Нет записи — предложение включить ИИ-диктора.
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Play, Pause, SkipBack, SkipForward, X, SlidersHorizontal, Loader2, CornerUpLeft, Download, CheckCircle2, Sparkles } from 'lucide-react';
 import { useAudio, pauseAudio, resumeAudio, stopAudio, stepVerse, setRate, setSleep, resumeFollow, startAudio } from '../core/audio.js';
 import { downloadBook, isBookOffline, removeBook } from '../core/offlineAudio.js';
@@ -60,6 +60,17 @@ export default function AudioBar() {
   const [opts, setOpts] = useState(false);
   const [note, setNote] = useState(null); // подпись о скачивании книги
   const [, tick] = useState(0);
+  const bar = useRef(null);
+
+  // Высота проигрывателя — в --audio-h: стрелки соседних глав встают над ним
+  useEffect(() => {
+    const el = bar.current;
+    const root = document.documentElement;
+    if (!el) return;
+    const ro = new ResizeObserver(() => root.style.setProperty('--audio-h', `${Math.round(el.getBoundingClientRect().height)}px`));
+    ro.observe(el);
+    return () => (ro.disconnect(), root.style.removeProperty('--audio-h'));
+  }, [a.active]);
 
   // Обратный отсчёт таймера сна
   useEffect(() => {
@@ -72,7 +83,7 @@ export default function AudioBar() {
   const left = a.sleep?.kind === 'min' ? Math.max(1, Math.round((a.sleep.until - Date.now()) / 60000)) : null;
 
   return (
-    <div className="audio-bar" role="region" aria-label={t('Аудиокнига')}>
+    <div ref={bar} className="audio-bar" role="region" aria-label={t('Аудиокнига')}>
       {/* Записи нет — предлагаем ИИ-диктора */}
       {a.offerTts && !a.playing && (
         <div className="audio-offer">

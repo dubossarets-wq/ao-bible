@@ -29,6 +29,7 @@ import HelpSheet from './HelpSheet.jsx';
 import NewsSheet from './NewsSheet.jsx';
 import Welcome from './Welcome.jsx';
 import ImageViewer from './ImageViewer.jsx';
+import MoreSheet from './MoreSheet.jsx';
 
 const KINDS = {
   dict: DictionaryBottomSheet,
@@ -59,12 +60,17 @@ const KINDS = {
   welcome: Welcome,
   news: NewsSheet,
   illus: ImageViewer,
+  more: MoreSheet,
 };
 
+// Есть ли такое окно (вкладка открывает своё окно, только если оно зарегистрировано)
+export const hasSheet = (kind) => Object.prototype.hasOwnProperty.call(KINDS, kind);
+
 export default function SheetHost() {
-  const { sheet, closeSheet } = useApp();
+  const { sheet, closeSheetIf } = useApp();
   if (!sheet) return null;
   const C = KINDS[sheet.kind];
   if (!C) return null;
-  return <C key={sheet.id} pane={sheet.pane} payload={sheet.payload || {}} onClose={closeSheet} />;
+  const id = sheet.id;
+  return <C key={id} pane={sheet.pane} payload={sheet.payload || {}} onClose={() => closeSheetIf(id)} />;
 }

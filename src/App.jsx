@@ -10,6 +10,8 @@ import Bootstrap from './components/Bootstrap.jsx';
 import WordPopover from './components/WordPopover.jsx';
 import AudioBar from './components/AudioBar.jsx';
 import TourOverlay from './components/TourOverlay.jsx';
+import TabBar from './components/TabBar.jsx';
+import { usePhoneLayout, isPhoneLayout } from './core/layout.js';
 import { fitsTranslation, detachFollow, audioState } from './core/audio.js';
 import { useSermons } from './core/sermons.js';
 import { pendingNews, markNewsSeen } from './core/whatsNew.js';
@@ -143,12 +145,12 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [updates.available, updates.auto, updates.forced, sheet]);
 
-  // О каждой новой версии сообщаем один раз; дальше — только точка на ⋮
+  // О каждой новой версии сообщаем один раз; дальше — только точка на ⋮ (на телефоне — на вкладке «Ещё»)
   useEffect(() => {
     if (!updates.available || !updates.latest || updates.auto || updates.forced) return;
     if (load('notifiedBuild', null) === updates.latest) return;
     save('notifiedBuild', updates.latest);
-    toast(t('Доступна новая версия — меню ⋮ → «Обновить приложение»'));
+    toast(isPhoneLayout() ? t('Доступна новая версия — «Ещё» → «Обновить приложение»') : t('Доступна новая версия — меню ⋮ → «Обновить приложение»'));
   }, [updates.available, updates.latest, toast]);
 
   // Один раз доустанавливаем новые базовые модули (например, «Места» для карты) у прежних пользователей
@@ -548,6 +550,9 @@ export default function App() {
     openPopover: (p) => setPopover({ ...p, id: Date.now() + Math.random() }),
     closePopover: () => setPopover(null),
     closeSheet: () => setSheet(null),
+    // Закрыть именно это окно: окно закрывается с анимацией, и если за это время открыли другое
+    // (например, нажали вкладку внизу), новое не должно закрыться
+    closeSheetIf: (id) => setSheet((s) => (s && s.id === id ? null : s)),
     toast,
     bookmarks,
     setBookmarks,
@@ -572,10 +577,13 @@ export default function App() {
   };
 
   const ready = modules !== null && bibles.length > 0;
+  const phone = usePhoneLayout();
+  const tabbar = ready && phone;
   return (
     <AppCtx.Provider value={ctx}>
-      <div className="app">
+      <div className={`app${tabbar ? ' with-tabbar' : ''}`}>
         {modules === null ? null : ready ? <SplitScreenReader /> : <Bootstrap />}
+        {tabbar && <TabBar />}
         <SheetHost />
         <WordPopover />
         <AudioBar />

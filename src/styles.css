@@ -1296,3 +1296,71 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .bg-preview { display: block; width: 100%; aspect-ratio: 16 / 10; border-radius: var(--radius); border: 1px solid var(--line); background: var(--user-bg, none) center / cover no-repeat, var(--bg); position: relative; overflow: hidden; }
 .bg-preview::after { content: ''; position: absolute; inset: 0; background: color-mix(in srgb, var(--bg) var(--bg-veil), transparent); }
 .bg-preview span { position: relative; z-index: 1; display: block; padding: 14px 16px; font-family: var(--font-text); font-size: calc(var(--fs) * .85); color: var(--text); }
+
+/* ---------- Новая навигация: нижняя панель вкладок на телефоне (до 900 px) ----------
+   --tabbar-h — сколько места внизу занимает панель сейчас (0, если её нет, она спрятана в режиме чтения
+   или открыта клавиатура); --sab — нижний вырез экрана, если панели нет (панель сама его учитывает). */
+:root { --tabbar-base: 58px; --tabbar-h: 0px; --sab: env(safe-area-inset-bottom, 0px); }
+html.has-tabbar:not(.reading-hidden):not(.kb-open) { --tabbar-h: calc(var(--tabbar-base) + env(safe-area-inset-bottom, 0px)); --sab: 0px; }
+.app.with-tabbar { display: flex; flex-direction: column; }
+.app.with-tabbar > .split { flex: 1 1 auto; min-height: 0; height: auto; }
+.tabbar { flex: none; position: relative; z-index: 42; display: flex; align-items: stretch; height: calc(var(--tabbar-base) + env(safe-area-inset-bottom, 0px)); padding: 0 calc(env(safe-area-inset-right, 0px) + 4px) env(safe-area-inset-bottom, 0px) calc(env(safe-area-inset-left, 0px) + 4px); margin: 0 calc(-1 * env(safe-area-inset-right, 0px)) 0 calc(-1 * env(safe-area-inset-left, 0px)); background: var(--bar); color: var(--bar-text); border-top: 1px solid color-mix(in srgb, var(--bar-text) 12%, var(--bar)); font-family: var(--font-ui); transition: margin-bottom .22s ease; }
+html.reading-hidden .tabbar { margin-bottom: calc(-1 * (var(--tabbar-base) + env(safe-area-inset-bottom, 0px))); }
+html.kb-open .tabbar { display: none; }
+.tab { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 5px 2px 4px; border: 0; background: none; color: color-mix(in srgb, var(--bar-text) 64%, var(--bar)); font: inherit; font-size: .72rem; font-weight: 600; letter-spacing: .01em; -webkit-tap-highlight-color: transparent; }
+.tab-icon { position: relative; display: grid; place-items: center; width: 54px; height: 30px; border-radius: 999px; transition: background .18s, color .18s; }
+.tab-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tab.on { color: var(--bar-text); font-weight: 800; }
+.tab.on .tab-icon { background: color-mix(in srgb, var(--bar-text) 13%, var(--bar)); }
+.tab:active .tab-icon { background: color-mix(in srgb, var(--bar-text) 20%, var(--bar)); }
+.tab:focus-visible { outline: none; }
+.tab:focus-visible .tab-icon { outline: 2px solid var(--accent); outline-offset: 1px; }
+@media (hover: hover) { .tab:hover .tab-icon { background: color-mix(in srgb, var(--bar-text) 9%, var(--bar)); } .tab.on:hover .tab-icon { background: color-mix(in srgb, var(--bar-text) 15%, var(--bar)); } }
+.tab .update-dot { top: 2px; right: 12px; box-shadow: 0 0 0 2px var(--bar); }
+
+/* Окна стоят над панелью вкладок: она видна, по ней можно перейти в другой раздел */
+html.has-tabbar .sheet { bottom: max(var(--kb, 0px), var(--tabbar-h)); height: calc((var(--vvh, 100dvh) - var(--tabbar-h)) * var(--sheet-h) / 100); max-height: calc(var(--vvh, 100dvh) - var(--tabbar-h) - env(safe-area-inset-top, 0px) - 6px); }
+html.has-tabbar .sheet.page { bottom: max(var(--kb, 0px), var(--tabbar-h)); }
+@media (min-width: 820px) { html.has-tabbar .sheet:not(.page) { bottom: calc(max(var(--kb, 0px), var(--tabbar-h)) + 16px); max-height: calc(var(--vvh, 100dvh) - var(--tabbar-h) - 32px); } }
+html.has-tabbar .sheet-body { padding-bottom: calc(20px + var(--sab)); }
+html.has-tabbar .sheet-foot { padding-bottom: calc(10px + var(--sab)); }
+/* Прибитое к низу экрана — над панелью вкладок */
+html.has-tabbar .audio-bar { bottom: calc(var(--tabbar-h) + var(--sab) + 8px); }
+html.has-tabbar .toasts { bottom: calc(max(var(--kb, 0px), var(--tabbar-h) + var(--sab)) + 16px); }
+html.has-tabbar .app:has(.plan-return) .toasts, html.has-tabbar .app:has(.sheet-foot) .toasts { bottom: calc(var(--tabbar-h) + var(--sab) + 70px); }
+html.has-tabbar .staging-badge { bottom: calc(var(--tabbar-h) + var(--sab) + 6px); }
+/* Внутри панели чтения: её низ уже над вкладками — нижний вырез не нужен */
+html.has-tabbar .listen-fab { bottom: calc(var(--sab) + 16px); }
+html.has-tabbar .plan-return, html.has-tabbar .float-pill { bottom: calc(var(--sab) + 14px); }
+html.has-tabbar .plan-view .text-col { padding-bottom: calc(var(--sab) + 76px); }
+html.has-tabbar .place-card { bottom: calc(10px + var(--sab)); }
+
+/* Лист «Ещё» — пункты бывшего меню ⋮ */
+.more-list { display: flex; flex-direction: column; flex: none; margin: -4px -6px 0; }
+.more-list .menu-2-sub { max-width: none; }
+
+/* Соседняя глава: круглые стрелки внизу слева и справа; «Слушать» — над правой стрелкой.
+   Над кнопкой «Вернуться к плану» и над проигрывателем стрелки поднимаются; в режиме чтения уходят с панелями. */
+.reader { --chap-bottom: calc(var(--sab) + 16px); }
+.chap-nav { position: absolute; bottom: var(--chap-bottom); z-index: 5; width: 46px; height: 46px; padding: 0; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 94%, transparent); color: var(--text); box-shadow: 0 4px 14px rgba(0,0,0,.16); cursor: pointer; transition: opacity .22s, transform .22s, bottom .22s; animation: pop .18s ease-out; }
+.chap-nav.prev { left: calc(env(safe-area-inset-left, 0px) + 14px); }
+.chap-nav.next { right: calc(env(safe-area-inset-right, 0px) + 14px); }
+.chap-nav:active { transform: scale(.92); }
+@media (hover: hover) { .chap-nav:hover { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 50%, var(--line)); } }
+.reader:has(.chap-nav.next) .listen-fab { bottom: calc(var(--chap-bottom) + 58px); }
+.reader:has(.plan-return) { --chap-bottom: calc(var(--sab) + 70px); }
+.app:has(.audio-bar) .reader { --chap-bottom: calc(var(--sab) + var(--audio-h, 64px) + 18px); }
+.app:has(.audio-bar) .split.rows .pane-slot.first .reader { --chap-bottom: calc(var(--sab) + 16px); }
+.reader.bar-hidden .chap-nav { opacity: 0; pointer-events: none; transform: translateY(16px); }
+html.kb-open .chap-nav { display: none; }
+
+/* Верхняя панель: распорка между местом и кнопками справа; место — пилюля по размеру текста */
+.tb-gap { flex: 1 1 0; min-width: 0; }
+.toolbar .tb-ref { flex: 0 1 auto; }
+/* Телефон: перевод и место — светлые скруглённые пилюли */
+.toolbar.is-phone { gap: 4px; }
+.toolbar.is-phone .tb-module, .toolbar.is-phone .tb-ref { height: 36px; min-height: 36px; border-radius: 999px; background: color-mix(in srgb, var(--bar-text) 11%, var(--bar)); color: var(--bar-text); }
+.toolbar.is-phone .tb-module { padding: 0 9px 0 12px; font-size: .9rem; }
+.toolbar.is-phone .tb-ref { padding: 0 10px 0 13px; font-size: 1.02rem; font-weight: 700; }
+@media (hover: hover) { .toolbar.is-phone .tb-module:hover, .toolbar.is-phone .tb-ref:hover { background: color-mix(in srgb, var(--bar-text) 17%, var(--bar)); } }
+.toolbar.is-phone .tb-module:active, .toolbar.is-phone .tb-ref:active { background: color-mix(in srgb, var(--bar-text) 22%, var(--bar)); }
