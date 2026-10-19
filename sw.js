@@ -1,5 +1,7 @@
-const CACHE = 'aob-shell-20261016-173721';
+const CACHE = 'aob-shell-20261019-070212';
 const PREFIX = 'aob-shell-';
+const ILLUS = 'aob-illus';
+const ILLUS_MAX = 120;
 const SHELL = ["./","index.html","manifest.webmanifest","modules/catalog.json","icons/icon.svg","icons/icon-192.png","icons/apple-touch-icon.png"];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -17,6 +19,14 @@ self.addEventListener('fetch', (e) => {
   // Страница и каталог: сначала сеть мимо HTTP-кэша (GitHub Pages кэширует на 10 минут), при офлайне — кэш
   if (url.origin === location.origin && (url.pathname.endsWith('/') || url.pathname.endsWith('.html') || url.pathname.endsWith('catalog.json'))) {
     e.respondWith(fetch(e.request, { cache: 'no-store' }).then((r) => { const copy = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); return r; }).catch(() => caches.match(e.request, { ignoreSearch: true })));
+    return;
+  }
+  // Иллюстрации: из кэша, иначе из сети с сохранением; самые старые вытесняются
+  if (url.host === 'upload.wikimedia.org') {
+    e.respondWith(caches.open(ILLUS).then((c) => c.match(e.request).then((hit) => hit || fetch(e.request).then((r) => {
+      if (r.ok && r.type !== 'opaque') c.put(e.request, r.clone()).then(() => c.keys()).then((keys) => Promise.all(keys.slice(0, Math.max(0, keys.length - ILLUS_MAX)).map((k) => c.delete(k))));
+      return r;
+    }))));
     return;
   }
   // Остальное (иконки, шрифты, модули) — из кэша, иначе из сети с сохранением
