@@ -3,6 +3,8 @@
 // с точной формой этого слова. Стрелки — к соседним стихам. Окно на всю высоту.
 // Ветхий Завет можно смотреть и по Септуагинте (греческий текст Свита, слева направо): под словом — значение
 // по словарю Стронга, подобранное по синодальному стиху. Записей чтения для Септуагинты нет.
+// В обоих Заветах есть и вкладка «Вульгата»: латинские слова (Климентина) слева направо, под словом — его начальная
+// форма и значение по словарю (бледным). Записей чтения и номеров Стронга у Вульгаты нет.
 import React, { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Loader2, Volume2, Square } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
@@ -10,7 +12,7 @@ import { useApp } from '../App.jsx';
 import { getBook, getVerse, errorText } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
 import { formatRef, testamentOf } from '../core/books.js';
-import { ensureOriginal, origInterlinear, originalFor, vinInterlinear, lxxInterlinear, LXX } from '../core/interlinear.js';
+import { ensureOriginal, origInterlinear, originalFor, vinInterlinear, lxxInterlinear, LXX, vulgInterlinear, VULG } from '../core/interlinear.js';
 import { usePersistentState } from '../core/storage.js';
 import { Segmented } from './ui.jsx';
 import { translit } from '../core/translit.js';
@@ -28,8 +30,10 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
   const [otSource, setOtSource] = usePersistentState('ilSourceOT', 'heb');
   const vin = !ot && source === 'vin';
   const lxx = ot && otSource === 'lxx';
-  const hebrew = ot && !lxx;
-  const noSound = vin || lxx; // записей чтения нет
+  // «Вульгата» — в обоих Заветах (латинский текст, значения по словарю)
+  const vulg = (ot ? otSource : source) === 'vulg';
+  const hebrew = ot && !lxx && !vulg;
+  const noSound = vin || lxx || vulg; // записей чтения нет
   // Живое чтение стиха: playing — 'loading' | true | false; cur — звучащее слово
   const [playing, setPlaying] = useState(false);
   const [cur, setCur] = useState(-1);
@@ -40,7 +44,7 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
     setPlaying(false);
     setCur(-1);
     setNoAudio(false);
-  }, [ref.book, ref.chapter, ref.verse, lxx]);
+  }, [ref.book, ref.chapter, ref.verse, lxx, vulg]);
 
   // Запись стиха и начала слов — один раз на стих (для «Слушать» и для отдельных слов)
   const segRef = React.useRef(null);
@@ -96,9 +100,9 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
       if (!originalFor(ref.book)) return alive && setState({ status: 'none' });
       try {
         const progress = (p, label) => alive && setState({ status: 'install', label });
-        if (!lxx) await ensureOriginal(ref.book, progress);
+        if (!lxx && !vulg) await ensureOriginal(ref.book, progress);
         const [words, ru] = await Promise.all([
-          lxx ? lxxInterlinear(ref, progress) : vin ? vinInterlinear(ref) : origInterlinear(ref),
+          lxx ? lxxInterlinear(ref, progress) : vulg ? vulgInterlinear(ref, progress) : vin ? vinInterlinear(ref) : origInterlinear(ref),
           payload.moduleId ? getVerse(payload.moduleId, ref) : null,
         ]);
         if (alive) setState({ status: 'ok', words: words || [], ru: ru ? plainText(ru) : '' });
@@ -109,11 +113,11 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
     return () => {
       alive = false;
     };
-  }, [ref.book, ref.chapter, ref.verse, vin, lxx]);
+  }, [ref.book, ref.chapter, ref.verse, vin, lxx, vulg]);
 
   // Соседний стих по оригинальному тексту (с переходом через главу)
   const step = async (d) => {
-    const id = lxx ? LXX : originalFor(ref.book);
+    const id = lxx ? LXX : vulg ? VULG : originalFor(ref.book);
     const book = id && (await getBook(id, ref.book));
     if (!book) return;
     const ch = book.chapters;
@@ -133,7 +137,9 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
 
   const open = (w) => w.strongs && openSheet('dict', pane, { token: { text: w.gloss || w.text, strongs: w.strongs, morph: w.morph ? [w.morph] : null }, ref, moduleId: payload.moduleId, origWord: w, autoOpen: true, initial: 'full' });
 
-  const subtitle = lxx
+  const subtitle = vulg
+    ? t('Вульгата (Климентина) · значения по словарю')
+    : lxx
     ? t('Септуагинта (Свит) · значения по словарю')
     : hebrew
       ? t('Еврейский текст (OSHB) · синодальный')
@@ -175,29 +181,31 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
           {ot ? (
             <Segmented
               id="il-source-ot"
-              value={lxx ? 'lxx' : 'heb'}
+              value={vulg ? 'vulg' : lxx ? 'lxx' : 'heb'}
               onChange={setOtSource}
               options={[
                 ['heb', t('Еврейский')],
                 ['lxx', t('Септуагинта')],
+                ['vulg', t('Вульгата')],
               ]}
             />
           ) : (
             <Segmented
               id="il-source"
-              value={vin ? 'vin' : 'syn'}
+              value={vulg ? 'vulg' : vin ? 'vin' : 'syn'}
               onChange={setSource}
               options={[
                 ['syn', t('Синодальный')],
                 ['vin', t('Винокуров')],
+                ['vulg', t('Вульгата')],
               ]}
             />
           )}
           {state.ru && <blockquote className="xref-source">{state.ru}</blockquote>}
           {noAudio && <p className="muted small">{t('Записи этого стиха пока нет.')}</p>}
           {!state.words.length && <p className="muted">{t('В оригинале этого стиха нет.')}</p>}
-          {lxx && state.words.length > 0 && <p className="muted small">{t('Под словами — значения по словарю, а не перевод.')}</p>}
-          <div className={`il-grid ${hebrew ? 'hebrew' : 'greek'}`} dir={hebrew ? 'rtl' : 'ltr'}>
+          {(lxx || vulg) && state.words.length > 0 && <p className="muted small">{t('Под словами — значения по словарю, а не перевод.')}</p>}
+          <div className={`il-grid ${hebrew ? 'hebrew' : vulg ? 'latin' : 'greek'}`} dir={hebrew ? 'rtl' : 'ltr'}>
             {state.words.map((w, i) => (
               <div key={i} className={`il-cell ${i === cur ? 'speaking' : ''}`}>
                 <span className={`il-line ${hebrew || noSound ? '' : 'say-after'}`} dir="ltr">
@@ -206,13 +214,13 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
                       <Volume2 size={15} />
                     </button>
                   )}
-                  <button className="il-orig" dir={hebrew ? 'rtl' : 'ltr'} lang={hebrew ? 'he' : 'grc'} onClick={() => open(w)} disabled={!w.strongs}>
+                  <button className="il-orig" dir={hebrew ? 'rtl' : 'ltr'} lang={hebrew ? 'he' : vulg ? 'la' : 'grc'} onClick={() => open(w)} disabled={!w.strongs}>
                     {w.text}
                   </button>
                 </span>
                 <button className="il-rest" onClick={() => open(w)} disabled={!w.strongs}>
                   <span className="il-tr" dir="ltr">
-                    {translit(w.text) || ' '}
+                    {(vulg ? w.lemma : translit(w.text)) || ' '}
                   </span>
                   <span className={`il-ru ${w.guess ? 'guess' : ''}`} dir="ltr">
                     {w.gloss || ' '}
@@ -226,8 +234,9 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
           </div>
           {vin && <p className="sheet-hint">{t('Подстрочник А. Винокурова — с разрешения автора. Под словом: чтение, перевод и номер Стронга.')}</p>}
           {lxx && <p className="sheet-hint">{t('Септуагинта — греческий Ветхий Завет (изд. Г. Б. Свита). Под словом: чтение, значение и номер Стронга. Нажмите на слово — откроется словарь.')}</p>}
+          {vulg && <p className="sheet-hint">{t('Вульгата — латинская Библия бл. Иеронима (Климентинское издание). Под словом: начальная форма и значение. Значения — из Викисловаря (CC BY-SA 4.0), формы — по Collatinus.')}</p>}
           {/* не hidden: у .sheet-hint свой display, атрибут hidden его не перебивает */}
-          {!vin && !lxx && (
+          {!vin && !lxx && !vulg && (
             <p className="sheet-hint">
               {t('Под словом: чтение, перевод и номер Стронга; бледным — обычное значение. Нажмите на слово — откроется словарь.')}
             </p>
