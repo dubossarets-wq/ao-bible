@@ -5,6 +5,12 @@ import * as db from './db.js';
 import { normalize, bytesToJson, ModuleError } from './schema.js';
 import { t } from './i18n.js';
 
+// Текст ошибки для человека: нехватку места браузер сообщает по-английски и непонятно — объясняем, что делать
+export const errorText = (e) =>
+  e?.name === 'QuotaExceededError' || /quota/i.test(e?.message || '')
+    ? t('Не хватает места на устройстве. Удалите ненужные модули (Библиотека модулей → Установленные) или освободите память телефона.')
+    : e?.message || String(e);
+
 const bookCache = new Map(); // `${moduleId}|${bookId}` -> { chapters, headings, xrefs }
 const payloadCache = new Map(); // moduleId -> Promise<payload>
 const listeners = new Set();

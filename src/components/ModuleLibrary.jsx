@@ -353,7 +353,7 @@ export default function ModuleLibrary({ payload, onClose }) {
       await repo.installFromCatalog(c, (p, label) => setBusy((b) => ({ ...b, [c.id]: { p, label } })));
       toast(t('{name} установлен', { name: c.name }));
     } catch (e) {
-      toast(`${c.name}: ${e.message}`, 'error');
+      toast(`${c.name}: ${repo.errorText(e)}`, 'error');
     } finally {
       setBusy((b) => {
         const n = { ...b };

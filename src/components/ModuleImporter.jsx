@@ -55,7 +55,7 @@ export default function ModuleImporter({ onDone }) {
       patch(it.key, { state: 'done' });
       toast(t('{name} установлен', { name: it.norm.meta.name }));
     } catch (e) {
-      patch(it.key, { state: 'error', error: t('Не удалось сохранить: {error}', { error: e.message }) });
+      patch(it.key, { state: 'error', error: t('Не удалось сохранить: {error}', { error: repo.errorText(e) }) });
     }
   };
 

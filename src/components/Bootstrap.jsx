@@ -33,7 +33,7 @@ export default function Bootstrap() {
         }
       }
     } catch (e) {
-      setState({ phase: 'error', message: e.message });
+      setState({ phase: 'error', message: repo.errorText(e) });
     }
   };
 
