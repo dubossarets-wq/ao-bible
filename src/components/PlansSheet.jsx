@@ -1,15 +1,43 @@
 // Планы чтения: активные планы с прогрессом и кнопкой «Читать» (весь день одной страницей),
 // учёт прочитанного, начало нового плана, свой план
 import React, { useEffect, useMemo, useState } from 'react';
-import { BookOpen, CalendarCheck, Check, ChevronLeft, ChevronRight, Loader2, Plus, Trash2 } from 'lucide-react';
+import { BookOpen, Check, ChevronLeft, ChevronRight, Loader2, Plus, Trash2, Flame, Library, CalendarDays, Sunrise, Music, Feather, Sparkles } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { usePlans } from '../core/planStore.js';
 import { readStats } from '../core/readLog.js';
 import { bookMeta } from '../core/books.js';
 import { fetchPlanIndex, fetchPlan, makeCustomPlan, SCOPES, parseReading, planToday, behindDays, readingDone, localDate } from '../core/plans.js';
-import { ConfirmButton, Empty, Segmented, Hint } from './ui.jsx';
-import { t, fmtDate } from '../core/i18n.js';
+import { ConfirmButton, Segmented, Hint } from './ui.jsx';
+import { t, fmtDate, locale } from '../core/i18n.js';
+
+// Кольцо прогресса: доля 0…1, в середине — подпись
+function Ring({ value, size = 64, stroke = 7, children }) {
+  const r = (size - stroke) / 2;
+  const len = 2 * Math.PI * r;
+  const v = Math.max(0, Math.min(1, value || 0));
+  return (
+    <span className="ring" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
+        <circle className="ring-bg" cx={size / 2} cy={size / 2} r={r} strokeWidth={stroke} />
+        <circle className="ring-fg" cx={size / 2} cy={size / 2} r={r} strokeWidth={stroke} strokeDasharray={len} strokeDashoffset={len * (1 - v)} />
+      </svg>
+      <span className="ring-label">{children}</span>
+    </span>
+  );
+}
+
+// Обложки планов: фотография (свободные снимки из фонов для картинок со стихом), значок и цвет;
+// свой план и неизвестные — по умолчанию
+const LOOK = {
+  mcheyne: [Library, 'c1', '10'],
+  'bible-year': [CalendarDays, 'c2', '06'],
+  'nt-90': [Sunrise, 'c3', '01'],
+  'ps-prov-31': [Music, 'c4', '07'],
+  'gospels-30': [Feather, 'c5', '02'],
+};
+const look = (id) => LOOK[id] || [Sparkles, 'c6', '08'];
+const coverUrl = (id) => `images/verse-bg/${look(id)[2]}.jpg`;
 
 function ActivePlan({ plan, onChange, onRemove, read }) {
   const days = plan.readings.length;
@@ -33,18 +61,19 @@ function ActivePlan({ plan, onChange, onRemove, read }) {
     onChange({ ...plan, done: next, parts });
   };
   return (
-    <div className="plan-card">
+    <div className={`plan-card cover-${look(plan.planId)[1]}`}>
+      <div className="plan-banner" style={{ backgroundImage: `url(${coverUrl(plan.planId)})` }} aria-hidden="true" />
       <div className="plan-head">
-        <span className="plan-name">{t(plan.name)}</span>
-        <span className="plan-meta">
-          {t('{done} из {total} дн.', { done: doneCount, total: days })}
+        <Ring value={doneCount / days} size={48} stroke={5}>
+          {Math.round((doneCount / days) * 100)}%
+        </Ring>
+        <span className="plan-head-text">
+          <span className="plan-name">{t(plan.name)}</span>
+          <span className="plan-meta">{t('{done} из {total} дн.', { done: doneCount, total: days })}</span>
         </span>
         <ConfirmButton className="icon-btn subtle" confirmText={t('Удалить')} onConfirm={onRemove} aria-label={t('Удалить план')}>
           <Trash2 size={15} />
         </ConfirmButton>
-      </div>
-      <div className="progress-track">
-        <div className="progress-bar" style={{ width: `${(doneCount / days) * 100}%` }} />
       </div>
       {behind.length > 0 && (
         <div className="plan-behind">
@@ -91,44 +120,71 @@ const chLabel = (key) => {
   return `${bookMeta(b).short.replace(/\.$/, '')} ${c}`;
 };
 
-// Сколько и что прочитано — по дочитанным до конца главам
-function ReadStats({ open }) {
+// Сколько прочитано — по дочитанным до конца главам: кольцо «доля Библии», серия дней, столбики за неделю
+const BIBLE_CHAPTERS = 1189;
+function ReadHero({ open }) {
   const st = useMemo(() => readStats(), []);
   const [more, setMore] = useState(false);
-  if (!st.total) return null;
   const fmt = (d) => fmtDate(`${d}T12:00`, { day: 'numeric', month: 'short' });
+  const wd = (d) => new Date(`${d}T12:00`).toLocaleDateString(locale(), { weekday: 'narrow' });
+  const max = Math.max(1, ...st.days7.map((d) => d.n));
+  const pct = (st.total / BIBLE_CHAPTERS) * 100;
   return (
-    <section className="nav-group read-stats">
-      <h4>
-        {t('Прочитано')} <Hint>{t('Глава засчитывается, когда вы дочитали её до последнего стиха — в плане или в обычном чтении.')}</Hint>
-      </h4>
-      <div className="stat-row">
-        <div className="stat">
-          <b>{st.today}</b>
-          <span>{t('сегодня')}</span>
-        </div>
-        <div className="stat">
-          <b>{st.week}</b>
-          <span>{t('за 7 дней')}</span>
-        </div>
-        <div className="stat">
-          <b>{st.total}</b>
-          <span>{t('глава всего|главы всего|глав всего', { n: st.total })}</span>
+    <section className="read-hero" aria-label={t('Прочитано')}>
+      <div className="hero-top">
+        <Ring value={st.total / BIBLE_CHAPTERS} size={84} stroke={8}>
+          <b>{pct > 0 && pct < 1 ? '<1' : Math.round(pct)}%</b>
+          <small>{t('Библии')}</small>
+        </Ring>
+        <div className="hero-nums">
+          <span className={`hero-streak ${st.streak ? 'on' : ''}`}>
+            <Flame size={18} /> <b>{st.streak}</b> {t('день подряд|дня подряд|дней подряд', { n: st.streak })}
+          </span>
+          <span className="hero-sub">
+            {t('Сегодня: {n} гл.', { n: st.today })} · {t('Глав Библии: {n} из {total}', { n: st.total, total: BIBLE_CHAPTERS })}{' '}
+            <Hint>{t('Глава засчитывается, когда вы дочитали её до последнего стиха — в плане или в обычном чтении. Столбики — сколько глав прочитано в каждый день, повторы тоже; «Глав Библии» — сколько разных глав прочитано хоть раз.')}</Hint>
+          </span>
         </div>
       </div>
-      <div className="chips">
-        {st.recent.slice(0, more ? 30 : 8).map((x) => (
-          <button key={x.key + x.day} className="chip" onClick={() => open(x.key)} title={fmt(x.day)}>
-            {chLabel(x.key)} <small className="muted">{fmt(x.day)}</small>
-          </button>
+      <div className="week-bars" role="img" aria-label={t('За 7 дней: {n} гл.', { n: st.week })}>
+        {st.days7.map((d) => (
+          <span key={d.day} className={`wb ${d.n ? 'on' : ''}`} title={`${fmt(d.day)}: ${d.n}`}>
+            <span className="wb-col">
+              <span className="wb-bar" style={{ height: `${d.n ? Math.max(12, (d.n / max) * 100) : 4}%` }} />
+            </span>
+            <small>{wd(d.day)}</small>
+          </span>
         ))}
-        {st.recent.length > 8 && !more && (
-          <button className="chip" onClick={() => setMore(true)}>
-            {t('ещё…')}
-          </button>
-        )}
       </div>
+      {st.recent.length > 0 && (
+        <div className="chips">
+          {st.recent.slice(0, more ? 30 : 3).map((x) => (
+            <button key={x.key + x.day} className="chip" onClick={() => open(x.key)} title={fmt(x.day)}>
+              {chLabel(x.key)} <small className="muted">{fmt(x.day)}</small>
+            </button>
+          ))}
+          {st.recent.length > 3 && !more && (
+            <button className="chip" onClick={() => setMore(true)}>
+              {t('ещё…')}
+            </button>
+          )}
+        </div>
+      )}
     </section>
+  );
+}
+
+// Готовый план — вертикальная обложка с фотографией и названием; нажатие выбирает план
+function PlanTile({ m, on, onPick }) {
+  const [Icon, c] = look(m.id);
+  return (
+    <button className={`plan-tile cover-${c} ${on ? 'on' : ''}`} onClick={onPick} aria-pressed={on}>
+      <img src={coverUrl(m.id)} alt="" loading="lazy" />
+      <span className="plan-tile-days">
+        <Icon size={13} /> {t('{n} дн.', { n: m.days })}
+      </span>
+      <span className="plan-tile-name">{t(m.name)}</span>
+    </button>
   );
 }
 
@@ -140,6 +196,7 @@ export default function PlansSheet({ pane, onClose }) {
   const [busy, setBusy] = useState(null);
   const [scope, setScope] = useState('nt');
   const [days, setDays] = useState(90);
+  const [pick, setPick] = useState(null); // выбранный в сетке план — под сеткой его описание и «Начать»
 
   useEffect(() => {
     fetchPlanIndex().then(setIndex, (e) => setErr(e.message));
@@ -186,11 +243,6 @@ export default function PlansSheet({ pane, onClose }) {
 
   return (
     <BottomSheet title={t('Планы чтения')} onClose={onClose} initial={2}>
-      {plans.length === 0 && (
-        <Empty icon={CalendarCheck} title={t('Активных планов нет')}>
-          {t('Выберите план ниже — каждый день здесь будет чтение на сегодня.')}
-        </Empty>
-      )}
       {plans.map((p) => (
         <ActivePlan
           key={p.uid}
@@ -201,26 +253,33 @@ export default function PlansSheet({ pane, onClose }) {
         />
       ))}
 
-      <ReadStats open={openChapter} />
+      <ReadHero open={openChapter} />
 
       <section className="nav-group">
-        <h4>{t('Начать план')}</h4>
+        <h4>{plans.length ? t('Ещё планы') : t('Выберите план')}</h4>
         {err && <p className="error-text small">{err}</p>}
         {!index && !err && (
           <div className="loading small">
             <Loader2 className="spin" size={16} /> {t('Загружаю планы…')}
           </div>
         )}
-        {index?.map((m) => (
-          <div key={m.id} className="plan-offer">
-            <div className="plan-offer-text">
-              <span className="plan-name">{t(m.name)}</span>
-              <span className="plan-meta">
-                {t('{n} дн.', { n: m.days })}{m.description ? ` · ${t(m.description)}` : ''}
-              </span>
-            </div>
-            <button className="btn small" disabled={!!busy} onClick={() => start(m)}>
-              {busy === m.id ? <Loader2 size={14} className="spin" /> : <Plus size={14} />} {t('Начать')}
+        {index && (
+          <div className="plan-grid">
+            {index.map((m) => (
+              <PlanTile key={m.id} m={m} on={pick === m.id} onPick={() => (setPick((x) => (x === m.id ? null : m.id)), setTimeout(() => document.querySelector('.plan-detail')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60))} />
+            ))}
+          </div>
+        )}
+        {index?.filter((m) => m.id === pick).map((m) => (
+          <div key={m.id} className={`plan-detail cover-${look(m.id)[1]}`}>
+            <span className="plan-name">{t(m.name)}</span>
+            <span className="plan-meta">
+              {t('{n} дн.', { n: m.days })}
+              {m.short ? ` · ${t(m.short)}` : ''}
+            </span>
+            {m.description && <p className="plan-desc">{t(m.description)}</p>}
+            <button className="btn primary" disabled={!!busy} onClick={() => start(m)}>
+              {busy === m.id ? <Loader2 size={16} className="spin" /> : <Plus size={16} />} {t('Начать')}
             </button>
           </div>
         ))}

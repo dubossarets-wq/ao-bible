@@ -1,11 +1,12 @@
 // Настройки оформления — все изменения применяются сразу через CSS-переменные.
 import React, { useState } from 'react';
-import { RotateCcw, ChevronRight, SunMoon, AlignLeft, Type, Hash, Superscript, Heading, PanelTop, MessageSquareText, Highlighter, Palette } from 'lucide-react';
+import { RotateCcw, ChevronRight, Image as ImageIcon, Upload, Trash2, SunMoon, AlignLeft, Type, Hash, Superscript, Heading, PanelTop, MessageSquareText, Highlighter, Palette } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
-import { FONTS, ensureFont, COLOR_KEYS, themeColors } from '../core/settings.js';
+import { FONTS, ensureFont, COLOR_KEYS, themeColors, THEMES } from '../core/settings.js';
 import { Segmented, Slider, Switch } from './ui.jsx';
 import { HL_COLORS } from '../core/highlights.js';
+import { saveBg, clearBg } from '../core/userBg.js';
 import { t, N_ } from '../core/i18n.js';
 import { formatRef } from '../core/books.js';
 
@@ -132,6 +133,7 @@ export const textView = (s) => (s.bookMode ? 'book' : s.continuousVerses ? 'flow
 // Блоки оформления: на первом экране — их список с текущими значениями, по нажатию — настройки одного блока
 const BLOCKS = [
   ['theme', SunMoon, N_('Тема')],
+  ['bg', ImageIcon, N_('Фон')],
   ['view', AlignLeft, N_('Вид текста')],
   ['text', Type, N_('Шрифт и размер')],
   ['verseNums', Hash, N_('Номера стихов')],
@@ -142,7 +144,25 @@ const BLOCKS = [
   ['hl', Highlighter, N_('Цвета выделений')],
   ['colors', Palette, N_('Цвета интерфейса')],
 ];
-const THEME_NAMES = { light: N_('Светлая'), dark: N_('Тёмная'), sepia: N_('Сепия'), auto: N_('Как в системе') };
+const THEME_NAMES = { ...Object.fromEntries(Object.entries(THEMES).map(([k, v]) => [k, v.label])), auto: N_('Как в системе') };
+
+// Плитка темы: маленький образец — панель, страница, строки текста и кнопка цвета акцента
+function ThemeTile({ id, on, onPick }) {
+  const th = THEMES[id] || THEMES.light;
+  const dark = THEMES.dark;
+  const half = id === 'auto';
+  return (
+    <button className={`theme-tile ${on ? 'on' : ''}`} onClick={onPick} aria-pressed={on}>
+      <span className="theme-swatch" style={{ background: half ? `linear-gradient(135deg, ${THEMES.light.bg} 50%, ${dark.bg} 50%)` : th.bg, borderColor: th.line }} aria-hidden="true">
+        <span className="ts-bar" style={{ background: half ? `linear-gradient(90deg, ${THEMES.light.bar} 50%, ${dark.bar} 50%)` : th.bar }} />
+        <span className="ts-line" style={{ background: half ? THEMES.light.text : th.text }} />
+        <span className="ts-line short" style={{ background: half ? dark.text : th.muted }} />
+        <span className="ts-dot" style={{ background: th.accent }} />
+      </span>
+      <span className="theme-name">{t(THEME_NAMES[id])}</span>
+    </button>
+  );
+}
 const VIEW_NAMES = { verses: N_('По стихам'), flow: N_('Сплошной'), book: N_('Как книга') };
 const POS_NAMES = { sup: N_('Над строкой'), inline: N_('В строке'), sub: N_('Под строкой') };
 
@@ -160,7 +180,17 @@ function BlockRow({ icon: Icon, title, sub, onClick }) {
 }
 
 export default function AppearanceSettings({ onClose, payload }) {
-  const { settings: s, setSettings: set, resetSettings, themeName, modules, hlLabels, setHlLabels } = useApp();
+  const { settings: s, setSettings: set, resetSettings, themeName, modules, hlLabels, setHlLabels, toast } = useApp();
+  const fileRef = React.useRef(null);
+  const pickBg = async (file) => {
+    if (!file) return;
+    try {
+      await saveBg(file);
+      set({ bgImage: Date.now() });
+    } catch {
+      toast(t('Не удалось открыть картинку'), 'error');
+    }
+  };
   const commentaries = modules.filter((m) => m.type === 'commentary' && m.enabled !== false);
   const eff = themeColors(s, themeName); // цвета, которые сейчас на экране
   const [live, setLive] = React.useState(null); // какой цвет сейчас выбирают в палитре
@@ -178,6 +208,7 @@ export default function AppearanceSettings({ onClose, payload }) {
   // В строке блока — текущее значение, чтобы не открывать блок ради проверки
   const subs = {
     theme: t(THEME_NAMES[s.theme] || THEME_NAMES.light),
+    bg: s.bgImage ? t('Своя картинка') : t('Без картинки'),
     view: t(VIEW_NAMES[textView(s)]),
     text: `${t(FONTS[s.fontFamily]?.label || '')} · ${s.fontSize} px`,
     verseNums: onOff(s.showVerseNumbers, t(POS_NAMES[s.verseNumPos])),
@@ -221,8 +252,38 @@ export default function AppearanceSettings({ onClose, payload }) {
 
       {block === 'theme' && (
         <section className="settings-group">
-          <Segmented id="set-theme" value={s.theme} onChange={(theme) => set({ theme })} options={Object.entries(THEME_NAMES).map(([k, v]) => [k, t(v)])} />
+          <div className="theme-grid" role="group" aria-label={t('Тема')}>
+            {Object.keys(THEME_NAMES).map((k) => (
+              <ThemeTile key={k} id={k} on={s.theme === k} onPick={() => set({ theme: k })} />
+            ))}
+          </div>
           <Sample s={s} bar head num sn />
+        </section>
+      )}
+
+      {block === 'bg' && (
+        <section className="settings-group">
+          <span className="bg-preview" aria-hidden="true">
+            <span>{t('В начале сотворил Бог небо и землю.')}</span>
+          </span>
+          <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => (pickBg(e.target.files?.[0]), (e.target.value = ''))} />
+          <div className="row-actions">
+            <button className="btn primary" onClick={() => fileRef.current?.click()}>
+              <Upload size={16} /> {s.bgImage ? t('Заменить картинку') : t('Выбрать картинку')}
+            </button>
+            {!!s.bgImage && (
+              <button className="btn" onClick={() => (clearBg(), set({ bgImage: 0 }))}>
+                <Trash2 size={16} /> {t('Убрать')}
+              </button>
+            )}
+          </div>
+          {!!s.bgImage && (
+            <>
+              <Slider id="set-bg-show" label={t('Картинку видно')} value={100 - (s.bgVeil ?? 72)} min={5} max={70} step={1} onChange={(v) => set({ bgVeil: 100 - v })} format={(v) => `${v}%`} />
+              <Slider id="set-bg-blur" label={t('Размытие')} value={s.bgBlur || 0} min={0} max={20} step={1} onChange={(bgBlur) => set({ bgBlur })} format={(v) => `${v} px`} />
+            </>
+          )}
+          <p className="field-hint">{t('Картинка хранится только на этом устройстве.')}</p>
         </section>
       )}
 

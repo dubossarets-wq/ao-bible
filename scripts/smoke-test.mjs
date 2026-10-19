@@ -65,7 +65,7 @@ async function run(label, viewport, isMobile) {
   check(`${label}: нет горизонтальной прокрутки`, overflow <= 0, `${overflow}px`);
 
   // По умолчанию светлая тема, даже если в системе тёмная (контекст создан с colorScheme: 'dark')
-  const LIGHT = 'rgb(246, 245, 242)';
+  const LIGHT = 'rgb(255, 255, 255)';
   const bg0 = await page.evaluate(() => getComputedStyle(document.querySelector('.reader')).backgroundColor);
   check(`${label}: светлая тема по умолчанию при тёмной системе`, bg0 === LIGHT, bg0);
   // Настройки старой версии с темой «как в системе» переводятся в светлую

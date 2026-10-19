@@ -39,5 +39,10 @@ export function readStats() {
       recent.push({ key: k, day: d });
     }
   }
-  return { today: (days[today] || []).length, week, total: all.size, recent: recent.reverse().slice(0, 30), daysActive: Object.keys(days).length };
+  // Столбики за 7 дней (с самого раннего до сегодня) и серия дней подряд: сегодня ещё не читал — серия не обрывается
+  const dayAgo = (i) => localDate(new Date(Date.now() - i * 86400000));
+  const days7 = [6, 5, 4, 3, 2, 1, 0].map((i) => ({ day: dayAgo(i), n: (days[dayAgo(i)] || []).length }));
+  let streak = 0;
+  for (let i = days[today]?.length ? 0 : 1; (days[dayAgo(i)] || []).length; i++) streak++;
+  return { today: (days[today] || []).length, week, total: all.size, recent: recent.reverse().slice(0, 30), daysActive: Object.keys(days).length, days7, streak };
 }

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { usePersistentState, useEvent, load, save } from './core/storage.js';
 import { DEFAULT_SETTINGS, applySettings, resolveTheme, migrateSettings } from './core/settings.js';
+import { loadBg } from './core/userBg.js';
 import * as repo from './core/modules.js';
 import { bookMeta, registerModuleBooks } from './core/books.js';
 import SplitScreenReader from './components/SplitScreenReader.jsx';
@@ -52,6 +53,25 @@ export default function App() {
   const prefersDark = usePrefersDark();
   const themeName = resolveTheme(fullSettings, prefersDark);
   useEffect(() => applySettings(fullSettings, themeName), [fullSettings, themeName]);
+  // Своя картинка под текстом: загружаем из IndexedDB и ставим CSS-переменной
+  useEffect(() => {
+    const root = document.documentElement;
+    let url = null;
+    let alive = true;
+    if (fullSettings.bgImage)
+      loadBg().then((blob) => {
+        if (!alive || !blob) return;
+        url = URL.createObjectURL(blob);
+        root.style.setProperty('--user-bg', `url("${url}")`);
+        root.classList.add('has-user-bg');
+      });
+    return () => {
+      alive = false;
+      root.classList.remove('has-user-bg');
+      root.style.removeProperty('--user-bg');
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [fullSettings.bgImage]);
 
   const [modules, setModules] = useState(null);
   useEffect(() => {
