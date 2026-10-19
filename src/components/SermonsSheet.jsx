@@ -134,7 +134,7 @@ function Editor({ sermon, pane, moduleId, onBackToList }) {
   const addByRef = async (e) => {
     e.preventDefault();
     const r = parseHumanRef(ref);
-    if (!r) return setRefErr(t('Не понял ссылку. Пример: «Ин 3:16» или «Пс 22:1-4».'));
+    if (!r) return setRefErr(t('Не понял ссылку. Пример: Ин 3:16'));
     // «Ин 3» — вся глава; «Ин 3:16-18» — стихи; «Ин 3:16–4:2» — через главу
     const wholeChapter = !/\d\s*[:.,]\s*\d|\d\s+\d/.test(ref.replace(/^\s*\d\s*/, ''));
     const endCh = r.end?.chapter || r.chapter;
@@ -257,10 +257,10 @@ function Editor({ sermon, pane, moduleId, onBackToList }) {
       {!sermon.blocks.length && (
         <div className="sermon-hint">
           <p>
-            <strong>{t('Как добавить стих:')}</strong> {t('в тексте Библии зажмите стих пальцем — он выделится — и нажмите под ним «В проповедь». Или введите ссылку ниже.')}
+            <strong>{t('Как добавить стих:')}</strong> {t('зажмите стих в Библии и нажмите «В проповедь» — или введите ссылку ниже.')}
           </p>
           <p>
-            <strong>{t('Свой текст')}</strong> {t('— кнопка «Текст»: вступление, пояснения, примеры, вывод. Порядок меняется перетаскиванием: зажмите стих или текст и ведите.')}
+            <strong>{t('Свой текст')}</strong> {t('— кнопка «Текст». Порядок меняйте перетаскиванием.')}
           </p>
         </div>
       )}
@@ -283,7 +283,7 @@ function Editor({ sermon, pane, moduleId, onBackToList }) {
                 <p className="sermon-verse-text">{b.text}</p>
               </>
             ) : (
-              <AutoText value={b.text} onChange={(text) => updateBlock(sermon.id, b.id, { text })} placeholder={t('Ваш текст: мысль, пояснение, пример…')} autoFocus={fresh === b.id} />
+              <AutoText value={b.text} onChange={(text) => updateBlock(sermon.id, b.id, { text })} placeholder={t('Мысль, пояснение, пример…')} autoFocus={fresh === b.id} />
             )}
             <div className="sermon-block-tools">
               <span className="sermon-grip" title={t('Зажмите, чтобы перетащить')} aria-hidden="true">
@@ -362,7 +362,7 @@ export default function SermonsSheet({ pane, payload, onClose }) {
           </form>
           {!sermons.length ? (
             <Empty icon={ScrollText} title={t('Проповедей пока нет')}>
-              {t('Создайте проповедь, а потом добавляйте в неё стихи прямо во время чтения: зажмите стих и нажмите под ним «В проповедь».')}
+              {t('Создайте проповедь и добавляйте стихи прямо при чтении: зажмите стих → «В проповедь».')}
             </Empty>
           ) : (
             <div className="sermon-pick">

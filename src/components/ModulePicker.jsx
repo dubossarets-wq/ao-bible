@@ -28,7 +28,7 @@ export default function ModulePicker({ pane, onClose }) {
               {b.id === current && <Check size={18} className="pick-check" />}
             </button>
             {settings.primaryModule !== b.id ? (
-              <button className="icon-btn subtle" title={t('Сделать основным переводом')} aria-label={t('Сделать {name} основным переводом', { name: b.name })} onClick={() => setSettings({ primaryModule: b.id })}>
+              <button className="icon-btn subtle" title={t('Сделать основным')} aria-label={t('Сделать {name} основным переводом', { name: b.name })} onClick={() => setSettings({ primaryModule: b.id })}>
                 <Star size={16} />
               </button>
             ) : (
@@ -40,7 +40,7 @@ export default function ModulePicker({ pane, onClose }) {
         ))}
       </ul>
       <button className="btn wide" onClick={() => openSheet('library', pane, { tab: 'catalog' })}>
-        <Library size={16} /> {t('Установить другие переводы')}
+        <Library size={16} /> {t('Другие переводы')}
       </button>
     </BottomSheet>
   );

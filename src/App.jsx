@@ -176,7 +176,7 @@ export default function App() {
               ? t('Добавлены иллюстрации к стихам: нажмите на значок картинки в конце стиха')
               : entry.id === 'strongs-ru-hebrew'
                 ? t('Добавлен словарь Стронга на русском: нажмите на слово или номер Стронга')
-                : t('Установлен модуль «{name}»: нажмите на название города в стихе, чтобы увидеть его на карте', { name: entry.name })
+                : t('Установлен «{name}»: нажмите на город в стихе — он покажется на карте', { name: entry.name })
           );
         }
       })
@@ -241,7 +241,7 @@ export default function App() {
   }, []);
   // Память браузера переполнена — предупреждаем: иначе правки молча не сохранились бы
   useEffect(() => {
-    const full = () => toast(t('Память приложения заполнена — последние изменения могут не сохраниться. Сохраните данные в файл: Настройки → «Мои данные».'), 'error');
+    const full = () => toast(t('Память заполнена — изменения могут не сохраниться. Сохраните данные: Настройки → «Мои данные».'), 'error');
     window.addEventListener('aob-storage-full', full);
     return () => window.removeEventListener('aob-storage-full', full);
   }, [toast]);
@@ -280,7 +280,7 @@ export default function App() {
         const books = added.filter((e) => !repo.ORIGINALS.includes(e.translation));
         if (books.length) {
           const names = [...new Set(books.map((e) => bibles.find((b) => fitsTranslation(e.translation, b.id))?.name).filter(Boolean))];
-          toast(names.length ? t('Подключены аудиокниги к переводу {names} — нажмите 🎧 внизу, чтобы слушать', { names: names.join(', ') }) : t('Подключены аудиокниги — нажмите 🎧 внизу, чтобы слушать'));
+          toast(names.length ? t('Аудиокниги для {names}: нажмите 🎧 внизу', { names: names.join(', ') }) : t('Аудиокниги готовы — нажмите 🎧 внизу'));
         }
       })
       .catch(() => {});

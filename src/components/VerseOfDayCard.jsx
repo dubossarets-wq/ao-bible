@@ -73,7 +73,7 @@ export default function VerseOfDayCard({ pane = 0, onClose }) {
     }
     try {
       await navigator.clipboard.writeText(text);
-      toast(t('Поделиться отсюда нельзя — текст скопирован'));
+      toast(t('Поделиться нельзя — текст скопирован'));
     } catch {
       toast(t('Не удалось ни поделиться, ни скопировать'), 'error');
     }

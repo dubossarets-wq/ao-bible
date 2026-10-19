@@ -94,7 +94,7 @@ export default function MapsSheet({ pane, onClose }) {
       )}
       {maps && !maps.length && !places.length && (
         <Empty icon={MapIcon} title={t('Карты не установлены')}>
-          {t('Модули карт можно установить из каталога или импортировать из JSON.')}{' '}
+          {t('Установите карты из каталога.')}{' '}
           <button className="link-inline" onClick={() => openSheet('library', pane, { tab: 'catalog', section: 'maps' })}>
             {t('Открыть библиотеку')}
           </button>

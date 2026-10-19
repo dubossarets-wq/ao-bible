@@ -205,7 +205,7 @@ export default function SearchPanel({ pane, onClose }) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('Слово, ссылка (Ин 3:16) или номер Стронга (G26)')}
+            placeholder={t('Слово, Ин 3:16 или G26')}
             autoComplete="off"
             enterKeyHint="search"
           />
@@ -253,7 +253,7 @@ export default function SearchPanel({ pane, onClose }) {
 
       {results === null && !refHit && !strongHit && history.length > 0 && (
         <section className="nav-group">
-          <h4>{t('Недавние запросы')}</h4>
+          <h4>{t('Недавние')}</h4>
           <div className="chips">
             {history.map((h) => (
               <button

@@ -35,7 +35,7 @@ export default function BookNavigator({ pane, onClose }) {
   const submit = (e) => {
     e.preventDefault();
     const r = parseHumanRef(query);
-    if (!r) return setErr(t('Не понял ссылку. Пример: «Ин 3:16», «Быт 1», «1 Кор 13:4».'));
+    if (!r) return setErr(t('Не понял ссылку. Пример: Ин 3:16'));
     const b = module.books.find((x) => x.id === r.book);
     if (!b) return setErr(t('В переводе {module} нет этой книги.', { module: module.name }));
     if (r.chapter > b.verses.length) return setErr(t('В книге «{book}» {n} глав.', { book: b.name, n: b.verses.length }));
@@ -106,7 +106,7 @@ export default function BookNavigator({ pane, onClose }) {
       {selBook && chapter && (
         <>
           <button className="btn wide" onClick={() => go({ book, chapter, verse: 1 })}>
-            {t('Читать главу {n} с начала', { n: chapter })}
+            {t('С начала главы', { n: chapter })}
           </button>
           <div className="num-grid" style={{ '--c': categoryOf(selBook.id).color }}>
             {Array.from({ length: selBook.verses[chapter - 1] }, (_, i) => (

@@ -100,7 +100,7 @@ export default function ModuleImporter({ onDone }) {
             e.target.value = '';
           }}
         />
-        <div className="field-hint">{t('Переводы, словари и параллельные места · .json или .json.gz · тип определяется автоматически')}</div>
+        <div className="field-hint">{t('Переводы, словари, параллельные места · .json или .json.gz')}</div>
       </div>
 
       {items.map((it) => {

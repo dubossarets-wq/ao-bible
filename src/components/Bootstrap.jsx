@@ -51,7 +51,7 @@ export default function Bootstrap() {
         <h1>AO Bible</h1>
         {state.phase === 'run' && (
           <>
-            <p>{t('Готовлю библиотеку: синодальный перевод с номерами Стронга, параллельные места и словари.')}</p>
+            <p>{t('Готовлю Синодальный перевод, словари и параллельные места…')}</p>
             <Progress value={state.p} label={state.label} />
           </>
         )}
@@ -70,7 +70,7 @@ export default function Bootstrap() {
         )}
         {state.phase === 'idle' && (
           <>
-            <p>{t('Нет ни одного установленного перевода. Установите перевод из каталога или импортируйте JSON-файл.')}</p>
+            <p>{t('Пока нет ни одного перевода. Скачайте его из каталога или импортируйте JSON-файл.')}</p>
             <div className="row-actions">
               <button className="btn primary" onClick={run}>{t('Установить Синодальный перевод и словари')}</button>
               <button className="btn" onClick={() => openSheet('library', 0, { tab: 'catalog' })}>

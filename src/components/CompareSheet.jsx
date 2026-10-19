@@ -54,14 +54,14 @@ export default function CompareSheet({ pane, payload, onClose }) {
 
   return (
     <BottomSheet
-      title={pick ? t('Параллельно в другом переводе') : t('Сравнение переводов')}
+      title={pick ? t('Читать параллельно') : t('Сравнение переводов')}
       subtitle={selectionLabel(refs, true)}
       onClose={onClose}
       initial={pick ? 1 : 2}
     >
       {others.length === 0 && (
         <Empty icon={Library} title={t('Другой перевод не установлен')}>
-          {t('Чтобы читать параллельно, установите ещё один перевод из каталога или импортируйте свой JSON.')}{' '}
+          {t('Установите ещё один перевод из каталога.')}{' '}
           <button className="link-inline" onClick={() => openSheet('library', pane, { tab: 'catalog' })}>
             {t('Открыть каталог')}
           </button>
@@ -69,7 +69,7 @@ export default function CompareSheet({ pane, payload, onClose }) {
       )}
       {!texts && (
         <div className="loading">
-          <Loader2 className="spin" size={20} /> {t('Загружаю переводы…')}
+          <Loader2 className="spin" size={20} /> {t('Загрузка…')}
         </div>
       )}
       {texts && (
@@ -108,7 +108,7 @@ export default function CompareSheet({ pane, payload, onClose }) {
             ))}
           </ul>
           <button className="btn cmp-more" onClick={() => openSheet('library', pane, { tab: 'catalog' })}>
-            <Library size={17} /> {t('Установить другие переводы')}
+            <Library size={17} /> {t('Другие переводы')}
           </button>
         </>
       )}

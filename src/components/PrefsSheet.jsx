@@ -36,9 +36,9 @@ const MENU_ITEMS = [
   ['plans', N_('Планы чтения')],
   ['listen', N_('«Слушать с этого места»')],
   ['maps', N_('Карты')],
-  ['focus', N_('Режим чтения (вкл/выкл)'), N_('Прячет кнопки в тексте, верхняя панель уходит при прокрутке вниз')],
-  ['book', N_('«Как книга» (вкл/выкл)'), N_('Быстро переключать текст в вид книги и обратно')],
-  ['split', N_('Синхронная прокрутка и расположение панелей'), N_('Видны в меню, когда экран разделён на две панели')],
+  ['focus', N_('Режим чтения'), N_('Без кнопок в тексте, панель прячется при прокрутке')],
+  ['book', N_('«Как книга»'), N_('Быстро переключать текст в вид книги и обратно')],
+  ['split', N_('Синхронная прокрутка и расположение панелей'), N_('Только при разделённом экране')],
 ];
 
 // Название языка на языке интерфейса («немецкий»), если браузер это умеет
@@ -87,8 +87,8 @@ function MyData() {
   const [err, setErr] = useState(null);
   const save = async () => {
     const r = await saveDataFile();
-    if (r === 'downloaded') toast(t('Файл с данными сохранён в «Загрузки»'));
-    if (r === 'shared') toast(t('Файл с данными сохранён'));
+    if (r === 'downloaded') toast(t('Файл сохранён в «Загрузки»'));
+    if (r === 'shared') toast(t('Файл сохранён'));
   };
   const pick = async (e) => {
     const f = e.target.files?.[0];
@@ -105,7 +105,7 @@ function MyData() {
   return (
     <section className="settings-group">
       <p className="pref-note">
-        {t('Сохраните файл, чтобы не потерять заметки или перенести всё на другой телефон. В файл входят закладки, заметки, любимые стихи, выделения, планы, проповеди и настройки.')}
+        {t('Закладки, заметки, любимые стихи, выделения, планы, проповеди и настройки — в одном файле. Чтобы ничего не потерять или перейти на новый телефон.')}
       </p>
       <div className="pref-btns">
         <button className="btn primary" onClick={save}>
@@ -124,7 +124,7 @@ function MyData() {
               ? t('В файле от {date}: закладок {bookmarks}, заметок {notes}, любимых стихов {favorites}, выделений {highlights}, планов {plans}, проповедей {sermons}.', { ...d, date: fmtDate(d.at), at: null })
               : t('В файле: закладок {bookmarks}, заметок {notes}, любимых стихов {favorites}, выделений {highlights}, планов {plans}, проповедей {sermons}.', { ...d, at: null })}
           </p>
-          <p className="pref-note">{t('Данные в этом телефоне заменятся данными из файла. Нынешние сохранятся в резервной копии («Версии приложения»).')}</p>
+          <p className="pref-note">{t('Всё на телефоне заменится данными из файла. Нынешнее останется в резервной копии («Версии приложения»).')}</p>
           <div className="pref-btns">
             <button className="btn primary" onClick={() => importData(pending)}>
               {t('Восстановить')}
@@ -144,7 +144,7 @@ function OfflineList() {
   const [list, setList] = useState(listOffline);
   const items = Object.entries(list);
   if (!items.length)
-    return <p className="pref-note">{t('Пока ничего не скачано. Чтобы слушать без интернета: включите прослушивание и нажмите в проигрывателе кнопку со стрелкой вниз.')}</p>;
+    return <p className="pref-note">{t('Пока ничего нет. Чтобы слушать без интернета, нажмите в проигрывателе стрелку вниз.')}</p>;
   const total = items.reduce((a, [, v]) => a + (v.bytes || 0), 0);
   return (
     <>
@@ -211,7 +211,7 @@ export default function PrefsSheet({ pane, onClose }) {
           <Row icon={CurrentFlag} onClick={() => setPage('lang')} sub={langInfo().name + (getLang() === 'ru' || getLang() === 'en' ? '' : ' · Language')}>
             {t('Язык')}
           </Row>
-          <Row icon={BookOpenCheck} onClick={() => go('help')} sub={t('Как пользоваться приложением')}>
+          <Row icon={BookOpenCheck} onClick={() => go('help')} sub={t('Пошаговые подсказки')}>
             {t('Инструкция')}
           </Row>
           <Row icon={Palette} onClick={() => go('settings')} sub={t('Тема, шрифт, размер букв')}>
@@ -220,7 +220,7 @@ export default function PrefsSheet({ pane, onClose }) {
           <Row icon={AlignLeft} onClick={() => setPage('view')} sub={t(VIEW_NAMES[textView(s)]) + (s.focusMode ? ` · ${t('режим чтения')}` : '')}>
             {t('Вид текста')}
           </Row>
-          <Row icon={MoreVertical} onClick={() => setPage('menu')} sub={phone ? t('Что показывать в разделе «Ещё»') : t('Что показывать в меню «три точки»')}>
+          <Row icon={MoreVertical} onClick={() => setPage('menu')} sub={phone ? t('Что показывать в разделе «Ещё»') : t('Выбрать пункты меню')}>
             {t('Меню ⋮')}
           </Row>
           <Row icon={Headphones} onClick={() => setPage('audio')} sub={t('ИИ-диктор, книги без интернета')}>
@@ -229,7 +229,7 @@ export default function PrefsSheet({ pane, onClose }) {
           <Row icon={Library} onClick={() => go('library')} sub={t('Переводы, словари, аудиокниги')}>
             {t('Библиотека модулей')}
           </Row>
-          <Row icon={HardDrive} onClick={() => setPage('data')} sub={t('Сохранить в файл, перенести на другой телефон')}>
+          <Row icon={HardDrive} onClick={() => setPage('data')} sub={t('Сохранить и перенести на новый телефон')}>
             {t('Мои данные')}
           </Row>
           {IS_PWA_BUILD && (
@@ -259,10 +259,10 @@ export default function PrefsSheet({ pane, onClose }) {
           />
           <p className="pref-note">
             {textView(s) === 'verses' && t('Каждый стих с новой строки, с номером.')}
-            {textView(s) === 'flow' && t('Стихи идут подряд, как в обычной книге, но с номерами.')}
-            {textView(s) === 'book' && t('Текст абзацами, без номеров и кнопок — для спокойного долгого чтения.')}
+            {textView(s) === 'flow' && t('Стихи подряд, с номерами.')}
+            {textView(s) === 'book' && t('Абзацами, без номеров и кнопок — для долгого чтения.')}
           </p>
-          <Switch id="pref-focus" checked={s.focusMode} onChange={(focusMode) => set({ focusMode })} label={t('Режим чтения')} hint={t('Прячет кнопки в тексте, верхняя панель уходит при прокрутке вниз')} />
+          <Switch id="pref-focus" checked={s.focusMode} onChange={(focusMode) => set({ focusMode })} label={t('Режим чтения')} hint={t('Без кнопок в тексте, панель прячется при прокрутке')} />
         </section>
       )}
 
@@ -271,7 +271,7 @@ export default function PrefsSheet({ pane, onClose }) {
           <p className="pref-note">
             {phone
               ? t('Отметьте, что показывать в разделе «Ещё» на нижней панели. Остальное всегда есть здесь, в настройках.')
-              : t('Отметьте, что показывать в меню «три точки» вверху справа. Остальное всегда есть здесь, в настройках.')}
+              : t('Отметьте, что показывать в меню ⋮. Остальное всегда есть в настройках.')}
           </p>
           {MENU_ITEMS.map(([k, label, hint]) => (
             <Switch key={k} id={`menu-${k}`} checked={!!s.menu[k]} onChange={(v) => setMenu(k, v)} label={t(label)} hint={hint && t(hint)} />
@@ -286,7 +286,7 @@ export default function PrefsSheet({ pane, onClose }) {
             checked={s.ttsFallback}
             onChange={(ttsFallback) => set({ ttsFallback })}
             label={t('ИИ-диктор, когда нет записи')}
-            hint={t('Если к главе нет живой аудиозаписи, текст прочитает синтезированный голос')}
+            hint={t('Если живой записи нет, главу прочитает синтезированный голос')}
           />
           <h4>{t('Книги без интернета')}</h4>
           <OfflineList />
@@ -297,13 +297,13 @@ export default function PrefsSheet({ pane, onClose }) {
 
       {page === 'app' && (
         <section className="settings-group">
-          <Row icon={RefreshCw} onClick={check} sub={updates.available ? t('Нажмите, чтобы обновить') : t('Сейчас: версия от {date}', { date: buildDate(BUILD) })} extra={checking ? <Loader2 size={16} className="spin" /> : null}>
+          <Row icon={RefreshCw} onClick={check} sub={updates.available ? t('Нажмите, чтобы обновить') : t('Версия от {date}', { date: buildDate(BUILD) })} extra={checking ? <Loader2 size={16} className="spin" /> : null}>
             {updates.available ? t('Обновить приложение') : t('Проверить обновления')}
           </Row>
-          <Row icon={Sparkles} onClick={() => go('news')} sub={t('Что изменилось в последнем обновлении')}>
+          <Row icon={Sparkles} onClick={() => go('news')} sub={t('Последнее обновление')}>
             {t('Что нового')}
           </Row>
-          <Row icon={History} onClick={() => go('versions')} sub={t('Вернуться к прежней версии, резервные копии')}>
+          <Row icon={History} onClick={() => go('versions')} sub={t('Откат и резервные копии')}>
             {t('Версии приложения')}
           </Row>
         </section>

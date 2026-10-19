@@ -39,7 +39,7 @@ export async function downloadBook(audioId, book, { onProgress, signal } = {}) {
     if (have) bytes += +(have.headers.get('x-size') || 0);
     else {
       const res = await fetch(urls[i], { mode: 'cors', signal });
-      if (!res.ok) throw new Error(t('Запись не скачалась (ошибка {status}). Проверьте интернет и попробуйте ещё раз.', { status: res.status }));
+      if (!res.ok) throw new Error(t('Запись не скачалась (ошибка {status}). Проверьте интернет.', { status: res.status }));
       const blob = await res.blob();
       bytes += blob.size;
       await cache.put(urls[i], new Response(blob, { headers: { 'content-type': res.headers.get('content-type') || 'audio/mpeg', 'x-size': String(blob.size) } }));

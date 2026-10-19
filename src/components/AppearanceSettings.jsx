@@ -111,8 +111,8 @@ export function Sample({ s: real, bar, head, num, sn, ui, colors, live, view = t
       <div className="pv-body">
         {head && <span className={`pv-head ${s.showHeadings ? '' : 'off'}`}>{t('Сотворение неба и земли')}</span>}
         {verses}
-        {sn && !s.showStrongs && <span className="pv-note">{t('Номера Стронга в тексте выключены — так они будут выглядеть, если включить')}</span>}
-        {head && !s.showHeadings && <span className="pv-note">{t('Заголовки выключены — так они будут выглядеть, если включить')}</span>}
+        {sn && !s.showStrongs && <span className="pv-note">{t('Номера Стронга выключены — вот как они выглядят')}</span>}
+        {head && !s.showHeadings && <span className="pv-note">{t('Заголовки выключены — вот как они выглядят')}</span>}
         {(ui || colors) && (
           <span className="pv-ui">
             <span className="pv-btn">{t('Кнопка')}</span>
@@ -311,7 +311,7 @@ export default function AppearanceSettings({ onClose, payload }) {
 
       {block === 'view' && (
         <section className="settings-group">
-          <p className="field-hint">{t('«По стихам» — каждый стих с новой строки. «Сплошной» — стихи подряд, с номерами. «Как книга» — абзацами по разделам, без номеров и кнопок, для долгого чтения.')}</p>
+          <p className="field-hint">{t('«По стихам» — каждый с новой строки. «Сплошной» — подряд, с номерами. «Как книга» — абзацами, без номеров и кнопок.')}</p>
           <Segmented
             id="set-view"
             value={textView(s)}
@@ -382,7 +382,7 @@ export default function AppearanceSettings({ onClose, payload }) {
       {block === 'strongs' && (
         <section className="settings-group">
           <Sample s={s} sn num={false} view="flow" />
-          <Switch id="set-strong" checked={s.showStrongs} onChange={(showStrongs) => set({ showStrongs })} label={t('Номера Стронга в тексте')} hint={t('Только для размеченных переводов, например RST+')} />
+          <Switch id="set-strong" checked={s.showStrongs} onChange={(showStrongs) => set({ showStrongs })} label={t('Номера Стронга в тексте')} hint={t('Только в переводах с номерами Стронга, например RST+')} />
           <Slider id="set-sn-size" label={t('Размер')} value={s.strongSize} min={0.35} max={1} step={0.05} onChange={(strongSize) => set({ strongSize })} format={(v) => `${Math.round(v * 100)}%`} />
           <Segmented
             id="set-sn-pos"
@@ -412,9 +412,9 @@ export default function AppearanceSettings({ onClose, payload }) {
         <section className="settings-group">
           <Switch id="set-xr" checked={s.showXrefButtons} onChange={(showXrefButtons) => set({ showXrefButtons })} label={t('Кнопки параллельных мест')} />
           <Switch id="set-il" checked={s.showIllustrations !== false} onChange={(showIllustrations) => set({ showIllustrations })} label={t('Значки иллюстраций у стихов')} hint={t('Картинка в конце стиха открывает иллюстрацию к нему')} />
-          <Switch id="set-focus" checked={s.focusMode} onChange={(focusMode) => set({ focusMode })} label={t('Режим чтения')} hint={t('Прячет кнопки в тексте, панель скрывается при прокрутке вниз')} />
+          <Switch id="set-focus" checked={s.focusMode} onChange={(focusMode) => set({ focusMode })} label={t('Режим чтения')} hint={t('Без кнопок в тексте, панель прячется при прокрутке')} />
           <Switch id="set-anim" checked={s.animations} onChange={(animations) => set({ animations })} label={t('Анимации')} />
-          <Slider id="set-uifs" label={t('Размер шрифта меню и окон')} value={s.uiFontSize} min={13} max={20} step={1} onChange={(uiFontSize) => set({ uiFontSize })} format={(v) => `${v} px`} />
+          <Slider id="set-uifs" label={t('Шрифт меню и окон')} value={s.uiFontSize} min={13} max={20} step={1} onChange={(uiFontSize) => set({ uiFontSize })} format={(v) => `${v} px`} />
           <Slider id="set-barh" label={t('Высота верхней панели')} value={s.barHeight} min={44} max={72} step={2} onChange={(barHeight) => set({ barHeight })} format={(v) => `${v} px`} />
           <Segmented
             id="set-split"
@@ -433,7 +433,7 @@ export default function AppearanceSettings({ onClose, payload }) {
 
       {block === 'comments' && (
         <section className="settings-group">
-          <p className="field-hint">{t('Отмеченные подписываются после стиха. Остальные открываются долгим нажатием на стих → «Комментарии».')}</p>
+          <p className="field-hint">{t('Отмеченные видны после стиха. Остальные — зажмите стих → «Комментарии».')}</p>
           {commentaries.map((m) => (
             <Switch
               key={m.id}
@@ -452,7 +452,7 @@ export default function AppearanceSettings({ onClose, payload }) {
 
       {block === 'hl' && (
         <section className="settings-group">
-          <p className="field-hint">{t('Подпишите цвета — например, «Обетования», «Вопросы». Подписи видны в палитре и в списке выделений.')}</p>
+          <p className="field-hint">{t('Дайте цветам названия — например, «Обетования», «Вопросы».')}</p>
           <div className="hl-labels">
             {HL_COLORS.map((c) => (
               <label key={c.id} className="hl-label-row" htmlFor={`hl-${c.id}`}>
@@ -466,7 +466,7 @@ export default function AppearanceSettings({ onClose, payload }) {
 
       {block === 'colors' && (
         <section className="settings-group">
-          <p className="field-hint">{t('Любой цвет можно поменять поверх выбранной темы. Стрелка справа возвращает цвет темы.')}</p>
+          <p className="field-hint">{t('Меняйте любой цвет темы. Стрелка справа вернёт исходный.')}</p>
           <Sample s={s} bar head sn colors />
           <Swatches id="sw-accent" label={t('Акцент интерфейса')} list={ACCENTS} value={eff.accent} onPick={(v) => setColor('accent', v)} />
           <Swatches id="sw-bar" label={t('Верхняя панель')} list={BARS} value={eff.bar} onPick={(v) => set({ colorOverrides: { ...over, bar: v, barText: isLight(v) ? '#1d1c1a' : '#f3f1ec' } })} />

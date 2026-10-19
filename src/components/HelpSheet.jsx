@@ -22,7 +22,7 @@ export default function HelpSheet({ onClose }) {
   return (
     <BottomSheet title={t('Инструкция')} onClose={onClose} initial={2}>
       <p className="help-intro">
-        <Hand size={18} /> {t('Выберите, что хотите сделать, — приложение покажет, куда нажимать.')}
+        <Hand size={18} /> {t('Выберите тему — покажем, куда нажимать.')}
       </p>
       <div className="input-wrap">
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('Например: проповедь, слушать, шрифт')} aria-label={t('Поиск по инструкции')} autoComplete="off" />

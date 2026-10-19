@@ -67,7 +67,7 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
                 )}
                 {mk[v]?.includes('b') && <span className="vmark bm" title={t('Закладка')} aria-label={t('Закладка')} />}
                 {mk[v]?.includes('s') && (
-                  <button className="vmark sermon-mark" data-act="sermon" title={t('Есть в проповеди — открыть')} aria-label={t('Стих есть в проповеди. Открыть проповедь')}>
+                  <button className="vmark sermon-mark" data-act="sermon" title={t('Открыть проповедь')} aria-label={t('Стих есть в проповеди. Открыть проповедь')}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="M15 12h-5" />
                       <path d="M15 8h-5" />
@@ -184,13 +184,13 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     clearLivePosition(index);
     getBook(module.id, ref.book).then((data) => {
       if (!alive) return;
-      if (!data) return setError(t('Не удалось прочитать книгу из хранилища. Попробуйте переустановить модуль в библиотеке.'));
+      if (!data) return setError(t('Книга не открылась. Переустановите модуль в библиотеке.'));
       const total = data.chapters.length;
       const c = Math.min(Math.max(1, ref.chapter), total);
       pending.current = { type: 'nav', c, v: ref.verse };
       setBook({ id: ref.book, data, meta });
       setRange({ start: Math.max(1, c - 1), end: Math.min(total, c + 1) });
-    }).catch(() => alive && setError(t('Не удалось прочитать книгу из памяти телефона. Закройте приложение и откройте снова.')));
+    }).catch(() => alive && setError(t('Книга не открылась. Перезапустите приложение.')));
     return () => {
       alive = false;
     };
@@ -357,7 +357,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
         const c = +ch.dataset.c;
         logChapter(book.id, c);
         const { credited, finished } = creditChapter(book.id, c);
-        if (finished.length) toast(t('План «{plan}»: чтение на сегодня выполнено ✓', { plan: t(finished[0]) }));
+        if (finished.length) toast(t('План «{plan}»: на сегодня всё ✓', { plan: t(finished[0]) }));
         else if (credited.length) toast(t('Засчитано в план «{plan}»: {ref}', { plan: t(credited[0]), ref: formatRef({ book: book.id, chapter: c, verse: 1 }).replace(/:1$/, '') }));
       }
     }, 1000);

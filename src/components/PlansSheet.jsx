@@ -143,7 +143,7 @@ function ReadHero({ open }) {
           </span>
           <span className="hero-sub">
             {t('Сегодня: {n} гл.', { n: st.today })} · {t('Глав Библии: {n} из {total}', { n: st.total, total: BIBLE_CHAPTERS })}{' '}
-            <Hint>{t('Глава засчитывается, когда вы дочитали её до последнего стиха — в плане или в обычном чтении. Столбики — сколько глав прочитано в каждый день, повторы тоже; «Глав Библии» — сколько разных глав прочитано хоть раз.')}</Hint>
+            <Hint>{t('Глава засчитывается, когда дочитана до конца — по плану или просто так. Столбики — главы за каждый день, с повторами; «Глав Библии» — сколько разных глав прочитано хоть раз.')}</Hint>
           </span>
         </div>
       </div>
@@ -290,7 +290,7 @@ export default function PlansSheet({ pane, onClose }) {
 
       <section className="nav-group">
         <h4>
-          {t('Свой план')} <Hint>{t('Главы выбранных книг делятся на дни поровну по числу стихов.')}</Hint>
+          {t('Свой план')} <Hint>{t('Главы делятся на дни поровну по числу стихов.')}</Hint>
         </h4>
         <Segmented id="plan-scope" value={scope} onChange={setScope} options={Object.entries(SCOPES).map(([k, v]) => [k, t(v.label)])} />
         <div className="ref-form">

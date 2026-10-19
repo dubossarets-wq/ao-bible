@@ -56,7 +56,7 @@ export default function VerseGuide({ pane, payload, onClose }) {
     <BottomSheet title={t('Всё о стихе · {ref}', { ref: formatRef(ref) })} onClose={onClose} initial={2}>
       {!d && (
         <div className="loading">
-          <Loader2 className="spin" size={20} /> {t('Собираю сведения…')}
+          <Loader2 className="spin" size={20} /> {t('Загрузка…')}
         </div>
       )}
       {d && (

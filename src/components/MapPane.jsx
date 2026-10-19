@@ -24,7 +24,7 @@ function loadMapLibre() {
       js.onload = () => resolve(window.maplibregl);
       js.onerror = () => {
         mlPromise = null;
-        reject(new Error(t('Не удалось загрузить карту. Проверьте подключение к интернету.')));
+        reject(new Error(t('Карта не загрузилась. Проверьте интернет.')));
       };
       document.head.appendChild(js);
     });
@@ -170,7 +170,7 @@ export default function MapPane({ pane }) {
         )}
         {state === 'error' && (
           <div className="map-status error-text">
-            {error} {t('Координаты места: {lat}, {lng}.', { lat: place.lat.toFixed(4), lng: place.lng.toFixed(4) })}
+            {error} {t('Координаты: {lat}, {lng}.', { lat: place.lat.toFixed(4), lng: place.lng.toFixed(4) })}
           </div>
         )}
         <div ref={card} className={`place-card ${cardOpen ? 'open' : ''}`}>
@@ -191,7 +191,7 @@ export default function MapPane({ pane }) {
               )}
               {place.confidence != null && (
                 <div className="conf">
-                  <span className="muted">{t('Уверенность отождествления: {pct}%', { pct: place.confidence })}</span>
+                  <span className="muted">{t('Достоверность: {pct}%', { pct: place.confidence })}</span>
                   <span className="conf-bar">
                     <i style={{ width: `${place.confidence}%` }} />
                   </span>

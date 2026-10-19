@@ -21,7 +21,7 @@ export default function WordStats({ num, onOpenRef, onOpenAll }) {
   if (!st)
     return (
       <div className="loading small">
-        <Loader2 className="spin" size={16} /> {t('Считаю употребления…')}
+        <Loader2 className="spin" size={16} /> {t('Считаю…')}
       </div>
     );
   if (!st.total) return null;
@@ -56,7 +56,7 @@ export default function WordStats({ num, onOpenRef, onOpenAll }) {
       </div>
       {onOpenAll && (
         <button className="btn" onClick={onOpenAll}>
-          {t('Все места с текстом стихов ({n})', { n: st.verses })}
+          {t('Все места ({n})', { n: st.verses })}
         </button>
       )}
     </section>

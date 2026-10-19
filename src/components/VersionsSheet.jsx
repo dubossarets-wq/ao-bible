@@ -18,7 +18,7 @@ export default function VersionsSheet({ onClose }) {
 
   const { toast } = useApp();
   const [checking, setChecking] = useState(false);
-  const load = () => fetchVersions().then(setData, () => setError(t('Не удалось загрузить список версий. Проверьте подключение к интернету.')));
+  const load = () => fetchVersions().then(setData, () => setError(t('Не удалось загрузить версии. Проверьте интернет.')));
   useEffect(() => {
     load();
   }, []);
@@ -38,7 +38,7 @@ export default function VersionsSheet({ onClose }) {
       }
       toast(t('У вас последняя версия'));
     } catch {
-      setError(t('Не удалось проверить обновления. Проверьте подключение к интернету.'));
+      setError(t('Не удалось проверить обновления. Проверьте интернет.'));
     } finally {
       setChecking(false);
     }
@@ -69,7 +69,7 @@ export default function VersionsSheet({ onClose }) {
           setAutoUpdate(v);
         }}
         label={t('Обновлять автоматически')}
-        hint={t('Включено: новая версия ставится сама сразу после выхода. Выключено: приложение остаётся на выбранной версии. Откат на старую версию выключает автообновление.')}
+        hint={t('Новая версия ставится сама, как только выйдет. Откат на старую версию это выключает.')}
       />
       {error && <p className="error-text">{error}</p>}
       {!data && !error && (
@@ -108,7 +108,7 @@ export default function VersionsSheet({ onClose }) {
       )}
       <section className="nav-group">
         <h4>
-          {t('Резервные копии ваших данных')}
+          {t('Резервные копии')}
           <Hint>{t('Настройки, закладки, заметки и любимые стихи сохраняются перед каждым обновлением (последние 5 копий).')}</Hint>
         </h4>
         {backups.length === 0 && <p className="field-hint">{t('Копий пока нет — первая появится при следующем обновлении.')}</p>}

@@ -21,13 +21,13 @@ function DownloadButton({ audioId, book, onNote }) {
   const name = bookMeta(book).name;
   const click = async () => {
     if (prog != null) return;
-    if (offline) return onNote({ ok: true, text: t('«{book}» есть в телефоне — слушается без интернета', { book: name }), remove: () => removeBook(audioId, book).then(() => (setOffline(false), onNote(null))) });
+    if (offline) return onNote({ ok: true, text: t('«{book}» в телефоне — слушайте без интернета', { book: name }), remove: () => removeBook(audioId, book).then(() => (setOffline(false), onNote(null))) });
     setProg(0);
     onNote({ text: t('Скачиваю «{book}»…', { book: name }) });
     try {
       const bytes = await downloadBook(audioId, book, { onProgress: (done, total, b) => (setProg(done / total), onNote({ text: t('Скачиваю «{book}»: {done} из {total} · {size}', { book: name, done, total, size: mb(b) }) })) });
       setOffline(true);
-      onNote({ ok: true, text: t('«{book}» скачана ({size}) — можно слушать без интернета', { book: name, size: mb(bytes) }) });
+      onNote({ ok: true, text: t('«{book}» скачана ({size})', { book: name, size: mb(bytes) }) });
     } catch (e) {
       onNote({ text: e.message });
     } finally {
@@ -88,7 +88,7 @@ export default function AudioBar() {
       {a.offerTts && !a.playing && (
         <div className="audio-offer">
           <p>
-            <strong>{a.error || t('Для этой главы нет аудиозаписи.')}</strong> {t('Включить ИИ-диктора? Он прочитает текст синтезированным голосом — не так живо, как чтец.')}
+            <strong>{a.error || t('Для этой главы нет аудиозаписи.')}</strong> {t('Включить ИИ-диктора? Он читает не так живо, как чтец.')}
           </p>
           <div className="audio-offer-btns">
             <button
@@ -104,7 +104,7 @@ export default function AudioBar() {
               {t('Не нужно')}
             </button>
           </div>
-          <small>{t('Выключить можно в «Настройках», раздел «Аудио».')}</small>
+          <small>{t('Выключить: Настройки → Аудио.')}</small>
         </div>
       )}
       {note && (
@@ -112,7 +112,7 @@ export default function AudioBar() {
           {note.text}
           {note.remove && (
             <button className="link-btn" onClick={note.remove}>
-              {t('удалить из телефона')}
+              {t('удалить')}
             </button>
           )}
           <button className="link-btn" onClick={() => setNote(null)}>
@@ -151,7 +151,7 @@ export default function AudioBar() {
         <div className="audio-info">
           {/* Человек ушёл в другое место — место чтения становится кнопкой «вернуться» */}
           {a.ref && !a.follow ? (
-            <button className="audio-ref audio-back" onClick={() => (resumeFollow(), navigate(a.pane, a.ref, { flash: false, audio: true }))} title={t('Вернуться к месту, которое сейчас звучит')}>
+            <button className="audio-ref audio-back" onClick={() => (resumeFollow(), navigate(a.pane, a.ref, { flash: false, audio: true }))} title={t('К звучащему месту')}>
               <CornerUpLeft size={14} /> {formatRef(a.ref)}
             </button>
           ) : (

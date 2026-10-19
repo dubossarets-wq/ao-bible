@@ -438,7 +438,7 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
           <div className="plan-intro-meta">
             {t('День {n} из {total}', { n: day + 1, total: plan.readings.length })} · {t('{n} отрывок|{n} отрывка|{n} отрывков', { n })}
           </div>
-          <p className="plan-intro-hint">{t('Читайте подряд сверху вниз. Отрывок отметится сам, когда вы дочитаете его до конца.')}</p>
+          <p className="plan-intro-hint">{t('Читайте подряд — отрывок отметится сам.')}</p>
         </div>
         {!books && (
           <div className="loading">
@@ -515,7 +515,7 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
                   )}
                   {i < n - 1 ? (
                     <button className="btn primary plan-next" onClick={() => scrollToReading(i + 1)}>
-                      {t('Дальше по плану: {ref}', { ref: readingLabel(readings[i + 1], module) })} <ChevronDown size={17} />
+                      {t('Дальше: {ref}', { ref: readingLabel(readings[i + 1], module) })} <ChevronDown size={17} />
                     </button>
                   ) : allDone ? (
                     <div className="plan-finish">
@@ -534,7 +534,7 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
                     </div>
                   ) : (
                     <div className="plan-left">
-                      <span>{t('Осталось прочитать:')}</span>
+                      <span>{t('Осталось:')}</span>
                       {readings.map((x, j) =>
                         doneFlags[j] ? null : (
                           <button key={x + j} className="chip" onClick={() => scrollToReading(j)}>

@@ -100,7 +100,7 @@ export default function SelectionBar({ index, module, selection, onDone }) {
     }
     try {
       await navigator.clipboard.writeText(text);
-      toast(t('Поделиться отсюда нельзя — текст скопирован'));
+      toast(t('Поделиться нельзя — текст скопирован'));
     } catch {
       toast(t('Не удалось ни поделиться, ни скопировать'), 'error');
     }
@@ -155,7 +155,7 @@ export default function SelectionBar({ index, module, selection, onDone }) {
           {refs.length}
         </span>
       </div>
-      <button className="tb tb-icon" onClick={parallel} aria-label={t('Открыть параллельно в другом переводе')} title={t('Параллельно в другом переводе')}>
+      <button className="tb tb-icon" onClick={parallel} aria-label={t('Открыть параллельно в другом переводе')} title={t('Читать параллельно')}>
         <Languages size={22} />
       </button>
       {/* Комментарии — рядом с переводом */}
@@ -194,7 +194,7 @@ export default function SelectionBar({ index, module, selection, onDone }) {
       <button className={`tb tb-icon ${hasNote ? 'on' : ''}`} onClick={() => (openSheet('note', index, { refs, moduleId: module.id }), onDone())} aria-label={hasNote ? t('Открыть заметку') : t('Добавить заметку')} title={t('Заметка')}>
         <NotebookPen size={21} />
       </button>
-      <button className={`tb tb-icon ${bm ? 'on' : ''}`} onClick={toggleBm} aria-label={bm ? t('Убрать закладку') : t('Закладка: продолжить отсюда')} title={bm ? t('Убрать закладку') : t('Закладка «продолжить отсюда»')}>
+      <button className={`tb tb-icon ${bm ? 'on' : ''}`} onClick={toggleBm} aria-label={bm ? t('Убрать закладку') : t('Закладка: продолжить отсюда')} title={bm ? t('Убрать закладку') : t('Закладка')}>
         {bm ? <BookmarkCheck size={21} /> : <Bookmark size={21} />}
       </button>
       <div className="tb-menu-wrap" ref={moreRef}>

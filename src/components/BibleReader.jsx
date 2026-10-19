@@ -121,7 +121,7 @@ function PartInline({ index, module, refs, part, setPart, onDone }) {
   };
   return (
     <div className="sel-inline part-inline">
-      <p className="part-hint">{ready ? `«${text}»` : t('Нажмите на первое слово нужной части, потом на последнее.')}</p>
+      <p className="part-hint">{ready ? `«${text}»` : t('Нажмите на первое и последнее слово.')}</p>
       <div className="part-btns">
         <button className="btn primary" disabled={!ready} onClick={() => (openSheet('sermon-add', index, { refs: [ref], moduleId: module.id, fragment: { text } }), onDone())}>
           <ScrollText size={17} /> {t('В проповедь')}
@@ -195,7 +195,7 @@ function PlanReturn({ index, lastPlan }) {
   return (
     <div className="plan-return">
       <button className="plan-return-btn" onClick={() => returnToPlan(index)}>
-        <CornerUpLeft size={16} /> {t('Вернуться к плану · {done} из {total}', { done, total: rs.length })}
+        <CornerUpLeft size={16} /> {t('К плану · {done} из {total}', { done, total: rs.length })}
       </button>
       <button className="plan-return-x" onClick={() => dismissPlanReturn(index)} aria-label={t('Скрыть кнопку возврата к плану')}>
         <X size={15} />

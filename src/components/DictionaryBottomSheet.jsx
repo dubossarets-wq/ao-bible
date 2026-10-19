@@ -108,7 +108,7 @@ function StrongEntry({ num, entry, module, mapping, orig, verseRef, onOpenStrong
               <div key={m}>
                 <dt>{t('Грамматическая форма')}</dt>
                 <dd>
-                  {d.text || t('расшифровка кода не входит в установленные данные')} <span className="mono muted">({m})</span>
+                  {d.text || t('без расшифровки')} <span className="mono muted">({m})</span>
                 </dd>
               </div>
             );
@@ -157,7 +157,7 @@ function StrongEntry({ num, entry, module, mapping, orig, verseRef, onOpenStrong
       )}
       {entry.refs?.length > 0 && (
         <section>
-          <h4>{entry.renderings ? t('Первые места употребления') : t('Связанные стихи')}</h4>
+          <h4>{entry.renderings ? t('Где встречается') : t('Связанные стихи')}</h4>
           <div className="chips">
             {entry.refs.map((r) => {
               const p = parseOsisRef(r);
@@ -174,7 +174,7 @@ function StrongEntry({ num, entry, module, mapping, orig, verseRef, onOpenStrong
       <WordStats num={num} onOpenRef={onOpenRef} onOpenAll={onOpenAll && (() => onOpenAll(num, entry.lemma))} />
       <p className="source-note">
         {module.name}
-        {module.language === 'en' ? ` · ${t('статья на английском языке')}` : ''} · {module.license}
+        {module.language === 'en' ? ` · ${t('на английском')}` : ''} · {module.license}
       </p>
     </article>
   );
@@ -255,7 +255,7 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
             <div className="warn">
               <AlertTriangle size={16} />
               <span>
-                {t('Перевод не размечен номерами Стронга. Варианты подобраны по симфонии RST+ — это приблизительное соответствие, одно русское слово может передавать разные слова оригинала:')}{' '}
+                {t('В переводе нет номеров Стронга. Примерные варианты по симфонии RST+:')}{' '}
                 {mapping.strongs.map((s) => (
                   <span key={s} className="mono strong-chip">
                     {s} · {Math.round(mapping.weights[s] * 100)}%
@@ -267,7 +267,7 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
           {mapping.mode === 'none' && res.results.length === 0 && (
             <div className="warn">
               <AlertTriangle size={16} />
-              <span>{t('Для этого слова нет привязки к оригиналу ни в переводе, ни в установленных симфониях.')}</span>
+              <span>{t('Не нашли это слово в оригинале.')}</span>
             </div>
           )}
         </div>
@@ -279,7 +279,7 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
             <Empty icon={BookText} title={t('Статей не найдено')}>
               {res.dictionaryCount === 0 ? `${t('Нет включённых словарей.')} ` : `${t('Проверено словарей: {n}.', { n: res.dictionaryCount })} `}
               <button className="link-inline" onClick={() => openSheet('library', pane, { tab: 'installed' })}>
-                {t('Открыть библиотеку модулей')}
+                {t('Открыть библиотеку')}
               </button>
             </Empty>
           ) : (
@@ -292,7 +292,7 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
                       <span className="dict-name">{r.module.name}</span>
                       <span className="dict-desc">
                         {r.found.map((f) => f.entry.lemma || f.entry.word || f.key).join(' · ')}
-                        {r.found.some((f) => f.match === 'stem') ? ` · ${t('совпадение по основе слова')}` : ''}
+                        {r.found.some((f) => f.match === 'stem') ? ` · ${t('по основе слова')}` : ''}
                       </span>
                     </span>
                     <span className="dict-count">{r.found.length > 1 ? t('{n} статьи', { n: r.found.length }) : KIND_LABEL[r.module.dictionaryKind] ? t(KIND_LABEL[r.module.dictionaryKind]) : ''}</span>
@@ -332,8 +332,8 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
             return (
               <article className="entry">
                 <h3 className="entry-word">{f.entry.word || f.key}</h3>
-                {f.match === 'stem' && <p className="warn small">{t('Найдено по основе слова «{word}» — проверьте, что это та же лексема.', { word: token.text })}</p>}
-                {f.match === 'root' && <p className="warn small">{t('Найдено по корню слова «{word}» (без приставки).', { word: token.text })}</p>}
+                {f.match === 'stem' && <p className="warn small">{t('Найдено по основе «{word}» — возможно, это другое слово.', { word: token.text })}</p>}
+                {f.match === 'root' && <p className="warn small">{t('Найдено по корню «{word}».', { word: token.text })}</p>}
                 {f.entry.original && <div className="orig">{f.entry.original}</div>}
                 <p className="prewrap">
                   <LinkedText text={f.entry.text || f.entry.definition} onOpen={openRef} />

@@ -249,7 +249,7 @@ export default function VerseImageSheet({ payload, onClose }) {
           ['story', t('История@@формат картинки: вертикальная, для «историй» в соцсетях')],
         ]}
       />
-      <p className="vimg-tip">{t('Текст можно передвинуть пальцем, а размер изменить двумя пальцами.')}</p>
+      <p className="vimg-tip">{t('Двигайте текст пальцем, размер — двумя пальцами.')}</p>
       <div className="vimg-size">
         <span className="field-label">{t('Размер текста')}</span>
         {(scale !== 1 || pos.x || pos.y) && (

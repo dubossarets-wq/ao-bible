@@ -134,12 +134,12 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
   const open = (w) => w.strongs && openSheet('dict', pane, { token: { text: w.gloss || w.text, strongs: w.strongs, morph: w.morph ? [w.morph] : null }, ref, moduleId: payload.moduleId, origWord: w, autoOpen: true, initial: 'full' });
 
   const subtitle = lxx
-    ? t('Греческий текст Септуагинты (издание Свита) и значения слов по словарю')
+    ? t('Септуагинта (Свит) · значения по словарю')
     : hebrew
-      ? t('Еврейский текст (OSHB) и синодальный перевод')
+      ? t('Еврейский текст (OSHB) · синодальный')
       : vin
-        ? t('Греческий текст (Робинсон — Пирпонт) и подстрочник А. Винокурова')
-        : t('Греческий текст (Робинсон — Пирпонт) и синодальный перевод');
+        ? t('Греческий текст (Робинсон — Пирпонт) · А. Винокуров')
+        : t('Греческий текст (Робинсон — Пирпонт) · синодальный');
 
   return (
     <BottomSheet
@@ -165,10 +165,10 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
     >
       {(state.status === 'loading' || state.status === 'install') && (
         <div className="loading">
-          <Loader2 className="spin" size={20} /> {state.status === 'install' ? `${t('Загружаю оригинальный текст…')} ${state.label || ''}` : t('Загрузка…')}
+          <Loader2 className="spin" size={20} /> {state.status === 'install' ? `${t('Загружаю оригинал…')} ${state.label || ''}` : t('Загрузка…')}
         </div>
       )}
-      {state.status === 'none' && <p className="muted">{t('Для этой книги нет оригинального текста с номерами Стронга.')}</p>}
+      {state.status === 'none' && <p className="muted">{t('Для этой книги нет оригинала.')}</p>}
       {state.status === 'error' && <p className="warn">{state.message}</p>}
       {state.status === 'ok' && (
         <>
@@ -194,9 +194,9 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
             />
           )}
           {state.ru && <blockquote className="xref-source">{state.ru}</blockquote>}
-          {noAudio && <p className="muted small">{t('Для этого стиха пока нет записи чтения.')}</p>}
-          {!state.words.length && <p className="muted">{t('В оригинальном тексте этого стиха нет.')}</p>}
-          {lxx && state.words.length > 0 && <p className="muted small">{t('Под словами — значения по словарю Стронга, а не перевод Септуагинты.')}</p>}
+          {noAudio && <p className="muted small">{t('Записи этого стиха пока нет.')}</p>}
+          {!state.words.length && <p className="muted">{t('В оригинале этого стиха нет.')}</p>}
+          {lxx && state.words.length > 0 && <p className="muted small">{t('Под словами — значения по словарю, а не перевод.')}</p>}
           <div className={`il-grid ${hebrew ? 'hebrew' : 'greek'}`} dir={hebrew ? 'rtl' : 'ltr'}>
             {state.words.map((w, i) => (
               <div key={i} className={`il-cell ${i === cur ? 'speaking' : ''}`}>
@@ -224,12 +224,12 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
               </div>
             ))}
           </div>
-          {vin && <p className="sheet-hint">{t('Подстрочный перевод Нового Завета А. Винокурова — с разрешения автора. Слова греческого текста по порядку; под словом — его чтение, перевод Винокурова и номер Стронга.')}</p>}
-          {lxx && <p className="sheet-hint">{t('Септуагинта — греческий перевод Ветхого Завета (издание Г. Б. Свита). Слова по порядку, слева направо; под словом — его чтение, значение по словарю Стронга (подобрано по словам синодального стиха; бледным — это не перевод данного места) и номер Стронга. У слов, которых нет в Новом Завете, номера нет. Нажмите на слово — откроется статья словаря.')}</p>}
+          {vin && <p className="sheet-hint">{t('Подстрочник А. Винокурова — с разрешения автора. Под словом: чтение, перевод и номер Стронга.')}</p>}
+          {lxx && <p className="sheet-hint">{t('Септуагинта — греческий Ветхий Завет (изд. Г. Б. Свита). Под словом: чтение, значение и номер Стронга. Нажмите на слово — откроется словарь.')}</p>}
           {/* не hidden: у .sheet-hint свой display, атрибут hidden его не перебивает */}
           {!vin && !lxx && (
             <p className="sheet-hint">
-              {t('Слова оригинала по порядку (еврейский текст — справа налево); под словом — его чтение, перевод из синодального текста и номер Стронга. Бледным — обычный перевод слова, если в этом стихе его нет. Нажмите на слово — откроется статья словаря.')}
+              {t('Под словом: чтение, перевод и номер Стронга; бледным — обычное значение. Нажмите на слово — откроется словарь.')}
             </p>
           )}
         </>

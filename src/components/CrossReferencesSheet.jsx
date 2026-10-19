@@ -49,7 +49,7 @@ export default function CrossReferencesSheet({ pane, payload, onClose }) {
       {source && <blockquote className="xref-source">{source}</blockquote>}
       {!items && (
         <div className="loading">
-          <Loader2 className="spin" size={20} /> {t('Собираю параллельные места…')}
+          <Loader2 className="spin" size={20} /> {t('Загрузка…')}
         </div>
       )}
       {items && items.length === 0 && <Empty icon={Link2} title={t('Параллельных мест нет')}>{t('Для этого стиха в установленных модулях нет ссылок.')}</Empty>}
@@ -57,7 +57,7 @@ export default function CrossReferencesSheet({ pane, payload, onClose }) {
         <>
           <h4 className="sheet-h4">
             {t('Места')} · {items.length}
-            <Hint>{pane === 0 ? t('Нажмите на место — оно откроется во второй панели, а исходный текст останется в первой.') : t('Нажмите на место — оно откроется в этой панели; вернуться можно кнопкой «назад».')}</Hint>
+            <Hint>{pane === 0 ? t('Место откроется во второй панели.') : t('Место откроется здесь; вернуться — кнопкой «назад».')}</Hint>
           </h4>
           <ul className="xref-list">
             {items.map((it) => (
@@ -75,7 +75,7 @@ export default function CrossReferencesSheet({ pane, payload, onClose }) {
                       {it.truncated && <span className="muted">…</span>}
                     </span>
                   ) : (
-                    <span className="xref-text muted">{t('В переводе {module} нет текста для {book}.', { module: module?.name, book: bookMeta(it.ref.book).name })}</span>
+                    <span className="xref-text muted">{t('В переводе {module} нет этой книги.', { module: module?.name, book: bookMeta(it.ref.book).name })}</span>
                   )}
                 </button>
               </li>

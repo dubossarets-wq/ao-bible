@@ -37,7 +37,7 @@ export function moreItems(app, { index, ref, module, sheet = false }) {
       sub: `${bookMeta(last.book).short} ${last.chapter}:${last.verse}${last.text ? ` · ${last.text}` : ''}`,
       run: () => navigate(index, last),
     });
-  if (!sheet) add({ key: 'saved', icon: Heart, label: t('Закладки, заметки, любимые стихи'), run: () => openSheet('bookmarks', index) });
+  if (!sheet) add({ key: 'saved', icon: Heart, label: t('Закладки и заметки'), run: () => openSheet('bookmarks', index) });
   if (m.sermons) add({ key: 'sermons', icon: ScrollText, label: t('Проповеди'), run: () => openSheet('sermons', index) });
   if (m.plans && !sheet) add({ key: 'plans', icon: CalendarCheck, label: t('Планы чтения'), run: () => openSheet('plans', index) });
   if (m.listen) add({ key: 'listen', icon: Headphones, label: t('Слушать с этого места'), run: () => listenFrom(index, module.id, ref) });

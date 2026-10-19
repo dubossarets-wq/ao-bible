@@ -108,7 +108,7 @@ function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle })
     );
   else if (updatable)
     action = (
-      <button className="row-act accent" onClick={() => onInstall(cat)} aria-label={t('Обновить {name}', { name: m.name })} title={t('Доступна новая версия модуля')}>
+      <button className="row-act accent" onClick={() => onInstall(cat)} aria-label={t('Обновить {name}', { name: m.name })} title={t('Есть новая версия')}>
         <RefreshCw size={20} />
       </button>
     );
@@ -196,7 +196,7 @@ function Sections({ items, mode, catalog, busy, onInstall, filter }) {
   const groups = MODULE_SECTIONS.map(([type, label]) => [type, label, items.filter((m) => m.type === type)]).filter(
     ([type, , list]) => (filter === 'all' ? list.length : type === filter)
   );
-  if (!groups.length) return <Empty icon={BookOpen} title={t('Модулей нет')}>{mode === 'installed' ? t('Установите их из онлайн-каталога или импортируйте JSON-файл.') : t('В каталоге пока нет модулей.')}</Empty>;
+  if (!groups.length) return <Empty icon={BookOpen} title={t('Модулей нет')}>{mode === 'installed' ? t('Скачайте из каталога или импортируйте JSON-файл.') : t('В каталоге пока нет модулей.')}</Empty>;
   return groups.map(([type, label, list]) => (
     <section key={type} className="nav-group">
       <h4>
@@ -225,8 +225,8 @@ function Sections({ items, mode, catalog, busy, onInstall, filter }) {
       ) : (
         <p className="field-hint">
           {mode === 'installed' ? `${t('Не установлено.')} ` : `${t('В каталоге пока нет.')} `}
-          {type === 'commentary' && t('Комментарии к стихам (например, «Толковая Библия» Лопухина) можно импортировать в формате JSON.')}
-          {type === 'maps' && t('Модули карт можно импортировать в формате JSON.')}
+          {type === 'commentary' && t('Комментарии (например, Лопухина) можно импортировать из JSON-файла.')}
+          {type === 'maps' && t('Карты можно импортировать из JSON-файла.')}
         </p>
       )}
     </section>
@@ -373,7 +373,7 @@ export default function ModuleLibrary({ payload, onClose }) {
 
   return (
     <BottomSheet title={t('Библиотека модулей')} onClose={onClose} variant="wide">
-      {!persist && <p className="warn small">{t('Браузер не дал доступ к IndexedDB: модули работают до перезагрузки страницы и не сохраняются.')}</p>}
+      {!persist && <p className="warn small">{t('Браузер не даёт сохранять модули — после перезагрузки они пропадут.')}</p>}
       <div className="tabs" role="tablist" aria-label={t('Разделы библиотеки')}>
         {[
           ['installed', t('Установленные')],
@@ -392,7 +392,7 @@ export default function ModuleLibrary({ payload, onClose }) {
             <label htmlFor="mod-q" className="sr-only">
               {t('Поиск модулей')}
             </label>
-            <input id="mod-q" type="search" value={mq} onChange={(e) => setMq(e.target.value)} placeholder={t('Поиск модулей: Лопухин, Стронг, KJV…')} autoComplete="off" />
+            <input id="mod-q" type="search" value={mq} onChange={(e) => setMq(e.target.value)} placeholder={t('Поиск: Лопухин, Стронг, KJV…')} autoComplete="off" />
           </div>
           <Filter value={filter} onChange={setFilter} counts={counts} />
           <LangFilter value={lang} onChange={setLang} items={base} />
@@ -412,8 +412,8 @@ export default function ModuleLibrary({ payload, onClose }) {
             <h4>
               {t('Источник каталога')}
               <Hint>
-                {sourceUrl === repo.CATALOG_URL ? `${t('Сейчас — каталог, опубликованный вместе с приложением.')} ` : `${t('Сейчас — {url}.', { url: sourceUrl })} `}
-                {t('Можно подключить другой каталог в формате aob-catalog по адресу https://…/catalog.json (сервер должен разрешать CORS).')}
+                {sourceUrl === repo.CATALOG_URL ? `${t('Сейчас — встроенный каталог.')} ` : `${t('Сейчас — {url}.', { url: sourceUrl })} `}
+                {t('Можно подключить свой каталог aob-catalog: https://…/catalog.json (нужен CORS).')}
               </Hint>
             </h4>
             <form

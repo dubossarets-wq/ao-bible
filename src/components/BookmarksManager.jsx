@@ -33,7 +33,7 @@ function HighlightsTab({ moduleId, open }) {
   if (!Object.keys(highlights).length)
     return (
       <Empty icon={Highlighter} title={t('Выделений пока нет')}>
-        {t('Зажмите стих и нажмите маркер, чтобы выделить его цветом.')}
+        {t('Зажмите стих и нажмите маркер.')}
       </Empty>
     );
   const counts = {};
@@ -77,7 +77,7 @@ function CollectionsTab({ open }) {
   if (!collections.length)
     return (
       <Empty icon={Folder} title={t('Подборок пока нет')}>
-        {t('Зажмите стих → «⋯» → «В подборку…», чтобы собрать стихи к уроку или теме.')}
+        {t('Зажмите стих → «⋯» → «В подборку…».')}
       </Empty>
     );
   if (c)
@@ -194,7 +194,7 @@ export default function BookmarksManager({ pane, payload, onClose }) {
             </ul>
           ) : (
             <Empty icon={Bookmark} title={t('Закладок пока нет')}>
-              {t('Зажмите стих и нажмите «Закладка» — с этого места можно будет продолжить. Закладок может быть сколько угодно.')}
+              {t('Зажмите стих и нажмите «Закладка».')}
             </Empty>
           )}
         </>
@@ -219,7 +219,7 @@ export default function BookmarksManager({ pane, payload, onClose }) {
           </ul>
         ) : (
           <Empty icon={Heart} title={t('Любимых стихов пока нет')}>
-            {t('Дважды быстро нажмите на стих — он станет любимым. Или зажмите стих и нажмите сердечко.')}
+            {t('Дважды нажмите на стих — он станет любимым.')}
           </Empty>
         ))}
 
