@@ -435,6 +435,7 @@ async function run(label, viewport, isMobile) {
   // Настройки: тёмная тема и размер шрифта
   await page.click('.tb-more');
   await page.click('.menu-item:has-text("Оформление")');
+  await page.click('.sheet .pref-row:has-text("Тема")');
   await page.click('.segmented button:has-text("Тёмная")');
   const bg = await page.evaluate(() => getComputedStyle(document.querySelector('.reader')).backgroundColor);
   check(`${label}: тёмная тема`, bg === 'rgb(22, 22, 23)', bg);

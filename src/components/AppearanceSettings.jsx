@@ -1,13 +1,12 @@
 // Настройки оформления — все изменения применяются сразу через CSS-переменные.
-import React from 'react';
-import { RotateCcw } from 'lucide-react';
+import React, { useState } from 'react';
+import { RotateCcw, ChevronRight, SunMoon, AlignLeft, Type, Hash, Superscript, Heading, PanelTop, MessageSquareText, Highlighter, Palette } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
-import { FONTS, ensureFont, COLOR_KEYS, themeColors, DEFAULT_SETTINGS } from '../core/settings.js';
-import { usePersistentState } from '../core/storage.js';
-import { Segmented, Slider, Switch, Hint } from './ui.jsx';
+import { FONTS, ensureFont, COLOR_KEYS, themeColors } from '../core/settings.js';
+import { Segmented, Slider, Switch } from './ui.jsx';
 import { HL_COLORS } from '../core/highlights.js';
-import { t } from '../core/i18n.js';
+import { t, N_ } from '../core/i18n.js';
 import { formatRef } from '../core/books.js';
 
 // Готовые цвета для быстрого выбора акцента и верхней панели
@@ -130,12 +129,37 @@ export function Sample({ s: real, bar, head, num, sn, ui, colors, live, view = t
 // Вид текста — один выбор вместо трёх переключателей (хранится в прежних полях, чтобы ничего не сбилось)
 export const textView = (s) => (s.bookMode ? 'book' : s.continuousVerses ? 'flow' : 'verses');
 
-// Тонкие настройки — под переключателем «Все настройки», чтобы новичок видел только главное.
-// Если человек уже менял что-то из них, переключатель при первом открытии сразу включён.
-const FINE = ['fontWeight', 'lineHeight', 'verseSpacing', 'textWidth', 'chapterTitleSize', 'textAlign', 'verseNumSize', 'verseNumPos', 'strongSize', 'strongPos', 'headingSize', 'animations', 'uiFontSize', 'barHeight', 'splitLayout'];
-const fineChanged = (s) => FINE.some((k) => s[k] !== undefined && s[k] !== DEFAULT_SETTINGS[k]) || Object.keys(s.colorOverrides || {}).length > 0;
+// Блоки оформления: на первом экране — их список с текущими значениями, по нажатию — настройки одного блока
+const BLOCKS = [
+  ['theme', SunMoon, N_('Тема')],
+  ['view', AlignLeft, N_('Вид текста')],
+  ['text', Type, N_('Шрифт и размер')],
+  ['verseNums', Hash, N_('Номера стихов')],
+  ['strongs', Superscript, N_('Номера Стронга')],
+  ['headings', Heading, N_('Заголовки разделов')],
+  ['ui', PanelTop, N_('Кнопки и панели')],
+  ['comments', MessageSquareText, N_('Комментарии в тексте')],
+  ['hl', Highlighter, N_('Цвета выделений')],
+  ['colors', Palette, N_('Цвета интерфейса')],
+];
+const THEME_NAMES = { light: N_('Светлая'), dark: N_('Тёмная'), sepia: N_('Сепия'), auto: N_('Как в системе') };
+const VIEW_NAMES = { verses: N_('По стихам'), flow: N_('Сплошной'), book: N_('Как книга') };
+const POS_NAMES = { sup: N_('Над строкой'), inline: N_('В строке'), sub: N_('Под строкой') };
 
-export default function AppearanceSettings({ onClose }) {
+function BlockRow({ icon: Icon, title, sub, onClick }) {
+  return (
+    <button className="pref-row" onClick={onClick}>
+      <Icon size={19} />
+      <span className="pref-row-text">
+        {title}
+        {sub && <small>{sub}</small>}
+      </span>
+      <ChevronRight size={17} className="pref-chev" />
+    </button>
+  );
+}
+
+export default function AppearanceSettings({ onClose, payload }) {
   const { settings: s, setSettings: set, resetSettings, themeName, modules, hlLabels, setHlLabels } = useApp();
   const commentaries = modules.filter((m) => m.type === 'commentary' && m.enabled !== false);
   const eff = themeColors(s, themeName); // цвета, которые сейчас на экране
@@ -147,17 +171,38 @@ export default function AppearanceSettings({ onClose }) {
     const { [k]: _, ...rest } = over;
     set({ colorOverrides: rest });
   };
-  const [all, setAll] = usePersistentState('appearanceAll', () => fineChanged(s));
+  const [block, setBlock] = useState(payload?.block || null);
+  const onOff = (on, more) => (on ? [t('вкл'), more].filter(Boolean).join(' · ') : t('выкл'));
+  const inlineCount = s.inlineCommentaries ? commentaries.filter((m) => s.inlineCommentaries.includes(m.id)).length : commentaries.length;
+
+  // В строке блока — текущее значение, чтобы не открывать блок ради проверки
+  const subs = {
+    theme: t(THEME_NAMES[s.theme] || THEME_NAMES.light),
+    view: t(VIEW_NAMES[textView(s)]),
+    text: `${t(FONTS[s.fontFamily]?.label || '')} · ${s.fontSize} px`,
+    verseNums: onOff(s.showVerseNumbers, t(POS_NAMES[s.verseNumPos])),
+    strongs: onOff(s.showStrongs, t(POS_NAMES[s.strongPos])),
+    headings: onOff(s.showHeadings),
+    ui: [s.focusMode && t('Режим чтения'), t('Кнопки в тексте, меню, верхняя панель')].filter(Boolean).join(' · '),
+    comments: t('{n} из {total}', { n: inlineCount, total: commentaries.length }),
+    hl: HL_COLORS.map((c) => hlLabels[c.id] || t(c.name)).join(', '),
+    colors: Object.keys(over).length ? t('Свои цвета: {n}', { n: Object.keys(over).length }) : t('Как в теме'),
+  };
+  const shown = BLOCKS.filter(([id]) => id !== 'comments' || commentaries.length > 0);
+  const cur = BLOCKS.find(([id]) => id === block);
 
   return (
     <BottomSheet
-      title={t('Оформление')}
+      title={cur ? t(cur[2]) : t('Оформление')}
       onClose={onClose}
+      onBack={cur ? () => setBlock(null) : null}
       initial={1}
       headerExtra={
-        <button className="btn small" onClick={resetSettings} title={t('Восстановить стандартные настройки')}>
-          <RotateCcw size={15} /> {t('Сбросить')}
-        </button>
+        !cur && (
+          <button className="btn small" onClick={resetSettings} title={t('Восстановить стандартные настройки')}>
+            <RotateCcw size={15} /> {t('Сбросить')}
+          </button>
+        )
       }
     >
       {live && (
@@ -165,169 +210,147 @@ export default function AppearanceSettings({ onClose }) {
           <Sample s={s} live {...(LIVE[live] || { bar: true, head: true, sn: true, ui: true })} />
         </div>
       )}
-      <Switch id="set-all" checked={all} onChange={setAll} label={t('Все настройки')} hint={t('Толщина и интервалы текста, размер и положение номеров, цвета, высота панели')} />
-      <section className="settings-group">
-        <h4>{t('Тема')}</h4>
-        <Segmented
-          id="set-theme"
-          value={s.theme}
-          onChange={(theme) => set({ theme })}
-          options={[
-            ['light', t('Светлая')],
-            ['dark', t('Тёмная')],
-            ['sepia', t('Сепия')],
-            ['auto', t('Как в системе')],
-          ]}
-        />
-        <Sample s={s} bar head num sn />
-      </section>
 
-      <section className="settings-group">
-        <h4>
-          {t('Вид текста')} <Hint>{t('«По стихам» — каждый стих с новой строки. «Сплошной» — стихи подряд, с номерами. «Как книга» — абзацами по разделам, без номеров и кнопок, для долгого чтения.')}</Hint>
-        </h4>
-        <Segmented
-          id="set-view"
-          value={textView(s)}
-          onChange={(v) => set({ bookMode: v === 'book', continuousVerses: v === 'flow' })}
-          options={[
-            ['verses', t('По стихам')],
-            ['flow', t('Сплошной')],
-            ['book', t('Как книга')],
-          ]}
-        />
-        <Sample s={s} />
-      </section>
+      {!cur && (
+        <div className="pref-list-main">
+          {shown.map(([id, icon, title]) => (
+            <BlockRow key={id} icon={icon} title={t(title)} sub={subs[id]} onClick={() => setBlock(id)} />
+          ))}
+        </div>
+      )}
 
-      <section className="settings-group">
-        <h4>{t('Текст')}</h4>
-        <label className="field" htmlFor="set-font">
-          <span className="field-label">{t('Шрифт')}</span>
-          <select
-            id="set-font"
-            value={s.fontFamily}
-            onChange={(e) => {
-              ensureFont(e.target.value);
-              set({ fontFamily: e.target.value });
-            }}
-          >
-            {Object.entries(FONTS).map(([k, f]) => (
-              <option key={k} value={k}>
-                {t(f.label)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <Slider id="set-size" label={t('Размер шрифта')} value={s.fontSize} min={13} max={40} step={1} onChange={(fontSize) => set({ fontSize })} format={(v) => `${v} px`} />
-        {all && (
-          <>
-            <Slider id="set-weight" label={t('Толщина')} value={s.fontWeight} min={300} max={700} step={100} onChange={(fontWeight) => set({ fontWeight })} format={(v) => ({ 300: t('тонкий'), 400: t('обычный'), 500: t('средний'), 600: t('полужирный'), 700: t('жирный') })[v]} />
-            <Slider id="set-lh" label={t('Межстрочный интервал')} value={s.lineHeight} min={1.1} max={2.2} step={0.05} onChange={(lineHeight) => set({ lineHeight })} format={(v) => v.toFixed(2)} />
-            <Slider id="set-vgap" label={t('Расстояние между стихами')} value={s.verseSpacing} min={0} max={1.6} step={0.05} onChange={(verseSpacing) => set({ verseSpacing })} format={(v) => `${v.toFixed(2)} em`} />
-            <Slider id="set-width" label={t('Ширина текста')} value={s.textWidth} min={24} max={80} step={1} onChange={(textWidth) => set({ textWidth })} format={(v) => `${v} em`} />
-            <Slider id="set-ch" label={t('Размер заголовков глав')} value={s.chapterTitleSize} min={1.1} max={3.2} step={0.1} onChange={(chapterTitleSize) => set({ chapterTitleSize })} format={(v) => `${v.toFixed(1)} em`} />
-            <Segmented
-              id="set-align"
-              label={t('Выравнивание')}
-              value={s.textAlign}
-              onChange={(textAlign) => set({ textAlign })}
-              options={[
-                ['left', t('По левому краю')],
-                ['justify', t('По ширине')],
-              ]}
-            />
-          </>
-        )}
-        <Sample s={s} head />
-      </section>
-
-      <section className="settings-group">
-        <h4>{t('Номера стихов')}</h4>
-        <Switch id="set-vn" checked={s.showVerseNumbers} onChange={(showVerseNumbers) => set({ showVerseNumbers })} label={t('Номера стихов')} />
-        {all && (
-          <>
-            <Slider id="set-vn-size" label={t('Размер')} value={s.verseNumSize} min={0.4} max={1.2} step={0.05} onChange={(verseNumSize) => set({ verseNumSize })} format={(v) => `${Math.round(v * 100)}%`} />
-            <Segmented
-              id="set-vn-pos"
-              label={t('Положение')}
-              value={s.verseNumPos}
-              onChange={(verseNumPos) => set({ verseNumPos })}
-              options={[
-                ['sup', t('Над строкой')],
-                ['inline', t('В строке')],
-              ]}
-            />
-          </>
-        )}
-        <Sample s={s} />
-      </section>
-
-      <section className="settings-group">
-        <h4>{t('Номера Стронга')}</h4>
-        <Switch id="set-strong" checked={s.showStrongs} onChange={(showStrongs) => set({ showStrongs })} label={t('Номера Стронга в тексте')} hint={t('Только для размеченных переводов, например RST+')} />
-        {all && (
-          <>
-            <Slider id="set-sn-size" label={t('Размер')} value={s.strongSize} min={0.35} max={1} step={0.05} onChange={(strongSize) => set({ strongSize })} format={(v) => `${Math.round(v * 100)}%`} />
-            <Segmented
-              id="set-sn-pos"
-              label={t('Положение')}
-              value={s.strongPos}
-              onChange={(strongPos) => set({ strongPos })}
-              options={[
-                ['sup', t('Над строкой')],
-                ['inline', t('В строке')],
-                ['sub', t('Под строкой')],
-              ]}
-            />
-            <ColorRow id="c-strong" label={t('Цвет')} value={eff.strong} changed={!!over.strong} onChange={(v) => setColor('strong', v)} onReset={() => resetColor('strong')} onLive={liveFor('strong')} />
-          </>
-        )}
-        <Sample s={s} sn num={false} view="flow" />
-      </section>
-
-      <section className="settings-group">
-        <h4>{t('Заголовки разделов')}</h4>
-        <Switch id="set-head" checked={s.showHeadings} onChange={(showHeadings) => set({ showHeadings })} label={t('Заголовки разделов')} />
-        {all && (
-          <>
-            <Slider id="set-head-size" label={t('Размер')} value={s.headingSize} min={0.6} max={1.4} step={0.05} onChange={(headingSize) => set({ headingSize })} format={(v) => `${Math.round(v * 100)}%`} />
-            <ColorRow id="c-heading" label={t('Цвет')} value={eff.heading} changed={!!over.heading} onChange={(v) => setColor('heading', v)} onReset={() => resetColor('heading')} onLive={liveFor('heading')} />
-          </>
-        )}
-        <Sample s={s} head view="flow" />
-      </section>
-
-      <section className="settings-group">
-        <h4>{t('Интерфейс')}</h4>
-        <Switch id="set-xr" checked={s.showXrefButtons} onChange={(showXrefButtons) => set({ showXrefButtons })} label={t('Кнопки параллельных мест')} />
-        <Switch id="set-il" checked={s.showIllustrations !== false} onChange={(showIllustrations) => set({ showIllustrations })} label={t('Значки иллюстраций у стихов')} hint={t('Картинка в конце стиха открывает иллюстрацию к нему')} />
-        <Switch id="set-focus" checked={s.focusMode} onChange={(focusMode) => set({ focusMode })} label={t('Режим чтения')} hint={t('Прячет кнопки в тексте, панель скрывается при прокрутке вниз')} />
-        {all && (
-          <>
-            <Switch id="set-anim" checked={s.animations} onChange={(animations) => set({ animations })} label={t('Анимации')} />
-            <Slider id="set-uifs" label={t('Размер шрифта меню и окон')} value={s.uiFontSize} min={13} max={20} step={1} onChange={(uiFontSize) => set({ uiFontSize })} format={(v) => `${v} px`} />
-            <Slider id="set-barh" label={t('Высота верхней панели')} value={s.barHeight} min={44} max={72} step={2} onChange={(barHeight) => set({ barHeight })} format={(v) => `${v} px`} />
-            <Segmented
-              id="set-split"
-              label={t('Разделённый экран')}
-              value={s.splitLayout}
-              onChange={(splitLayout) => set({ splitLayout })}
-              options={[
-                ['auto', t('Авто')],
-                ['columns', t('Рядом')],
-                ['rows', t('Друг над другом')],
-              ]}
-            />
-          </>
-        )}
-        <Sample s={s} bar ui num={false} view="flow" />
-      </section>
-
-      {commentaries.length > 0 && (
+      {block === 'theme' && (
         <section className="settings-group">
-          <h4>
-            {t('Комментарии в тексте')} <Hint>{t('Отмеченные подписываются после стиха. Остальные открываются долгим нажатием на стих → «Комментарии».')}</Hint>
-          </h4>
+          <Segmented id="set-theme" value={s.theme} onChange={(theme) => set({ theme })} options={Object.entries(THEME_NAMES).map(([k, v]) => [k, t(v)])} />
+          <Sample s={s} bar head num sn />
+        </section>
+      )}
+
+      {block === 'view' && (
+        <section className="settings-group">
+          <p className="field-hint">{t('«По стихам» — каждый стих с новой строки. «Сплошной» — стихи подряд, с номерами. «Как книга» — абзацами по разделам, без номеров и кнопок, для долгого чтения.')}</p>
+          <Segmented
+            id="set-view"
+            value={textView(s)}
+            onChange={(v) => set({ bookMode: v === 'book', continuousVerses: v === 'flow' })}
+            options={Object.entries(VIEW_NAMES).map(([k, v]) => [k, t(v)])}
+          />
+          <Sample s={s} />
+        </section>
+      )}
+
+      {block === 'text' && (
+        <section className="settings-group">
+          <Sample s={s} head />
+          <label className="field" htmlFor="set-font">
+            <span className="field-label">{t('Шрифт')}</span>
+            <select
+              id="set-font"
+              value={s.fontFamily}
+              onChange={(e) => {
+                ensureFont(e.target.value);
+                set({ fontFamily: e.target.value });
+              }}
+            >
+              {Object.entries(FONTS).map(([k, f]) => (
+                <option key={k} value={k}>
+                  {t(f.label)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Slider id="set-size" label={t('Размер шрифта')} value={s.fontSize} min={13} max={40} step={1} onChange={(fontSize) => set({ fontSize })} format={(v) => `${v} px`} />
+          <Slider id="set-weight" label={t('Толщина')} value={s.fontWeight} min={300} max={700} step={100} onChange={(fontWeight) => set({ fontWeight })} format={(v) => ({ 300: t('тонкий'), 400: t('обычный'), 500: t('средний'), 600: t('полужирный'), 700: t('жирный') })[v]} />
+          <Slider id="set-lh" label={t('Межстрочный интервал')} value={s.lineHeight} min={1.1} max={2.2} step={0.05} onChange={(lineHeight) => set({ lineHeight })} format={(v) => v.toFixed(2)} />
+          <Slider id="set-vgap" label={t('Расстояние между стихами')} value={s.verseSpacing} min={0} max={1.6} step={0.05} onChange={(verseSpacing) => set({ verseSpacing })} format={(v) => `${v.toFixed(2)} em`} />
+          <Slider id="set-width" label={t('Ширина текста')} value={s.textWidth} min={24} max={80} step={1} onChange={(textWidth) => set({ textWidth })} format={(v) => `${v} em`} />
+          <Slider id="set-ch" label={t('Размер заголовков глав')} value={s.chapterTitleSize} min={1.1} max={3.2} step={0.1} onChange={(chapterTitleSize) => set({ chapterTitleSize })} format={(v) => `${v.toFixed(1)} em`} />
+          <Segmented
+            id="set-align"
+            label={t('Выравнивание')}
+            value={s.textAlign}
+            onChange={(textAlign) => set({ textAlign })}
+            options={[
+              ['left', t('По левому краю')],
+              ['justify', t('По ширине')],
+            ]}
+          />
+        </section>
+      )}
+
+      {block === 'verseNums' && (
+        <section className="settings-group">
+          <Sample s={s} />
+          <Switch id="set-vn" checked={s.showVerseNumbers} onChange={(showVerseNumbers) => set({ showVerseNumbers })} label={t('Номера стихов')} />
+          <Slider id="set-vn-size" label={t('Размер')} value={s.verseNumSize} min={0.4} max={1.2} step={0.05} onChange={(verseNumSize) => set({ verseNumSize })} format={(v) => `${Math.round(v * 100)}%`} />
+          <Segmented
+            id="set-vn-pos"
+            label={t('Положение')}
+            value={s.verseNumPos}
+            onChange={(verseNumPos) => set({ verseNumPos })}
+            options={[
+              ['sup', t('Над строкой')],
+              ['inline', t('В строке')],
+            ]}
+          />
+        </section>
+      )}
+
+      {block === 'strongs' && (
+        <section className="settings-group">
+          <Sample s={s} sn num={false} view="flow" />
+          <Switch id="set-strong" checked={s.showStrongs} onChange={(showStrongs) => set({ showStrongs })} label={t('Номера Стронга в тексте')} hint={t('Только для размеченных переводов, например RST+')} />
+          <Slider id="set-sn-size" label={t('Размер')} value={s.strongSize} min={0.35} max={1} step={0.05} onChange={(strongSize) => set({ strongSize })} format={(v) => `${Math.round(v * 100)}%`} />
+          <Segmented
+            id="set-sn-pos"
+            label={t('Положение')}
+            value={s.strongPos}
+            onChange={(strongPos) => set({ strongPos })}
+            options={[
+              ['sup', t('Над строкой')],
+              ['inline', t('В строке')],
+              ['sub', t('Под строкой')],
+            ]}
+          />
+          <ColorRow id="c-strong" label={t('Цвет')} value={eff.strong} changed={!!over.strong} onChange={(v) => setColor('strong', v)} onReset={() => resetColor('strong')} onLive={liveFor('strong')} />
+        </section>
+      )}
+
+      {block === 'headings' && (
+        <section className="settings-group">
+          <Sample s={s} head view="flow" />
+          <Switch id="set-head" checked={s.showHeadings} onChange={(showHeadings) => set({ showHeadings })} label={t('Заголовки разделов')} />
+          <Slider id="set-head-size" label={t('Размер')} value={s.headingSize} min={0.6} max={1.4} step={0.05} onChange={(headingSize) => set({ headingSize })} format={(v) => `${Math.round(v * 100)}%`} />
+          <ColorRow id="c-heading" label={t('Цвет')} value={eff.heading} changed={!!over.heading} onChange={(v) => setColor('heading', v)} onReset={() => resetColor('heading')} onLive={liveFor('heading')} />
+        </section>
+      )}
+
+      {block === 'ui' && (
+        <section className="settings-group">
+          <Switch id="set-xr" checked={s.showXrefButtons} onChange={(showXrefButtons) => set({ showXrefButtons })} label={t('Кнопки параллельных мест')} />
+          <Switch id="set-il" checked={s.showIllustrations !== false} onChange={(showIllustrations) => set({ showIllustrations })} label={t('Значки иллюстраций у стихов')} hint={t('Картинка в конце стиха открывает иллюстрацию к нему')} />
+          <Switch id="set-focus" checked={s.focusMode} onChange={(focusMode) => set({ focusMode })} label={t('Режим чтения')} hint={t('Прячет кнопки в тексте, панель скрывается при прокрутке вниз')} />
+          <Switch id="set-anim" checked={s.animations} onChange={(animations) => set({ animations })} label={t('Анимации')} />
+          <Slider id="set-uifs" label={t('Размер шрифта меню и окон')} value={s.uiFontSize} min={13} max={20} step={1} onChange={(uiFontSize) => set({ uiFontSize })} format={(v) => `${v} px`} />
+          <Slider id="set-barh" label={t('Высота верхней панели')} value={s.barHeight} min={44} max={72} step={2} onChange={(barHeight) => set({ barHeight })} format={(v) => `${v} px`} />
+          <Segmented
+            id="set-split"
+            label={t('Разделённый экран')}
+            value={s.splitLayout}
+            onChange={(splitLayout) => set({ splitLayout })}
+            options={[
+              ['auto', t('Авто')],
+              ['columns', t('Рядом')],
+              ['rows', t('Друг над другом')],
+            ]}
+          />
+          <Sample s={s} bar ui num={false} view="flow" />
+        </section>
+      )}
+
+      {block === 'comments' && (
+        <section className="settings-group">
+          <p className="field-hint">{t('Отмеченные подписываются после стиха. Остальные открываются долгим нажатием на стих → «Комментарии».')}</p>
           {commentaries.map((m) => (
             <Switch
               key={m.id}
@@ -344,25 +367,24 @@ export default function AppearanceSettings({ onClose }) {
         </section>
       )}
 
-      <section className="settings-group">
-        <h4>
-          {t('Цвета выделений')} <Hint>{t('Подпишите цвета — например, «Обетования», «Вопросы». Подписи видны в палитре и в списке выделений.')}</Hint>
-        </h4>
-        <div className="hl-labels">
-          {HL_COLORS.map((c) => (
-            <label key={c.id} className="hl-label-row" htmlFor={`hl-${c.id}`}>
-              <span className="hl-swatch" style={{ background: c.css }} />
-              <input id={`hl-${c.id}`} value={hlLabels[c.id] || ''} placeholder={t(c.name)} onChange={(e) => setHlLabels((l) => ({ ...l, [c.id]: e.target.value }))} autoComplete="off" />
-            </label>
-          ))}
-        </div>
-      </section>
-
-      {all && (
+      {block === 'hl' && (
         <section className="settings-group">
-          <h4>
-            {t('Цвета')} <Hint>{t('Любой цвет можно поменять поверх выбранной темы. Стрелка справа возвращает цвет темы.')}</Hint>
-          </h4>
+          <p className="field-hint">{t('Подпишите цвета — например, «Обетования», «Вопросы». Подписи видны в палитре и в списке выделений.')}</p>
+          <div className="hl-labels">
+            {HL_COLORS.map((c) => (
+              <label key={c.id} className="hl-label-row" htmlFor={`hl-${c.id}`}>
+                <span className="hl-swatch" style={{ background: c.css }} />
+                <input id={`hl-${c.id}`} value={hlLabels[c.id] || ''} placeholder={t(c.name)} onChange={(e) => setHlLabels((l) => ({ ...l, [c.id]: e.target.value }))} autoComplete="off" />
+              </label>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {block === 'colors' && (
+        <section className="settings-group">
+          <p className="field-hint">{t('Любой цвет можно поменять поверх выбранной темы. Стрелка справа возвращает цвет темы.')}</p>
+          <Sample s={s} bar head sn colors />
           <Swatches id="sw-accent" label={t('Акцент интерфейса')} list={ACCENTS} value={eff.accent} onPick={(v) => setColor('accent', v)} />
           <Swatches id="sw-bar" label={t('Верхняя панель')} list={BARS} value={eff.bar} onPick={(v) => set({ colorOverrides: { ...over, bar: v, barText: isLight(v) ? '#1d1c1a' : '#f3f1ec' } })} />
           <div className="color-list">
@@ -375,7 +397,6 @@ export default function AppearanceSettings({ onClose }) {
               <RotateCcw size={15} /> {t('Все цвета — как в теме')}
             </button>
           )}
-          <Sample s={s} bar head sn colors />
         </section>
       )}
     </BottomSheet>
