@@ -4,7 +4,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Check, Languages, BookCopy, Heart, Link2, Share2, Copy, NotebookPen, Bookmark, BookmarkCheck, MoreHorizontal, MessageSquareText, Headphones, Highlighter, FolderPlus, Eraser, Compass, ScrollText, WholeWord, Image as ImageIcon } from 'lucide-react';
 import { useApp } from '../App.jsx';
-import { getVerse } from '../core/modules.js';
+import { getVerse, ORIGINALS } from '../core/modules.js';
 import { listenFrom } from '../core/listen.js';
 import { swallowNextClick } from './ui.jsx';
 import { HL_COLORS, hlLabel } from '../core/highlights.js';
@@ -55,7 +55,8 @@ export default function SelectionBar({ index, module, selection, onDone }) {
   const moreRef = useRef(null);
   const refs = sortedRefs(selection);
   const label = selectionLabel(refs);
-  const others = bibles.filter((b) => b.id !== module.id);
+  // Оригиналы (еврейский и греческий текст) — для подстрочника, параллельно предлагаем только переводы
+  const others = bibles.filter((b) => b.id !== module.id && !ORIGINALS.includes(b.id));
   const first = refs[0];
   const hasNote = !!notes[`${first.book}.${first.chapter}.${first.verse}`];
 

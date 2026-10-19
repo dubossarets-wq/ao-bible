@@ -9,6 +9,7 @@ import { readStats } from '../core/readLog.js';
 import { bookMeta } from '../core/books.js';
 import { fetchPlanIndex, fetchPlan, makeCustomPlan, SCOPES, parseReading, planToday, behindDays, readingDone, localDate } from '../core/plans.js';
 import { ConfirmButton, Segmented, Hint } from './ui.jsx';
+import VerseOfDayCard from './VerseOfDayCard.jsx';
 import { t, fmtDate, locale } from '../core/i18n.js';
 
 // Кольцо прогресса: доля 0…1, в середине — подпись
@@ -243,6 +244,8 @@ export default function PlansSheet({ pane, onClose }) {
 
   return (
     <BottomSheet title={t('Планы чтения')} onClose={onClose} initial={2}>
+      <VerseOfDayCard pane={pane} onClose={onClose} />
+
       {plans.map((p) => (
         <ActivePlan
           key={p.uid}

@@ -662,8 +662,8 @@ mark.diff { background: color-mix(in srgb, #f2a65a 38%, transparent); border-rad
 .hint-pop.below::before { top: -5px; }
 .hint-pop.above::before { bottom: -5px; }
 
-/* Верхняя панель — снова тёмная (компоновка новая: «таблетка» перевода, круглые кнопки) */
-.toolbar { background: var(--bar); color: var(--bar-text); box-shadow: 0 1px 0 rgba(0,0,0,.25); }
+/* Верхняя панель — цвета темы (у светлых тем светлая, с тонкой линией снизу): «таблетка» перевода, круглые кнопки */
+.toolbar { background: var(--bar); color: var(--bar-text); box-shadow: 0 1px 0 color-mix(in srgb, var(--line) 70%, rgba(0,0,0,.25)); }
 .toolbar .tb { color: var(--bar-text); }
 @media (hover: hover) { .toolbar .tb:hover:not(:disabled) { background: color-mix(in srgb, var(--bar-text) 12%, transparent); } }
 .toolbar .tb:active:not(:disabled) { background: color-mix(in srgb, var(--bar-text) 20%, transparent); }
@@ -1296,3 +1296,24 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .bg-preview { display: block; width: 100%; aspect-ratio: 16 / 10; border-radius: var(--radius); border: 1px solid var(--line); background: var(--user-bg, none) center / cover no-repeat, var(--bg); position: relative; overflow: hidden; }
 .bg-preview::after { content: ''; position: absolute; inset: 0; background: color-mix(in srgb, var(--bg) var(--bg-veil), transparent); }
 .bg-preview span { position: relative; z-index: 1; display: block; padding: 14px 16px; font-family: var(--font-text); font-size: calc(var(--fs) * .85); color: var(--text); }
+.bg-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+.bg-photo { padding: 0; border: 0; border-radius: 10px; overflow: hidden; aspect-ratio: 4 / 5; cursor: pointer; background: var(--line); }
+.bg-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Стих дня вверху листа «Планы» (VerseOfDayCard) */
+.today-verse { position: relative; isolation: isolate; overflow: hidden; flex: none; display: flex; flex-direction: column; min-height: min(360px, 46vh); margin-bottom: 14px; border-radius: calc(var(--radius) + 10px); background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 55%, #0b1020), #0b1020); color: #fff; }
+.today-photo { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
+/* Затемнение снизу и посередине — белый текст читается на любом снимке */
+.today-veil { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(0,0,0,.28) 0%, rgba(0,0,0,.42) 40%, rgba(0,0,0,.7) 100%); }
+.today-verse.light-photo .today-veil { background: linear-gradient(180deg, rgba(0,0,0,.4) 0%, rgba(0,0,0,.55) 40%, rgba(0,0,0,.78) 100%); }
+.today-verse-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 22px 22px 6px; }
+.today-kicker { font-size: .78rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; opacity: .88; }
+.today-text { margin: 0; font-family: var(--font-text); font-size: clamp(1.3rem, 5.6vw, 1.75rem); line-height: 1.38; font-weight: 500; text-wrap: pretty; text-shadow: 0 1px 14px rgba(0,0,0,.4); }
+.today-ref { font-size: 1.02rem; font-weight: 700; opacity: .95; }
+.today-ref::before { content: ''; display: block; width: 36px; height: 2px; margin-bottom: 10px; background: currentColor; opacity: .7; }
+.today-text-skeleton { display: block; height: 6.5em; border-radius: 10px; background: rgba(255,255,255,.14); }
+.today-actions { display: flex; gap: 8px; padding: 14px 16px 16px; }
+.today-act { flex: 1 1 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 8px; border-radius: 999px; border: 0; background: color-mix(in srgb, var(--panel) 86%, transparent); color: var(--text); font-size: .92rem; font-weight: 600; white-space: nowrap; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.today-act.primary { background: var(--accent); color: var(--on-accent); }
+.today-act:disabled { opacity: .55; }
+.today-credit { padding: 0 16px 10px; margin-top: -6px; font-size: .64rem; opacity: .72; text-align: right; }
+@media (min-width: 700px) { .today-verse { min-height: 340px; } }

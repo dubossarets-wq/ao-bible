@@ -7,7 +7,7 @@ import React, { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Loader2, Volume2, Square } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
-import { getBook, getVerse } from '../core/modules.js';
+import { getBook, getVerse, errorText } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
 import { formatRef, testamentOf } from '../core/books.js';
 import { ensureOriginal, origInterlinear, originalFor, vinInterlinear, lxxInterlinear, LXX } from '../core/interlinear.js';
@@ -103,7 +103,7 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
         ]);
         if (alive) setState({ status: 'ok', words: words || [], ru: ru ? plainText(ru) : '' });
       } catch (e) {
-        if (alive) setState({ status: 'error', message: e.message });
+        if (alive) setState({ status: 'error', message: errorText(e) });
       }
     })();
     return () => {

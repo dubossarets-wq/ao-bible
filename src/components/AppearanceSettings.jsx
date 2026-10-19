@@ -182,6 +182,20 @@ function BlockRow({ icon: Icon, title, sub, onClick }) {
 export default function AppearanceSettings({ onClose, payload }) {
   const { settings: s, setSettings: set, resetSettings, themeName, modules, hlLabels, setHlLabels, toast } = useApp();
   const fileRef = React.useRef(null);
+  const [block, setBlock] = useState(payload?.block || null);
+  // Готовые фото — свободные снимки из фонов для картинок со стихом (public/images/verse-bg)
+  const [photos, setPhotos] = useState(null);
+  React.useEffect(() => {
+    if (block !== 'bg' || photos) return;
+    fetch('images/verse-bg/index.json')
+      .then((r) => r.json())
+      .then((j) => setPhotos(j.images || []))
+      .catch(() => setPhotos([]));
+  }, [block, photos]);
+  const pickPhoto = (ph) =>
+    fetch(`images/verse-bg/${ph.file}`)
+      .then((r) => r.blob())
+      .then(pickBg);
   const pickBg = async (file) => {
     if (!file) return;
     try {
@@ -201,7 +215,6 @@ export default function AppearanceSettings({ onClose, payload }) {
     const { [k]: _, ...rest } = over;
     set({ colorOverrides: rest });
   };
-  const [block, setBlock] = useState(payload?.block || null);
   const onOff = (on, more) => (on ? [t('вкл'), more].filter(Boolean).join(' · ') : t('выкл'));
   const inlineCount = s.inlineCommentaries ? commentaries.filter((m) => s.inlineCommentaries.includes(m.id)).length : commentaries.length;
 
@@ -277,6 +290,15 @@ export default function AppearanceSettings({ onClose, payload }) {
               </button>
             )}
           </div>
+          {photos?.length > 0 && (
+            <div className="bg-photos" role="group" aria-label={t('Готовые фото')}>
+              {photos.map((ph) => (
+                <button key={ph.id} className="bg-photo" onClick={() => pickPhoto(ph)} title={t(ph.title)} aria-label={t(ph.title)}>
+                  <img src={`images/verse-bg/${ph.thumb}`} alt="" loading="lazy" />
+                </button>
+              ))}
+            </div>
+          )}
           {!!s.bgImage && (
             <>
               <Slider id="set-bg-show" label={t('Картинку видно')} value={100 - (s.bgVeil ?? 72)} min={5} max={70} step={1} onChange={(v) => set({ bgVeil: 100 - v })} format={(v) => `${v}%`} />

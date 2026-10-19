@@ -168,7 +168,14 @@ ${FONTS}
   );
   // Service worker: оболочка приложения кэшируется при установке; модули — при первом скачивании
   // (gz-версии, которые и загружает приложение). Тексты уже лежат в IndexedDB, так что офлайн работает.
-  const shell = ['./', 'index.html', 'manifest.webmanifest', 'modules/catalog.json', 'icons/icon.svg', 'icons/icon-192.png', 'icons/apple-touch-icon.png'];
+  // Без сети должно работать всё, кроме загрузки модулей: планы чтения и фотографии (для картинок со стихом,
+  // обложек планов и фона) кладём в кэш сразу при установке
+  const ownFiles = async (sub, re) => (await readdir(path.join(out, PWA_DIR, sub)).catch(() => [])).filter((f) => re.test(f)).map((f) => `${sub}/${f}`);
+  const shell = [
+    './', 'index.html', 'manifest.webmanifest', 'modules/catalog.json', 'icons/icon.svg', 'icons/icon-192.png', 'icons/apple-touch-icon.png',
+    ...(await ownFiles('plans', /\.json$/)),
+    ...(await ownFiles('images/verse-bg', /\.(json|jpg)$/)),
+  ];
   await writeFile(path.join(dir, 'version.json'), JSON.stringify({ version: VERSION, build: BUILD, date: BUILT_AT.toISOString() }));
   // Политика конфиденциальности отдельной страницей (ссылка для App Store и Google Play): privacy.html
   await writeFile(path.join(dir, 'privacy.html'), PRIVACY_HTML);
@@ -207,10 +214,12 @@ self.addEventListener('fetch', (e) => {
     }))));
     return;
   }
-  // Остальное (иконки, шрифты, модули) — из кэша, иначе из сети с сохранением
+  // Модули — только из сети: приложение само хранит их в IndexedDB, второй копии в кэше не нужно
+  if (url.origin === location.origin && url.pathname.includes('/modules/')) return;
+  // Остальное (иконки, шрифты, планы, фотографии) — из кэша, иначе из сети с сохранением
   if (url.origin === location.origin || url.host.endsWith('gstatic.com') || url.host.endsWith('googleapis.com') || url.host === 'cdn.jsdelivr.net') {
-    e.respondWith(caches.match(e.request).then((hit) => hit || fetch(e.request).then((r) => {
-      if (r.ok && !url.pathname.endsWith('.json')) { const copy = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); }
+    e.respondWith(caches.match(e.request, { ignoreSearch: true }).then((hit) => hit || fetch(e.request).then((r) => {
+      if (r.ok) { const copy = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); }
       return r;
     })));
   }

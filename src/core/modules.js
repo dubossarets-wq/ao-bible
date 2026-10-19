@@ -9,7 +9,9 @@ import { t } from './i18n.js';
 export const errorText = (e) =>
   e?.name === 'QuotaExceededError' || /quota/i.test(e?.message || '')
     ? t('Не хватает места на устройстве. Удалите ненужные модули (Библиотека модулей → Установленные) или освободите память телефона.')
-    : e?.message || String(e);
+    : !navigator.onLine
+      ? t('Нужен интернет: этот модуль скачивается один раз, потом работает без сети.')
+      : e?.message || String(e);
 
 const bookCache = new Map(); // `${moduleId}|${bookId}` -> { chapters, headings, xrefs }
 const payloadCache = new Map(); // moduleId -> Promise<payload>
@@ -220,10 +222,12 @@ export async function importFile(file, onProgress) {
 }
 
 // Первый запуск: ставим базовый набор из каталога, сначала перевод — чтобы сразу можно было читать.
-export const STARTER = ['rst-plus', 'xrefs-rst', 'rst-symphony', 'strongs-ru-hebrew', 'strongs-ru-greek', 'bible-places', 'bible-illustrations'];
+// Оригиналы для подстрочника (еврейский и греческий текст) — тоже сразу, чтобы подстрочник работал без интернета
+export const ORIGINALS = ['oshb', 'byz-rp2018'];
+export const STARTER = ['rst-plus', 'xrefs-rst', 'rst-symphony', 'strongs-ru-hebrew', 'strongs-ru-greek', 'bible-places', 'bible-illustrations', ...ORIGINALS];
 
 // Модули, которые один раз доустанавливаются тем, кто начал пользоваться приложением до их появления
-export const LATE_STARTER = ['bible-places', 'bible-illustrations', 'strongs-ru-hebrew', 'strongs-ru-greek'];
+export const LATE_STARTER = ['bible-places', 'bible-illustrations', 'strongs-ru-hebrew', 'strongs-ru-greek', ...ORIGINALS];
 
 // Модули, собранные в один: многотомный комментарий одного автора стал одним модулем.
 // У кого стоят старые части — ставится общий модуль, части удаляются (см. App.jsx).

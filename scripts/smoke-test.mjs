@@ -436,7 +436,7 @@ async function run(label, viewport, isMobile) {
   await page.click('.tb-more');
   await page.click('.menu-item:has-text("Оформление")');
   await page.click('.sheet .pref-row:has-text("Тема")');
-  await page.click('.segmented button:has-text("Тёмная")');
+  await page.click('.theme-tile:has-text("Тёмная")');
   const bg = await page.evaluate(() => getComputedStyle(document.querySelector('.reader')).backgroundColor);
   check(`${label}: тёмная тема`, bg === 'rgb(22, 22, 23)', bg);
   await page.screenshot({ path: `${shots}/${label}-8-settings.png` });

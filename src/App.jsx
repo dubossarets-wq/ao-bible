@@ -168,7 +168,7 @@ export default function App() {
           const entry = cat.find((c) => c.id === id);
           if (!entry) continue;
           await repo.installFromCatalog(entry);
-          if (entry.id === 'strongs-ru-greek') continue; // о русском Стронге — одно уведомление на оба модуля
+          if (entry.id === 'strongs-ru-greek' || repo.ORIGINALS.includes(entry.id)) continue; // о русском Стронге — одно уведомление на оба модуля; оригиналы ставятся молча
           toast(
             entry.type === 'illustrations'
               ? t('Добавлены иллюстрации к стихам: нажмите на значок картинки в конце стиха')
@@ -274,8 +274,10 @@ export default function App() {
           }
         }
         // Одно сообщение на все подключённые записи
-        if (added.length) {
-          const names = [...new Set(added.map((e) => bibles.find((b) => fitsTranslation(e.translation, b.id))?.name).filter(Boolean))];
+        // Записи чтения оригинала (к OSHB и греческому тексту) — для подстрочника, а не аудиокниги: о них молчим
+        const books = added.filter((e) => !repo.ORIGINALS.includes(e.translation));
+        if (books.length) {
+          const names = [...new Set(books.map((e) => bibles.find((b) => fitsTranslation(e.translation, b.id))?.name).filter(Boolean))];
           toast(names.length ? t('Подключены аудиокниги к переводу {names} — нажмите 🎧 внизу, чтобы слушать', { names: names.join(', ') }) : t('Подключены аудиокниги — нажмите 🎧 внизу, чтобы слушать'));
         }
       })

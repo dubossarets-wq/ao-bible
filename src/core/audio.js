@@ -150,7 +150,12 @@ function stopEngines() {
   if (el) el.pause();
 }
 
-const playError = (e) => (e?.name === 'NotAllowedError' ? t('Нажмите ▶, чтобы начать воспроизведение') : t('Не удалось воспроизвести запись'));
+const playError = (e) =>
+  e?.name === 'NotAllowedError'
+    ? t('Нажмите ▶, чтобы начать воспроизведение')
+    : !navigator.onLine
+      ? t('Нет интернета. Чтобы слушать без сети, скачайте книгу заранее: Настройки → «Аудио».')
+      : t('Не удалось воспроизвести запись');
 
 async function neighbourVerse(moduleId, ref, dir) {
   const mod = await getModule(moduleId);
