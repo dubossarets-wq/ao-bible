@@ -667,7 +667,8 @@ def m_maps():
 
 # ---------------------------------------------------------------------------------------------
 
-BUILDERS = [m_kjv, m_bsb, m_oshb, m_byz, m_csl, m_makarij, m_kulish,
+# m_makarij (только Пятикнижие) заменён полным модулем rus-makarij из scripts/build_ru_old.py
+BUILDERS = [m_kjv, m_bsb, m_oshb, m_byz, m_csl, m_kulish,
             m_lopukhin, m_mhcc, m_jfb, m_barnes,
             m_nikifor, m_dal, m_pbe, m_esbe_bible, m_eebe_bible,
             m_easton, m_smith, m_hitchcock, m_nave, m_isbe, m_amtract, m_torrey, m_webster1828,
