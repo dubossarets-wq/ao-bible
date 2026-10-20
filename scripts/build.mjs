@@ -201,8 +201,9 @@ self.addEventListener('fetch', (e) => {
   // Каталог и страница: сначала сеть (чтобы видеть обновления), при офлайне — кэш
   // version.json — всегда из сети (по нему приложение узнаёт об обновлении)
   if (url.pathname.endsWith('version.json')) return;
+  // Манифест — тоже сначала из сети: по нему Android обновляет установленное приложение (например, поворот экрана)
   // Страница и каталог: сначала сеть мимо HTTP-кэша (GitHub Pages кэширует на 10 минут), при офлайне — кэш
-  if (url.origin === location.origin && (url.pathname.endsWith('/') || url.pathname.endsWith('.html') || url.pathname.endsWith('catalog.json'))) {
+  if (url.origin === location.origin && (url.pathname.endsWith('/') || url.pathname.endsWith('.html') || url.pathname.endsWith('catalog.json') || url.pathname.endsWith('manifest.webmanifest'))) {
     e.respondWith(fetch(e.request, { cache: 'no-store' }).then((r) => { const copy = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); return r; }).catch(() => caches.match(e.request, { ignoreSearch: true })));
     return;
   }
