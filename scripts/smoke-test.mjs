@@ -337,6 +337,7 @@ async function run(label, viewport, isMobile) {
   await page.locator('.pick-row', { hasText: 'RST НК' }).click();
   await page.waitForTimeout(500);
   await page.click('.pane-slot.first .tb-ref');
+  await page.click('.bn-seg [role=tab]:has-text("Ветхий Завет")'); // неканонические книги — в Ветхом Завете
   const stars = await page.$$eval('.bc-dc', (e) => e.length);
   await page.fill('#ref-input', 'Тов 1:3');
   await page.keyboard.press('Enter');
@@ -361,7 +362,8 @@ async function run(label, viewport, isMobile) {
     await page.locator('.pick-row', { hasText: 'RST А' }).click();
     await page.waitForTimeout(500);
     await page.click('.pane-slot.first .tb-ref');
-    const groups = await page.$$eval('.nav-group h4', (e) => e.map((x) => x.textContent));
+    const groups = await page.$$eval('.bn-seg [role=tab]', (e) => e.map((x) => x.textContent));
+    await page.click('.bn-seg [role=tab]:has-text("Апокрифы")');
     await page.locator('.book-cell', { hasText: 'Завещание Левия' }).click();
     await page.locator('.num-grid button', { hasText: /^1$/ }).first().click();
     await page.locator('.btn.wide:has-text("С начала главы")').click();

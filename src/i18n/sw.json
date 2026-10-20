@@ -1,4 +1,5 @@
 {
+ "Книга или ссылка: Ин 3:16": "Kitabu au rejeo: John 3:16",
  "Запустить таймер": "Anzisha kipima muda",
  "До конца главы": "Hadi mwisho wa sura",
  "Выключить таймер": "Zima kipima muda",
@@ -327,7 +328,6 @@
  "В книге «{book}» {n} глав.": "Kitabu cha {book} kina sura {n}.",
  "Перейти": "Nenda",
  "Ссылка": "Rejeo",
- "Ссылка, например: Ин 3:16": "Rejeo, kwa mfano: John 3:16",
  "Неканоническая книга": "Kitabu cha Deuterokanoni",
  "С начала главы": "Tangu mwanzo wa sura",
  "Подключаю каталог…": "Inaunganisha katalogi…",

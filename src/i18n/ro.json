@@ -1,4 +1,5 @@
 {
+ "Книга или ссылка: Ин 3:16": "Carte sau referință: John 3:16",
  "Запустить таймер": "Pornește temporizatorul",
  "До конца главы": "Până la sfârșitul capitolului",
  "Выключить таймер": "Oprește temporizatorul",
@@ -328,7 +329,6 @@
  "В книге «{book}» {n} глав.": "Numărul de capitole în cartea „{book}”: {n}.",
  "Перейти": "Mergi",
  "Ссылка": "Referință",
- "Ссылка, например: Ин 3:16": "Referință, de exemplu: John 3:16",
  "Неканоническая книга": "Carte necanonică",
  "С начала главы": "De la începutul capitolului",
  "Подключаю каталог…": "Se conectează catalogul…",

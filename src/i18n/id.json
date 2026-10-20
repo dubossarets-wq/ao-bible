@@ -1,4 +1,5 @@
 {
+ "Книга или ссылка: Ин 3:16": "Kitab atau referensi: John 3:16",
  "Запустить таймер": "Mulai timer",
  "До конца главы": "Sampai akhir pasal",
  "Выключить таймер": "Matikan timer",
@@ -326,7 +327,6 @@
  "В книге «{book}» {n} глав.": "Kitab “{book}” memiliki {n} pasal.",
  "Перейти": "Buka",
  "Ссылка": "Referensi",
- "Ссылка, например: Ин 3:16": "Referensi, misalnya: John 3:16",
  "Неканоническая книга": "Kitab deuterokanonika",
  "С начала главы": "Dari awal pasal",
  "Подключаю каталог…": "Menghubungkan katalog…",

@@ -1,4 +1,5 @@
 {
+ "Книга или ссылка: Ин 3:16": "Livre ou référence : John 3:16",
  "Запустить таймер": "Lancer le minuteur",
  "До конца главы": "Jusqu’à la fin du chapitre",
  "Выключить таймер": "Désactiver le minuteur",
@@ -328,7 +329,6 @@
  "В книге «{book}» {n} глав.": "Le livre « {book} » compte {n} chapitres.",
  "Перейти": "Aller",
  "Ссылка": "Référence",
- "Ссылка, например: Ин 3:16": "Référence, par exemple : John 3:16",
  "Неканоническая книга": "Livre deutérocanonique",
  "С начала главы": "Depuis le début du chapitre",
  "Подключаю каталог…": "Connexion au catalogue…",
