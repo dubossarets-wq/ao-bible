@@ -1,7 +1,7 @@
 // Показывает текущую нижнюю панель. Каждая панель знает, из какой панели чтения её открыли (sheet.pane).
 import React from 'react';
 import { useApp } from '../App.jsx';
-import { SheetBack, SheetReturn } from './BottomSheet.jsx';
+import { SheetBack } from './BottomSheet.jsx';
 import DictionaryBottomSheet from './DictionaryBottomSheet.jsx';
 import CrossReferencesSheet from './CrossReferencesSheet.jsx';
 import BookNavigator from './BookNavigator.jsx';
@@ -68,28 +68,31 @@ const KINDS = {
 export const hasSheet = (kind) => Object.prototype.hasOwnProperty.call(KINDS, kind);
 
 export default function SheetHost() {
-  const { sheet, closeSheetIf, backSheetIf, openSheet } = useApp();
-  if (!sheet) return null;
-  const C = KINDS[sheet.kind];
-  if (!C) return null;
+  const { sheet, closeSheetIf, backSheetIf, returnSheet } = useApp();
+  if (!sheet || !KINDS[sheet.kind]) return null;
   const id = sheet.id;
-  // Подменю «Ещё»: «Ещё» остаётся открытым под ним (тот же ключ — не переоткрывается), подменю выезжает справа
-  const pushed = sheet.payload?.backTo === 'more';
-  const push = pushed ? { back: () => backSheetIf(id, 'more', sheet.pane) } : null;
-  const More = KINDS.more;
-  // Открыто из другого окна (payload.returnTo) — «‹ Назад» возвращает в него
-  const rt = sheet.payload?.returnTo;
-  const ret = rt ? () => openSheet(rt.kind, sheet.pane, rt.payload) : null;
+  // Стопка окон: подменю выезжает справа поверх того окна, из которого его открыли, а то остаётся на месте.
+  // Родитель — payload.backTo === 'more' (подменю «Ещё») или payload.returnTo (например, пункт «Настроек»).
+  // Ключ родителя — его прежний id: при возврате окно не переоткрывается и помнит, где было.
+  const layers = [{ kind: sheet.kind, payload: sheet.payload || {}, id }];
+  for (let d = 0; d < 4; d++) {
+    const p = layers[0].payload;
+    const parent = p.returnTo ? { kind: p.returnTo.kind, payload: p.returnTo.payload || {}, id: p.returnTo.id ?? `${p.returnTo.kind}-parent` } : p.backTo === 'more' && layers[0].kind !== 'more' ? { kind: 'more', payload: {}, id: 'more-host' } : null;
+    if (!parent || !KINDS[parent.kind]) break;
+    layers.unshift(parent);
+  }
   return (
     <>
-      {(sheet.kind === 'more' || pushed) && <More key="more-host" pane={sheet.pane} payload={sheet.kind === 'more' ? sheet.payload || {} : {}} onClose={() => closeSheetIf(id)} />}
-      {sheet.kind !== 'more' && (
-        <SheetBack.Provider value={push}>
-          <SheetReturn.Provider value={ret}>
-            <C key={id} pane={sheet.pane} payload={sheet.payload || {}} onClose={() => closeSheetIf(id)} />
-          </SheetReturn.Provider>
-        </SheetBack.Provider>
-      )}
+      {layers.map((L, i) => {
+        const C = KINDS[L.kind];
+        const below = layers[i - 1];
+        const push = below ? { back: () => (below.kind === 'more' ? backSheetIf(id, 'more', sheet.pane) : returnSheet(id, below, sheet.pane)) } : null;
+        return (
+          <SheetBack.Provider key={L.kind === 'more' ? 'more-host' : String(L.id)} value={push}>
+            <C pane={sheet.pane} payload={L.payload} sheetId={L.id} onClose={() => closeSheetIf(id)} />
+          </SheetBack.Provider>
+        );
+      })}
     </>
   );
 }

@@ -183,14 +183,14 @@ const CurrentFlag = () => (
   </span>
 );
 
-export default function PrefsSheet({ pane, payload, onClose }) {
+export default function PrefsSheet({ pane, payload, sheetId, onClose }) {
   const { settings: s, setSettings: set, openSheet, updates, toast } = useApp();
   const phone = usePhoneLayout(); // на телефоне меню ⋮ — это лист «Ещё» на нижней панели
   const [page, setPage] = useState(null);
   const [checking, setChecking] = useState(false);
   const setMenu = (k, v) => set({ menu: { ...s.menu, [k]: v } });
   // Пункты настроек открываются со стрелкой «‹ Назад» — обратно в «Настройки»
-  const go = (kind) => openSheet(kind, pane, { returnTo: { kind: 'prefs', payload: payload || {} } });
+  const go = (kind) => openSheet(kind, pane, { returnTo: { kind: 'prefs', payload: payload || {}, id: sheetId } });
 
   const check = async () => {
     if (updates.available) return applyUpdate();

@@ -223,8 +223,8 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
   const current = view?.results.find((r) => r.module.id === selected) || (top ? view.results[0] : null);
 
   // «Назад» из словаря, открытого из подстрочника, — обратно к подстрочнику того же стиха
-  const ret = payload.returnTo;
-  const back = top ? () => setStack((s) => s.slice(0, -1)) : ret ? () => openSheet(ret.kind, pane, ret.payload) : selected ? () => setSelected(null) : null;
+  // Открыт из подстрочника — на верхнем уровне «‹ Назад» (как у подменю) уводит окно вправо, к подстрочнику
+  const back = top ? () => setStack((s) => s.slice(0, -1)) : payload.returnTo ? null : selected ? () => setSelected(null) : null;
   const openRef = (r) => {
     onClose();
     openInOther(pane, r);

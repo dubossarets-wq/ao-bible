@@ -564,6 +564,8 @@ export default function App() {
     closeSheetIf: (id) => setSheet((s) => (s && s.id === id ? null : s)),
     // Окно, открытое из «Ещё», по крестику возвращает в «Ещё» (если за это время не открыли другое окно)
     backSheetIf: (id, kind, pane) => setSheet((s) => (!s || s.id === id ? { kind, pane, payload: { navTab: 'more' }, id: Date.now() } : s)),
+    // «‹ Назад» из подменю — к окну, из которого его открыли (с его прежним id, чтобы оно не переоткрывалось)
+    returnSheet: (id, to, pane) => setSheet((s) => (!s || s.id === id ? { kind: to.kind, pane, payload: to.payload, id: to.id } : s)),
     toast,
     bookmarks,
     setBookmarks,

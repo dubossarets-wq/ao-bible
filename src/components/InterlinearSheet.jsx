@@ -19,7 +19,7 @@ import { translit } from '../core/translit.js';
 import { verseAudio, playSegment, stopVerse, wordStarts } from '../core/origAudio.js';
 import { t } from '../core/i18n.js';
 
-export default function InterlinearSheet({ pane, payload, onClose }) {
+export default function InterlinearSheet({ pane, payload, sheetId, onClose }) {
   const { openSheet } = useApp();
   const [ref, setRef] = useState(payload.ref);
   const [state, setState] = useState({ status: 'loading' });
@@ -135,7 +135,7 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
     setRef({ book: ref.book, chapter, verse });
   };
 
-  const open = (w) => w.strongs && openSheet('dict', pane, { token: { text: w.gloss || w.text, strongs: w.strongs, morph: w.morph ? [w.morph] : null }, ref, moduleId: payload.moduleId, origWord: w, autoOpen: true, initial: 'full', returnTo: { kind: 'interlinear', payload: { ...payload, ref } } });
+  const open = (w) => w.strongs && openSheet('dict', pane, { token: { text: w.gloss || w.text, strongs: w.strongs, morph: w.morph ? [w.morph] : null }, ref, moduleId: payload.moduleId, origWord: w, autoOpen: true, initial: 'full', returnTo: { kind: 'interlinear', payload: { ...payload, ref }, id: sheetId } });
 
   const subtitle = vulg
     ? t('Вульгата (Климентина) · значения по словарю')

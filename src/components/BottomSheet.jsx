@@ -21,8 +21,6 @@ const snaps = () => [SNAPS[0], belowBar(), SNAPS[2]];
 // Подменю «Ещё»: окно выезжает справа поверх «Ещё» (оно остаётся на месте). SheetHost передаёт { back } —
 // стрелка ‹ уводит подменю вправо и возвращает в «Ещё»; крестик, свайп вниз и Escape закрывают оба окна.
 export const SheetBack = createContext(null);
-// Окно открыто из другого (например, из «Настроек»): функция «‹ Назад» к нему
-export const SheetReturn = createContext(null);
 
 export default function BottomSheet({ title, subtitle, onClose, onBack, children, initial = 1, variant = 'normal', headerExtra, footer }) {
   const full = initial === 'full';
@@ -88,7 +86,6 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
   }, []);
 
   const push = useContext(SheetBack); // { back } — это подменю «Ещё»
-  const ret = useContext(SheetReturn);
   const [leaving, setLeaving] = useState(false);
   const reduceMotion = () => document.documentElement.classList.contains('no-anim') || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const close = () => {
@@ -104,7 +101,7 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
     setLeaving(true);
     setTimeout(push.back, reduceMotion() ? 0 : 220);
   };
-  backRef.current = onBack || (push ? goBack : ret);
+  backRef.current = onBack || (push ? goBack : null);
 
   // Закрытие нажатием на вкладку снизу — с той же анимацией, но без возврата в «Ещё»
   useEffect(() => {
@@ -180,8 +177,8 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
         )}
         {/* Не landmark: под подменю открыто «Ещё» со своей шапкой — двух «banner» на странице быть не должно */}
         <header className="sheet-head" role="none" {...(variant !== 'page' ? { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: onPointerUp } : {})}>
-          {(onBack || push || ret || variant === 'page') && (
-            <button className="icon-btn" onClick={onBack || (push ? goBack : ret || close)} aria-label={onBack || push || ret ? t('Назад') : t('Назад к чтению')}>
+          {(onBack || push || variant === 'page') && (
+            <button className="icon-btn" onClick={onBack || (push ? goBack : close)} aria-label={onBack || push ? t('Назад') : t('Назад к чтению')}>
               <ChevronLeft size={22} />
             </button>
           )}
@@ -196,7 +193,7 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
             </button>
           )}
         </header>
-        <div className="sheet-body" data-swipe-back={onBack || push || ret ? '' : undefined} ref={bodyRef} onAnimationEnd={(e) => e.target === bodyRef.current && bodyRef.current.classList.remove('tab-in-l', 'tab-in-r')}>
+        <div className="sheet-body" data-swipe-back={onBack || push ? '' : undefined} ref={bodyRef} onAnimationEnd={(e) => e.target === bodyRef.current && bodyRef.current.classList.remove('tab-in-l', 'tab-in-r')}>
           {children}
         </div>
         {footer && <div className="sheet-foot">{footer}</div>}
