@@ -1,14 +1,17 @@
-// Повторное нажатие на выделенное слово: выборка закрывается касанием (pointerdown) раньше,
+// Нажатие на слово при открытой выборке: выборка закрывается касанием (pointerdown) раньше,
 // чем приходит щелчок по слову. Запоминаем, что её закрыли нажатием именно на это слово, —
 // тогда щелчок только снимает выделение и не открывает выборку снова.
 let closedOn = { el: null, at: 0 };
 
+// Слово узнаём и по месту (стих + номер слова): после закрытия выборки стих может перерисоваться
+const wordKey = (el) => { const v = el.closest?.('[data-v]'); return `${v?.id || v?.dataset.v || ''}:${el.dataset?.i ?? ''}`; };
+
 export function markClosedOnWord(el) {
-  closedOn = { el, at: Date.now() };
+  closedOn = { el, key: wordKey(el), at: Date.now() };
 }
 
 export function wasClosedOnWord(el) {
-  const hit = closedOn.el === el && Date.now() - closedOn.at < 1000;
+  const hit = (closedOn.el === el || (closedOn.key && closedOn.key === wordKey(el))) && Date.now() - closedOn.at < 1000;
   if (hit) closedOn = { el: null, at: 0 };
   return hit;
 }

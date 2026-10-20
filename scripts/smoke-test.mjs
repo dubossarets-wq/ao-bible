@@ -105,8 +105,14 @@ async function run(label, viewport, isMobile) {
     await page.waitForSelector('.sheet');
     await page.waitForTimeout(500); // окно выезжает снизу
     const plansOn = await page.locator('.tabbar .tab-plans.on').count();
-    // Меню — поверх окна: в точке над капсулой виден её пункт, а не окно
-    const sheetAbove = await page.evaluate(() => { const r = document.querySelector('.tabbar .tab-plans').getBoundingClientRect(); return !!document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)?.closest('.tabbar'); });
+    // Капсула вкладок висит поверх окна: она видна (сверху), а низ окна с запасом отодвинут над ней — ничего не прячется
+    const sheetAbove = await page.evaluate(() => {
+      const bar = document.querySelector('.tabbar').getBoundingClientRect();
+      const onTop = document.elementFromPoint(bar.left + bar.width / 2, bar.top + bar.height / 2)?.closest('.tabbar');
+      const pad = parseFloat(getComputedStyle(document.querySelector('.sheet .sheet-body')).paddingBottom);
+      const sheet = document.querySelector('.sheet').getBoundingClientRect();
+      return !!onTop && sheet.bottom - pad <= bar.top + 1;
+    });
     await page.click('.tabbar .tab-bible');
     await page.waitForSelector('.sheet', { state: 'detached' });
     check(`${label}: вкладки открывают окна, меню поверх`, plansOn === 1 && sheetAbove && (await page.locator('.tabbar .tab-bible.on').count()) === 1, `планы подсвечены: ${plansOn}, окно над вкладками: ${sheetAbove}`);
@@ -497,9 +503,9 @@ async function run(label, viewport, isMobile) {
   await page.waitForTimeout(600);
 
   // Настройки: тёмная тема и размер шрифта
+  // Тема — лентой кружков прямо на главном экране «Оформления»
   await menu(page, 'Оформление');
-  await page.click('.sheet .pref-row:has-text("Тема")');
-  await page.click('.theme-tile:has-text("Тёмная")');
+  await page.click('.sheet .theme-tile:has-text("Тёмная")');
   const bg = await page.evaluate(() => getComputedStyle(document.querySelector('.reader')).backgroundColor);
   check(`${label}: тёмная тема`, bg === 'rgb(22, 22, 23)', bg);
   await page.screenshot({ path: `${shots}/${label}-8-settings.png` });

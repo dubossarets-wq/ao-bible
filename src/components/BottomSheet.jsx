@@ -40,7 +40,7 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
     const body = bodyRef.current;
     if (!body) return;
     let s = null;
-    const SKIP = 'input, textarea, select, .tabs, .chips, .bg-photos, .theme-grid, .plan-grid, .maplibregl-map, .map-pane, [data-no-swipe]';
+    const SKIP = 'input, textarea, select, .tabs, .chips, .bg-photos, .theme-strip, .plan-grid, .maplibregl-map, .map-pane, [data-no-swipe]';
     const onStart = (e) => {
       const t0 = e.touches[0];
       s = e.touches.length === 1 && !e.target.closest(SKIP) && body.querySelector('.tabs[role="tablist"]') ? { x: t0.clientX, y: t0.clientY, t: Date.now() } : null;
@@ -101,11 +101,15 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
     return () => window.removeEventListener('aob-sheet-slide-close', slide);
   });
 
+  // Escape — всегда с последним close: «Ещё» под подменю перерисовывается с новым onClose (другой id окна),
+  // и старый обработчик закрывал бы уже не то окно — «Ещё» зависало бы полузакрытым
+  const closeRef = useRef(close);
+  closeRef.current = close;
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
-        close();
+        closeRef.current();
       }
     };
     window.addEventListener('keydown', onKey);
@@ -157,7 +161,8 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
             <span className="grip-bar" />
           </div>
         )}
-        <header className="sheet-head" {...(variant !== 'page' ? { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: onPointerUp } : {})}>
+        {/* Не landmark: под подменю открыто «Ещё» со своей шапкой — двух «banner» на странице быть не должно */}
+        <header className="sheet-head" role="none" {...(variant !== 'page' ? { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: onPointerUp } : {})}>
           {(onBack || push || variant === 'page') && (
             <button className="icon-btn" onClick={onBack || (push ? goBack : close)} aria-label={onBack || push ? t('Назад') : t('Назад к чтению')}>
               <ChevronLeft size={22} />

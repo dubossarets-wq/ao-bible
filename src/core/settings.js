@@ -100,6 +100,7 @@ export const DEFAULT_SETTINGS = {
   focusMode: false,
   splitLayout: 'auto', // auto | rows | columns
   bgImage: 0, // своя картинка под текстом: 0 — нет, иначе время загрузки (сама картинка — в IndexedDB, core/userBg.js)
+  bgPhoto: null, // какое из готовых фото выбрано (id из images/verse-bg/index.json); null — своя картинка
   bgVeil: 72, // % — насколько цвет страницы закрывает картинку
   bgBlur: 0, // px — размытие картинки
   splitRatio: 0.5,

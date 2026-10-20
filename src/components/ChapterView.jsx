@@ -474,8 +474,9 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     }
     const w = e.target.closest('.w');
     if (w) {
-      // Повторное нажатие на выделенное слово — снимаем выделение, выборку не открываем
+      // Нажатие, которым закрыли выборку, или повторное нажатие на выделенное слово — снимаем выделение, выборку не открываем
       if (wasClosedOnWord(w) || (w === activeWord.current && !popover && !sheet)) {
+        activeWord.current?.classList.remove('active');
         w.classList.remove('active');
         activeWord.current = null;
         return;

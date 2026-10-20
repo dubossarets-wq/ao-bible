@@ -168,6 +168,7 @@ export function Switch({ id, checked, onChange, label, hint }) {
 
 // Выбор из нескольких вариантов: подложка плавно переезжает к выбранному;
 // можно провести пальцем по вариантам — подложка едет следом, выбор — там, где отпустили.
+// Вариант — [значение, подпись, (необязательно) название для чтения с экрана, если подпись — картинка].
 export function Segmented({ value, options, onChange, label, id }) {
   const box = useRef(null);
   const [preview, setPreview] = useState(null);
@@ -248,8 +249,8 @@ export function Segmented({ value, options, onChange, label, id }) {
         }}
       >
         {pill && <span className="seg-pill" aria-hidden="true" style={{ transform: `translate(${pill.left}px, ${pill.top}px)`, width: pill.width, height: pill.height }} />}
-        {options.map(([v, l], i) => (
-          <button key={v} data-i={i} type="button" className={v === shown ? 'on' : ''} aria-pressed={v === value} onClick={() => onChange(v)}>
+        {options.map(([v, l, aria], i) => (
+          <button key={v} data-i={i} type="button" className={v === shown ? 'on' : ''} aria-pressed={v === value} aria-label={aria} onClick={() => onChange(v)}>
             {l}
           </button>
         ))}
