@@ -44,6 +44,18 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
     setTimeout(() => (onClose(), back?.()), reduce ? 0 : 200);
   };
 
+  // Закрытие нажатием на вкладку снизу — с той же анимацией, но без возврата в «Ещё»
+  useEffect(() => {
+    const slide = () => {
+      if (closing) return;
+      setClosing(true);
+      const reduce = document.documentElement.classList.contains('no-anim') || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      setTimeout(onClose, reduce ? 0 : 200);
+    };
+    window.addEventListener('aob-sheet-slide-close', slide);
+    return () => window.removeEventListener('aob-sheet-slide-close', slide);
+  });
+
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') {

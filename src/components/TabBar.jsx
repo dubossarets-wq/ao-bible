@@ -12,9 +12,9 @@ import { t, N_ } from '../core/i18n.js';
 // id — вкладка; sheet — какое окно открыть (null — закрыть окно, экран чтения); payload — что передать окну;
 // kinds — какие ещё окна считаются этой вкладкой (для подсветки: открыты из неё)
 export const TABS = [
-  { id: 'bible', icon: BookOpen, label: N_('Библия'), sheet: null },
   { id: 'plans', icon: CalendarCheck, label: N_('Планы'), sheet: 'plans' },
   { id: 'search', icon: Search, label: N_('Поиск'), sheet: 'search' },
+  { id: 'bible', icon: BookOpen, label: N_('Библия'), sheet: null }, // «Библия» — в центре
   { id: 'saved', icon: Heart, label: N_('Закладки'), sheet: 'bookmarks' },
   { id: 'more', icon: Menu, label: N_('Ещё'), sheet: 'more', kinds: ['prefs', 'settings', 'library', 'about', 'versions', 'news', 'help', 'sermons', 'maps'] },
 ];
@@ -27,12 +27,18 @@ export function activeTab(sheet) {
   return tab?.id || 'bible';
 }
 
+function slideClose(app) {
+  const s = app.sheet;
+  if (!s) return;
+  window.dispatchEvent(new CustomEvent('aob-sheet-slide-close'));
+  setTimeout(() => app.closeSheetIf(s.id), 320); // окно без анимации закрытия — закрываем сами
+}
+
 export function openTab(app, id) {
   const tab = TABS.find((x) => x.id === id);
   if (!tab) return;
-  if (!tab.sheet) return app.closeSheet();
-  // Повторное нажатие на открытую вкладку закрывает её окно
-  if (app.sheet && activeTab(app.sheet) === id) return app.closeSheet();
+  // «Библия» или повторное нажатие на открытую вкладку — окно плавно уезжает вниз, как и открывалось
+  if (!tab.sheet || (app.sheet && activeTab(app.sheet) === id)) return slideClose(app);
   if (!hasSheet(tab.sheet)) return;
   app.openSheet(tab.sheet, 0, { ...(tab.payload || {}), navTab: tab.id });
 }

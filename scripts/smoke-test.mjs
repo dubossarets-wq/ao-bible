@@ -84,7 +84,7 @@ async function run(label, viewport, isMobile) {
     tabs: [...document.querySelectorAll('.tabbar .tab-label')].map((e) => e.textContent).join('|'),
     top: [...document.querySelectorAll('.pane-slot.first .toolbar > *')].map((e) => e.className).join(' '),
   }));
-  if (isMobile) check(`${label}: панель вкладок и простая верхняя панель`, nav.tabs === 'Библия|Планы|Поиск|Закладки|Ещё' && !/tb-more|tb-search/.test(nav.top), `${nav.tabs}; ${nav.top}`);
+  if (isMobile) check(`${label}: панель вкладок и простая верхняя панель`, nav.tabs === 'Планы|Поиск|Библия|Закладки|Ещё' && !/tb-more|tb-search/.test(nav.top), `${nav.tabs}; ${nav.top}`);
   else check(`${label}: на широком экране без вкладок, поиск и ⋮ наверху`, !nav.tabs && /tb-search/.test(nav.top) && /tb-menu-wrap/.test(nav.top), nav.top);
   // Круглые стрелки соседней главы; «Слушать» — по центру между ними, всё — над вкладками
   const geo = await page.evaluate(() => {

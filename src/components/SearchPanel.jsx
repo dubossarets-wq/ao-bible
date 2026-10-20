@@ -8,7 +8,7 @@ import { search, queryRegex } from '../core/search.js';
 import { parseHumanRef, formatRef, bookMeta, testamentOf } from '../core/books.js';
 import { getVerse, ORIGINALS } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
-import { usePersistentState, save } from '../core/storage.js';
+import { usePersistentState, save, load } from '../core/storage.js';
 import { shortName } from '../core/moduleShort.js';
 import { copyText } from '../core/clipboard.js';
 import { quoteVerse, quoteLabel } from './SelectionBar.jsx';
@@ -139,6 +139,9 @@ export default function SearchPanel({ pane, payload = {}, onClose }) {
       body?.removeEventListener('scroll', onScroll);
       abort.current?.abort();
       save('searchQuery', queryNow.current); // окно закрыли сразу после ввода — запрос всё равно сохранится
+      // Запрос, по которому что-то нашлось, — в историю, даже если результат не открывали
+      const q = queryNow.current?.trim();
+      if (q && q.length > 1 && memo?.results?.length) save('searchHistory', [q, ...load('searchHistory', []).filter((x) => x !== q)].slice(0, 15));
     };
   }, []);
 
@@ -360,25 +363,29 @@ export default function SearchPanel({ pane, payload = {}, onClose }) {
       {progress && <Progress value={progress.p} label={progress.label} />}
 
       {results === null && !refHit && !strongHit && history.length > 0 && (
-        <section className="nav-group">
+        <section className="nav-group search-history">
           <h4>{t('Недавние')}</h4>
-          <div className="chips">
+          <ul>
             {history.map((h) => (
-              <button
-                key={h}
-                className="chip"
-                onClick={() => {
-                  setQuery(h);
-                  run(h);
-                }}
-              >
-                <Clock size={13} /> {h}
-              </button>
+              <li key={h}>
+                <button
+                  className="sh-q"
+                  onClick={() => {
+                    setQuery(h);
+                    run(h);
+                  }}
+                >
+                  <Clock size={16} /> <span>{h}</span>
+                </button>
+                <button className="icon-btn subtle" aria-label={t('Убрать из истории')} onClick={() => setHistory((x) => x.filter((y) => y !== h))}>
+                  <X size={16} />
+                </button>
+              </li>
             ))}
-            <button className="chip ghost" onClick={() => setHistory([])}>
-              {t('Очистить')}
-            </button>
-          </div>
+          </ul>
+          <button className="btn small" onClick={() => setHistory([])}>
+            {t('Очистить историю')}
+          </button>
         </section>
       )}
 
