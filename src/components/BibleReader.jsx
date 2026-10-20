@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useApp } from '../App.jsx';
 import ReaderToolbar from './ReaderToolbar.jsx';
-import SelectionBar, { sortedRefs } from './SelectionBar.jsx';
+import SelectionBar, { sortedRefs, quoteVerse, quoteLabel } from './SelectionBar.jsx';
 import { listenFrom } from '../core/listen.js';
 import { useAudio } from '../core/audio.js';
 import { formatRef } from '../core/books.js';
@@ -110,7 +110,7 @@ function PartInline({ index, module, refs, part, setPart, onDone }) {
   const ref = refs[0];
   const ready = part.from != null && text;
   const copy = async () => {
-    const s = `«${text}» (${formatRef(ref)})`;
+    const s = quoteVerse(text, quoteLabel([ref]));
     try {
       await navigator.clipboard.writeText(s);
       toast(t('Часть стиха скопирована'));

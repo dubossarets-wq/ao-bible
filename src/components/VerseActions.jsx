@@ -4,16 +4,16 @@ import { Bookmark, BookmarkCheck, Heart, Copy, Link2, Columns2, NotebookPen } fr
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { formatRef } from '../core/books.js';
+import { quoteVerse, quoteLabel } from './SelectionBar.jsx';
 import { t } from '../core/i18n.js';
 
 export default function VerseActions({ pane, payload, onClose }) {
   const { isBookmarked, toggleBookmark, isFavorite, toggleFavorite, openSheet, openInOther, toast, bibles, panes, notes } = useApp();
   const { ref, text } = payload;
   const mod = bibles.find((b) => b.id === panes[pane]?.moduleId);
-  const label = `${formatRef(ref, { full: true })} (${mod?.name || ''})`;
 
   const copy = async () => {
-    const s = `${text}\n— ${label}`;
+    const s = quoteVerse(text, quoteLabel([ref]));
     try {
       await navigator.clipboard.writeText(s);
       toast(t('Стих скопирован'));

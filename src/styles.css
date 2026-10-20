@@ -1387,3 +1387,21 @@ html.kb-open .chap-nav { display: none; }
 .toolbar.is-phone .tb-ref { padding: 0 10px 0 13px; font-size: 1.02rem; font-weight: 700; }
 @media (hover: hover) { .toolbar.is-phone .tb-module:hover, .toolbar.is-phone .tb-ref:hover { background: color-mix(in srgb, var(--bar-text) 17%, var(--bar)); } }
 .toolbar.is-phone .tb-module:active, .toolbar.is-phone .tb-ref:active { background: color-mix(in srgb, var(--bar-text) 22%, var(--bar)); }
+
+/* ===== Окно поиска: поле без лупы слева, крестик внутри поля, лупа справа, копирование у каждого места, метка перевода ===== */
+.search-form .input-wrap { padding-left: 0; }
+.search-form .input-wrap input { padding-left: 12px; padding-right: 4px; }
+.search-form .input-wrap input::-webkit-search-cancel-button, .search-form .input-wrap input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
+.search-form .search-clear { margin-right: 3px; width: 34px; height: 34px; }
+@media (hover: hover) { .search-form .search-clear:hover { color: var(--text); background: color-mix(in srgb, var(--text) 8%, transparent); } }
+.search-form .search-go { flex: none; min-width: 46px; padding-left: 12px; padding-right: 12px; display: inline-flex; align-items: center; justify-content: center; }
+.results .result-item { position: relative; }
+.results .result-item .result-row { padding-right: 44px; }
+.result-head { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.result-mod { flex: none; font-size: .72rem; font-weight: 700; letter-spacing: .02em; line-height: 1.2; padding: 1px 6px; border-radius: 6px; border: 1px solid var(--line); color: var(--muted); background: var(--panel); white-space: nowrap; }
+.results .result-copy { position: absolute; top: 5px; right: 0; width: 38px; height: 38px; }
+@media (hover: hover) { .results .result-copy:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); } }
+.results .result-copy:active { color: var(--accent); }
+/* Подсветка слова из поиска в тексте: только в стихе перехода, через несколько секунд плавно гаснет */
+.scroller .w.hl { transition: background-color .7s ease; }
+.scroller.hl-fade .w.hl { background-color: transparent; }

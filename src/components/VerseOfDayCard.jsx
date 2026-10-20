@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { BookOpen, Image as ImageIcon, Share2 } from 'lucide-react';
 import { useApp } from '../App.jsx';
-import { selectionLabel, selectionText } from './SelectionBar.jsx';
+import { selectionLabel, selectionText, quoteVerse, quoteLabel } from './SelectionBar.jsx';
 import { verseOfDay, dayOfYear, VERSES } from '../core/verseOfDay.js';
 import { t } from '../core/i18n.js';
 
@@ -62,7 +62,7 @@ export default function VerseOfDayCard({ pane = 0, onClose }) {
   const image = () => openSheet('verse-image', pane, { refs: [v.ref], moduleId: v.module.id });
   // Как «Поделиться» у выделенных стихов: системное окно, иначе — скопировать текст
   const share = async () => {
-    const text = `${v.text}\n— ${label} (${v.module.name})`;
+    const text = quoteVerse(v.text, quoteLabel([v.ref]));
     if (navigator.share) {
       try {
         await navigator.share({ text });

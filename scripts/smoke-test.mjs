@@ -55,7 +55,7 @@ async function menu(page, text) {
 // «Закладки, заметки, любимые стихи»: на телефоне — вкладка «Закладки», на компьютере — пункт меню
 async function openSaved(page) {
   if (await page.locator('.tabbar').count()) await page.click('.tabbar .tab-saved');
-  else await menu(page, 'Закладки, заметки');
+  else await menu(page, 'Закладки и заметки');
 }
 
 async function run(label, viewport, isMobile) {
