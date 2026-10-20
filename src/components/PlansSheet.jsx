@@ -43,7 +43,12 @@ const coverUrl = (id) => `images/verse-bg/${look(id)[2]}.jpg`;
 function ActivePlan({ plan, onChange, onRemove, read }) {
   const days = plan.readings.length;
   const today = planToday(plan);
-  const [day, setDay] = useState(today);
+  // Показываем день, с которого читать: прочитали вперёд — первый непрочитанный после сегодняшнего
+  const [day, setDay] = useState(() => {
+    let d = today;
+    while (d < days - 1 && plan.done?.[d]) d++;
+    return d;
+  });
   const done = plan.done || {};
   const doneCount = Object.keys(done).length;
   const behind = behindDays(plan);

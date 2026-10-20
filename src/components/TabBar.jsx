@@ -3,7 +3,7 @@
 // Вкладка «Библия» — экран чтения (закрывает открытое окно); остальные открывают своё окно поверх чтения,
 // панель вкладок остаётся видна, активная подсвечена. В режиме чтения панель уходит при прокрутке вниз
 // (вместе с верхней), при открытой клавиатуре — прячется.
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { BookOpen, CalendarCheck, Search, Heart, Menu } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { hasSheet } from './SheetHost.jsx';
@@ -47,6 +47,39 @@ export default function TabBar() {
   const app = useApp();
   const { sheet, updates } = app;
   const active = activeTab(sheet);
+  // Подсветка — одна плашка, которая переезжает к выбранному пункту. Пальцем можно вести по меню:
+  // плашка идёт за пальцем, отпустили — открывается этот раздел
+  const navRef = useRef(null);
+  const swipe = useRef(null);
+  const [hover, setHover] = useState(null);
+  const at = (x) => {
+    const r = navRef.current.getBoundingClientRect();
+    return Math.max(0, Math.min(TABS.length - 1, Math.floor(((x - r.left - 6) / (r.width - 12)) * TABS.length)));
+  };
+  const onDown = (e) => {
+    swipe.current = { x: e.clientX, moved: false };
+  };
+  const onMove = (e) => {
+    const s = swipe.current;
+    if (!s) return;
+    if (!s.moved && Math.abs(e.clientX - s.x) > 10) {
+      s.moved = true;
+      navRef.current.setPointerCapture?.(e.pointerId);
+    }
+    if (s.moved) setHover(at(e.clientX));
+  };
+  const onUp = (e) => {
+    const s = swipe.current;
+    swipe.current = null;
+    if (!s?.moved) return setHover(null);
+    const id = TABS[at(e.clientX)].id;
+    setHover(null);
+    s.done = true;
+    if (id !== active) openTab(app, id); // провели пальцем до своей же вкладки — ничего не закрываем
+    navRef.current.dataset.swiped = '1'; // за свайпом браузер пришлёт click — его пропускаем
+    setTimeout(() => navRef.current && delete navRef.current.dataset.swiped, 50);
+  };
+  const shown = hover ?? TABS.findIndex((x) => x.id === active);
 
   // Пока панель на экране, раскладка учитывает её высоту (окна, проигрыватель, уведомления — над ней)
   useEffect(() => {
@@ -56,7 +89,17 @@ export default function TabBar() {
   }, []);
 
   return (
-    <nav className="tabbar" aria-label={t('Разделы приложения')}>
+    <nav
+      ref={navRef}
+      className={`tabbar ${hover != null ? 'swiping' : ''}`}
+      aria-label={t('Разделы приложения')}
+      style={{ '--tab-i': shown, '--tab-n': TABS.length }}
+      onPointerDown={onDown}
+      onPointerMove={onMove}
+      onPointerUp={onUp}
+      onPointerCancel={() => ((swipe.current = null), setHover(null))}
+    >
+      <span className="tab-pill" aria-hidden="true" />
       {TABS.map((tab) => {
         const Icon = tab.icon;
         const on = tab.id === active;
@@ -66,7 +109,7 @@ export default function TabBar() {
             className={`tab tab-${tab.id} ${on ? 'on' : ''}`}
             aria-current={on ? 'page' : undefined}
             aria-label={tab.id === 'more' && updates.available ? t('Ещё. Доступно обновление') : undefined}
-            onClick={() => openTab(app, tab.id)}
+            onClick={() => !navRef.current?.dataset.swiped && openTab(app, tab.id)}
           >
             <span className="tab-icon">
               <Icon size={22} strokeWidth={on ? 2.4 : 1.9} />

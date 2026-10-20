@@ -1475,3 +1475,11 @@ html.has-tabbar .audio-bar { bottom: calc(var(--sab) + 8px); }
 html.has-tabbar .toasts { bottom: calc(max(var(--kb, 0px), var(--sab)) + 16px); }
 html.has-tabbar .app:has(.plan-return) .toasts, html.has-tabbar .app:has(.sheet-foot) .toasts { bottom: calc(var(--sab) + 70px); }
 html.has-tabbar .staging-badge { bottom: calc(var(--sab) + 6px); }
+/* Нижнее меню: подсветка — одна плашка, переезжает к выбранному пункту (и идёт за пальцем при свайпе) */
+.tab-pill { position: absolute; z-index: 0; top: 6px; bottom: 6px; left: 6px; width: calc((100% - 12px) / var(--tab-n)); border-radius: 26px; background: color-mix(in srgb, var(--text) 9%, transparent); transform: translateX(calc(var(--tab-i) * 100%)); transition: transform .3s cubic-bezier(.2,.8,.2,1); pointer-events: none; }
+.tabbar.swiping .tab-pill { transition-duration: .14s; }
+.tab { position: relative; z-index: 1; touch-action: pan-y; }
+.tab.on, .tab:active, .tab.on:hover { background: none; }
+@media (hover: hover) { .tab:hover { background: none; color: var(--text); } }
+.tabbar { touch-action: none; }
+@media (prefers-reduced-motion: reduce) { .tab-pill { transition: none; } }

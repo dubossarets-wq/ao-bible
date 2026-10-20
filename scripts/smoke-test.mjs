@@ -105,10 +105,11 @@ async function run(label, viewport, isMobile) {
     await page.waitForSelector('.sheet');
     await page.waitForTimeout(500); // окно выезжает снизу
     const plansOn = await page.locator('.tabbar .tab-plans.on').count();
-    const sheetAbove = await page.evaluate(() => document.querySelector('.sheet').getBoundingClientRect().bottom <= document.querySelector('.tabbar').getBoundingClientRect().top + 1);
+    // Меню — поверх окна: в точке над капсулой виден её пункт, а не окно
+    const sheetAbove = await page.evaluate(() => { const r = document.querySelector('.tabbar .tab-plans').getBoundingClientRect(); return !!document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)?.closest('.tabbar'); });
     await page.click('.tabbar .tab-bible');
     await page.waitForSelector('.sheet', { state: 'detached' });
-    check(`${label}: вкладки открывают окна над панелью`, plansOn === 1 && sheetAbove && (await page.locator('.tabbar .tab-bible.on').count()) === 1, `планы подсвечены: ${plansOn}, окно над вкладками: ${sheetAbove}`);
+    check(`${label}: вкладки открывают окна, меню поверх`, plansOn === 1 && sheetAbove && (await page.locator('.tabbar .tab-bible.on').count()) === 1, `планы подсвечены: ${plansOn}, окно над вкладками: ${sheetAbove}`);
     await page.screenshot({ path: `${shots}/${label}-1a-tabs.png` });
   }
 
