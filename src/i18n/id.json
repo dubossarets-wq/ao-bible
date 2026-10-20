@@ -1,4 +1,6 @@
 {
+ "Меню «Ещё»": "Menu “Lainnya”",
+ "новая версия": "versi baru",
  "Поиск: у каждого стиха — «Копировать», запрос сохраняется, крестик стирает строку, можно искать во всех скачанных переводах.": "Pencarian: tombol “Salin” di tiap ayat, kueri tersimpan, tanda silang menghapus isian, dan bisa mencari di semua terjemahan yang diunduh.",
  "Найти": "Cari",
  "Во всех модулях": "Di semua modul",
@@ -1154,7 +1156,6 @@
  "Что нового": "Yang baru",
  "Обновление от {date}": "Pembaruan {date}",
  "Последнее обновление": "Pembaruan terakhir",
- "есть новая": "ada versi baru",
  "(часть)": "(bagian)",
  "зажмите стих в Библии и нажмите «В проповедь» — или введите ссылку ниже.": "tekan lama sebuah ayat di Alkitab lalu ketuk “Ke khotbah” — atau masukkan referensi di bawah.",
  "Создайте проповедь и добавляйте стихи прямо при чтении: зажмите стих → «В проповедь».": "Buat khotbah dan tambahkan ayat sambil membaca: tekan lama ayat → “Ke khotbah”.",

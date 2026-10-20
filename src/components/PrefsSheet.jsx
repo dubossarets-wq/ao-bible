@@ -201,7 +201,7 @@ export default function PrefsSheet({ pane, onClose }) {
   };
 
   return (
-    <BottomSheet title={page ? t(PAGES[page]) : t('Настройки')} onClose={onClose} onBack={page ? () => setPage(null) : null} initial={2}>
+    <BottomSheet title={page ? (page === 'menu' && phone ? t('Меню «Ещё»') : t(PAGES[page])) : t('Настройки')} onClose={onClose} onBack={page ? () => setPage(null) : null} initial={2}>
       {!page && (
         <div className="pref-list-main">
           {/* «Language» по-английски — чтобы найти строку, даже если случайно выбран незнакомый язык */}
@@ -215,7 +215,7 @@ export default function PrefsSheet({ pane, onClose }) {
             {t('Оформление')}
           </Row>
           <Row icon={MoreVertical} onClick={() => setPage('menu')} sub={phone ? t('Что показывать в разделе «Ещё»') : t('Выбрать пункты меню')}>
-            {t('Меню ⋮')}
+            {phone ? t('Меню «Ещё»') : t('Меню ⋮')}
           </Row>
           <Row icon={Headphones} onClick={() => setPage('audio')} sub={t('ИИ-диктор, книги без интернета')}>
             {t('Аудио')}

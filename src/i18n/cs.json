@@ -1,4 +1,6 @@
 {
+ "Меню «Ещё»": "Nabídka „Více“",
+ "новая версия": "nová verze",
  "Поиск: у каждого стиха — «Копировать», запрос сохраняется, крестик стирает строку, можно искать во всех скачанных переводах.": "Hledání: u každého verše „Kopírovat“, dotaz se pamatuje, křížek smaže řádek a lze hledat ve všech stažených překladech.",
  "Найти": "Najít",
  "Во всех модулях": "Ve všech modulech",
@@ -1178,7 +1180,6 @@
  "Что нового": "Co je nového",
  "Обновление от {date}": "Aktualizace z {date}",
  "Последнее обновление": "Poslední aktualizace",
- "есть новая": "je nová",
  "(часть)": "(část)",
  "зажмите стих в Библии и нажмите «В проповедь» — или введите ссылку ниже.": "podržte verš v Bibli a klepněte na „Do kázání“ — nebo zadejte odkaz níže.",
  "Создайте проповедь и добавляйте стихи прямо при чтении: зажмите стих → «В проповедь».": "Vytvořte kázání a přidávejte verše přímo při čtení: podržte verš → „Do kázání“.",

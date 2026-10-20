@@ -560,6 +560,8 @@ export default function App() {
     // Закрыть именно это окно: окно закрывается с анимацией, и если за это время открыли другое
     // (например, нажали вкладку внизу), новое не должно закрыться
     closeSheetIf: (id) => setSheet((s) => (s && s.id === id ? null : s)),
+    // Окно, открытое из «Ещё», по крестику возвращает в «Ещё» (если за это время не открыли другое окно)
+    backSheetIf: (id, kind, pane) => setSheet((s) => (!s || s.id === id ? { kind, pane, payload: { navTab: 'more' }, id: Date.now() } : s)),
     toast,
     bookmarks,
     setBookmarks,

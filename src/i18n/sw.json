@@ -1,4 +1,6 @@
 {
+ "Меню «Ещё»": "Menyu “Zaidi”",
+ "новая версия": "toleo jipya",
  "Поиск: у каждого стиха — «Копировать», запрос сохраняется, крестик стирает строку, можно искать во всех скачанных переводах.": "Utafutaji: “Nakili” kando ya kila mstari, utafutaji unahifadhiwa, alama ya × inafuta sehemu, na unaweza kutafuta katika tafsiri zote zilizopakuliwa.",
  "Найти": "Tafuta",
  "Во всех модулях": "Katika moduli zote",
@@ -1162,7 +1164,6 @@
  "Что нового": "Mapya",
  "Обновление от {date}": "Sasisho la {date}",
  "Последнее обновление": "Sasisho la mwisho",
- "есть новая": "lipo jipya",
  "(часть)": "(sehemu)",
  "зажмите стих в Библии и нажмите «В проповедь» — или введите ссылку ниже.": "bonyeza mstari kwa muda katika Biblia na gusa “Kwenye mahubiri” — au andika rejea hapa chini.",
  "Создайте проповедь и добавляйте стихи прямо при чтении: зажмите стих → «В проповедь».": "Unda mahubiri na uongeze mistari unaposoma: bonyeza mstari kwa muda → “Kwenye mahubiri”.",

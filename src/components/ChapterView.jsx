@@ -246,12 +246,26 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       el.querySelectorAll(`.verse[data-b="${b}"][data-c="${c}"][data-v="${v}"] .w`).forEach((w) => +w.dataset.i >= from && +w.dataset.i <= to && w.classList.add(cls));
     for (const [k, verses] of favParts) {
       const [b, c] = k.split('.');
-      for (const [v, [from, to]] of Object.entries(verses)) mark(b, c, v, from, to, 'fav-part');
+      for (const [v, [from, to]] of Object.entries(verses)) {
+        mark(b, c, v, from, to, 'fav-part');
+        drawPart(el, { key: `${b}.${c}.${v}`, from, to }, 'fav'); // любимая часть — цельной плашкой цвета сердечка
+      }
     }
     if (part?.from != null) {
       drawPart(el, part); // выбранная часть — одной цельной плашкой под текстом
     }
   });
+
+  // Плашки частей стихов стоят по координатам строк — при смене ширины перерисовываем
+  const [, setRelayout] = useState(0);
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el || !window.ResizeObserver) return;
+    let w = el.clientWidth;
+    const ro = new ResizeObserver(() => el.clientWidth !== w && ((w = el.clientWidth), setRelayout((n) => n + 1)));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // Снимаем подсветку слова, когда закрыты и выборка словарей, и окно статьи
   useEffect(() => {

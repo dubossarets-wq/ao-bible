@@ -1,6 +1,7 @@
 // Показывает текущую нижнюю панель. Каждая панель знает, из какой панели чтения её открыли (sheet.pane).
 import React from 'react';
 import { useApp } from '../App.jsx';
+import { SheetBack } from './BottomSheet.jsx';
 import DictionaryBottomSheet from './DictionaryBottomSheet.jsx';
 import CrossReferencesSheet from './CrossReferencesSheet.jsx';
 import BookNavigator from './BookNavigator.jsx';
@@ -67,10 +68,17 @@ const KINDS = {
 export const hasSheet = (kind) => Object.prototype.hasOwnProperty.call(KINDS, kind);
 
 export default function SheetHost() {
-  const { sheet, closeSheetIf } = useApp();
+  const { sheet, closeSheetIf, backSheetIf } = useApp();
   if (!sheet) return null;
   const C = KINDS[sheet.kind];
   if (!C) return null;
   const id = sheet.id;
-  return <C key={id} pane={sheet.pane} payload={sheet.payload || {}} onClose={() => closeSheetIf(id)} />;
+  const to = sheet.payload?.backTo;
+  // Крестик/свайп/Escape в окне, открытом из «Ещё», возвращают в «Ещё»; закрытие ради действия (урок, переход) — полное
+  const back = to ? () => backSheetIf(id, to, sheet.pane) : null;
+  return (
+    <SheetBack.Provider value={back}>
+      <C key={id} pane={sheet.pane} payload={sheet.payload || {}} onClose={() => closeSheetIf(id)} />
+    </SheetBack.Provider>
+  );
 }

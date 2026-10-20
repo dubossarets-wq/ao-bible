@@ -1,4 +1,6 @@
 {
+ "Меню «Ещё»": "Menú «Más»",
+ "новая версия": "nueva versión",
  "Поиск: у каждого стиха — «Копировать», запрос сохраняется, крестик стирает строку, можно искать во всех скачанных переводах.": "Búsqueda: «Copiar» junto a cada versículo, la consulta se guarda, la cruz borra el campo y se puede buscar en todas las traducciones descargadas.",
  "Найти": "Buscar",
  "Во всех модулях": "En todos los módulos",
@@ -1168,7 +1170,6 @@
  "Что нового": "Novedades",
  "Обновление от {date}": "Actualización del {date}",
  "Последнее обновление": "Última actualización",
- "есть новая": "versión nueva",
  "(часть)": "(parte)",
  "зажмите стих в Библии и нажмите «В проповедь» — или введите ссылку ниже.": "mantenga presionado un versículo en la Biblia y toque «Al sermón», o escriba una referencia abajo.",
  "Создайте проповедь и добавляйте стихи прямо при чтении: зажмите стих → «В проповедь».": "Cree un sermón y añada versículos mientras lee: mantenga presionado un versículo → «Al sermón».",

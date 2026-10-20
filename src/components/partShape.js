@@ -1,6 +1,7 @@
 // Подложка выбранной части стиха — одной цельной плашкой со скруглёнными углами, как выделение текста
 // на телефоне. Рисуется под текстом по точным границам строк: соседние строки стыкуются ровно посередине
-// промежутка (без наложений и просветов), выступающие углы скругляются.
+// промежутка (без наложений и просветов); скругляются и выступающие углы, и внутренние — на стыке строк разной длины.
+// Та же плашка (цветом сердечка) — у любимых частей стихов: drawPart(root, part, 'fav').
 const R = 6; // радиус скругления, px
 const PAD = 2; // запас вокруг текста, px
 
@@ -8,7 +9,7 @@ export function clearPart(root) {
   root.querySelectorAll('.part-shape').forEach((x) => x.remove());
 }
 
-export function drawPart(root, part) {
+export function drawPart(root, part, kind = '') {
   if (part?.from == null) return;
   const [b, c, v] = part.key.split('.');
   const verse = root.querySelector(`.verse[data-b="${b}"][data-c="${c}"][data-v="${v}"]`);
@@ -44,7 +45,7 @@ export function drawPart(root, part) {
   lines[0].t -= PAD;
   lines[lines.length - 1].b += PAD;
   const box = document.createElement('div');
-  box.className = 'part-shape';
+  box.className = kind ? `part-shape ${kind}` : 'part-shape';
   box.setAttribute('aria-hidden', 'true');
   lines.forEach((l, i) => {
     const prev = lines[i - 1];
@@ -59,6 +60,17 @@ export function drawPart(root, part) {
     const d = document.createElement('i');
     d.style.cssText = `left:${left - base.left}px;top:${l.t - base.top}px;width:${right - left}px;height:${l.b - l.t}px;border-radius:${tl}px ${tr}px ${br}px ${bl}px`;
     box.appendChild(d);
+    // Внутренний угол: соседняя строка выступает дальше этой — заполняем угол снаружи вогнутой дугой
+    const fillet = (x, y, at) => {
+      const f = document.createElement('i');
+      f.className = 'part-fillet';
+      f.style.cssText = `left:${x - base.left}px;top:${y - base.top}px;width:${R}px;height:${R}px;--at:${at}`;
+      box.appendChild(f);
+    };
+    if (next && next.l - PAD < left - R) fillet(left - R, l.b - R, '0 0');
+    if (next && next.r + PAD > right + R) fillet(right, l.b - R, '100% 0');
+    if (prev && prev.l - PAD < left - R) fillet(left - R, l.t, '0 100%');
+    if (prev && prev.r + PAD > right + R) fillet(right, l.t, '100% 100%');
   });
   host.appendChild(box);
 }

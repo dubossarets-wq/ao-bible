@@ -3,7 +3,7 @@
 // На широком экране выглядит как модальное окно у нижнего края (variant="wide" — почти на весь экран).
 // variant="page" — отдельная страница во весь экран: выезжает справа, вверху стрелка «назад» (без ручки и крестика).
 // initial="full" — окно на всю высоту: свайп вниз за ручку закрывает его, короткий — возвращает наверх.
-import React, { useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { X, ChevronLeft } from 'lucide-react';
 import { t } from '../core/i18n.js';
 
@@ -24,6 +24,9 @@ const belowBar = () => {
 };
 const snaps = () => [SNAPS[0], belowBar(), SNAPS[2]];
 
+// Куда вернуться после закрытия крестиком/свайпом (окно открыто из «Ещё») — задаёт SheetHost
+export const SheetBack = createContext(null);
+
 export default function BottomSheet({ title, subtitle, onClose, onBack, children, initial = 1, variant = 'normal', headerExtra, footer }) {
   const full = initial === 'full';
   // Высота при открытии: на всю высоту (full), почти весь экран (wide), половина (0) или до верхней панели (остальные)
@@ -33,11 +36,12 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
   const drag = useRef(null);
   const sheetRef = useRef(null);
 
+  const back = useContext(SheetBack);
   const close = () => {
     if (closing) return;
     setClosing(true);
     const reduce = document.documentElement.classList.contains('no-anim') || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    setTimeout(onClose, reduce ? 0 : 200);
+    setTimeout(() => (onClose(), back?.()), reduce ? 0 : 200);
   };
 
   useEffect(() => {

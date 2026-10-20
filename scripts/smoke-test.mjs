@@ -86,13 +86,13 @@ async function run(label, viewport, isMobile) {
   }));
   if (isMobile) check(`${label}: панель вкладок и простая верхняя панель`, nav.tabs === 'Библия|Планы|Поиск|Закладки|Ещё' && !/tb-more|tb-search/.test(nav.top), `${nav.tabs}; ${nav.top}`);
   else check(`${label}: на широком экране без вкладок, поиск и ⋮ наверху`, !nav.tabs && /tb-search/.test(nav.top) && /tb-menu-wrap/.test(nav.top), nav.top);
-  // Круглые стрелки соседней главы; «Слушать» — над правой стрелкой, всё — над вкладками
+  // Круглые стрелки соседней главы; «Слушать» — по центру между ними, всё — над вкладками
   const geo = await page.evaluate(() => {
     const r = (s) => document.querySelector(s)?.getBoundingClientRect();
     const tab = r('.tabbar');
-    return { next: r('.chap-nav.next'), prev: r('.chap-nav.prev'), fab: r('.listen-fab'), tabTop: tab ? tab.top : innerHeight };
+    return { next: r('.chap-nav.next'), prev: r('.chap-nav.prev'), fab: r('.listen-fab'), tabTop: tab ? tab.top : innerHeight, vw: document.querySelector('.pane-slot.first .reader').getBoundingClientRect().width };
   });
-  check(`${label}: стрелки глав`, !!geo.next && !!geo.prev && geo.next.bottom <= geo.tabTop && geo.fab.bottom <= geo.next.top + 1, JSON.stringify({ next: Math.round(geo.next?.bottom), fab: Math.round(geo.fab?.bottom), tab: Math.round(geo.tabTop) }));
+  check(`${label}: стрелки глав`, !!geo.next && !!geo.prev && geo.next.bottom <= geo.tabTop && geo.fab.bottom <= geo.tabTop && geo.fab.left > geo.prev.right && geo.fab.right < geo.next.left && Math.abs((geo.fab.left + geo.fab.right) / 2 - geo.vw / 2) < 4, JSON.stringify({ next: Math.round(geo.next?.bottom), fab: Math.round(geo.fab?.bottom), fabX: Math.round(geo.fab?.left), tab: Math.round(geo.tabTop) }));
   await page.click('.pane-slot.first .chap-nav.next');
   await page.waitForTimeout(700);
   const nextRef = await page.textContent('.pane-slot.first .tb-ref');

@@ -31,6 +31,8 @@ export function openTab(app, id) {
   const tab = TABS.find((x) => x.id === id);
   if (!tab) return;
   if (!tab.sheet) return app.closeSheet();
+  // Повторное нажатие на открытую вкладку закрывает её окно
+  if (app.sheet && activeTab(app.sheet) === id) return app.closeSheet();
   if (!hasSheet(tab.sheet)) return;
   app.openSheet(tab.sheet, 0, { ...(tab.payload || {}), navTab: tab.id });
 }

@@ -349,7 +349,7 @@ mark { background: var(--hl); color: inherit; border-radius: 2px; padding: 0 1px
   .text-col { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 }
 .verse { position: relative; }
-.verse.selected { background: var(--panel); box-shadow: -16px 0 0 var(--panel), 16px 0 0 var(--panel); border-radius: 0; }
+.verse.selected { --sel-bg: color-mix(in srgb, var(--accent) 9%, var(--bg)); background: var(--sel-bg); box-shadow: -16px 0 0 var(--sel-bg), 16px 0 0 var(--sel-bg); border-radius: 0; }
 /* Метка выделения — в поле слева от текста, не поверх букв */
 .verse.selected::before { content: ""; position: absolute; left: -11px; top: 0; bottom: 0; width: 3px; border-radius: 2px; background: var(--accent); }
 .verses.continuous .verse.selected { box-shadow: none; background: color-mix(in srgb, var(--accent) 16%, var(--panel)); }
@@ -594,7 +594,7 @@ button.wp-item:active { background: rgba(255,255,255,.08); }
 .verse.hl-4 { --hlc: color-mix(in srgb, #f2a65a 42%, transparent); }
 .verse.hl-5 { --hlc: color-mix(in srgb, #e79ac0 42%, transparent); }
 .verse.hl-6 { --hlc: color-mix(in srgb, #b7a3e3 45%, transparent); }
-.verse.selected[class*=" hl-"] { background: var(--panel); }
+.verse.selected[class*=" hl-"] { background: var(--sel-bg); }
 .hl-palette { position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); display: flex; gap: 8px; padding: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 14px 40px rgba(0,0,0,.22); z-index: 20; animation: pop .14s ease-out; }
 .hl-dot { width: 32px; height: 32px; border-radius: 50%; border: 2px solid transparent; padding: 0; display: grid; place-items: center; color: var(--text); }
 .hl-dot.on { border-color: var(--text); }
@@ -1014,7 +1014,11 @@ html.kb-open .tour-ctrl.top { top: auto; bottom: calc(var(--kb, 0px) + 8px); }
 .part-shape { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
 .part-shape i { position: absolute; background: color-mix(in srgb, var(--accent) 24%, transparent); }
 .verse.selected .vt, .verse.selected .vn, .verse.selected .vmark, .verse.selected .xr, .verse.selected .cm, .verse.selected .note-tag { position: relative; z-index: 1; }
-.w.fav-part { box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--love) 70%, transparent); }
+/* Любимая часть стиха — цельная плашка цвета сердечка (partShape.js), текст поверх неё */
+.part-shape.fav i { background: color-mix(in srgb, var(--love) 20%, transparent); }
+.part-shape i.part-fillet { background: color-mix(in srgb, var(--accent) 24%, transparent); -webkit-mask: radial-gradient(circle at var(--at), transparent 5.5px, #000 6px); mask: radial-gradient(circle at var(--at), transparent 5.5px, #000 6px); }
+.part-shape.fav i.part-fillet { background: color-mix(in srgb, var(--love) 20%, transparent); }
+.verse:has(.fav-part) .vt, .verse:has(.fav-part) .vn { position: relative; z-index: 1; }
 .fav-heart.part { opacity: .75; }
 .part-inline { flex-direction: column; align-items: stretch; }
 .part-hint { margin: 0; font-size: .9rem; line-height: 1.4; color: var(--muted); font-style: italic; }
@@ -1373,7 +1377,9 @@ html.has-tabbar .place-card { bottom: calc(10px + var(--sab)); }
 .chap-nav.next { right: calc(env(safe-area-inset-right, 0px) + 14px); }
 .chap-nav:active { transform: scale(.92); }
 @media (hover: hover) { .chap-nav:hover { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 50%, var(--line)); } }
-.reader:has(.chap-nav.next) .listen-fab { bottom: calc(var(--chap-bottom) + 58px); }
+/* Кнопка «Слушать» — по центру, на одной линии со стрелками глав */
+.reader:has(.chap-nav.next) .listen-fab { right: auto; left: 50%; margin-left: -23px; width: 46px; height: 46px; bottom: var(--chap-bottom); }
+.reader.bar-hidden:has(.chap-nav.next) .listen-fab { opacity: 0; pointer-events: none; }
 .reader:has(.plan-return) { --chap-bottom: calc(var(--sab) + 70px); }
 .app:has(.audio-bar) .reader { --chap-bottom: calc(var(--sab) + var(--audio-h, 64px) + 18px); }
 .app:has(.audio-bar) .split.rows .pane-slot.first .reader { --chap-bottom: calc(var(--sab) + 16px); }
@@ -1411,3 +1417,11 @@ input.fade-end { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 
 /* Подсветка слова из поиска в тексте: только в стихе перехода, через несколько секунд плавно гаснет */
 .scroller .w.hl { transition: background-color .7s ease; }
 .scroller.hl-fade .w.hl { background-color: transparent; }
+/* Активная вкладка — плашка на весь пункт (значок и подпись); строки «Ещё» плотнее — промежутки не больше отступа от края */
+.tab { margin: 4px 1px; border-radius: 16px; transition: background .18s, color .18s; }
+.tab.on .tab-icon, .tab:active .tab-icon { background: none; }
+.tab.on { background: color-mix(in srgb, var(--bar-text) 12%, var(--bar)); }
+.tab:active { background: color-mix(in srgb, var(--bar-text) 18%, var(--bar)); }
+@media (hover: hover) { .tab:hover .tab-icon, .tab.on:hover .tab-icon { background: none; } .tab:hover { background: color-mix(in srgb, var(--bar-text) 8%, var(--bar)); } .tab.on:hover { background: color-mix(in srgb, var(--bar-text) 14%, var(--bar)); } }
+.tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; } .tab:focus-visible .tab-icon { outline: none; }
+.more-list .menu-item { padding-top: 7px; padding-bottom: 7px; }

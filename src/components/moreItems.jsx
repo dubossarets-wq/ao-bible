@@ -13,6 +13,8 @@ import { t } from '../core/i18n.js';
 // sheet: true — для листа «Ещё» на телефоне: там нет «Планов» и «Закладок, заметок…» (у них свои вкладки)
 export function moreItems(app, { index, ref, module, sheet = false }) {
   const { openSheet, panes, settings, setSettings, isBookmarked, toggleBookmark, updates, modules, bookmarks, navigate } = app;
+  // Из листа «Ещё» окна открываются с возвратом: крестик ведёт обратно в «Ещё»
+  const open = (kind, i, payload) => openSheet(kind, i, sheet ? { ...payload, backTo: 'more' } : payload);
   const m = settings.menu;
   const split = !!panes[1];
   const marked = isBookmarked(ref);
@@ -37,11 +39,11 @@ export function moreItems(app, { index, ref, module, sheet = false }) {
       sub: `${bookMeta(last.book).short} ${last.chapter}:${last.verse}${last.text ? ` · ${last.text}` : ''}`,
       run: () => navigate(index, last),
     });
-  if (!sheet) add({ key: 'saved', icon: Heart, label: t('Закладки и заметки'), run: () => openSheet('bookmarks', index) });
-  if (m.sermons) add({ key: 'sermons', icon: ScrollText, label: t('Проповеди'), run: () => openSheet('sermons', index) });
-  if (m.plans && !sheet) add({ key: 'plans', icon: CalendarCheck, label: t('Планы чтения'), run: () => openSheet('plans', index) });
+  if (!sheet) add({ key: 'saved', icon: Heart, label: t('Закладки и заметки'), run: () => open('bookmarks', index) });
+  if (m.sermons) add({ key: 'sermons', icon: ScrollText, label: t('Проповеди'), run: () => open('sermons', index) });
+  if (m.plans && !sheet) add({ key: 'plans', icon: CalendarCheck, label: t('Планы чтения'), run: () => open('plans', index) });
   if (m.listen) add({ key: 'listen', icon: Headphones, label: t('Слушать с этого места'), run: () => listenFrom(index, module.id, ref) });
-  if (m.maps && modules.some((x) => x.type === 'maps')) add({ key: 'maps', icon: MapIcon, label: t('Карты'), run: () => openSheet('maps', index) });
+  if (m.maps && modules.some((x) => x.type === 'maps')) add({ key: 'maps', icon: MapIcon, label: t('Карты'), run: () => open('maps', index) });
   // Переключатели, которые человек сам вынес в меню (Настройки → «Меню ⋮»)
   if (m.focus || m.book || (m.split && split)) add({ key: 'sep1', sep: true });
   const onOff = (v) => (v ? t('вкл') : t('выкл'));
@@ -54,12 +56,12 @@ export function moreItems(app, { index, ref, module, sheet = false }) {
     add({ key: 'layout', keep: true, icon: rows ? Columns2 : Rows2, label: rows ? t('Панели рядом') : t('Панели друг над другом'), run: () => setSettings({ splitLayout: rows ? 'columns' : 'rows' }) });
   }
   add({ key: 'sep2', sep: true });
-  if (IS_PWA_BUILD && updates.available) add({ key: 'update', cls: 'update-item', icon: RefreshCw, label: t('Обновить приложение'), run: () => applyUpdate() });
+  if (IS_PWA_BUILD && updates.available) add({ key: 'update', cls: 'update-item', icon: RefreshCw, label: t('Обновить приложение'), extra: t('новая версия'), extraCls: 'badge-new', run: () => applyUpdate() });
   // Только на тестовом сайте: версии с заметками — что изменилось, обновиться или вернуться
-  if (IS_STAGING) add({ key: 'versions', icon: History, label: t('Обновления'), extra: updates.available ? t('есть новая') : null, run: () => openSheet('versions', index) });
-  add({ key: 'appearance', icon: Palette, label: t('Оформление'), run: () => openSheet('settings', index) });
-  add({ key: 'prefs', icon: SettingsIcon, label: t('Настройки'), run: () => openSheet('prefs', index) });
-  if (m.help) add({ key: 'help', icon: BookOpenCheck, label: t('Инструкция'), run: () => openSheet('help', index) });
+  if (IS_STAGING) add({ key: 'versions', icon: History, label: t('Обновления'), run: () => open('versions', index) }); // о новой версии говорит бейдж у «Обновить приложение»
+  add({ key: 'appearance', icon: Palette, label: t('Оформление'), run: () => open('settings', index) });
+  add({ key: 'prefs', icon: SettingsIcon, label: t('Настройки'), run: () => open('prefs', index) });
+  if (m.help) add({ key: 'help', icon: BookOpenCheck, label: t('Инструкция'), run: () => open('help', index) });
   // Без двух разделителей подряд и без разделителя в конце
   return out.filter((x, i, a) => !x.sep || (i > 0 && i < a.length - 1 && !a[i + 1].sep && !a[i - 1].sep));
 }
