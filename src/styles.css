@@ -492,6 +492,9 @@ button.wp-item:active { background: rgba(255,255,255,.08); }
 :root { --love: #d9475e; }
 .fav-heart { color: var(--love); width: .62em; height: .62em; vertical-align: .22em; margin-right: .25em; }
 .fav-heart svg { display: block; width: 100%; height: 100%; }
+/* Стих в подборке — папка того же размера, что и сердечко */
+.col-mark { color: var(--accent); width: .6em; height: .6em; vertical-align: .22em; margin-right: .25em; }
+.col-mark svg { display: block; width: 100%; height: 100%; }
 .love { color: var(--love); }
 .verse.fav-pulse { animation: fav-pulse .8s ease-out; }
 @keyframes fav-pulse { 0% { background-color: color-mix(in srgb, var(--love) 30%, transparent); } 100% { background-color: transparent; } }

@@ -84,6 +84,13 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
                     </svg>
                   </span>
                 )}
+                {mk[v]?.includes('c') && (
+                  <span className="vmark col-mark" title={t('Стих в подборке')} aria-label={t('Стих в подборке')}>
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" fill="currentColor" />
+                    </svg>
+                  </span>
+                )}
                 <span className="vt" dangerouslySetInnerHTML={{ __html: verseHtml(text, { showStrongs: opts.showStrongs, highlight: hlRe && (hlVerse == null || hlVerse === v) ? hlRe : null, interlinear: opts.interlinear }) }} />
                 {mk[v]?.includes('n') && (
                   <button className="note-tag" data-act="note" aria-label={t('Заметка к стиху')} title={t('Заметка')}>

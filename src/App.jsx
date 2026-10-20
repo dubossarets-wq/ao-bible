@@ -472,7 +472,7 @@ export default function App() {
   });
 
   const sermons = useSermons();
-  // Отметки в тексте: «Книга.глава» → { стих: 'fbns' } (f — любимый стих, b — закладка, n — заметка, s — в проповеди)
+  // Отметки в тексте: «Книга.глава» → { стих: 'fbnsc' } (f — любимый стих, b — закладка, n — заметка, s — в проповеди, c — в подборке)
   const marks = useMemo(() => {
     const m = new Map();
     const add = (book, c, v, flag) => {
@@ -490,12 +490,14 @@ export default function App() {
     for (const s of sermons)
       for (const b of s.blocks)
         if (b.type === 'verse') for (let v = b.verse; v <= (b.to || b.verse); v++) if (!m.get(`${b.book}.${b.chapter}`)?.[v]?.includes('s')) add(b.book, b.chapter, v, 's');
+    for (const col of collections)
+      for (const r of col.items || []) if (!m.get(`${r.book}.${r.chapter}`)?.[r.verse]?.includes('c')) add(r.book, r.chapter, r.verse, 'c');
     Object.entries(highlights).forEach(([k, color]) => {
       const [b, c, v] = k.split('.');
       add(b, +c, +v, color); // цифра — цвет выделения
     });
     return m;
-  }, [favorites, bookmarks, notes, highlights, sermons]);
+  }, [favorites, bookmarks, notes, highlights, sermons, collections]);
 
   const setHighlight = useEvent((refs, color) => {
     setHighlights((h) => {
