@@ -49,7 +49,7 @@ export default function BookNavigator({ pane, onClose }) {
   return (
     <BottomSheet
       title={title}
-      subtitle={selBook ? `${t(categoryOf(selBook.id).name)} · ${chapter ? t('выберите стих') : t('выберите главу')}` : module.title || module.name}
+      subtitle={selBook ? t(categoryOf(selBook.id).name) : module.title || module.name}
       onClose={onClose}
       onBack={back}
       initial={2}

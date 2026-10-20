@@ -243,7 +243,6 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
           {mapping.mode === 'exact' && (
             <div className="map-line">
               <span className="badge ok">{t('Точная привязка')}</span>
-              <span className="muted">{t('слово размечено в переводе:')}</span>
               {mapping.strongs.map((s) => (
                 <span key={s} className="mono strong-chip">
                   {s}
@@ -277,7 +276,7 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
         <>
           {res.results.length === 0 ? (
             <Empty icon={BookText} title={t('Статей не найдено')}>
-              {res.dictionaryCount === 0 ? `${t('Нет включённых словарей.')} ` : `${t('Проверено словарей: {n}.', { n: res.dictionaryCount })} `}
+              {res.dictionaryCount === 0 ? `${t('Нет включённых словарей.')} ` : null}
               <button className="link-inline" onClick={() => openSheet('library', pane, { tab: 'installed' })}>
                 {t('Открыть библиотеку')}
               </button>

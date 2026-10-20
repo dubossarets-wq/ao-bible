@@ -38,7 +38,7 @@ export default function HelpSheet({ onClose }) {
                   <x.icon size={19} />
                   <span className="pref-row-text">
                     {t(x.title)}
-                    <small>{t('{n} шаг|{n} шага|{n} шагов', { n: x.steps.length })} · {t('показать на экране')}</small>
+                    <small>{t('{n} шаг|{n} шага|{n} шагов', { n: x.steps.length })}</small>
                   </span>
                   <ChevronRight size={17} className="pref-chev" />
                 </button>

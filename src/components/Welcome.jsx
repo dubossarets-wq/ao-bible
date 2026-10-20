@@ -73,12 +73,9 @@ export default function Welcome({ onClose }) {
           ))}
         </div>
         {last && (
-          <>
-            <p className="muted">{t('Все возможности по шагам — в «Инструкции».')}</p>
-            <button className="btn small" onClick={() => openSheet('help')}>
-              {t('Открыть инструкцию')}
-            </button>
-          </>
+          <button className="btn small" onClick={() => openSheet('help')}>
+            {t('Открыть инструкцию')}
+          </button>
         )}
       </div>
     </BottomSheet>

@@ -14,7 +14,7 @@ import { useApp } from '../App.jsx';
 import * as repo from '../core/modules.js';
 import { MODULE_TYPES, MODULE_SECTIONS } from '../core/schema.js';
 import { isPersistent } from '../core/db.js';
-import { ConfirmButton, Empty, Hint, fmtSize, useSwipeToggle } from './ui.jsx';
+import { ConfirmButton, Empty, Fold, fmtSize, useSwipeToggle } from './ui.jsx';
 import { t, N_, getLang, locale, fmtNum } from '../core/i18n.js';
 
 export const TYPE_ICON = { bible: BookOpen, commentary: MessageSquareText, dictionary: BookText, maps: MapIcon, crossrefs: Link2, audio: Headphones };
@@ -408,14 +408,11 @@ export default function ModuleLibrary({ payload, onClose }) {
             </div>
           )}
           {catalog && <Sections items={list} mode="catalog" catalog={catalog} busy={busy} onInstall={install} filter={filter} />}
-          <section className="nav-group">
-            <h4>
-              {t('Источник каталога')}
-              <Hint>
-                {sourceUrl === repo.CATALOG_URL ? `${t('Сейчас — встроенный каталог.')} ` : `${t('Сейчас — {url}.', { url: sourceUrl })} `}
-                {t('Можно подключить свой каталог aob-catalog: https://…/catalog.json (нужен CORS).')}
-              </Hint>
-            </h4>
+          <Fold title={t('Источник каталога')} id="cat-src">
+            <p className="field-hint">
+              {sourceUrl === repo.CATALOG_URL ? `${t('Сейчас — встроенный каталог.')} ` : `${t('Сейчас — {url}.', { url: sourceUrl })} `}
+              {t('Можно подключить свой каталог aob-catalog: https://…/catalog.json (нужен CORS).')}
+            </p>
             <form
               className="ref-form"
               onSubmit={(e) => {
@@ -441,7 +438,7 @@ export default function ModuleLibrary({ payload, onClose }) {
                 <RefreshCw size={14} /> {t('Обновить список')}
               </button>
             </div>
-          </section>
+          </Fold>
         </>
       )}
       {tab === 'import' && <ModuleImporter onDone={() => setTab('installed')} />}

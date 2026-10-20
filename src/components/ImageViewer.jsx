@@ -182,7 +182,6 @@ export default function ImageViewer({ payload, onClose }) {
             </>
           )}
         </span>
-        <small>{t('Нажмите на картинку, чтобы увеличить; двумя пальцами — плавно.')}</small>
       </div>
     </div>,
     document.body

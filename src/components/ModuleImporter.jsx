@@ -5,7 +5,7 @@ import { Upload, FileJson, AlertTriangle, CheckCircle2, Copy } from 'lucide-reac
 import { useApp } from '../App.jsx';
 import * as repo from '../core/modules.js';
 import { MODULE_TYPES } from '../core/schema.js';
-import { Progress, fmtSize } from './ui.jsx';
+import { Progress, Fold, fmtSize } from './ui.jsx';
 import { t, fmtNum } from '../core/i18n.js';
 
 // Пример файла модуля — образец формата, не переводится
@@ -168,8 +168,7 @@ export default function ModuleImporter({ onDone }) {
         );
       })}
 
-      <section className="nav-group">
-        <h4>{t('Формат модуля')}</h4>
+      <Fold title={t('Формат модуля')} id="imp-format">
         <p className="field-hint">
           {t('Родной формат — {native} (описание: docs/MODULE_SCHEMA.md в проекте). Также принимаются массив книг с полем {chapters}, список стихов {verses}, словарь {dict} и список статей {entries}.', {
             native: <span className="mono">aob-module</span>,
@@ -183,7 +182,7 @@ export default function ModuleImporter({ onDone }) {
         <button className="btn small" onClick={copySample}>
           <Copy size={14} /> {t('Скопировать пример')}
         </button>
-      </section>
+      </Fold>
     </>
   );
 }

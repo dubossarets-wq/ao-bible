@@ -45,14 +45,14 @@ export default function CrossReferencesSheet({ pane, payload, onClose }) {
   };
 
   return (
-    <BottomSheet title={t('Параллельные места · {ref}', { ref: formatRef(ref) })} subtitle={module ? t('Тексты из перевода {module}', { module: module.name }) : null} onClose={onClose} initial={1}>
+    <BottomSheet title={t('Параллельные места · {ref}', { ref: formatRef(ref) })} subtitle={module ? module.name : null} onClose={onClose} initial={1}>
       {source && <blockquote className="xref-source">{source}</blockquote>}
       {!items && (
         <div className="loading">
           <Loader2 className="spin" size={20} /> {t('Загрузка…')}
         </div>
       )}
-      {items && items.length === 0 && <Empty icon={Link2} title={t('Параллельных мест нет')}>{t('Для этого стиха в установленных модулях нет ссылок.')}</Empty>}
+      {items && items.length === 0 && <Empty icon={Link2} title={t('Параллельных мест нет')} />}
       {items && items.length > 0 && (
         <>
           <h4 className="sheet-h4">
