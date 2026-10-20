@@ -66,12 +66,74 @@ function ChapterNav({ index, module, pane }) {
   const ref = useLivePosition(index, pane.ref);
   const books = module?.books || [];
   const bi = books.findIndex((b) => b.id === ref.book);
-  if (bi < 0) return null;
-  const chapters = books[bi].verses.length;
-  const prev = ref.chapter > 1 ? { book: ref.book, chapter: ref.chapter - 1 } : bi > 0 ? { book: books[bi - 1].id, chapter: books[bi - 1].verses.length } : null;
-  const next = ref.chapter < chapters ? { book: ref.book, chapter: ref.chapter + 1 } : bi < books.length - 1 ? { book: books[bi + 1].id, chapter: 1 } : null;
+  const chapters = bi < 0 ? 0 : books[bi].verses.length;
+  const prev = bi < 0 ? null : ref.chapter > 1 ? { book: ref.book, chapter: ref.chapter - 1 } : bi > 0 ? { book: books[bi - 1].id, chapter: books[bi - 1].verses.length } : null;
+  const next = bi < 0 ? null : ref.chapter < chapters ? { book: ref.book, chapter: ref.chapter + 1 } : bi < books.length - 1 ? { book: books[bi + 1].id, chapter: 1 } : null;
   const go = (r) => navigate(index, { ...r, verse: 1 }, { flash: false });
   const name = (r) => formatRef({ ...r, verse: 1 }).replace(/:1$/, '');
+  // Свайп по тексту влево — следующая глава, вправо — предыдущая (текст идёт за пальцем, коротко — возвращается)
+  const nav = useRef({});
+  nav.current = { prev, next, go };
+  useEffect(() => {
+    const sc = document.querySelector(`.pane-slot.${index === 0 ? 'first' : 'second'} .reader .scroller`);
+    if (!sc) return;
+    let s = null;
+    const col = () => sc.querySelector('.text-col');
+    const reset = (anim) => {
+      const c = col();
+      if (!c) return;
+      c.style.transition = anim ? 'transform .2s ease, opacity .2s ease' : '';
+      c.style.transform = '';
+      c.style.opacity = '';
+    };
+    const onStart = (e) => {
+      const t0 = e.touches[0];
+      const busy = e.touches.length > 1 || document.querySelector('.sheet, .selection-bar, .word-pop, .tour, .player-full') || sc.classList.contains('selecting');
+      const edge = t0.clientX < 24 || t0.clientX > innerWidth - 24; // у края — системные жесты телефона
+      s = busy || edge ? null : { x: t0.clientX, y: t0.clientY, t: Date.now(), dir: 0 };
+    };
+    const onMove = (e) => {
+      if (!s) return;
+      if (e.touches.length > 1) return reset(false), (s = null);
+      const dx = e.touches[0].clientX - s.x;
+      const dy = e.touches[0].clientY - s.y;
+      if (!s.dir) {
+        if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
+        s.dir = Math.abs(dx) > Math.abs(dy) * 1.6 ? 1 : -1; // -1 — прокрутка, не трогаем
+      }
+      if (s.dir !== 1) return;
+      const c = col();
+      const can = dx < 0 ? nav.current.next : nav.current.prev;
+      if (c) {
+        c.style.transition = '';
+        c.style.transform = `translateX(${dx * (can ? 0.35 : 0.12)}px)`;
+        c.style.opacity = String(1 - Math.min(0.35, Math.abs(dx) / 900));
+      }
+    };
+    const onEnd = (e) => {
+      if (!s) return;
+      const st = s;
+      s = null;
+      if (st.dir !== 1) return reset(false);
+      const dx = (e.changedTouches[0]?.clientX ?? st.x) - st.x;
+      const fast = Date.now() - st.t < 600;
+      const target = dx < 0 ? nav.current.next : nav.current.prev;
+      if (target && (Math.abs(dx) > 110 || (fast && Math.abs(dx) > 60))) {
+        reset(false);
+        nav.current.go(target);
+      } else reset(true);
+    };
+    sc.addEventListener('touchstart', onStart, { passive: true });
+    sc.addEventListener('touchmove', onMove, { passive: true });
+    sc.addEventListener('touchend', onEnd, { passive: true });
+    sc.addEventListener('touchcancel', () => ((s = null), reset(true)), { passive: true });
+    return () => {
+      sc.removeEventListener('touchstart', onStart);
+      sc.removeEventListener('touchmove', onMove);
+      sc.removeEventListener('touchend', onEnd);
+    };
+  }, [index]);
+  if (bi < 0) return null;
   return (
     <>
       {prev && (

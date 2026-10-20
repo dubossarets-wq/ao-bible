@@ -2979,3 +2979,4 @@ html.player-open .tabbar { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) { .ap { animation: none; transition: none; } .ap-verse { filter: none !important; transition: none; transform: none; } }
 html.no-anim .ap { animation: none; transition: none; }
 html.no-anim .ap-verse { filter: none !important; transition: none; transform: none; }
+.tab-label { font-size: calc(.72rem - 1px); } /* подписи нижнего меню — на 1 px меньше */
