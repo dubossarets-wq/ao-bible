@@ -1,14 +1,14 @@
 // Планы чтения: активные планы с прогрессом и кнопкой «Читать» (весь день одной страницей),
 // учёт прочитанного, начало нового плана, свой план
 import React, { useEffect, useMemo, useState } from 'react';
-import { BookOpen, Check, ChevronLeft, ChevronRight, Loader2, Plus, Trash2, Flame, Library, CalendarDays, Sunrise, Music, Feather, Sparkles } from 'lucide-react';
+import { BookOpen, Check, ChevronLeft, ChevronRight, Loader2, Plus, Trash2, Flame, Library, CalendarDays, Sunrise, Music, Feather, Sparkles, CalendarPlus, Minus } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { usePlans } from '../core/planStore.js';
 import { readStats } from '../core/readLog.js';
 import { bookMeta } from '../core/books.js';
 import { fetchPlanIndex, fetchPlan, makeCustomPlan, SCOPES, parseReading, planToday, behindDays, readingDone, localDate } from '../core/plans.js';
-import { ConfirmButton, Segmented, Hint } from './ui.jsx';
+import { ConfirmButton, Hint } from './ui.jsx';
 import VerseOfDayCard from './VerseOfDayCard.jsx';
 import { t, fmtDate, locale } from '../core/i18n.js';
 
@@ -293,20 +293,49 @@ export default function PlansSheet({ pane, onClose }) {
         ))}
       </section>
 
-      <section className="nav-group">
-        <h4>
-          {t('Свой план')} <Hint>{t('Главы делятся на дни поровну по числу стихов.')}</Hint>
-        </h4>
-        <Segmented id="plan-scope" value={scope} onChange={setScope} options={Object.entries(SCOPES).map(([k, v]) => [k, t(v.label)])} />
-        <div className="ref-form">
-          <label htmlFor="plan-days" className="sr-only">
-            {t('Число дней')}
-          </label>
+      {/* Свой план — отдельной карточкой: что читать, за сколько дней, начать */}
+      <section className="custom-plan" aria-labelledby="custom-plan-h">
+        <div className="cp-head">
+          <span className="cp-icon" aria-hidden="true">
+            <CalendarPlus size={22} />
+          </span>
+          <div className="cp-titles">
+            <h3 id="custom-plan-h">{t('Свой план')}</h3>
+            <p>{t('Главы делятся на дни поровну по числу стихов.')}</p>
+          </div>
+        </div>
+        <div className="cp-label" id="plan-scope-l">
+          {t('Что читать')}
+        </div>
+        <div className="cp-scopes" id="plan-scope" role="radiogroup" aria-labelledby="plan-scope-l">
+          {Object.entries(SCOPES).map(([k, v]) => (
+            <button key={k} type="button" role="radio" aria-checked={scope === k} className={`cp-scope ${scope === k ? 'on' : ''}`} onClick={() => setScope(k)}>
+              {t(v.label)}
+            </button>
+          ))}
+        </div>
+        <label className="cp-label" htmlFor="plan-days">
+          {t('За сколько дней')}
+        </label>
+        <div className="cp-days">
+          <button type="button" className="cp-step" onClick={() => setDays(Math.max(7, (+days || 90) - 1))} aria-label={t('Уменьшить')}>
+            <Minus size={18} />
+          </button>
           <input id="plan-days" type="number" inputMode="numeric" min="7" max="730" value={days} onChange={(e) => setDays(e.target.value)} />
-          <button className="btn primary" onClick={startCustom} disabled={!!busy}>
-            {t('Начать на {n} дн.', { n: Math.max(7, Math.min(730, +days || 90)) })}
+          <button type="button" className="cp-step" onClick={() => setDays(Math.min(730, (+days || 90) + 1))} aria-label={t('Увеличить')}>
+            <Plus size={18} />
           </button>
         </div>
+        <div className="cp-presets">
+          {[30, 90, 180, 365].map((n) => (
+            <button key={n} type="button" className={`chip ${+days === n ? 'on' : ''}`} aria-pressed={+days === n} onClick={() => setDays(n)}>
+              {t('{n} дн.', { n })}
+            </button>
+          ))}
+        </div>
+        <button className="btn primary cp-start" onClick={startCustom} disabled={!!busy}>
+          {busy === 'custom' ? <Loader2 size={16} className="spin" /> : <Plus size={16} />} {t('Начать на {n} дн.', { n: Math.max(7, Math.min(730, +days || 90)) })}
+        </button>
       </section>
     </BottomSheet>
   );

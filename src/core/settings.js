@@ -106,6 +106,7 @@ export const DEFAULT_SETTINGS = {
   splitRatio: 0.5,
   syncScroll: true, // синхронная прокрутка двух панелей
   bookMode: false, // режим «как книга»
+  commentaryFontSize: 19, // px — текст в окне комментариев
   inlineCommentaries: null, // какие комментарии подписывать в тексте: null — все включённые, иначе список id
   primaryModule: 'rst-plus',
   ttsFallback: false, // ИИ-диктор (синтез речи), когда к главе нет аудиозаписи

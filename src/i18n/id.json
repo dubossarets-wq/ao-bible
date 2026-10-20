@@ -1,4 +1,7 @@
 {
+ "Так выглядит текст комментария.": "Beginilah tampilan teks tafsiran.",
+ "Что читать": "Apa yang dibaca",
+ "За сколько дней": "Dalam berapa hari",
  "Стих в подборке": "Ayat dalam koleksi",
  "Раздел «Оформление» стал проще: сверху живой образец, тема, размер и вид текста — сразу на первом экране, остальное — в понятных подразделах.": "Tampilan kini lebih sederhana: pratinjau langsung di atas, tema, ukuran dan tata letak teks langsung di layar pertama, sisanya di bagian yang jelas.",
  "Коричневый": "Cokelat",
@@ -549,7 +552,6 @@
  "Начать": "Mulai",
  "Свой план": "Rencana sendiri",
  "Главы делятся на дни поровну по числу стихов.": "Pasal dibagi rata ke hari-hari menurut jumlah ayat.",
- "Число дней": "Jumlah hari",
  "Начать на {n} дн.": "Mulai untuk {n} hari",
  "План на сегодня выполнен 🎉": "Rencana hari ini selesai 🎉",
  "✓ Прочитано: {ref}": "✓ Sudah dibaca: {ref}",

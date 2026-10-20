@@ -1,4 +1,7 @@
 {
+ "Так выглядит текст комментария.": "Voici à quoi ressemble le texte du commentaire.",
+ "Что читать": "Quoi lire",
+ "За сколько дней": "En combien de jours",
  "Стих в подборке": "Verset dans une collection",
  "Раздел «Оформление» стал проще: сверху живой образец, тема, размер и вид текста — сразу на первом экране, остальное — в понятных подразделах.": "L’apparence est plus simple : un aperçu en direct en haut, le thème, la taille et la mise en page du texte dès le premier écran, le reste dans des sections claires.",
  "Коричневый": "Marron",
@@ -553,7 +556,6 @@
  "Начать": "Commencer",
  "Свой план": "Plan personnalisé",
  "Главы делятся на дни поровну по числу стихов.": "Les chapitres sont répartis équitablement sur les jours selon le nombre de versets.",
- "Число дней": "Nombre de jours",
  "Начать на {n} дн.": "Commencer sur {n} j",
  "План на сегодня выполнен 🎉": "Plan du jour terminé 🎉",
  "✓ Прочитано: {ref}": "✓ Lu : {ref}",

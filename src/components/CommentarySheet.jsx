@@ -10,7 +10,7 @@ import LinkedText from './LinkedText.jsx';
 import { t } from '../core/i18n.js';
 
 export default function CommentarySheet({ pane, payload, onClose }) {
-  const { openInOther } = useApp();
+  const { openInOther, settings } = useApp();
   const go = (r) => (onClose(), openInOther(pane, r));
   const { ref, moduleId } = payload;
   const [res, setRes] = useState(null);
@@ -47,7 +47,7 @@ export default function CommentarySheet({ pane, payload, onClose }) {
             {formatRef(it.ref, { full: true })}
             {it.title ? ` · ${it.title}` : ''}
           </h4>
-          <p className="prewrap commentary-text">
+          <p className="prewrap commentary-text" style={{ fontSize: `${settings.commentaryFontSize || 19}px` }}>
             <LinkedText text={it.text} onOpen={go} />
           </p>
         </article>

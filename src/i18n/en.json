@@ -1,4 +1,7 @@
 {
+ "Так выглядит текст комментария.": "This is how commentary text looks.",
+ "Что читать": "What to read",
+ "За сколько дней": "In how many days",
  "Стих в подборке": "Verse in a collection",
  "Раздел «Оформление» стал проще: сверху живой образец, тема, размер и вид текста — сразу на первом экране, остальное — в понятных подразделах.": "Appearance is simpler: a live preview on top, theme, text size and layout right on the first screen, everything else in clear sections.",
  "Коричневый": "Brown",
@@ -551,7 +554,6 @@
  "Начать": "Start",
  "Свой план": "Custom plan",
  "Главы делятся на дни поровну по числу стихов.": "Chapters are split evenly across days by number of verses.",
- "Число дней": "Number of days",
  "Начать на {n} дн.": "Start ({n} days)",
  "План на сегодня выполнен 🎉": "Today’s plan is done 🎉",
  "✓ Прочитано: {ref}": "✓ Read: {ref}",

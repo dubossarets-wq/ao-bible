@@ -1,7 +1,7 @@
 // Показывает текущую нижнюю панель. Каждая панель знает, из какой панели чтения её открыли (sheet.pane).
 import React from 'react';
 import { useApp } from '../App.jsx';
-import { SheetBack } from './BottomSheet.jsx';
+import { SheetBack, SheetReturn } from './BottomSheet.jsx';
 import DictionaryBottomSheet from './DictionaryBottomSheet.jsx';
 import CrossReferencesSheet from './CrossReferencesSheet.jsx';
 import BookNavigator from './BookNavigator.jsx';
@@ -68,7 +68,7 @@ const KINDS = {
 export const hasSheet = (kind) => Object.prototype.hasOwnProperty.call(KINDS, kind);
 
 export default function SheetHost() {
-  const { sheet, closeSheetIf, backSheetIf } = useApp();
+  const { sheet, closeSheetIf, backSheetIf, openSheet } = useApp();
   if (!sheet) return null;
   const C = KINDS[sheet.kind];
   if (!C) return null;
@@ -77,12 +77,17 @@ export default function SheetHost() {
   const pushed = sheet.payload?.backTo === 'more';
   const push = pushed ? { back: () => backSheetIf(id, 'more', sheet.pane) } : null;
   const More = KINDS.more;
+  // Открыто из другого окна (payload.returnTo) — «‹ Назад» возвращает в него
+  const rt = sheet.payload?.returnTo;
+  const ret = rt ? () => openSheet(rt.kind, sheet.pane, rt.payload) : null;
   return (
     <>
       {(sheet.kind === 'more' || pushed) && <More key="more-host" pane={sheet.pane} payload={sheet.kind === 'more' ? sheet.payload || {} : {}} onClose={() => closeSheetIf(id)} />}
       {sheet.kind !== 'more' && (
         <SheetBack.Provider value={push}>
-          <C key={id} pane={sheet.pane} payload={sheet.payload || {}} onClose={() => closeSheetIf(id)} />
+          <SheetReturn.Provider value={ret}>
+            <C key={id} pane={sheet.pane} payload={sheet.payload || {}} onClose={() => closeSheetIf(id)} />
+          </SheetReturn.Provider>
         </SheetBack.Provider>
       )}
     </>

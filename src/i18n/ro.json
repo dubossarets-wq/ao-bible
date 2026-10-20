@@ -1,4 +1,7 @@
 {
+ "Так выглядит текст комментария.": "Așa arată textul comentariului.",
+ "Что читать": "Ce să citești",
+ "За сколько дней": "În câte zile",
  "Стих в подборке": "Verset într-o colecție",
  "Раздел «Оформление» стал проще: сверху живой образец, тема, размер и вид текста — сразу на первом экране, остальное — в понятных подразделах.": "Aspectul e mai simplu: sus o previzualizare vie, tema, mărimea și aranjarea textului direct pe primul ecran, restul în secțiuni clare.",
  "Коричневый": "Maro",
@@ -553,7 +556,6 @@
  "Начать": "Începe",
  "Свой план": "Plan propriu",
  "Главы делятся на дни поровну по числу стихов.": "Capitolele se împart pe zile în mod egal, după numărul de versete.",
- "Число дней": "Numărul de zile",
  "Начать на {n} дн.": "Începe pe {n} zile",
  "План на сегодня выполнен 🎉": "Planul de azi este îndeplinit 🎉",
  "✓ Прочитано: {ref}": "✓ Citit: {ref}",

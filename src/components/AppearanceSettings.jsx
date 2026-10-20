@@ -268,7 +268,7 @@ const BLOCKS = [
   ['bg', ImageIcon, N_('Фон')],
   ['colors', Palette, N_('Цвета')],
   ['ui', PanelTop, N_('Кнопки и панели')],
-  ['comments', MessageSquareText, N_('Комментарии в тексте')],
+  ['comments', MessageSquareText, N_('Комментарии')],
 ];
 // Прежние названия блоков (если окно открывают с payload.block) → новые подразделы; null — главный экран
 const OLD_BLOCKS = { theme: null, view: null, text: 'font', verseNums: 'nums', strongs: 'nums', headings: 'nums', hl: 'colors' };
@@ -279,7 +279,7 @@ const LOOK_KEYS = [
   'theme', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'verseSpacing', 'textWidth', 'textAlign', 'showVerseNumbers', 'chapterTitleSize',
   'showStrongs', 'showHeadings', 'showXrefButtons', 'showIllustrations', 'continuousVerses', 'bookMode', 'customColors', 'colors', 'colorOverrides',
   'strongSize', 'strongPos', 'verseNumSize', 'verseNumPos', 'headingSize', 'uiFontSize', 'barHeight', 'animations', 'focusMode', 'splitLayout',
-  'bgImage', 'bgPhoto', 'bgVeil', 'bgBlur',
+  'bgImage', 'bgPhoto', 'bgVeil', 'bgBlur', 'commentaryFontSize',
 ];
 
 function BlockRow({ icon: Icon, title, sub, onClick }) {
@@ -648,6 +648,14 @@ export default function AppearanceSettings({ onClose, payload }) {
 
         {block === 'comments' && (
           <>
+            {/* Размер текста в окне комментариев — с образцом */}
+            <section className="ap-card">
+              <p className="commentary-text cm-sample" style={{ fontSize: `${s.commentaryFontSize}px` }}>
+                {t('Так выглядит текст комментария.')}
+              </p>
+              <Range id="set-cm-size" label={t('Размер текста')} big value={s.commentaryFontSize} min={14} max={32} step={1} onChange={(commentaryFontSize) => set({ commentaryFontSize })} word={(v) => `${v} px`} />
+            </section>
+            <h4 className="ap-sub">{t('Комментарии в тексте')}</h4>
             <p className="field-hint">{t('Отмеченные видны после стиха. Остальные — зажмите стих → «Комментарии».')}</p>
             <section className="ap-card">
               {commentaries.map((m) => (
