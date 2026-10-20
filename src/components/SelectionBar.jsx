@@ -2,7 +2,7 @@
 // ✓ · ссылка и число стихов · параллельно в другом переводе · любимые · заметка · закладка · копировать · ⋯
 // В «⋯»: сравнить переводы, параллельные места, поделиться.
 import React, { useEffect, useRef, useState } from 'react';
-import { Check, Languages, BookCopy, Heart, Link2, Share2, Copy, NotebookPen, Bookmark, BookmarkCheck, MoreHorizontal, MessageSquareText, Headphones, Highlighter, FolderPlus, Eraser, Compass, ScrollText, WholeWord, Image as ImageIcon } from 'lucide-react';
+import { X, Languages, BookCopy, Heart, Link2, Share2, Copy, NotebookPen, Bookmark, BookmarkCheck, MoreHorizontal, MessageSquareText, Headphones, Highlighter, FolderPlus, Eraser, Compass, ScrollText, WholeWord, Image as ImageIcon } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { getVerse, ORIGINALS } from '../core/modules.js';
 import { listenFrom } from '../core/listen.js';
@@ -162,7 +162,7 @@ export default function SelectionBar({ index, module, selection, onDone }) {
   return (
     <div className="toolbar selection-bar" role="toolbar" aria-label={t('Действия с выделенными стихами')}>
       <button className="tb tb-icon" onClick={onDone} aria-label={t('Готово, снять выделение')} title={t('Готово')}>
-        <Check size={24} />
+        <X size={24} />
       </button>
       <div className="tb tb-sel-ref" aria-live="polite">
         <span className="sel-ref">{label}</span>
