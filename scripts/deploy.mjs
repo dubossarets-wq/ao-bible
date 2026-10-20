@@ -45,8 +45,7 @@ await cp(dist, tmp, { recursive: true });
 await writeFile(path.join(tmp, '.nojekyll'), '');
 if (APP_SITE) {
   // Домен сайта и проверка для Google Play: приложение app.aobible открывает сайт без адресной строки
-  await writeFile(path.join(tmp, 'CNAME'), 'aobible.app
-');
+  await writeFile(path.join(tmp, 'CNAME'), 'aobible.app');
   await mkdir(path.join(tmp, '.well-known'), { recursive: true });
   await cp(path.join(root, 'scripts/play/assetlinks.json'), path.join(tmp, '.well-known/assetlinks.json'));
 }
