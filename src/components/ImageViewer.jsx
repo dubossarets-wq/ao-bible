@@ -9,7 +9,7 @@ import { t } from '../core/i18n.js';
 const MAX_SCALE = 5;
 const TAP_SCALE = 2.5;
 
-function Zoomable({ item, onSwipe }) {
+function Zoomable({ item, onSwipe, onPull, onClose }) {
   const box = useRef(null);
   const [tf, setT] = useState({ s: 1, x: 0, y: 0 }); // сдвиг и масштаб картинки
   const [state, setState] = useState('loading'); // loading | ok | error
@@ -18,6 +18,11 @@ function Zoomable({ item, onSwipe }) {
   const tap = useRef(null); // для отличия нажатия от перетаскивания
   const cur = useRef(tf);
   cur.current = tf;
+  const [pull, setPull] = useState(0); // насколько картинку потянули вниз, чтобы закрыть
+  const pulling = (y) => {
+    setPull(y);
+    onPull?.(y);
+  };
 
   useEffect(() => {
     setT({ s: 1, x: 0, y: 0 });
@@ -48,7 +53,7 @@ function Zoomable({ item, onSwipe }) {
     const list = [...pts.current.values()];
     if (list.length === 1) tap.current = { x: e.clientX, y: e.clientY, at: Date.now() };
     else tap.current = null;
-    g.current = { list: list.map((p) => ({ ...p })), t: { ...cur.current } };
+    g.current = { list: list.map((p) => ({ ...p })), t: { ...cur.current }, at: Date.now() };
   };
   const onMove = (e) => {
     if (!pts.current.has(e.pointerId)) return;
@@ -69,6 +74,11 @@ function Zoomable({ item, onSwipe }) {
       const py = m0.y - (r.top + r.height / 2);
       const k = s / st.t.s;
       setT(clamp(s, px - (px - st.t.x) * k + (m1.x - m0.x), py - (py - st.t.y) * k + (m1.y - m0.y)));
+    } else if (list.length === 1 && st.t.s <= 1.02) {
+      // Один палец вниз при обычном размере — картинка уходит вниз, отпустить — закрыть просмотр
+      const dx = list[0].x - st.list[0].x;
+      const dy = list[0].y - st.list[0].y;
+      if (pull || (dy > 12 && dy > Math.abs(dx) * 1.2)) pulling(Math.max(0, dy));
     } else if (list.length === 1 && st.t.s > 1) {
       // Один палец по увеличенной картинке — двигаем её
       setT(clamp(st.t.s, st.t.x + (list[0].x - st.list[0].x), st.t.y + (list[0].y - st.list[0].y)));
@@ -80,6 +90,12 @@ function Zoomable({ item, onSwipe }) {
     const list = [...pts.current.values()];
     g.current = list.length ? { list: list.map((p) => ({ ...p })), t: { ...cur.current } } : null;
     if (list.length) return;
+    if (pull) {
+      const fast = was && was.at && (e.clientY - was.list[0].y) / Math.max(1, Date.now() - was.at) > 0.6;
+      tap.current = null;
+      if (pull > 110 || fast) return onClose?.();
+      return pulling(0);
+    }
     // Короткое нажатие: увеличить в этом месте, повторное — вернуть как было
     if (tap.current && Date.now() - tap.current.at < 350) {
       if (cur.current.s > 1.05) setT({ s: 1, x: 0, y: 0 });
@@ -107,7 +123,7 @@ function Zoomable({ item, onSwipe }) {
         draggable={false}
         onLoad={() => setState('ok')}
         onError={() => setState('error')}
-        style={{ transform: `translate(${tf.x}px, ${tf.y}px) scale(${tf.s})`, opacity: state === 'ok' ? 1 : 0 }}
+        style={{ transform: `translate(${tf.x}px, ${tf.y + pull}px) scale(${tf.s * (1 - Math.min(pull, 400) / 2000)})`, opacity: state === 'ok' ? 1 : 0, transition: pull ? 'opacity .2s' : undefined }}
       />
       <div className="iv-zoom">
         <button className="iv-btn" onClick={() => setT(clamp(Math.max(1, cur.current.s / 1.6), cur.current.x, cur.current.y))} aria-label={t('Уменьшить')} disabled={tf.s <= 1}>
@@ -132,6 +148,7 @@ function Zoomable({ item, onSwipe }) {
 export default function ImageViewer({ payload, onClose }) {
   const items = payload.items || [];
   const [i, setI] = useState(0);
+  const [fade, setFade] = useState(0); // фон бледнеет, пока картинку тянут вниз
   const item = items[i];
   const go = (d) => setI((x) => Math.max(0, Math.min(items.length - 1, x + d)));
   useEffect(() => {
@@ -145,7 +162,7 @@ export default function ImageViewer({ payload, onClose }) {
   }, []);
   if (!item) return null;
   return createPortal(
-    <div className="iv" role="dialog" aria-label={payload.ref ? t('Иллюстрация к {ref}', { ref: formatRef(payload.ref) }) : t('Иллюстрация к стиху')}>
+    <div className="iv" style={fade ? { background: `rgba(0,0,0,${Math.max(0.35, 1 - fade / 400)})` } : undefined} role="dialog" aria-label={payload.ref ? t('Иллюстрация к {ref}', { ref: formatRef(payload.ref) }) : t('Иллюстрация к стиху')}>
       <div className="iv-top">
         <span className="iv-ref">{payload.ref ? formatRef(payload.ref) : ''}</span>
         {items.length > 1 && (
@@ -157,7 +174,7 @@ export default function ImageViewer({ payload, onClose }) {
           <X size={22} />
         </button>
       </div>
-      <Zoomable key={item.img} item={item} onSwipe={go} />
+      <Zoomable key={item.img} item={item} onSwipe={go} onPull={setFade} onClose={onClose} />
       {items.length > 1 && (
         <>
           <button className="iv-btn iv-prev" onClick={() => go(-1)} disabled={i === 0} aria-label={t('Предыдущая картинка')}>

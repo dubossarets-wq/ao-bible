@@ -135,7 +135,7 @@ export default function InterlinearSheet({ pane, payload, onClose }) {
     setRef({ book: ref.book, chapter, verse });
   };
 
-  const open = (w) => w.strongs && openSheet('dict', pane, { token: { text: w.gloss || w.text, strongs: w.strongs, morph: w.morph ? [w.morph] : null }, ref, moduleId: payload.moduleId, origWord: w, autoOpen: true, initial: 'full' });
+  const open = (w) => w.strongs && openSheet('dict', pane, { token: { text: w.gloss || w.text, strongs: w.strongs, morph: w.morph ? [w.morph] : null }, ref, moduleId: payload.moduleId, origWord: w, autoOpen: true, initial: 'full', returnTo: { kind: 'interlinear', payload: { ...payload, ref } } });
 
   const subtitle = vulg
     ? t('Вульгата (Климентина) · значения по словарю')

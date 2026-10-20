@@ -33,6 +33,44 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
   const [dragging, setDragging] = useState(false);
   const drag = useRef(null);
   const sheetRef = useRef(null);
+  const bodyRef = useRef(null);
+
+  // Свайп по окну влево/вправо — соседняя вкладка (если в окне есть ряд вкладок role="tablist")
+  useEffect(() => {
+    const body = bodyRef.current;
+    if (!body) return;
+    let s = null;
+    const SKIP = 'input, textarea, select, .tabs, .chips, .bg-photos, .theme-grid, .plan-grid, .maplibregl-map, .map-pane, [data-no-swipe]';
+    const onStart = (e) => {
+      const t0 = e.touches[0];
+      s = e.touches.length === 1 && !e.target.closest(SKIP) && body.querySelector('.tabs[role="tablist"]') ? { x: t0.clientX, y: t0.clientY, t: Date.now() } : null;
+    };
+    const onEnd = (e) => {
+      if (!s) return;
+      const t1 = e.changedTouches[0];
+      const dx = t1.clientX - s.x;
+      const dy = t1.clientY - s.y;
+      const quick = Date.now() - s.t < 700;
+      s = null;
+      if (!quick || Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.8) return;
+      const list = body.querySelector('.tabs[role="tablist"]');
+      const tabs = [...list.querySelectorAll('[role="tab"]')];
+      const cur = tabs.findIndex((x) => x.getAttribute('aria-selected') === 'true');
+      const next = tabs[cur + (dx < 0 ? 1 : -1)];
+      if (!next) return;
+      next.click();
+      next.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+      body.classList.remove('tab-in-l', 'tab-in-r');
+      void body.offsetWidth;
+      body.classList.add(dx < 0 ? 'tab-in-r' : 'tab-in-l');
+    };
+    body.addEventListener('touchstart', onStart, { passive: true });
+    body.addEventListener('touchend', onEnd, { passive: true });
+    return () => {
+      body.removeEventListener('touchstart', onStart);
+      body.removeEventListener('touchend', onEnd);
+    };
+  }, []);
 
   const push = useContext(SheetBack); // { back } — это подменю «Ещё»
   const [leaving, setLeaving] = useState(false);
@@ -78,6 +116,7 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
 
   const onPointerDown = (e) => {
     if (e.button !== undefined && e.button !== 0) return;
+    if (e.target.closest('button, a, input, select')) return; // кнопки в заголовке нажимаются как обычно
     drag.current = { y: e.clientY, h: height, t: Date.now() };
     setDragging(true);
     e.currentTarget.setPointerCapture?.(e.pointerId);
@@ -91,11 +130,13 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
     if (!drag.current) return;
     const dy = drag.current.y - e.clientY;
     const velocity = dy / Math.max(1, Date.now() - drag.current.t);
+    const h0 = drag.current.h; // высота окна до перетаскивания
     drag.current = null;
     setDragging(false);
-    if (height < 0.28 || velocity < -1.2) return close();
-    if (full) return height < 0.85 || velocity < -0.5 ? close() : setHeight(1);
-    const target = velocity > 1 ? SNAPS[2] : snaps().reduce((a, b) => (Math.abs(b - height) < Math.abs(a - height) ? b : a));
+    // Потянули вниз — окно закрывается полностью (не останавливается на половине); вверх — раскрывается
+    if (dy < -60 || velocity < -0.4 || height < 0.28) return close();
+    if (full) return setHeight(1);
+    const target = velocity > 1 ? SNAPS[2] : snaps().filter((x) => x >= h0 - 0.001).reduce((a, b) => (Math.abs(b - height) < Math.abs(a - height) ? b : a), h0);
     setHeight(target);
   };
 
@@ -116,7 +157,7 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
             <span className="grip-bar" />
           </div>
         )}
-        <header className="sheet-head">
+        <header className="sheet-head" {...(variant !== 'page' ? { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: onPointerUp } : {})}>
           {(onBack || push || variant === 'page') && (
             <button className="icon-btn" onClick={onBack || (push ? goBack : close)} aria-label={onBack || push ? t('Назад') : t('Назад к чтению')}>
               <ChevronLeft size={22} />
@@ -133,7 +174,9 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
             </button>
           )}
         </header>
-        <div className="sheet-body">{children}</div>
+        <div className="sheet-body" ref={bodyRef} onAnimationEnd={(e) => e.target === bodyRef.current && bodyRef.current.classList.remove('tab-in-l', 'tab-in-r')}>
+          {children}
+        </div>
         {footer && <div className="sheet-foot">{footer}</div>}
       </div>
     </div>
