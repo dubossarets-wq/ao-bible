@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Подстрочник Ветхого Завета — Алексей Винокуров</title><style>
+:root { --bg:#f7f6f3; --card:#fff; --text:#1c1c1e; --muted:#6a6a6f; --line:#e4e2dd; --accent:#1c1c1e; --on:#fff; --ok:#2f6339; }
+@media (prefers-color-scheme: dark) { :root { --bg:#161617; --card:#212123; --text:#e8e6e1; --muted:#9a9893; --line:#333336; --accent:#e8e6e1; --on:#161617; --ok:#7cc68a; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+main { max-width: 760px; margin: 0 auto; padding: 24px 16px 60px; }
+h1 { font-size: 1.45rem; margin: 0 0 4px; }
+.what { color: var(--muted); margin: 0 0 18px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin: 0 0 14px; }
+.note { border-left: 4px solid var(--accent); }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.row.stack { flex-direction: column-reverse; align-items: flex-start; }
+.label { font-size: .78rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+.val { flex: 1; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+pre { white-space: pre-wrap; font: inherit; margin: 0; }
+button { font: inherit; font-weight: 600; padding: 8px 14px; border-radius: 10px; border: 0; background: var(--accent); color: var(--on); cursor: pointer; }
+button.done { background: var(--ok); color: #fff; }
+input { font: inherit; width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); }
+.me { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 560px) { .me { grid-template-columns: 1fr; } }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 10px 0 0; font-size: .92rem; }
+dt { color: var(--muted); } dd { margin: 0; overflow-wrap: anywhere; }
+a { color: inherit; }
+ul.list { list-style: none; padding: 0; margin: 0; }
+ul.list li { margin: 0 0 10px; }
+ul.list a { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; text-decoration: none; }
+ul.list small { display: block; color: var(--muted); }
+</style></head>
+<body><main><p><a href="index.html">← Все письма</a></p>
+<h1>Подстрочник Ветхого Завета — Алексей Винокуров</h1><p class="what">Подстрочный перевод Септуагинты (Ветхий Завет)</p>
+<section class="card note"><div>Разрешение на Новый Завет уже есть. Это письмо — про Ветхий Завет (Септуагинту) и про полный файл без пропусков.</div><dl><dt>Как связаться</dt><dd>тем же способом, каким вы получили разрешение на Новый Завет</dd></dl></section>
+<section class="card"><p class="label">Ваши данные — подставятся в письмо</p><div class="me">
+<input data-me="name" placeholder="Ваше имя" autocomplete="name"><input data-me="email" placeholder="Ваша почта" autocomplete="email" type="email"></div></section>
+
+<section class="card"><p class="label">Тема</p><div class="row"><div class="val" id="subject">Подстрочник Септуагинты в бесплатном приложении AO Bible</div><button data-copy="subject">Скопировать</button></div></section>
+<section class="card"><p class="label">Текст письма</p><div class="row stack"><pre class="val" id="body" data-tpl="Здравствуйте, Алексей!
+
+Благодарю вас за разрешение использовать ваш подстрочный перевод Нового Завета в нашем бесплатном некоммерческом приложении AO Bible: он уже доступен читателям, с указанием вашего авторства.
+
+Мы добавили в приложение Септуагинту (греческий текст издания Свита, общественное достояние). Позвольте ли вы так же — бесплатно, без рекламы и с указанием вашего имени — использовать ваш подстрочный перевод Ветхого Завета: русские слова под греческими?
+
+И два вопроса:
+1. На «Азбуке веры» доступны 29 книг, и в них пропущены слова без номера Стронга (например, в Быт 1:4 нет «разделил»). Нет ли у вас полного файла без пропусков, и какие книги ещё готовы?
+2. Переводите ли вы Псалтирь?
+
+С уважением,
+{NAME}
+{EMAIL}
+AO Bible: https://dubossarets-wq.github.io/ao-bible/"></pre><button data-copy="body">Скопировать</button></div></section></main><script>
+const me = { name: localStorage.getItem('aob-letters-name') || '', email: localStorage.getItem('aob-letters-email') || '' };
+const fill = (s) => s.replaceAll('{NAME}', me.name || '[ваше имя]').replaceAll('{EMAIL}', me.email || '[ваша почта]');
+function render() { document.querySelectorAll('[data-tpl]').forEach((el) => (el.textContent = fill(el.dataset.tpl))); }
+document.querySelectorAll('input[data-me]').forEach((inp) => {
+  inp.value = me[inp.dataset.me];
+  inp.addEventListener('input', () => { me[inp.dataset.me] = inp.value.trim(); try { localStorage.setItem('aob-letters-' + inp.dataset.me, me[inp.dataset.me]); } catch {} render(); });
+});
+document.querySelectorAll('button[data-copy]').forEach((b) => b.addEventListener('click', async () => {
+  const text = document.getElementById(b.dataset.copy).textContent;
+  try { await navigator.clipboard.writeText(text); } catch { const t = document.createElement('textarea'); t.value = text; document.body.append(t); t.select(); document.execCommand('copy'); t.remove(); }
+  const old = b.textContent; b.textContent = 'Скопировано ✓'; b.classList.add('done');
+  setTimeout(() => { b.textContent = old; b.classList.remove('done'); }, 1600);
+}));
+render();
+</script></body></html>

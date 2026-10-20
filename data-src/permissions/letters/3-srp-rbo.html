@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Современный русский перевод — Российское Библейское Общество (РБО)</title><style>
+:root { --bg:#f7f6f3; --card:#fff; --text:#1c1c1e; --muted:#6a6a6f; --line:#e4e2dd; --accent:#1c1c1e; --on:#fff; --ok:#2f6339; }
+@media (prefers-color-scheme: dark) { :root { --bg:#161617; --card:#212123; --text:#e8e6e1; --muted:#9a9893; --line:#333336; --accent:#e8e6e1; --on:#161617; --ok:#7cc68a; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+main { max-width: 760px; margin: 0 auto; padding: 24px 16px 60px; }
+h1 { font-size: 1.45rem; margin: 0 0 4px; }
+.what { color: var(--muted); margin: 0 0 18px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin: 0 0 14px; }
+.note { border-left: 4px solid var(--accent); }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.row.stack { flex-direction: column-reverse; align-items: flex-start; }
+.label { font-size: .78rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+.val { flex: 1; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+pre { white-space: pre-wrap; font: inherit; margin: 0; }
+button { font: inherit; font-weight: 600; padding: 8px 14px; border-radius: 10px; border: 0; background: var(--accent); color: var(--on); cursor: pointer; }
+button.done { background: var(--ok); color: #fff; }
+input { font: inherit; width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); }
+.me { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 560px) { .me { grid-template-columns: 1fr; } }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 10px 0 0; font-size: .92rem; }
+dt { color: var(--muted); } dd { margin: 0; overflow-wrap: anywhere; }
+a { color: inherit; }
+ul.list { list-style: none; padding: 0; margin: 0; }
+ul.list li { margin: 0 0 10px; }
+ul.list a { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; text-decoration: none; }
+ul.list small { display: block; color: var(--muted); }
+</style></head>
+<body><main><p><a href="index.html">← Все письма</a></p>
+<h1>Современный русский перевод — Российское Библейское Общество (РБО)</h1><p class="what">«Библия. Современный русский перевод», полный текст</p>
+<section class="card note"><div>Отдельного адреса для лицензий у РБО нет — пишем на общий; в письме просим подсказать, кто занимается лицензированием.</div><dl><dt>Телефон</dt><dd>+7 (495) 940-55-90 (секретарь)</dd><dt>Адрес</dt><dd>Москва, ул. Валовая, д. 8, стр. 1</dd><dt>Сайт</dt><dd>https://biblia.ru/AboutUs/Contacts/</dd></dl></section>
+<section class="card"><p class="label">Ваши данные — подставятся в письмо</p><div class="me">
+<input data-me="name" placeholder="Ваше имя" autocomplete="name"><input data-me="email" placeholder="Ваша почта" autocomplete="email" type="email"></div></section>
+<section class="card"><p class="label">Кому (почта)</p><div class="row"><div class="val" id="to">info@biblia.ru</div><button data-copy="to">Скопировать</button></div></section>
+<section class="card"><p class="label">Тема</p><div class="row stack"><div class="val" id="subject">Просьба о разрешении использовать «Современный русский перевод» Библии в бесплатном некоммерческом приложении</div><button data-copy="subject">Скопировать</button></div></section>
+<section class="card"><p class="label">Текст письма</p><div class="row stack"><pre class="val" id="body" data-tpl="Здравствуйте!
+
+Меня зовут {NAME}. Я разрабатываю бесплатное некоммерческое библейское приложение AO Bible (https://dubossarets-wq.github.io/ao-bible/): без рекламы, без платных функций, без сбора платежей. Приложение готовится к публикации в App Store и Google Play.
+
+Просим разрешения включить в приложение «Библию. Современный русский перевод» Российского Библейского Общества (2011) в полном объёме и без изменений текста. Текст будет использоваться для чтения, поиска и сравнения переводов. На экране перевода и в разделе «О приложении» будет указано: «Современный русский перевод © Российское Библейское Общество. Использовано с разрешения».
+
+Готовы соблюдать ваши условия (формулировка авторства, срок, территория, отчётность, отзыв разрешения) и при необходимости подписать письменное соглашение. Просим также подсказать, к кому в РБО следует обращаться по вопросам лицензирования.
+
+С уважением,
+{NAME}
+{EMAIL}
+AO Bible: https://dubossarets-wq.github.io/ao-bible/"></pre><button data-copy="body">Скопировать</button></div></section></main><script>
+const me = { name: localStorage.getItem('aob-letters-name') || '', email: localStorage.getItem('aob-letters-email') || '' };
+const fill = (s) => s.replaceAll('{NAME}', me.name || '[ваше имя]').replaceAll('{EMAIL}', me.email || '[ваша почта]');
+function render() { document.querySelectorAll('[data-tpl]').forEach((el) => (el.textContent = fill(el.dataset.tpl))); }
+document.querySelectorAll('input[data-me]').forEach((inp) => {
+  inp.value = me[inp.dataset.me];
+  inp.addEventListener('input', () => { me[inp.dataset.me] = inp.value.trim(); try { localStorage.setItem('aob-letters-' + inp.dataset.me, me[inp.dataset.me]); } catch {} render(); });
+});
+document.querySelectorAll('button[data-copy]').forEach((b) => b.addEventListener('click', async () => {
+  const text = document.getElementById(b.dataset.copy).textContent;
+  try { await navigator.clipboard.writeText(text); } catch { const t = document.createElement('textarea'); t.value = text; document.body.append(t); t.select(); document.execCommand('copy'); t.remove(); }
+  const old = b.textContent; b.textContent = 'Скопировано ✓'; b.classList.add('done');
+  setTimeout(() => { b.textContent = old; b.classList.remove('done'); }, 1600);
+}));
+render();
+</script></body></html>
