@@ -73,12 +73,18 @@ export default function SheetHost() {
   const C = KINDS[sheet.kind];
   if (!C) return null;
   const id = sheet.id;
-  const to = sheet.payload?.backTo;
-  // Крестик/свайп/Escape в окне, открытом из «Ещё», возвращают в «Ещё»; закрытие ради действия (урок, переход) — полное
-  const back = to ? () => backSheetIf(id, to, sheet.pane) : null;
+  // Подменю «Ещё»: «Ещё» остаётся открытым под ним (тот же ключ — не переоткрывается), подменю выезжает справа
+  const pushed = sheet.payload?.backTo === 'more';
+  const push = pushed ? { back: () => backSheetIf(id, 'more', sheet.pane) } : null;
+  const More = KINDS.more;
   return (
-    <SheetBack.Provider value={back}>
-      <C key={id} pane={sheet.pane} payload={sheet.payload || {}} onClose={() => closeSheetIf(id)} />
-    </SheetBack.Provider>
+    <>
+      {(sheet.kind === 'more' || pushed) && <More key="more-host" pane={sheet.pane} payload={sheet.kind === 'more' ? sheet.payload || {} : {}} onClose={() => closeSheetIf(id)} />}
+      {sheet.kind !== 'more' && (
+        <SheetBack.Provider value={push}>
+          <C key={id} pane={sheet.pane} payload={sheet.payload || {}} onClose={() => closeSheetIf(id)} />
+        </SheetBack.Provider>
+      )}
+    </>
   );
 }

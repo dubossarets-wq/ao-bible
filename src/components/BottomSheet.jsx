@@ -9,14 +9,8 @@ import { t } from '../core/i18n.js';
 
 const SNAPS = [0.5, 0.7, 0.92]; // первая ступень — половина экрана; вторая — до верхней панели (см. belowBar)
 
-// Нижняя панель вкладок (телефон): окно стоит над ней, высота окна — доля места над ней
-const tabbarH = () => {
-  const el = document.querySelector('.tabbar');
-  const root = document.documentElement;
-  // В режиме чтения спрятанная панель возвращается, как только открыто окно
-  return el && !root.classList.contains('kb-open') ? el.getBoundingClientRect().height : 0;
-};
-const vh = () => (window.visualViewport?.height || window.innerHeight) - tabbarH();
+// Нижняя панель вкладок висит поверх окна (капсула над ним) — высота окна считается от всего экрана
+const vh = () => window.visualViewport?.height || window.innerHeight;
 // Обычное окно открывается до нижнего края верхней панели — она остаётся видна
 const belowBar = () => {
   const bottom = document.querySelector('.pane-slot.first .toolbar')?.getBoundingClientRect().bottom;
@@ -24,24 +18,37 @@ const belowBar = () => {
 };
 const snaps = () => [SNAPS[0], belowBar(), SNAPS[2]];
 
-// Куда вернуться после закрытия крестиком/свайпом (окно открыто из «Ещё») — задаёт SheetHost
+// Подменю «Ещё»: окно выезжает справа поверх «Ещё» (оно остаётся на месте). SheetHost передаёт { back } —
+// стрелка ‹ уводит подменю вправо и возвращает в «Ещё»; крестик, свайп вниз и Escape закрывают оба окна.
 export const SheetBack = createContext(null);
 
 export default function BottomSheet({ title, subtitle, onClose, onBack, children, initial = 1, variant = 'normal', headerExtra, footer }) {
   const full = initial === 'full';
   // Высота при открытии: на всю высоту (full), почти весь экран (wide), половина (0) или до верхней панели (остальные)
-  const [height, setHeight] = useState(() => (full ? 1 : variant === 'wide' ? SNAPS[2] : initial === 0 ? SNAPS[0] : belowBar()));
+  const pushedInit = useContext(SheetBack);
+  // Подменю — той же высоты, что «Ещё» под ним (его могли подтянуть пальцем)
+  const parentH = () => parseFloat(document.querySelector('.sheet-layer:not(.pushed) .sheet')?.style.getPropertyValue('--sheet-h')) / 100;
+  const [height, setHeight] = useState(() => (pushedInit && parentH() > 0 ? parentH() : full ? 1 : variant === 'wide' ? SNAPS[2] : initial === 0 ? SNAPS[0] : belowBar()));
   const [closing, setClosing] = useState(false);
   const [dragging, setDragging] = useState(false);
   const drag = useRef(null);
   const sheetRef = useRef(null);
 
-  const back = useContext(SheetBack);
+  const push = useContext(SheetBack); // { back } — это подменю «Ещё»
+  const [leaving, setLeaving] = useState(false);
+  const reduceMotion = () => document.documentElement.classList.contains('no-anim') || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const close = () => {
     if (closing) return;
+    // Подменю: закрываются оба окна — «Ещё» под ним уезжает вниз вместе с ним
+    if (push) return window.dispatchEvent(new CustomEvent('aob-sheet-slide-close'));
     setClosing(true);
-    const reduce = document.documentElement.classList.contains('no-anim') || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    setTimeout(() => (onClose(), back?.()), reduce ? 0 : 200);
+    setTimeout(onClose, reduceMotion() ? 0 : 200);
+  };
+  // Стрелка ‹ в подменю: уезжает вправо, под ним — «Ещё»
+  const goBack = () => {
+    if (leaving) return;
+    setLeaving(true);
+    setTimeout(push.back, reduceMotion() ? 0 : 220);
   };
 
   // Закрытие нажатием на вкладку снизу — с той же анимацией, но без возврата в «Ещё»
@@ -93,8 +100,8 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
   };
 
   return (
-    <div className={`sheet-layer ${closing ? 'closing' : ''}`}>
-      <div className="sheet-backdrop" onClick={close} />
+    <div className={`sheet-layer ${closing ? 'closing' : ''} ${push ? 'pushed' : ''} ${leaving ? 'leaving' : ''}`}>
+      {!push && <div className="sheet-backdrop" onClick={close} />}
       <div
         ref={sheetRef}
         tabIndex={-1}
@@ -110,8 +117,8 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
           </div>
         )}
         <header className="sheet-head">
-          {(onBack || variant === 'page') && (
-            <button className="icon-btn" onClick={onBack || close} aria-label={onBack ? t('Назад') : t('Назад к чтению')}>
+          {(onBack || push || variant === 'page') && (
+            <button className="icon-btn" onClick={onBack || (push ? goBack : close)} aria-label={onBack || push ? t('Назад') : t('Назад к чтению')}>
               <ChevronLeft size={22} />
             </button>
           )}
