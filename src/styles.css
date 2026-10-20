@@ -1710,3 +1710,5 @@ html.kb-open .ap-live { position: relative; }
 .sp-time { font-size: clamp(2.6rem, 13vw, 3.6rem); font-weight: 300; line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
 .sp-more { justify-content: flex-start; padding-top: 14px; flex-wrap: wrap; }
 @media (prefers-reduced-motion: reduce) { .sp, .sp-layer { animation: none; } }
+/* Текст Библии: сдвиг при подгрузке глав сверху делает приложение само (см. ChapterView) */
+.text-scroller { overflow-anchor: none; }

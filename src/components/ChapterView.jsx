@@ -164,6 +164,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
   const [counts, setCounts] = useState(null);
   const [error, setError] = useState(null);
   const pending = useRef(null);
+  const prependAt = useRef(0); // когда последний раз подгружали главу сверху
   const lastY = useRef(0);
   const posTimer = useRef(null);
   const pendingPop = useRef(0);
@@ -217,8 +218,20 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       el.scrollTop = target ? target.offsetTop - 8 : 0;
       lastY.current = el.scrollTop;
     } else if (p.type === 'prepend') {
-      el.scrollTop = p.top + (el.scrollHeight - p.height);
-      lastY.current = el.scrollTop;
+      // Сверху добавилась глава — сдвигаем прокрутку на её высоту, чтобы текст остался на месте.
+      // Берём текущее положение (прокрутка могла уйти дальше, пока глава рисовалась); подстройка браузера
+      // отключена (overflow-anchor: none), иначе сдвиг получился бы двойным.
+      // iPhone во время инерции перебивает присвоение scrollTop — тогда текст уезжал вниз, тут же подгружалась
+      // ещё глава, и всё летело к началу книги. Поэтому гасим инерцию на кадр и проверяем, что сдвиг применился.
+      const target = el.scrollTop + (el.scrollHeight - p.height);
+      el.style.overflowY = 'hidden';
+      el.scrollTop = target;
+      lastY.current = target;
+      requestAnimationFrame(() => {
+        el.style.overflowY = '';
+        if (Math.abs(el.scrollTop - target) > 40) el.scrollTop = target;
+        lastY.current = el.scrollTop;
+      });
     }
   }, [range, book]);
 
@@ -292,7 +305,8 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       onScrollDirection?.(y > lastY.current && y > 80);
       lastY.current = y;
     }
-    if (y < 900 && range.start > 1 && !pending.current) {
+    if (y < 900 && range.start > 1 && !pending.current && Date.now() - prependAt.current > 300) {
+      prependAt.current = Date.now();
       pending.current = { type: 'prepend', top: y, height: el.scrollHeight };
       setRange((r) => ({ ...r, start: r.start - 1 }));
     } else if (el.scrollHeight - y - el.clientHeight < 1400 && range.end < total && !pending.current) {
@@ -616,7 +630,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
 
   return (
     <div
-      className={`scroller${selection?.size ? ' selecting' : ''}${hlFade ? ' hl-fade' : ''}`}
+      className={`scroller text-scroller${selection?.size ? ' selecting' : ''}${hlFade ? ' hl-fade' : ''}`}
       ref={scroller}
       onScroll={(e) => {
         cancelPress();
