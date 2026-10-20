@@ -58,6 +58,7 @@ const publishedCatalog = (dropGz) => JSON.stringify({ ...fullCatalog, modules: f
   const { urlGz, sizeGz, ...rest } = m;
   return rest;
 }) }, null, 1);
+// dereference в cp ниже: если public/modules — ссылка (копия проекта для срочных исправлений), копируются файлы, а не ссылка
 const isPublished = (src) => {
   const rel = path.relative(path.join(root, 'public/modules'), src).split(path.sep);
   if (rel.length === 1 && rel[0] === '') return true;
@@ -93,7 +94,7 @@ ${FONTS}
 `;
   await writeFile(path.join(dir, 'index.html'), html);
   // Хостинг артефактов не отдаёт .gz — публикуем только .json и убираем gz-ссылки из каталога
-  await cp(path.join(root, 'public/modules'), path.join(dir, 'modules'), { recursive: true, filter: (src) => !src.endsWith('.gz') && isPublished(src) });
+  await cp(path.join(root, 'public/modules'), path.join(dir, 'modules'), { recursive: true, dereference: true, filter: (src) => !src.endsWith('.gz') && isPublished(src) });
   await writeFile(path.join(dir, 'modules/catalog.json'), publishedCatalog(true));
   await copyDicts(dir);
   console.log(`artifact: index.html ${(html.length / 1024).toFixed(0)} КБ`);
@@ -132,7 +133,7 @@ ${FONTS}
 </html>
 `;
   await writeFile(path.join(dir, 'index.html'), html);
-  await cp(path.join(root, 'public/modules'), path.join(dir, 'modules'), { recursive: true, filter: isPublished });
+  await cp(path.join(root, 'public/modules'), path.join(dir, 'modules'), { recursive: true, dereference: true, filter: isPublished });
   await writeFile(path.join(dir, 'modules/catalog.json'), publishedCatalog(false));
   await copyDicts(dir);
   // Планы чтения (готовые) — рядом с приложением
