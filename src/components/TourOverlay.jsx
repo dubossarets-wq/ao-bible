@@ -111,7 +111,8 @@ export default function TourOverlay() {
       if (!el) y = (limTop + limBot - bh) / 2;
       else if (limBot - goal.b - GAP >= bh) (y = goal.b + GAP), (arrowSide = 'up');
       else if (goal.t - GAP - limTop >= bh) (y = goal.t - GAP - bh), (arrowSide = 'down');
-      else y = goal.t - limTop > limBot - goal.b ? limTop : limBot - bh; // место большое (окно) — облачко у края
+      // Место большое (окно): облачко — у того края, где кнопки урока (внизу окон обычно его собственные кнопки действий)
+      else y = wantTop ? limTop : limBot - bh;
       const c = cur.current;
       const k = c ? 0.25 : 1;
       const n = { l: ease(c?.l, goal.l, k), t: ease(c?.t, goal.t, k), r: ease(c?.r, goal.r, k), b: ease(c?.b, goal.b, k), y: ease(c?.y, y, k) };

@@ -55,7 +55,7 @@ async function menu(page, text) {
 // «Закладки, заметки, любимые стихи»: на телефоне — вкладка «Закладки», на компьютере — пункт меню
 async function openSaved(page) {
   if (await page.locator('.tabbar').count()) await page.click('.tabbar .tab-saved');
-  else await menu(page, 'Закладки, заметки');
+  else await menu(page, 'Закладки и заметки');
 }
 
 async function run(label, viewport, isMobile) {
@@ -357,7 +357,7 @@ async function run(label, viewport, isMobile) {
     const groups = await page.$$eval('.nav-group h4', (e) => e.map((x) => x.textContent));
     await page.locator('.book-cell', { hasText: 'Завещание Левия' }).click();
     await page.locator('.num-grid button', { hasText: /^1$/ }).first().click();
-    await page.locator('.btn.wide:has-text("Читать главу")').click();
+    await page.locator('.btn.wide:has-text("С начала главы")').click();
     await page.waitForSelector('#v-1-1', { timeout: 15000 });
     const lvRef = await page.textContent('.pane-slot.first .tb-ref');
     check(`${label}: импорт апокрифов`, groups.includes('Апокрифы') && lvRef.includes('1:1'), `${groups.join(', ')}; ${lvRef}`);

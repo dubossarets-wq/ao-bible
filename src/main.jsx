@@ -5,6 +5,7 @@ import { bootVersionGate } from './core/updates.js';
 import { bootBackup } from './core/backup.js';
 import { i18nReady } from './core/i18n.js';
 import './styles.css';
+import { startFadeEnd } from './core/fadeEnd.js';
 
 // Динамическая высота мобильного браузера и клавиатура: --vvh = высота видимой области
 // --kb = высота экранной клавиатуры (iOS не сжимает layout viewport, нижние панели уезжали бы под неё)
@@ -43,4 +44,4 @@ if (location.search.includes('v=')) {
 // Резервная копия данных пользователя при первом запуске новой версии — до того, как код их прочитает
 bootBackup();
 // Словарь выбранного языка — до первого показа, чтобы не мелькал русский; без сети ждём не больше 3 секунд
-if (!bootVersionGate()) Promise.race([i18nReady, new Promise((r) => setTimeout(r, 3000))]).then(() => createRoot(document.getElementById('root')).render(<App />));
+if (!bootVersionGate()) Promise.race([i18nReady, new Promise((r) => setTimeout(r, 3000))]).then(() => (createRoot(document.getElementById('root')).render(<App />), startFadeEnd()));

@@ -66,10 +66,10 @@ button:disabled { cursor: default; opacity: .4; }
 @media (hover: hover) { .tb:hover:not(:disabled) { background: color-mix(in srgb, var(--bar-text) 9%, transparent); } }
 .tb:active:not(:disabled) { background: color-mix(in srgb, var(--bar-text) 16%, transparent); }
 .tb-module { font-size: 1.12rem; font-weight: 600; padding: 0 14px; max-width: 34%; }
-.tb-module-name { overflow: hidden; text-overflow: ellipsis; }
+.tb-module-name { overflow: hidden; text-overflow: clip; }
 .tb-split { width: 56px; }
 .approx { font-size: 1.6rem; line-height: 1; font-weight: 500; transform: translateY(-1px); }
-.tb-ref { flex: 1 1 auto; font-size: 1.12rem; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.tb-ref { flex: 1 1 auto; font-size: 1.12rem; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: clip; }
 .tb-icon { width: 54px; padding: 0; }
 .tb-more { width: 42px; }
 .tb-menu-wrap { position: relative; display: flex; }
@@ -140,8 +140,8 @@ button:disabled { cursor: default; opacity: .4; }
 .grip-bar { width: 44px; height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--muted) 50%, transparent); }
 .sheet-head { flex: none; display: flex; align-items: center; gap: 6px; padding: 0 10px 8px 16px; border-bottom: 1px solid var(--line); }
 .sheet-titles { flex: 1; min-width: 0; }
-.sheet-title { font-size: 1.15rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sheet-sub { font-size: .82rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sheet-title { font-size: 1.15rem; font-weight: 700; overflow: hidden; text-overflow: clip; white-space: nowrap; }
+.sheet-sub { font-size: .82rem; color: var(--muted); overflow: hidden; text-overflow: clip; white-space: nowrap; }
 .sheet-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 12px 16px calc(20px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 12px; }
 .sheet-hint { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: .85rem; margin: 0; }
 .sheet-hint svg { flex: none; }
@@ -258,7 +258,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 /* Наведение — только мышью: на телефоне после касания «залипает» на кнопке, оказавшейся под пальцем */
 @media (hover: hover) { .book-cell:hover, .num-grid button:hover { border-color: var(--accent); } }
 .bc-short { font-weight: 700; }
-.bc-name { font-size: .78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.bc-name { font-size: .78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: clip; max-width: 100%; }
 .num-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 6px; }
 .num-grid button { padding: 11px 0; border: 1px solid var(--line); background: var(--bg); border-radius: calc(var(--radius) * .6); font-variant-numeric: tabular-nums; font-weight: 500; }
 
@@ -283,7 +283,7 @@ mark { background: var(--hl); color: inherit; border-radius: 2px; padding: 0 1px
 .dict-icon { color: var(--accent); flex: none; }
 .dict-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .dict-name { font-weight: 700; }
-.dict-desc { color: var(--muted); font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dict-desc { color: var(--muted); font-size: .88rem; overflow: hidden; text-overflow: clip; white-space: nowrap; }
 .dict-count { color: var(--muted); font-size: .8rem; flex: none; }
 .entry { display: flex; flex-direction: column; gap: 12px; }
 .entry h4 { margin: 0 0 4px; font-size: .74rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); font-weight: 600; }
@@ -297,7 +297,7 @@ mark { background: var(--hl); color: inherit; border-radius: 2px; padding: 0 1px
 .facts dd { margin: 2px 0 0; font-weight: 500; overflow-wrap: anywhere; }
 .renderings { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .renderings li { display: grid; grid-template-columns: minmax(90px, 40%) 1fr auto; gap: 10px; align-items: center; font-size: .92rem; }
-.r-word { font-family: var(--font-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.r-word { font-family: var(--font-text); overflow: hidden; text-overflow: clip; white-space: nowrap; }
 .r-bar { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--accent) var(--w), color-mix(in srgb, var(--muted) 15%, transparent) var(--w)); }
 .r-n { color: var(--muted); font-variant-numeric: tabular-nums; font-size: .85rem; min-width: 3ch; text-align: right; }
 .prewrap { white-space: pre-wrap; }
@@ -358,7 +358,7 @@ mark { background: var(--hl); color: inherit; border-radius: 2px; padding: 0 1px
 .selection-bar { animation: barIn .16s ease-out; }
 @keyframes barIn { from { opacity: .4; } }
 .tb-sel-ref { flex: 1 1 auto; min-width: 0; gap: 8px; cursor: default; }
-.sel-ref { font-size: 1.05rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.sel-ref { font-size: 1.05rem; font-weight: 500; overflow: hidden; text-overflow: clip; white-space: nowrap; min-width: 0; }
 .sel-count { flex: none; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; display: grid; place-items: center; font-size: .78rem; font-weight: 700; background: var(--accent); color: var(--on-accent); font-variant-numeric: tabular-nums; }
 .tb-icon.on { color: var(--accent); }
 @container (max-width: 470px) { .selection-bar .tb-icon { width: 40px; } .sel-ref { font-size: .95rem; } }
@@ -385,7 +385,7 @@ mark { background: var(--hl); color: inherit; border-radius: 2px; padding: 0 1px
 button.wp-item:active { background: rgba(255,255,255,.08); }
 .wp-key { font-variant-numeric: tabular-nums; letter-spacing: .01em; }
 .wp-sep { opacity: .5; }
-.wp-dict { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wp-dict { min-width: 0; overflow: hidden; text-overflow: clip; white-space: nowrap; }
 .wp-muted { opacity: .7; font-size: .92rem; }
 .wp-note { position: relative; padding: 8px 18px 6px; font-size: .78rem; opacity: .7; }
 
@@ -419,7 +419,7 @@ button.wp-item:active { background: rgba(255,255,255,.08); }
 .map-row img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: var(--line); }
 .map-text { padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
 .map-title { font-weight: 700; }
-.map-desc { color: var(--muted); font-size: .85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.map-desc { color: var(--muted); font-size: .85rem; overflow: hidden; text-overflow: clip; white-space: nowrap; }
 .map-view { overflow: auto; max-height: 70vh; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); -webkit-overflow-scrolling: touch; }
 .map-view img { display: block; max-width: none; transition: width .2s; }
 
@@ -435,8 +435,8 @@ button.wp-item:active { background: rgba(255,255,255,.08); }
 .mod-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 8px 4px 8px 14px; background: none; border: 0; text-align: left; }
 .mod-icon { flex: none; color: var(--accent); }
 .mod-texts { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.mod-row .mod-name { font-weight: 700; font-size: .98rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mod-sub { color: var(--muted); font-size: .82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mod-row .mod-name { font-weight: 700; font-size: .98rem; white-space: nowrap; overflow: hidden; text-overflow: clip; }
+.mod-sub { color: var(--muted); font-size: .82rem; white-space: nowrap; overflow: hidden; text-overflow: clip; }
 .row-act { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: none; border-radius: 50%; color: var(--text); }
 @media (hover: hover) { button.row-act:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); } }
 .row-act.accent { color: var(--accent); }
@@ -463,14 +463,14 @@ button.wp-item:active { background: rgba(255,255,255,.08); }
 .wp-place .wp-key { font-weight: 600; }
 .map-pane .toolbar { gap: 0; }
 .tb-place { flex: 1 1 auto; min-width: 0; justify-content: flex-start; gap: 8px; padding: 0 14px; font-size: 1.08rem; font-weight: 600; cursor: default; }
-.tb-place-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tb-place-name { overflow: hidden; text-overflow: clip; white-space: nowrap; }
 .map-body { flex: 1; min-height: 0; position: relative; background: #dfe6e9; }
 .map-body > .map-canvas, .map-body > .map-canvas.maplibregl-map { position: absolute; inset: 0; } /* стили MapLibre задают relative — перебиваем */
 .map-status { position: absolute; left: 12px; right: 12px; top: 12px; display: flex; gap: 8px; align-items: center; padding: 10px 12px; background: var(--panel); border-radius: var(--radius); box-shadow: 0 4px 16px rgba(0,0,0,.15); font-size: .9rem; z-index: 2; }
 .place-card { position: absolute; left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 3; background: var(--panel); color: var(--text); border-radius: var(--radius); box-shadow: 0 8px 28px rgba(0,0,0,.22); max-height: 55%; display: flex; flex-direction: column; overflow: hidden; }
 @container (min-width: 640px) { .place-card { right: auto; width: 380px; } }
 .place-card-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 0; background: none; text-align: left; font-size: .98rem; }
-.place-card-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.place-card-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: clip; white-space: nowrap; }
 .place-chev { flex: none; color: var(--muted); transition: transform .2s; transform: rotate(180deg); }
 .place-card.open .place-chev { transform: none; }
 .place-card-body { overflow-y: auto; padding: 0 12px 12px; display: flex; flex-direction: column; gap: 8px; font-size: .9rem; line-height: 1.45; overscroll-behavior: contain; }
@@ -528,7 +528,7 @@ button.wp-item:active { background: rgba(255,255,255,.08); }
 .menu-item-2 { align-items: flex-start; }
 .menu-item-2 svg { margin-top: 2px; }
 .menu-2 { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
-.menu-2-sub { font-size: .82rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 230px; }
+.menu-2-sub { font-size: .82rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: clip; max-width: 230px; }
 /* Поиск: карточка перехода по ссылке («Ин 3 6») */
 .ref-hit { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: var(--radius); background: color-mix(in srgb, var(--accent) 7%, var(--bg)); }
 .ref-hit-title { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--accent); }
@@ -553,7 +553,7 @@ button.wp-item:active { background: rgba(255,255,255,.08); }
 .toolbar .tb-icon.on { color: var(--accent); }
 .toolbar .tb-module { flex: none; max-width: 38%; height: 40px; padding: 0 10px 0 12px; gap: 3px; font-size: .95rem; font-weight: 800; letter-spacing: .01em; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--panel)); }
 .toolbar .tb-ref { flex: 1 1 auto; justify-content: flex-start; gap: 4px; font-size: 1.12rem; font-weight: 700; padding: 0 8px; min-width: 0; }
-.tb-ref-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tb-ref-text { overflow: hidden; text-overflow: clip; white-space: nowrap; }
 .tb-chev { flex: none; opacity: .55; }
 .toolbar .tb-more { width: 36px; }
 .toolbar .tb-menu-wrap { margin-left: 0; }
@@ -578,7 +578,7 @@ button.wp-item:active { background: rgba(255,255,255,.08); }
 @media (hover: hover) { .audio-btn.play:hover { background: var(--accent); filter: brightness(1.06); color: var(--on-accent); } }
 .audio-info { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 0 6px; }
 .audio-ref { font-weight: 700; font-size: .95rem; }
-.audio-src { font-size: .78rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.audio-src { font-size: .78rem; color: var(--muted); overflow: hidden; text-overflow: clip; white-space: nowrap; }
 .audio-opts { display: flex; flex-direction: column; gap: 10px; padding: 12px 12px 4px; border-bottom: 1px solid var(--line); }
 .audio-opt-row { display: flex; flex-direction: column; gap: 6px; }
 
@@ -631,7 +631,7 @@ mark.diff { background: color-mix(in srgb, #f2a65a 38%, transparent); border-rad
 .gw-orig { font-size: 1.15rem; }
 .gw-orig.hebrew { font-family: var(--font-hebrew); text-align: right; }
 .gw-orig.greek { font-family: var(--font-greek); }
-.gw-meta { font-size: .75rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gw-meta { font-size: .75rem; color: var(--muted); overflow: hidden; text-overflow: clip; white-space: nowrap; }
 
 /* Режим «как книга» */
 .text-col.book-mode .verses.continuous { text-indent: 1.4em; }
@@ -729,7 +729,7 @@ mark.diff { background: color-mix(in srgb, #f2a65a 38%, transparent); border-rad
 /* Кнопка «Вернуться к плану» после чтения вне плана */
 .plan-return { position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); transform: translateX(-50%); z-index: 6; display: flex; align-items: center; background: var(--accent); color: var(--on-accent); border-radius: 999px; box-shadow: 0 8px 24px rgba(0,0,0,.22); font-family: var(--font-ui); animation: plan-ret .25s ease-out; max-width: calc(100% - 24px); }
 @keyframes plan-ret { from { transform: translate(-50%, 24px); opacity: 0; } }
-.plan-return-btn { display: inline-flex; align-items: center; gap: 7px; background: none; border: 0; color: inherit; font: inherit; font-weight: 600; font-size: .92rem; padding: 10px 6px 10px 16px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.plan-return-btn { display: inline-flex; align-items: center; gap: 7px; background: none; border: 0; color: inherit; font: inherit; font-weight: 600; font-size: .92rem; padding: 10px 6px 10px 16px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: clip; }
 .plan-return-x { background: none; border: 0; color: inherit; opacity: .8; padding: 10px 12px 10px 6px; cursor: pointer; display: inline-flex; }
 .audio-src { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 
@@ -869,7 +869,7 @@ html, body, .app { touch-action: manipulation; }
 .pulpit { position: fixed; inset: 0; z-index: 80; background: var(--bg); color: var(--text); display: flex; flex-direction: column; animation: pop .18s ease-out; }
 .pulpit-bar { display: flex; align-items: center; gap: 6px; padding: calc(env(safe-area-inset-top, 0px) + 6px) 10px 6px; border-bottom: 1px solid var(--line); background: var(--panel); font-family: var(--font-ui); }
 .pulpit-bar > svg { color: var(--muted); }
-.pulpit-title { flex: 1; min-width: 0; text-align: center; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pulpit-title { flex: 1; min-width: 0; text-align: center; font-weight: 700; overflow: hidden; text-overflow: clip; white-space: nowrap; }
 .pulpit-body { flex: 1; overflow-y: auto; padding: 24px max(20px, calc((100% - 46em) / 2)) calc(env(safe-area-inset-bottom, 0px) + 40vh); font-family: var(--font-text); line-height: 1.55; }
 .pulpit-body h1 { font-size: 1.5em; margin: 0 0 .6em; line-height: 1.2; text-align: center; }
 .pulpit-date { color: var(--muted); font-size: .7em; margin-bottom: 1.2em; font-family: var(--font-ui); text-align: center; }
@@ -1059,7 +1059,7 @@ html.kb-open .tour-ctrl.top { top: auto; bottom: calc(var(--kb, 0px) + 8px); }
 .iv-caption small { opacity: .55; font-size: .76rem; }
 
 /* Ручки для свайпа: полоса вдвое толще, зона захвата почти та же */
-.sheet-grip { height: 26px; }
+.sheet-grip { height: 19px; place-items: start center; padding-top: 5px; box-sizing: border-box; } /* полоска у верхнего края, заголовок — сразу под ней */
 .grip-bar { height: 10px; border-radius: 5px; }
 .split.rows .divider { flex-basis: 22px; }
 .split.columns .divider { flex-basis: 18px; }
@@ -1130,7 +1130,7 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .marquee-in { display: inline-block; }
 .marquee.run .marquee-in { animation: marquee var(--dur, 10s) ease-in-out infinite alternate; }
 @keyframes marquee { 0%, 15% { transform: translateX(0); } 85%, 100% { transform: translateX(var(--shift)); } }
-.no-anim .marquee.run { text-overflow: ellipsis; } .no-anim .marquee.run .marquee-in { animation: none; }
+.no-anim .marquee.run { text-overflow: clip; } .no-anim .marquee.run .marquee-in { animation: none; }
 
 /* Образцы под разделами оформления */
 .preview-card.sample { margin-top: 2px; }
@@ -1332,7 +1332,7 @@ html.reading-hidden .tabbar { margin-bottom: calc(-1 * (var(--tabbar-base) + env
 html.kb-open .tabbar { display: none; }
 .tab { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 5px 2px 4px; border: 0; background: none; color: color-mix(in srgb, var(--bar-text) 64%, var(--bar)); font: inherit; font-size: .72rem; font-weight: 600; letter-spacing: .01em; -webkit-tap-highlight-color: transparent; }
 .tab-icon { position: relative; display: grid; place-items: center; width: 54px; height: 30px; border-radius: 999px; transition: background .18s, color .18s; }
-.tab-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tab-label { max-width: 100%; overflow: hidden; text-overflow: clip; white-space: nowrap; }
 .tab.on { color: var(--bar-text); font-weight: 800; }
 .tab.on .tab-icon { background: color-mix(in srgb, var(--bar-text) 13%, var(--bar)); }
 .tab:active .tab-icon { background: color-mix(in srgb, var(--bar-text) 20%, var(--bar)); }
@@ -1387,3 +1387,6 @@ html.kb-open .chap-nav { display: none; }
 .toolbar.is-phone .tb-ref { padding: 0 10px 0 13px; font-size: 1.02rem; font-weight: 700; }
 @media (hover: hover) { .toolbar.is-phone .tb-module:hover, .toolbar.is-phone .tb-ref:hover { background: color-mix(in srgb, var(--bar-text) 17%, var(--bar)); } }
 .toolbar.is-phone .tb-module:active, .toolbar.is-phone .tb-ref:active { background: color-mix(in srgb, var(--bar-text) 22%, var(--bar)); }
+/* Обрезанный текст — плавное затухание в конце строки вместо многоточия (класс ставит core/fadeEnd.js) */
+.fade-end { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2.2em), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 2.2em), transparent); }
+input.fade-end { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 3em), transparent 100%); mask-image: linear-gradient(to right, #000 calc(100% - 3em), transparent 100%); }
