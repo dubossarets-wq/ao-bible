@@ -22,7 +22,81 @@ const clock = (s) => {
   const ss = String(v % 60).padStart(2, '0');
   return h ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`;
 };
-const SLEEP = [null, 15, 30, 60, 'chapter'];
+const SP_MAX = 120; // минут на ленте таймера
+const SP_STEP = 12; // px на минуту
+
+const fmtMin = (m) => (m >= 60 ? `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}:00` : `${m}:00`);
+
+// Таймер сна: лента минут, как у таймера в телефоне, — листается пальцем, выбранная минута под треугольником
+function SleepPicker({ initial, active, onPick, onClose }) {
+  const [min, setMin] = useState(initial);
+  const ruler = useRef(null);
+  useLayoutEffect(() => {
+    if (ruler.current) ruler.current.scrollLeft = initial * SP_STEP;
+  }, []);
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && (e.stopPropagation(), onClose());
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, []);
+  const onScroll = () => setMin(Math.max(0, Math.min(SP_MAX, Math.round(ruler.current.scrollLeft / SP_STEP))));
+  const moveTo = (m) => ruler.current?.scrollTo({ left: Math.max(0, Math.min(SP_MAX, m)) * SP_STEP, behavior: reduceMotion() ? 'auto' : 'smooth' });
+  const onKey = (e) => {
+    const d = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1, PageDown: -5, PageUp: 5 }[e.key];
+    if (d) {
+      e.preventDefault();
+      moveTo(min + d);
+    }
+  };
+  return (
+    <div className="sp-layer" onClick={onClose}>
+      <div className="sp" role="dialog" aria-label={t('Таймер сна')} onClick={(e) => e.stopPropagation()}>
+        <div className="sp-ruler-wrap">
+          <div
+            className="sp-ruler"
+            ref={ruler}
+            onScroll={onScroll}
+            tabIndex={0}
+            role="slider"
+            aria-label={t('Таймер сна')}
+            aria-valuemin={0}
+            aria-valuemax={SP_MAX}
+            aria-valuenow={min}
+            aria-valuetext={t('{n} мин', { n: min })}
+            onKeyDown={onKey}
+          >
+            <div className="sp-track" style={{ '--sp-step': `${SP_STEP}px` }}>
+              {Array.from({ length: SP_MAX + 1 }, (_, m) => (
+                <span key={m} className={`sp-tick ${m % 5 === 0 ? 'big' : ''}`} onClick={() => moveTo(m)}>
+                  {m % 5 === 0 && <b>{m}</b>}
+                </span>
+              ))}
+            </div>
+          </div>
+          <span className="sp-mark" aria-hidden="true" />
+        </div>
+        <div className="sp-row">
+          <button className="sp-start" disabled={!min} onClick={() => onPick('min', min)}>
+            {t('Запустить таймер')}
+          </button>
+          <span className="sp-time" aria-hidden="true">
+            {fmtMin(min)}
+          </span>
+        </div>
+        <div className="sp-row sp-more">
+          <button className="ap-chip" onClick={() => onPick('chapter')}>
+            {t('До конца главы')}
+          </button>
+          {active && (
+            <button className="ap-chip" onClick={() => onPick(null)}>
+              {t('Выключить таймер')}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 const BACK_AFTER = 3500; // через сколько после ручной прокрутки текст возвращается к звучащему стиху
 
 export default function AudioPlayer({ a, onClosed, dl, note, setNote, vol, setVol, sleepLeft }) {
@@ -214,14 +288,8 @@ export default function AudioPlayer({ a, onClosed, dl, note, setNote, vol, setVo
     return () => el.removeEventListener('change', commit);
   });
 
-  const sleepIdx = a.sleep ? SLEEP.indexOf(a.sleep.kind === 'chapter' ? 'chapter' : a.sleep.minutes) : 0;
   const sleepLabel = !a.sleep ? t('Выкл') : a.sleep.kind === 'chapter' ? t('Конец главы') : t('{n} мин', { n: sleepLeft || a.sleep.minutes });
-  const nextSleep = () => {
-    const v = SLEEP[(Math.max(0, sleepIdx) + 1) % SLEEP.length];
-    if (v == null) setSleep(null);
-    else if (v === 'chapter') setSleep('chapter');
-    else setSleep('min', v);
-  };
+  const [sleepOpen, setSleepOpen] = useState(false);
   const nextRate = () => setRate(RATES[(RATES.indexOf(a.rate) + 1) % RATES.length] ?? 1);
 
   const title = ref ? `${bookMeta(ref.book).name} ${ref.chapter}` : '';
@@ -328,7 +396,7 @@ export default function AudioPlayer({ a, onClosed, dl, note, setNote, vol, setVo
             <button className="ap-chip" onClick={nextRate} aria-label={`${t('Скорость')}: ${a.rate}×`}>
               {a.rate}×
             </button>
-            <button className={`ap-chip ${a.sleep ? 'on' : ''}`} onClick={nextSleep} aria-label={`${t('Таймер сна')}: ${sleepLabel}`}>
+            <button className={`ap-chip ${a.sleep ? 'on' : ''}`} onClick={() => setSleepOpen(true)} aria-haspopup="dialog" aria-label={`${t('Таймер сна')}: ${sleepLabel}`}>
               <Moon size={16} aria-hidden="true" />
               {a.sleep && <span>{sleepLabel}</span>}
             </button>
@@ -338,6 +406,19 @@ export default function AudioPlayer({ a, onClosed, dl, note, setNote, vol, setVo
             </button>
           </div>
         </div>
+        {sleepOpen && (
+          <SleepPicker
+            initial={a.sleep?.minutes || 15}
+            active={!!a.sleep}
+            onClose={() => setSleepOpen(false)}
+            onPick={(kind, m) => {
+              if (!kind) setSleep(null);
+              else if (kind === 'chapter') setSleep('chapter');
+              else setSleep('min', m);
+              setSleepOpen(false);
+            }}
+          />
+        )}
       </div>
     </div>
   );

@@ -1479,7 +1479,7 @@ html.has-tabbar .staging-badge { bottom: calc(var(--sab) + 6px); }
 html.player-open .tabbar { visibility: hidden; }
 /* Высота — по видимой области: на iPhone «весь экран» у fixed бывает выше экрана, и низ с кнопками уезжал за край */
 .ap-layer { position: fixed; top: 0; left: 0; right: 0; height: var(--vvh, 100dvh); z-index: 58; pointer-events: none; }
-.ap { pointer-events: auto; position: absolute; inset: 0; display: flex; flex-direction: column; color: var(--text); background-color: var(--bg); background-image: linear-gradient(180deg, color-mix(in srgb, var(--accent) 22%, var(--bg)) 0%, color-mix(in srgb, var(--accent) 8%, var(--bg)) 42%, var(--bg) 100%); font-family: var(--font-ui); padding: max(var(--sat, 0px), env(safe-area-inset-top, 0px)) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); outline: none; box-shadow: 0 -10px 40px color-mix(in srgb, var(--text) 18%, transparent); animation: ap-up .36s cubic-bezier(.22, .8, .24, 1); transition: transform .3s cubic-bezier(.4, 0, .7, .4); will-change: transform; }
+.ap { pointer-events: auto; position: absolute; inset: 0; display: flex; flex-direction: column; color: var(--text); background-color: var(--bg); background-image: linear-gradient(180deg, color-mix(in srgb, var(--accent) 22%, var(--bg)) 0%, color-mix(in srgb, var(--accent) 8%, var(--bg)) 42%, var(--bg) 100%); font-family: var(--font-ui); padding: max(var(--sat, 0px), env(safe-area-inset-top, 0px)) env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px); outline: none; box-shadow: 0 -10px 40px color-mix(in srgb, var(--text) 18%, transparent); animation: ap-up .36s cubic-bezier(.22, .8, .24, 1); transition: transform .3s cubic-bezier(.4, 0, .7, .4); will-change: transform; }
 .ap.dragging { transition: none; }
 .ap-layer.closing .ap { transform: translateY(100%); }
 @keyframes ap-up { from { transform: translateY(100%); } }
@@ -1493,8 +1493,10 @@ html.player-open .tabbar { visibility: hidden; }
 .ap-title { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
 .ap-title strong { font-size: 1.1rem; line-height: 1.25; }
 .ap-title span { font-size: .8rem; line-height: 1.3; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.ap-lyrics { flex: 1 1 auto; min-height: 0; position: relative; overflow-y: auto; overscroll-behavior: contain; padding: var(--ap-pad, 30vh) 18px; scrollbar-width: none; -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 15%, #000 85%, transparent 100%); mask-image: linear-gradient(180deg, transparent 0, #000 15%, #000 85%, transparent 100%); }
+.ap-lyrics { flex: 1 1 auto; min-height: 0; position: relative; overflow-y: auto; overscroll-behavior: contain; padding: 0 18px; scrollbar-width: none; -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 15%, #000 85%, transparent 100%); mask-image: linear-gradient(180deg, transparent 0, #000 15%, #000 85%, transparent 100%); }
 .ap-lyrics::-webkit-scrollbar { display: none; }
+/* Поля сверху и снизу, чтобы крайние стихи вставали в середину, — внутри прокрутки: отступом (padding) они не давали области сжаться и выталкивали кнопки за низ экрана */
+.ap-lyrics::before, .ap-lyrics::after { content: ''; display: block; height: var(--ap-pad, 30vh); }
 .ap-verse { display: block; width: 100%; max-width: 40rem; margin: 0 auto; padding: 10px 10px; border: 0; border-radius: 14px; background: none; color: var(--text); text-align: left; font-family: var(--font-text); font-size: clamp(1.3rem, 5.6vw, 1.85rem); font-weight: 700; line-height: 1.3; opacity: .15; color: transparent; text-shadow: 0 0 9px var(--text); transform: scale(.95); transform-origin: 0 50%; transition: opacity .5s ease, color .5s ease, text-shadow .5s ease, transform .5s ease, background-color .2s; -webkit-tap-highlight-color: transparent; }
 .ap-verse[data-d="0"] { opacity: 1; color: var(--text); text-shadow: none; transform: none; }
 .ap-verse[data-d="1"] { opacity: .5; text-shadow: 0 0 4px var(--text); }
@@ -1509,7 +1511,8 @@ html.player-open .tabbar { visibility: hidden; }
 /* Размытые соседние стихи: размытие тенью текста (filter: blur на iPhone оставлял цветные полосы по краям) */
 .ap-verse:not([data-d="0"]) .ap-vn { color: transparent; text-shadow: 0 0 5px var(--accent); }
 .ap-lyrics.manual .ap-verse .ap-vn { color: var(--accent); text-shadow: none; }
-.ap-controls { flex: none; width: 100%; max-width: 560px; margin: 0 auto; padding: 4px 22px 14px; display: flex; flex-direction: column; gap: 10px; }
+/* Снизу — такой же отступ, как по бокам (на iPhone чуть больше из-за полоски «домой») */
+.ap-controls { flex: none; width: 100%; max-width: 560px; margin: 0 auto; padding: 4px 22px max(22px, calc(env(safe-area-inset-bottom, 0px) - 8px)); display: flex; flex-direction: column; gap: 10px; }
 .ap-error { text-align: center; font-size: .84rem; color: var(--danger); }
 .ap-controls .audio-dl-note { justify-content: center; padding: 0; border: 0; text-align: center; }
 .ap-seek input, .ap-volume input { -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 24px; margin: 0; background: transparent; cursor: pointer; touch-action: none; }
@@ -1532,11 +1535,12 @@ html.player-open .tabbar { visibility: hidden; }
 .ap-chip { min-width: 54px; height: 38px; padding: 0 13px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; background: color-mix(in srgb, var(--panel) 72%, transparent); color: var(--text); font-weight: 700; font-size: .88rem; font-variant-numeric: tabular-nums; }
 .ap-chip.on { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 50%, var(--line)); }
 @media (hover: hover) { .ap-chip:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); } }
-@media (min-height: 760px) { .ap-controls { gap: 14px; padding-bottom: 22px; } }
+@media (min-height: 760px) { .ap-controls { gap: 14px; } }
 /* Без анимаций (настройка или системная «уменьшить движение»): окно появляется сразу, стихи без размытия */
-@media (prefers-reduced-motion: reduce) { .ap { animation: none; transition: none; } .ap-verse { filter: none !important; transition: none; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .ap { animation: none; transition: none; } .ap-verse { color: var(--text) !important; text-shadow: none !important; transition: none; transform: none; } .ap-verse .ap-vn { color: var(--accent) !important; text-shadow: none !important; } }
 html.no-anim .ap { animation: none; transition: none; }
-html.no-anim .ap-verse { filter: none !important; transition: none; transform: none; }
+html.no-anim .ap-verse { color: var(--text) !important; text-shadow: none !important; transition: none; transform: none; }
+html.no-anim .ap-verse .ap-vn { color: var(--accent) !important; text-shadow: none !important; }
 .tab-label { font-size: calc(.72rem - 1px); } /* подписи нижнего меню — на 1 px меньше */
 /* Свайп между вкладками окна: новая вкладка слегка въезжает с той стороны, куда вели */
 .sheet-body.tab-in-r { animation: tab-in-r .22s ease-out; }
@@ -1685,3 +1689,24 @@ html.kb-open .ap-live { position: relative; }
 /* «Оформление» → «Комментарии»: образец текста и подзаголовок */
 .cm-sample { margin: 0; line-height: 1.6; }
 .ap-sub { margin: 6px 0 -4px; font-size: .86rem; font-weight: 600; color: var(--muted); }
+/* Таймер сна: лента минут, как у таймера в телефоне */
+.sp-layer { position: absolute; inset: 0; z-index: 5; display: flex; align-items: flex-end; background: color-mix(in srgb, var(--text) 18%, transparent); animation: fade-in .2s ease-out; }
+.sp { width: 100%; max-width: 560px; margin: 0 auto; padding: 18px 0 max(22px, calc(env(safe-area-inset-bottom, 0px) - 8px)); border-radius: 28px 28px 0 0; background: var(--panel); box-shadow: 0 -10px 30px color-mix(in srgb, var(--text) 16%, transparent); animation: sp-up .28s cubic-bezier(.22, .8, .24, 1); }
+@keyframes sp-up { from { transform: translateY(100%); } }
+@keyframes fade-in { from { opacity: 0; } }
+.sp-ruler-wrap { position: relative; padding-bottom: 14px; }
+.sp-ruler { overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior: contain; touch-action: pan-x; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 18%, #000 82%, transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 18%, #000 82%, transparent 100%); outline: none; }
+.sp-ruler::-webkit-scrollbar { display: none; }
+.sp-ruler:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); border-radius: 12px; }
+.sp-track { display: flex; align-items: flex-end; width: max-content; height: 74px; padding: 0 calc(50% - var(--sp-step) / 2); }
+.sp-tick { position: relative; flex: none; width: var(--sp-step); height: 34px; scroll-snap-align: center; cursor: pointer; }
+.sp-tick::after { content: ''; position: absolute; left: calc(50% - 1.5px); bottom: 0; width: 3px; height: 100%; border-radius: 2px; background: color-mix(in srgb, var(--accent) 55%, transparent); }
+.sp-tick.big::after { background: var(--accent); }
+.sp-tick b { position: absolute; left: 50%; bottom: 42px; transform: translateX(-50%); font-size: 1.05rem; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
+.sp-mark { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 11px solid var(--accent); }
+.sp-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 22px 0; }
+.sp-start { min-height: 48px; padding: 0 22px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--accent) 16%, var(--panel)); color: var(--accent); font: inherit; font-size: 1.02rem; font-weight: 700; cursor: pointer; }
+.sp-start:disabled { opacity: .45; cursor: default; }
+.sp-time { font-size: clamp(2.6rem, 13vw, 3.6rem); font-weight: 300; line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.sp-more { justify-content: flex-start; padding-top: 14px; flex-wrap: wrap; }
+@media (prefers-reduced-motion: reduce) { .sp, .sp-layer { animation: none; } }
