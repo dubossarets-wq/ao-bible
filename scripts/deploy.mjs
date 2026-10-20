@@ -19,7 +19,10 @@ const STAGING = process.env.AOB_CHANNEL === 'staging';
 const dist = path.join(root, STAGING ? 'dist/pwa-staging' : 'dist/pwa');
 const git = (args, cwd = root) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 
-const remote = STAGING ? 'https://github.com/dubossarets-wq/ao-bible-staging.git' : git(['remote', 'get-url', 'origin']);
+// AOB_SITE=app — та же основная сборка на собственном домене aobible.app: его открывает приложение из Google Play.
+// Старый адрес (github.io/ao-bible) остаётся для тех, кто уже пользуется сайтом: их данные привязаны к нему.
+const APP_SITE = !STAGING && process.env.AOB_SITE === 'app';
+const remote = STAGING ? 'https://github.com/dubossarets-wq/ao-bible-staging.git' : APP_SITE ? 'https://github.com/dubossarets-wq/aobible.app.git' : git(['remote', 'get-url', 'origin']);
 const name = git(['config', 'user.name']);
 const email = git(['config', 'user.email']);
 // В основном приложении пометка «Тест:» из темы коммита людям не нужна
@@ -40,6 +43,13 @@ for (const [k, v] of [['core.autocrlf', 'false'], ['user.name', name], ['user.em
 for (const f of await readdir(tmp)) if (!['.git', 'versions', 'versions.json'].includes(f)) await rm(path.join(tmp, f), { recursive: true, force: true });
 await cp(dist, tmp, { recursive: true });
 await writeFile(path.join(tmp, '.nojekyll'), '');
+if (APP_SITE) {
+  // Домен сайта и проверка для Google Play: приложение app.aobible открывает сайт без адресной строки
+  await writeFile(path.join(tmp, 'CNAME'), 'aobible.app
+');
+  await mkdir(path.join(tmp, '.well-known'), { recursive: true });
+  await cp(path.join(root, 'scripts/play/assetlinks.json'), path.join(tmp, '.well-known/assetlinks.json'));
+}
 
 // Архив этой версии
 const html = await readFile(path.join(dist, 'index.html'), 'utf8');
@@ -60,4 +70,4 @@ git(['add', '-A'], tmp);
 git(['commit', '-q', '-m', `Версия ${build}: ${notes}`], tmp);
 git(['push', '-q', ...(fresh ? ['-f'] : []), remote, 'gh-pages'], tmp);
 await rm(tmp, { recursive: true, force: true });
-console.log(`${STAGING ? 'ТЕСТ' : 'ОСНОВНОЕ'} — опубликовано: ${build} — ${notes} (всего версий: ${list.versions.length})${list.minBuild === build ? ' · ЭКСТРЕННОЕ' : ''}`);
+console.log(`${STAGING ? 'ТЕСТ' : APP_SITE ? 'ОСНОВНОЕ (aobible.app)' : 'ОСНОВНОЕ'} — опубликовано: ${build} — ${notes} (всего версий: ${list.versions.length})${list.minBuild === build ? ' · ЭКСТРЕННОЕ' : ''}`);

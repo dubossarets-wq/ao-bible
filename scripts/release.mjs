@@ -12,3 +12,5 @@ const run = (file) => execFileSync(process.execPath, [path.join(root, 'scripts',
 
 run('build.mjs');
 run('deploy.mjs');
+// Основная версия — ещё и на домен aobible.app (сайт приложения из Google Play)
+if (channel === 'prod') execFileSync(process.execPath, [path.join(root, 'scripts', 'deploy.mjs')], { cwd: root, env: { ...env, AOB_SITE: 'app' }, stdio: 'inherit' });

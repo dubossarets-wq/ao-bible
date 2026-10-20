@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.aobible",
+      "sha256_cert_fingerprints": [
+        "AF:BE:7E:B0:1B:5A:65:35:56:11:1D:FF:13:1B:34:FE:F4:F0:DA:BC:E5:39:8A:63:A4:30:30:60:9D:02:61:5A"
+      ]
+    }
+  }
+]
