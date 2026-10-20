@@ -84,6 +84,7 @@ export async function resumeAudio() {
   if (!state.active || !state.ref) return;
   set({ playing: true });
   if (state.source !== 'tts' && el && el.src && timing?.key === `${state.ref.book}.${state.ref.chapter}`) {
+    if (graph && graph.ctx.state !== 'running') graph.ctx.resume().catch(() => {});
     el.play().catch((e) => set({ playing: false, error: playError(e) }));
   } else await playFrom(state.ref);
 }
@@ -151,24 +152,55 @@ export function seekChapter(sec) {
 }
 
 // --- Громкость ---------------------------------------------------------------------------
-// На iOS громкость элемента <audio> меняется только кнопками телефона: свойство volume всегда 1
+// На iPhone и iPad свойство volume у <audio> ничего не делает (громкость — только кнопками телефона),
+// хотя записанное значение читается обратно. Там звук пускаем через усилитель Web Audio (GainNode).
+// Усилитель подключаем, только когда громкость меньше 100%: так прослушивание по умолчанию остаётся обычным.
 let volume = Math.max(0, Math.min(1, +load('audioVolume', 1) || 0));
+const IOS = typeof navigator !== 'undefined' && (/iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+const AC = typeof window !== 'undefined' ? window.AudioContext || window.webkitAudioContext : null;
 let volumeOk = null;
+let graph = null; // { ctx, gain }
 export function canSetVolume() {
   if (volumeOk == null) {
-    try {
-      const probe = new Audio();
-      probe.volume = 0.5;
-      volumeOk = Math.abs(probe.volume - 0.5) < 0.01;
-    } catch {
-      volumeOk = false;
-    }
+    if (IOS) volumeOk = !!AC;
+    else
+      try {
+        const probe = new Audio();
+        probe.volume = 0.5;
+        volumeOk = Math.abs(probe.volume - 0.5) < 0.01;
+      } catch {
+        volumeOk = false;
+      }
   }
   return volumeOk;
 }
+function ensureGraph() {
+  if (graph || !el || !AC) return graph;
+  try {
+    // Звук через Web Audio не должен замолкать при блокировке экрана (Safari 17+)
+    if (navigator.audioSession) navigator.audioSession.type = 'playback';
+    const ctx = new AC();
+    const gain = ctx.createGain();
+    ctx.createMediaElementSource(el).connect(gain).connect(ctx.destination);
+    graph = { ctx, gain };
+  } catch {
+    graph = null;
+  }
+  return graph;
+}
+function applyVolume() {
+  if (!el) return;
+  if (!IOS) return void (el.volume = volume);
+  if (volume < 1 || graph) {
+    const g = ensureGraph();
+    if (!g) return;
+    g.gain.gain.value = volume;
+    if (g.ctx.state !== 'running') g.ctx.resume().catch(() => {});
+  }
+}
 export function setVolume(v) {
   volume = Math.max(0, Math.min(1, +v || 0));
-  if (el) el.volume = volume;
+  applyVolume();
 }
 
 export function setRate(rate) {
@@ -306,7 +338,8 @@ async function playRecorded(ref) {
     if (!el) {
       el = new Audio();
       el.preload = 'auto';
-      el.volume = volume;
+      if (IOS) el.crossOrigin = 'anonymous'; // для усилителя громкости (записи с archive.org отдаются с CORS)
+      applyVolume();
       el.addEventListener('durationchange', emitTime);
       el.addEventListener('loadedmetadata', emitTime);
       el.addEventListener('timeupdate', onTime);
@@ -340,6 +373,7 @@ async function playRecorded(ref) {
       /* перемотка не удалась */
     }
   } else el.addEventListener('loadedmetadata', () => my === gen && (el.currentTime = start), { once: true });
+  if (graph && graph.ctx.state !== 'running') graph.ctx.resume().catch(() => {});
   el.play().then(
     () => set({ loading: false }),
     (e) => set({ loading: false, playing: false, error: playError(e) })
