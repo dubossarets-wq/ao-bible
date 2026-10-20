@@ -34,8 +34,10 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
   const drag = useRef(null);
   const sheetRef = useRef(null);
   const bodyRef = useRef(null);
+  const backRef = useRef(null); // что делает «‹ Назад» в этом окне (если стрелка есть)
 
-  // Свайп по окну влево/вправо — соседняя вкладка (если в окне есть ряд вкладок role="tablist")
+  // Свайп по окну влево/вправо — соседняя вкладка (если в окне есть ряд вкладок role="tablist");
+  // вкладок нет или дальше листать некуда — назад к предыдущему меню (как стрелка ‹)
   useEffect(() => {
     const body = bodyRef.current;
     if (!body) return;
@@ -43,7 +45,7 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
     const SKIP = 'input, textarea, select, .tabs, .chips, .bg-photos, .theme-strip, .plan-grid, .maplibregl-map, .map-pane, [data-no-swipe]';
     const onStart = (e) => {
       const t0 = e.touches[0];
-      s = e.touches.length === 1 && !e.target.closest(SKIP) && body.querySelector('.tabs[role="tablist"]') ? { x: t0.clientX, y: t0.clientY, t: Date.now() } : null;
+      s = e.touches.length === 1 && !e.target.closest(SKIP) && (backRef.current || body.querySelector('.tabs[role="tablist"]')) ? { x: t0.clientX, y: t0.clientY, t: Date.now() } : null;
     };
     const onEnd = (e) => {
       if (!s) return;
@@ -54,10 +56,21 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
       s = null;
       if (!quick || Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.8) return;
       const list = body.querySelector('.tabs[role="tablist"]');
-      const tabs = [...list.querySelectorAll('[role="tab"]')];
+      const tabs = list ? [...list.querySelectorAll('[role="tab"]')] : [];
       const cur = tabs.findIndex((x) => x.getAttribute('aria-selected') === 'true');
       const next = tabs[cur + (dx < 0 ? 1 : -1)];
-      if (!next) return;
+      if (!next) {
+        const back = backRef.current;
+        if (!back) return;
+        back();
+        if (!push) {
+          // Назад внутри того же окна (например, к прошлой статье словаря) — содержимое въезжает слева
+          body.classList.remove('tab-in-l', 'tab-in-r');
+          void body.offsetWidth;
+          body.classList.add('tab-in-l');
+        }
+        return;
+      }
       next.click();
       next.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
       body.classList.remove('tab-in-l', 'tab-in-r');
@@ -88,6 +101,7 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
     setLeaving(true);
     setTimeout(push.back, reduceMotion() ? 0 : 220);
   };
+  backRef.current = onBack || (push ? goBack : null);
 
   // Закрытие нажатием на вкладку снизу — с той же анимацией, но без возврата в «Ещё»
   useEffect(() => {
@@ -179,7 +193,7 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
             </button>
           )}
         </header>
-        <div className="sheet-body" ref={bodyRef} onAnimationEnd={(e) => e.target === bodyRef.current && bodyRef.current.classList.remove('tab-in-l', 'tab-in-r')}>
+        <div className="sheet-body" data-swipe-back={onBack || push ? '' : undefined} ref={bodyRef} onAnimationEnd={(e) => e.target === bodyRef.current && bodyRef.current.classList.remove('tab-in-l', 'tab-in-r')}>
           {children}
         </div>
         {footer && <div className="sheet-foot">{footer}</div>}

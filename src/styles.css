@@ -1540,7 +1540,7 @@ html.no-anim .ap-verse { filter: none !important; transition: none; transform: n
 @keyframes tab-in-l { from { transform: translateX(-24px); opacity: .4; } }
 @media (prefers-reduced-motion: reduce) { .sheet-body.tab-in-r, .sheet-body.tab-in-l { animation: none; } }
 /* Свайп по окну с вкладками листает вкладки — браузер не должен принимать его за «назад» */
-.sheet-body:has(.tabs[role="tablist"]) { touch-action: pan-y; }
+.sheet-body:has(.tabs[role="tablist"]), .sheet-body[data-swipe-back] { touch-action: pan-y; }
 /* ---------- Оформление (AppearanceSettings): главный экран и подразделы ----------
    Сверху — живой образец, закреплён при прокрутке; подраздел выезжает справа, назад — слева.
    Все зоны нажатия не меньше 44 px; цвета — только переменные темы (кроме самих образцов тем и цветов). */
