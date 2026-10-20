@@ -1,4 +1,11 @@
 {
+ "Проигрыватель раскрывается на весь экран: звучащий стих крупно, нажатие на стих — переход к нему, громкость, скорость и таймер сна.": "Pemutar terbuka layar penuh: ayat yang dibacakan tampil besar, ketuk ayat untuk melompat ke sana, plus volume, kecepatan, dan pengatur waktu tidur.",
+ "Открыть проигрыватель": "Buka pemutar",
+ "Свернуть проигрыватель": "Kecilkan pemutar",
+ "Место в записи": "Posisi rekaman",
+ "{cur} из {total}": "{cur} dari {total}",
+ "Стих {n} из {total}": "Ayat {n} dari {total}",
+ "Громкость": "Volume",
  "Очистить историю": "Hapus riwayat",
  "Убрать из истории": "Hapus dari riwayat",
  "Меню «Ещё»": "Menu “Lainnya”",

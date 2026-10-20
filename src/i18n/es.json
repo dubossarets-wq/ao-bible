@@ -1,4 +1,11 @@
 {
+ "Проигрыватель раскрывается на весь экран: звучащий стих крупно, нажатие на стих — переход к нему, громкость, скорость и таймер сна.": "El reproductor se abre a pantalla completa: el versículo que suena en grande, tocar un versículo salta a él, volumen, velocidad y temporizador.",
+ "Открыть проигрыватель": "Abrir el reproductor",
+ "Свернуть проигрыватель": "Minimizar el reproductor",
+ "Место в записи": "Posición en la grabación",
+ "{cur} из {total}": "{cur} de {total}",
+ "Стих {n} из {total}": "Versículo {n} de {total}",
+ "Громкость": "Volumen",
  "Очистить историю": "Borrar historial",
  "Убрать из истории": "Quitar del historial",
  "Меню «Ещё»": "Menú «Más»",

@@ -1,4 +1,11 @@
 {
+ "Проигрыватель раскрывается на весь экран: звучащий стих крупно, нажатие на стих — переход к нему, громкость, скорость и таймер сна.": "Playerul se deschide pe tot ecranul: versetul citit apare mare, atingerea unui verset sare la el, plus volum, viteză și temporizator de somn.",
+ "Открыть проигрыватель": "Deschide playerul",
+ "Свернуть проигрыватель": "Restrânge playerul",
+ "Место в записи": "Poziția în înregistrare",
+ "{cur} из {total}": "{cur} din {total}",
+ "Стих {n} из {total}": "Versetul {n} din {total}",
+ "Громкость": "Volum",
  "Очистить историю": "Șterge istoricul",
  "Убрать из истории": "Elimină din istoric",
  "Меню «Ещё»": "Meniul „Mai mult”",

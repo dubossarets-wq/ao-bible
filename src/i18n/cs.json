@@ -1,4 +1,11 @@
 {
+ "Проигрыватель раскрывается на весь экран: звучащий стих крупно, нажатие на стих — переход к нему, громкость, скорость и таймер сна.": "Přehrávač se rozbalí na celou obrazovku: čtený verš velkým písmem, klepnutím na verš na něj přeskočíte, hlasitost, rychlost a časovač spánku.",
+ "Открыть проигрыватель": "Otevřít přehrávač",
+ "Свернуть проигрыватель": "Sbalit přehrávač",
+ "Место в записи": "Pozice v nahrávce",
+ "{cur} из {total}": "{cur} z {total}",
+ "Стих {n} из {total}": "Verš {n} z {total}",
+ "Громкость": "Hlasitost",
  "Очистить историю": "Vymazat historii",
  "Убрать из истории": "Odebrat z historie",
  "Меню «Ещё»": "Nabídka „Více“",
