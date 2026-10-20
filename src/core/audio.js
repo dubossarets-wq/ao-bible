@@ -104,6 +104,73 @@ export async function stepVerse(dir) {
   await playFrom(next);
 }
 
+// Слушать с выбранного стиха (нажатие на стих в раскрытом проигрывателе) — так же, как ⏮/⏭:
+// запись перематывается к началу стиха по разметке времени, ИИ-диктор начинает читать этот стих
+export async function playVerse(ref) {
+  resumeFollow();
+  if (!state.active || !ref) return;
+  stopEngines();
+  set({ ref: { book: ref.book, chapter: ref.chapter, verse: ref.verse }, playing: true, error: null });
+  await playFrom(state.ref);
+}
+
+// --- Время записи: отдельная подписка, обновляется несколько раз в секунду --------------------
+// pos/len — секунды от начала главы и её длина (в общем файле на несколько глав — только своя глава)
+const timeSubs = new Set();
+let timeSnap = { pos: 0, len: 0 };
+function chapterSpan() {
+  if (!el || !timing || state.source === 'tts' || state.source === 'none') return null;
+  const shared = timing.end != null;
+  const start = shared ? timing.start ?? 0 : 0;
+  const end = shared ? timing.end : Number.isFinite(el.duration) ? el.duration : 0;
+  return { start, len: Math.max(0, end - start) };
+}
+function emitTime() {
+  const s = chapterSpan();
+  const next = s ? { pos: Math.max(0, Math.min(s.len || Infinity, el.currentTime - s.start)), len: s.len } : { pos: 0, len: 0 };
+  if (next.pos === timeSnap.pos && next.len === timeSnap.len) return;
+  timeSnap = next;
+  timeSubs.forEach((f) => f());
+}
+export const useAudioTime = () =>
+  useSyncExternalStore(
+    (f) => (timeSubs.add(f), () => timeSubs.delete(f)),
+    () => timeSnap
+  );
+// Перемотка внутри главы: sec — секунды от начала главы. Текущий стих обновится по разметке (onTime)
+export function seekChapter(sec) {
+  const s = chapterSpan();
+  if (!s) return;
+  resumeFollow();
+  try {
+    el.currentTime = s.start + Math.max(0, Math.min(s.len, sec));
+  } catch {
+    /* перемотка не удалась */
+  }
+  emitTime();
+}
+
+// --- Громкость ---------------------------------------------------------------------------
+// На iOS громкость элемента <audio> меняется только кнопками телефона: свойство volume всегда 1
+let volume = Math.max(0, Math.min(1, +load('audioVolume', 1) || 0));
+let volumeOk = null;
+export function canSetVolume() {
+  if (volumeOk == null) {
+    try {
+      const probe = new Audio();
+      probe.volume = 0.5;
+      volumeOk = Math.abs(probe.volume - 0.5) < 0.01;
+    } catch {
+      volumeOk = false;
+    }
+  }
+  return volumeOk;
+}
+export function setVolume(v) {
+  volume = Math.max(0, Math.min(1, +v || 0));
+  if (el) el.volume = volume;
+}
+
 export function setRate(rate) {
   save('audioRate', rate);
   set({ rate });
@@ -239,6 +306,9 @@ async function playRecorded(ref) {
     if (!el) {
       el = new Audio();
       el.preload = 'auto';
+      el.volume = volume;
+      el.addEventListener('durationchange', emitTime);
+      el.addEventListener('loadedmetadata', emitTime);
       el.addEventListener('timeupdate', onTime);
       el.addEventListener('ended', onEnded);
       el.addEventListener('waiting', () => set({ loading: true }));
@@ -257,6 +327,7 @@ async function playRecorded(ref) {
       loadedUrl = ch.url;
     }
     timing = next;
+    emitTime();
   }
   // С первого стиха — с начала главы (объявление «Глава …»), иначе — с начала стиха
   const start = ref.verse === 1 && timing.start != null ? timing.start : timing.verses.find((x) => x[0] === ref.verse)?.[1] ?? timing.start ?? 0;
@@ -277,6 +348,7 @@ async function playRecorded(ref) {
 
 function onTime() {
   if (!timing || !el || state.source === 'tts') return;
+  emitTime();
   // Глава кончилась внутри общего файла — переходим к следующей
   if (timing.end != null && el.currentTime >= timing.end - 0.05) return chapterEnded();
   const t = el.currentTime + 0.05;
@@ -311,6 +383,7 @@ async function chapterEnded() {
     if (ch && ch.url === timing.url && ch.start != null && Math.abs(ch.start - (timing.end ?? -9)) < 1) {
       timing = { key: `${next.book}.${next.chapter}`, module: state.source, verses: ch.verses, url: ch.url, start: ch.start, end: ch.end ?? null };
       set({ ref: next });
+      emitTime();
       return;
     }
     el.pause();
