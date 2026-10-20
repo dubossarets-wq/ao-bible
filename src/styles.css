@@ -256,15 +256,6 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .fold-head svg { flex: none; transition: transform .2s; }
 .fold.open .fold-head { color: var(--text); }
 .fold.open .fold-head svg { transform: rotate(180deg); }
-.book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 6px; }
-.book-cell { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 8px 10px; border: 1px solid var(--line); background: var(--bg); border-radius: calc(var(--radius) * .75); text-align: left; min-width: 0; }
-.book-cell.on, .num-grid button.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--bg)); }
-/* Наведение — только мышью: на телефоне после касания «залипает» на кнопке, оказавшейся под пальцем */
-@media (hover: hover) { .book-cell:hover, .num-grid button:hover { border-color: var(--accent); } }
-.bc-short { font-weight: 700; }
-.bc-name { font-size: .78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: clip; max-width: 100%; }
-.num-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 6px; }
-.num-grid button { padding: 11px 0; border: 1px solid var(--line); background: var(--bg); border-radius: calc(var(--radius) * .6); font-variant-numeric: tabular-nums; font-weight: 500; }
 
 /* Параллельные места, поиск */
 .xref-source { margin: 0; padding: 10px 14px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); border-radius: 0 calc(var(--radius) * .6) calc(var(--radius) * .6) 0; font-family: var(--font-text); line-height: 1.5; }
@@ -404,7 +395,6 @@ button.wp-item:active { background: rgba(255,255,255,.08); }
 .update-item { color: var(--accent); font-weight: 600; }
 .badge-new { background: #e0533d; color: #fff !important; border-radius: 999px; padding: 2px 8px; font-size: .74rem !important; font-weight: 600; }
 
-.bc-dc { color: var(--accent); font-weight: 700; margin-left: 1px; }
 
 /* ---------- Версии приложения ---------- */
 .versions { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -766,18 +756,6 @@ mark.diff { background: color-mix(in srgb, #f2a65a 38%, transparent); border-rad
 
 .plan-seg-head { padding-bottom: 8px; }
 
-/* Выбор книги: разделы своим цветом — тонкая полоска слева, лёгкий оттенок, цветное сокращение */
-.book-cat + .book-cat { margin-top: 14px; }
-.book-cat-head { display: flex; align-items: center; gap: 8px; margin: 2px 2px 7px; font-size: .84rem; font-weight: 600; color: color-mix(in srgb, var(--c) 55%, var(--text)); }
-.book-cat-head i { width: 9px; height: 9px; border-radius: 3px; background: var(--c); flex: none; }
-.book-cat-head span { margin-left: auto; font-weight: 500; font-size: .76rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-.book-cat .book-cell { position: relative; overflow: hidden; padding-left: 14px; background: color-mix(in srgb, var(--c) 6%, var(--bg)); border-color: color-mix(in srgb, var(--c) 20%, var(--line)); transition: border-color .15s, background .15s; }
-.book-cat .book-cell::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--c); }
-.book-cat .bc-short { color: color-mix(in srgb, var(--c) 72%, var(--text)); }
-@media (hover: hover) { .book-cat .book-cell:hover { border-color: var(--c); } }
-.book-cat .book-cell.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 16%, var(--bg)); box-shadow: inset 0 0 0 1px var(--c); }
-.num-grid[style] button.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 16%, var(--bg)); }
-@media (hover: hover) { .num-grid[style] button:hover { border-color: var(--c); } }
 
 /* В проигрывателе: вернуться к месту, которое сейчас звучит */
 .audio-back { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; border: 0; background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); border-radius: 999px; padding: 3px 9px 3px 7px; cursor: pointer; font: inherit; font-weight: 700; font-size: .9rem; }
@@ -1712,3 +1690,79 @@ html.kb-open .ap-live { position: relative; }
 @media (prefers-reduced-motion: reduce) { .sp, .sp-layer { animation: none; } }
 /* Текст Библии: сдвиг при подгрузке глав сверху делает приложение само (см. ChapterView) */
 .text-scroller { overflow-anchor: none; }
+
+/* ── Выбор книги → главы → стиха (BookNavigator) ──
+   Без рамок и пестроты: мягкие плашки на фоне окна, крупные цели нажатия (от 44 px),
+   цвет раздела — только точка у заголовка. --bn-fill подходит ко всем темам: чуть темнее окна в светлых, чуть светлее в тёмных. */
+.bn { --bn-fill: color-mix(in srgb, var(--text) 5.5%, var(--panel)); --bn-fill-h: color-mix(in srgb, var(--text) 10%, var(--panel)); --bn-muted: color-mix(in srgb, var(--muted) 80%, var(--text)); display: flex; flex-direction: column; gap: 16px; }
+.bn-label { margin: 0 2px; font-size: .74rem; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--bn-muted); }
+
+/* Поле: ссылка или первые буквы книги */
+.bn-search { flex: none; position: relative; display: flex; align-items: center; gap: 0; height: 50px; padding: 0 3px 0 0; border: 1px solid transparent; border-radius: 15px; background: var(--bn-fill); transition: border-color .15s, box-shadow .15s, background .15s; }
+.bn-search:focus-within { border-color: var(--accent); background: var(--panel); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
+.bn-search-ic { position: absolute; left: 15px; color: var(--bn-muted); pointer-events: none; }
+.bn-search > input { flex: 1; min-width: 0; height: 100%; padding: 0 6px 0 44px; border: 0; background: none; box-shadow: none !important; font-size: 16px; }
+.bn-search > input::placeholder { color: var(--bn-muted); opacity: 1; }
+.bn-clear, .bn-submit { flex: none; position: relative; width: 44px; height: 44px; display: grid; place-items: center; padding: 0; border: 0; background: none; border-radius: 50%; color: var(--bn-muted); }
+.bn-submit::before { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: transparent; transition: background .15s, transform .15s; }
+.bn-submit svg { position: relative; }
+.bn-search.has-q .bn-submit { color: var(--on-accent); }
+.bn-search.has-q .bn-submit::before { background: var(--accent); }
+.bn-submit:active::before { transform: scale(.92); }
+.bn-clear:focus-visible, .bn-submit:focus-visible { outline-offset: -2px; }
+.bn .error-text { margin: -6px 4px 0; }
+
+/* Ссылка уже понятна — кнопка «Перейти: От Иоанна 3:16» */
+.bn-go { display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 10px 16px; border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line)); border-radius: 15px; background: color-mix(in srgb, var(--accent) 8%, var(--panel)); color: var(--text); font-size: 1rem; font-weight: 600; text-align: left; animation: bn-pop .18s ease-out; }
+.bn-go svg { flex: none; color: var(--accent); }
+@keyframes bn-pop { from { opacity: 0; transform: translateY(-4px); } }
+.bn-empty { margin: 8px 0 0; text-align: center; color: var(--bn-muted); }
+
+/* Недавние книги — лента (свайп по ней листает её, а не окно) */
+.bn-recent { display: flex; flex-direction: column; gap: 8px; }
+.bn-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 2px 16px; scroll-padding: 0 16px; }
+.bn-chips::-webkit-scrollbar { display: none; }
+.bn-chip { flex: none; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--bn-fill); color: var(--text); font-size: .92rem; font-weight: 500; white-space: nowrap; transition: background .15s; }
+.bn-chip.on { background: color-mix(in srgb, var(--accent) 14%, var(--panel)); box-shadow: inset 0 0 0 1.5px var(--accent); font-weight: 600; }
+
+/* Ветхий / Новый Завет / Апокрифы — сегменты; при прокрутке переключатель остаётся сверху.
+   Подложка выбранного: в светлых темах — цвет окна, в тёмных — чуть светлее дорожки (light-dark по color-scheme темы) */
+.bn-seg-wrap { position: sticky; top: -12px; z-index: 2; margin: -8px 0; padding: 8px 0; background: var(--panel); }
+.bn-seg.tabs { position: relative; display: flex; gap: 0; margin: 0; padding: 3px; border: 0; border-radius: 15px; background: var(--bn-fill); overflow: visible; }
+.bn-seg.tabs button { flex: 1 1 0; min-width: 0; min-height: 44px; position: relative; z-index: 1; padding: 0 8px; border: 0; border-radius: 12px; background: none; color: var(--bn-muted); font-size: .92rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: color .2s; }
+.bn-seg.tabs button.on { color: var(--text); font-weight: 650; }
+.bn-seg.tabs button:focus-visible { outline-offset: -2px; }
+.bn-seg-pill { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--n)); transform: translateX(calc(var(--i) * 100%)); border-radius: 12px; background: var(--panel); background: light-dark(var(--panel), color-mix(in srgb, var(--text) 14%, var(--panel))); box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 2px 8px rgba(0,0,0,.08), inset 0 0 0 1px color-mix(in srgb, var(--text) 8%, transparent); transition: transform .32s cubic-bezier(.3, 1.2, .5, 1); pointer-events: none; }
+.bn-panel { display: flex; flex-direction: column; gap: 22px; }
+
+/* Разделы и плитки книг: крупное сокращение, под ним название */
+.bn .book-cat { display: flex; flex-direction: column; gap: 10px; }
+.bn .book-cat-head { display: flex; align-items: center; gap: 8px; }
+.bn .book-cat-head i { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
+.bn .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+.bn .book-cell { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 3px; min-width: 0; min-height: 62px; padding: 9px 11px 10px; border: 0; border-radius: 14px; background: var(--bn-fill); color: var(--text); text-align: left; transition: background .15s, transform .12s; }
+.bn .bc-short { font-size: 1.04rem; font-weight: 700; line-height: 1.15; letter-spacing: -.01em; }
+/* Название — в одну строку; длинное не обрывается многоточием, а гаснет (fadeEnd.js) */
+.bn .bc-name { display: block; max-width: 100%; font-size: .76rem; line-height: 1.25; color: var(--bn-muted); white-space: nowrap; overflow: hidden; }
+.bn .bc-dc { margin-left: 1px; color: var(--accent); font-weight: 700; }
+.bn .book-cell.on { background: color-mix(in srgb, var(--accent) 14%, var(--panel)); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.bn .book-cell.on .bc-name { color: color-mix(in srgb, var(--muted) 45%, var(--text)); }
+
+/* Главы и стихи — ровная сетка крупных квадратов; текущее место залито цветом */
+.bn .num-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 8px; }
+.bn .num-grid button { min-height: 52px; padding: 0; border: 0; border-radius: 14px; background: var(--bn-fill); color: var(--text); font-size: 1.04rem; font-weight: 600; font-variant-numeric: tabular-nums; transition: background .15s, transform .12s; }
+.bn .num-grid button.on { background: var(--accent); color: var(--on-accent); }
+.bn .bn-start { min-height: 52px; gap: 10px; border: 0; border-radius: 15px; background: color-mix(in srgb, var(--accent) 13%, var(--panel)); color: var(--text); font-size: 1rem; font-weight: 600; }
+.bn .bn-start svg { color: var(--accent); }
+/* Наведение — только мышью: на телефоне после касания «залипает» на кнопке, оказавшейся под пальцем */
+@media (hover: hover) {
+  .bn .book-cell:not(.on):hover, .bn .num-grid button:not(.on):hover, .bn-chip:not(.on):hover { background: var(--bn-fill-h); }
+  .bn-seg.tabs button:not(.on):hover { color: var(--text); }
+  .bn .bn-start:hover, .bn-go:hover { background: color-mix(in srgb, var(--accent) 19%, var(--panel)); }
+}
+.bn .book-cell:active, .bn .num-grid button:active, .bn-chip:active, .bn .bn-start:active { transform: scale(.96); }
+@media (min-width: 820px) {
+  .bn .book-grid { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); }
+  .bn .num-grid { grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) { .bn-seg-pill, .bn-go { transition: none; animation: none; } }
