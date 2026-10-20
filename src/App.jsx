@@ -322,9 +322,12 @@ export default function App() {
       if (push) history.push(clean);
       else history[history.length - 1] = clean;
       const trimmed = history.slice(-100);
-      return { ...p, ...leavePlan(p, planReturn), ref: clean, history: trimmed, hIndex: trimmed.length - 1, nav: p.nav + 1, highlight, flash: flash ? `${clean.book}.${clean.chapter}.${clean.verse}.${Date.now()}` : null };
+      // Подсветка слова из поиска — только в том стихе, к которому перешли, и ненадолго (см. ChapterView)
+      const hl = highlight ? { q: highlight, at: `${clean.book}.${clean.chapter}.${clean.verse}`, t: Date.now() } : null;
+      return { ...p, ...leavePlan(p, planReturn), ref: clean, history: trimmed, hIndex: trimmed.length - 1, nav: p.nav + 1, highlight: hl, flash: flash ? `${clean.book}.${clean.chapter}.${clean.verse}.${Date.now()}` : null };
     });
   });
+  const clearHighlight = useEvent((i) => updatePane(i, (p) => (p.highlight ? { ...p, highlight: null } : p)));
 
   // Открыть день плана одной страницей; at — номер отрывка, к которому прокрутить
   const openPlanDay = useEvent((i, uid, day, at = 0) =>
@@ -532,6 +535,7 @@ export default function App() {
     bibles,
     panes,
     navigate,
+    clearHighlight,
     openPlanDay,
     returnToPlan,
     exitPlan,

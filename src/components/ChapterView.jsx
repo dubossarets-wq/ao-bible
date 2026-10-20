@@ -22,6 +22,7 @@ import { t, useLang } from '../core/i18n.js';
 import { drawPart, clearPart } from './partShape.js';
 
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const HL_MS = 8000; // сколько держится подсветка слова из поиска после перехода
 
 export function highlightRegex(query) {
   if (!query) return null;
@@ -35,7 +36,7 @@ export function highlightRegex(query) {
 
 // from/to — показать только часть главы (отрывок плана), idp — приставка к id стихов (на странице плана
 // одна и та же глава может встретиться дважды), noBookTitle/noChapterTitle — без заголовков (их заменяет заголовок отрывка)
-export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, xrefs, counts, comments, illus, opts, hlRe, flashVerse, isPsalm, selected, marks, from = 1, to = null, idp = '', noBookTitle = false, noChapterTitle = false, afterVerse = null, afterNode = null }) {
+export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, xrefs, counts, comments, illus, opts, hlRe, hlVerse = null, flashVerse, isPsalm, selected, marks, from = 1, to = null, idp = '', noBookTitle = false, noChapterTitle = false, afterVerse = null, afterNode = null }) {
   useLang(); // глава в memo — подписи (номер главы, кнопки) обновляются при смене языка
   const sel = selected ? new Set(selected.split(',').map(Number)) : null;
   const mk = marks ? Object.fromEntries(marks.split(',').map((x) => x.split(':'))) : {};
@@ -83,7 +84,7 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
                     </svg>
                   </span>
                 )}
-                <span className="vt" dangerouslySetInnerHTML={{ __html: verseHtml(text, { showStrongs: opts.showStrongs, highlight: hlRe, interlinear: opts.interlinear }) }} />
+                <span className="vt" dangerouslySetInnerHTML={{ __html: verseHtml(text, { showStrongs: opts.showStrongs, highlight: hlRe && (hlVerse == null || hlVerse === v) ? hlRe : null, interlinear: opts.interlinear }) }} />
                 {mk[v]?.includes('n') && (
                   <button className="note-tag" data-act="note" aria-label={t('Заметка к стиху')} title={t('Заметка')}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -148,7 +149,7 @@ export function selectedIn(selection, bookId, c) {
 
 // selection — Set ключей «Книга.глава.стих»; onSelect(ref, 'start' | 'toggle') — выделение стихов
 export default function ChapterView({ index, pane, module, onScrollDirection, selection, onSelect, selActions, part, onPart }) {
-  const { settings, openSheet, openPopover, closePopover, popover, reportPosition, navigate, sheet, modules, marks, toast, toggleFavorite } = useApp();
+  const { settings, openSheet, openPopover, closePopover, popover, reportPosition, navigate, clearHighlight, sheet, modules, marks, toast, toggleFavorite } = useApp();
   const scroller = useRef(null);
   usePinchFont(scroller);
   const [book, setBook] = useState(null); // { id, data, meta }
@@ -562,7 +563,29 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     }),
     [settings.showVerseNumbers, settings.showStrongs, settings.showHeadings, settings.showXrefButtons, settings.focusMode, settings.continuousVerses, settings.inlineCommentaries, settings.bookMode, settings.showIllustrations, module]
   );
-  const hlRe = useMemo(() => highlightRegex(pane.highlight), [pane.highlight]);
+  // Слово из поиска подсвечено только в стихе, к которому перешли: несколько секунд, потом плавно гаснет
+  // (сразу — при касании текста). Прежний формат (просто строка) и старые подсветки после перезапуска не показываем.
+  const hlObj = pane.highlight && typeof pane.highlight === 'object' && Date.now() - (pane.highlight.t || 0) < HL_MS ? pane.highlight : null;
+  const hlRe = useMemo(() => highlightRegex(hlObj?.q), [hlObj?.q]);
+  const hlAt = hlObj ? hlObj.at.split('.') : null;
+  const [hlFade, setHlFade] = useState(false);
+  useEffect(() => {
+    setHlFade(false);
+    if (!pane.highlight) return;
+    if (!hlObj) {
+      clearHighlight(index);
+      return;
+    }
+    const left = HL_MS - (Date.now() - hlObj.t);
+    const a = setTimeout(() => setHlFade(true), Math.max(0, left - 800));
+    const b = setTimeout(() => clearHighlight(index), Math.max(0, left));
+    return () => (clearTimeout(a), clearTimeout(b));
+  }, [pane.highlight]);
+  const dropHighlight = () => {
+    if (!pane.highlight || hlFade) return;
+    setHlFade(true);
+    setTimeout(() => clearHighlight(index), 700);
+  };
   const flash = pane.flash ? pane.flash.split('.') : null;
 
   const bookIdx = module.books.findIndex((b) => b.id === book?.id);
@@ -571,14 +594,17 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
 
   return (
     <div
-      className={`scroller${selection?.size ? ' selecting' : ''}`}
+      className={`scroller${selection?.size ? ' selecting' : ''}${hlFade ? ' hl-fade' : ''}`}
       ref={scroller}
       onScroll={(e) => {
         cancelPress();
         onScroll(e);
       }}
       onClick={onClick}
-      onPointerDown={onPointerDown}
+      onPointerDown={(e) => {
+        dropHighlight();
+        onPointerDown(e);
+      }}
       onWheel={() => (setDriver(index), (userTouchAt.current = Date.now()))}
       onTouchStart={() => (setDriver(index), (userTouchAt.current = Date.now()))}
       onPointerMove={onPointerMove}
@@ -613,7 +639,8 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
                 comments={comments}
                 illus={illus}
                 opts={opts}
-                hlRe={hlRe}
+                hlRe={hlAt && hlAt[0] === book.id && +hlAt[1] === c ? hlRe : null}
+                hlVerse={hlAt && hlAt[0] === book.id && +hlAt[1] === c ? +hlAt[2] : null}
                 isPsalm={book.id === 'Ps'}
                 flashVerse={flash && flash[0] === book.id && +flash[1] === c ? +flash[2] : null}
                 marks={marksFor(marks, book.id, c)}

@@ -47,6 +47,21 @@ export async function selectionText(moduleId, refs) {
   return lines.join('\n');
 }
 
+// Единый формат копирования и «Поделиться» во всём приложении: "Текст стиха" - Еккл. 9:6
+// Ссылка — короткая, как в интерфейсе; диапазон — через обычный дефис: «Ин. 3:16-18».
+export const quoteLabel = (refs) => selectionLabel(refs).replace(/–/g, '-');
+export const quoteVerse = (text, label) => `"${String(text || '').replace(/\s+/g, ' ').trim()}" - ${label}`;
+
+// Текст нескольких стихов — внутри одних кавычек, через пробел (без номеров стихов)
+export async function quoteText(moduleId, refs) {
+  const parts = [];
+  for (const r of refs) {
+    const v = await getVerse(moduleId, r);
+    if (v != null) parts.push(plainText(v).trim());
+  }
+  return quoteVerse(parts.filter(Boolean).join(' '), quoteLabel(refs));
+}
+
 export default function SelectionBar({ index, module, selection, onDone }) {
   const { openSheet, toast, bibles, openParallel, isFavorite, toggleFavorite, isBookmarked, toggleBookmark, notes, highlights, setHighlight, hlLabels } = useApp();
   const [palette, setPalette] = useState(false);
@@ -74,7 +89,7 @@ export default function SelectionBar({ index, module, selection, onDone }) {
     return () => document.removeEventListener('pointerdown', off);
   }, [more]);
 
-  const fullText = async () => `${await selectionText(module.id, refs)}\n— ${selectionLabel(refs, true)} (${module.name})`;
+  const fullText = () => quoteText(module.id, refs);
 
   const copy = async () => {
     const text = await fullText();
