@@ -1,11 +1,10 @@
-// Настройки: язык, что показывать в меню ⋮, вид текста, аудио (ИИ-диктор, книги без интернета),
+// Настройки: язык, что показывать в меню ⋮, аудио (ИИ-диктор, книги без интернета),
 // библиотека модулей, мои данные (сохранить в файл / перенести на другой телефон), обновления и «О приложении».
 import React, { useRef, useState } from 'react';
-import { ChevronRight, Library, Palette, RefreshCw, History, Info, Download, Upload, Trash2, BookOpenCheck, Loader2, AlignLeft, MoreVertical, Headphones, HardDrive, Check, Sparkles } from 'lucide-react';
+import { ChevronRight, Library, Palette, RefreshCw, History, Info, Download, Upload, Trash2, BookOpenCheck, Loader2, MoreVertical, Headphones, HardDrive, Check, Sparkles } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
-import { Segmented, Switch, Hint, ConfirmButton } from './ui.jsx';
-import { textView } from './AppearanceSettings.jsx';
+import { Switch, Hint, ConfirmButton } from './ui.jsx';
 import { IS_PWA_BUILD, applyUpdate, buildDate, BUILD } from '../core/updates.js';
 import { saveDataFile, readDataFile, describeData, importData } from '../core/dataFile.js';
 import { listOffline, removeBook } from '../core/offlineAudio.js';
@@ -37,7 +36,7 @@ const MENU_ITEMS = [
   ['listen', N_('«Слушать с этого места»')],
   ['maps', N_('Карты')],
   ['focus', N_('Режим чтения'), N_('Без кнопок в тексте, панель прячется при прокрутке')],
-  ['book', N_('«Как книга»'), N_('Быстро переключать текст в вид книги и обратно')],
+  ['book', N_('«Как книга»')],
   ['split', N_('Синхронная прокрутка и расположение панелей'), N_('Только при разделённом экране')],
 ];
 
@@ -171,13 +170,11 @@ function OfflineList() {
 // Простые настройки: короткий список крупных строк, каждая открывает свою страницу
 const PAGES = {
   lang: N_('Язык'),
-  view: N_('Вид текста'),
   menu: N_('Меню ⋮'),
   audio: N_('Аудио'),
   data: N_('Мои данные'),
   app: N_('Обновления'),
 };
-const VIEW_NAMES = { verses: N_('По стихам'), flow: N_('Сплошной текст'), book: N_('Как книга') };
 
 // Вместо значка в строке «Язык» — флажок текущего языка
 const CurrentFlag = () => (
@@ -217,9 +214,6 @@ export default function PrefsSheet({ pane, onClose }) {
           <Row icon={Palette} onClick={() => go('settings')} sub={t('Тема, шрифт, размер букв')}>
             {t('Оформление')}
           </Row>
-          <Row icon={AlignLeft} onClick={() => setPage('view')} sub={t(VIEW_NAMES[textView(s)]) + (s.focusMode ? ` · ${t('режим чтения')}` : '')}>
-            {t('Вид текста')}
-          </Row>
           <Row icon={MoreVertical} onClick={() => setPage('menu')} sub={phone ? t('Что показывать в разделе «Ещё»') : t('Выбрать пункты меню')}>
             {t('Меню ⋮')}
           </Row>
@@ -244,27 +238,6 @@ export default function PrefsSheet({ pane, onClose }) {
       )}
 
       {page === 'lang' && <LangList onPicked={() => setPage(null)} />}
-
-      {page === 'view' && (
-        <section className="settings-group">
-          <Segmented
-            id="pref-view"
-            value={textView(s)}
-            onChange={(v) => set({ bookMode: v === 'book', continuousVerses: v === 'flow' })}
-            options={[
-              ['verses', t('По стихам')],
-              ['flow', t('Сплошной')],
-              ['book', t('Как книга')],
-            ]}
-          />
-          <p className="pref-note">
-            {textView(s) === 'verses' && t('Каждый стих с новой строки, с номером.')}
-            {textView(s) === 'flow' && t('Стихи подряд, с номерами.')}
-            {textView(s) === 'book' && t('Абзацами, без номеров и кнопок — для долгого чтения.')}
-          </p>
-          <Switch id="pref-focus" checked={s.focusMode} onChange={(focusMode) => set({ focusMode })} label={t('Режим чтения')} hint={t('Без кнопок в тексте, панель прячется при прокрутке')} />
-        </section>
-      )}
 
       {page === 'menu' && (
         <section className="settings-group">

@@ -54,7 +54,7 @@ export function moreItems(app, { index, ref, module, sheet = false }) {
     add({ key: 'layout', keep: true, icon: rows ? Columns2 : Rows2, label: rows ? t('Панели рядом') : t('Панели друг над другом'), run: () => setSettings({ splitLayout: rows ? 'columns' : 'rows' }) });
   }
   add({ key: 'sep2', sep: true });
-  if (IS_PWA_BUILD && updates.available) add({ key: 'update', cls: 'update-item', icon: RefreshCw, label: t('Обновить приложение'), extra: t('новая версия'), extraCls: 'badge-new', run: () => applyUpdate() });
+  if (IS_PWA_BUILD && updates.available) add({ key: 'update', cls: 'update-item', icon: RefreshCw, label: t('Обновить приложение'), run: () => applyUpdate() });
   // Только на тестовом сайте: версии с заметками — что изменилось, обновиться или вернуться
   if (IS_STAGING) add({ key: 'versions', icon: History, label: t('Обновления'), extra: updates.available ? t('есть новая') : null, run: () => openSheet('versions', index) });
   add({ key: 'appearance', icon: Palette, label: t('Оформление'), run: () => openSheet('settings', index) });

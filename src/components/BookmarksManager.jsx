@@ -171,7 +171,7 @@ export default function BookmarksManager({ pane, payload, onClose }) {
             <span className="continue-text">
               <span className="continue-title">{t('Продолжить чтение')}</span>
               <span className="muted">
-                {t('{ref} — последнее место', { ref: `${bookMeta(p.ref.book).name} ${p.ref.chapter}:${p.ref.verse}` })}
+                {`${bookMeta(p.ref.book).name} ${p.ref.chapter}:${p.ref.verse}`}
               </span>
             </span>
           </button>

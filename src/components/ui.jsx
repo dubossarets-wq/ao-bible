@@ -1,7 +1,7 @@
 // Общие мелкие элементы интерфейса.
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { CircleAlert } from 'lucide-react';
+import { CircleAlert, ChevronDown } from 'lucide-react';
 import { t } from '../core/i18n.js';
 
 // Нажатие мимо открытого меню только закрывает его: следующий щелчок (по слову, стиху) гасим.
@@ -296,6 +296,20 @@ export function Empty({ icon: Icon, title, children }) {
       <div className="empty-title">{title}</div>
       {children && <div className="empty-text">{children}</div>}
     </div>
+  );
+}
+
+// Раскрывающийся блок для редких настроек: строка-кнопка с шевроном, по умолчанию закрыт
+export function Fold({ title, children, defaultOpen = false, id }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <section className={`nav-group fold${open ? ' open' : ''}`}>
+      <button type="button" className="fold-head" id={id} aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+        <span>{title}</span>
+        <ChevronDown size={17} />
+      </button>
+      {open && children}
+    </section>
   );
 }
 

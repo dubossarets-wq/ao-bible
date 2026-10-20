@@ -1,6 +1,6 @@
 // Карты: список карт из установленных модулей и просмотр с увеличением.
 import React, { useEffect, useState } from 'react';
-import { Map as MapIcon, ZoomIn, ZoomOut, Library, MapPin, Search } from 'lucide-react';
+import { Map as MapIcon, ZoomIn, ZoomOut, MapPin, Search } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { getPayload } from '../core/modules.js';
@@ -114,12 +114,6 @@ export default function MapsSheet({ pane, onClose }) {
             </li>
           ))}
         </ul>
-      )}
-      {!maps && null}
-      {maps && !maps.length && places.length ? null : maps && !maps.length ? null : (
-        <p className="sheet-hint">
-          <Library size={14} /> {t('Модули карт подключаются в библиотеке модулей.')}
-        </p>
       )}
     </BottomSheet>
   );

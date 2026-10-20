@@ -293,7 +293,7 @@ async function run(label, viewport, isMobile) {
   check(`${label}: не обновляется само`, (await page.evaluate(() => localStorage.getItem('aob.activeBuild'))) === build && !page.url().includes('versions/'), build);
   await page.click(MORE);
   const upd = await page.textContent(menuItem('Обновить приложение'));
-  check(`${label}: есть обновление — точка и пункт меню`, upd.includes('Обновить приложение') && upd.includes('новая версия'), upd);
+  check(`${label}: есть обновление — точка и пункт меню`, upd.includes('Обновить приложение'), upd);
   await page.click(menuItem('Настройки'));
   await page.click('.pref-row:has-text("Обновления")');
   await page.click('.pref-row:has-text("Версии приложения")');

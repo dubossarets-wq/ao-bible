@@ -455,9 +455,6 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
             return (
               <section key={r + i} className={`plan-seg${doneFlags[i] ? ' is-done' : ''}`} data-r={i}>
                 <header className="plan-seg-head">
-                  <span className="plan-seg-n">
-                    {t('Чтение {n} из {total}', { n: i + 1, total: n })}
-                  </span>
                   <span className="plan-seg-label">{readingLabel(r, module, true)}</span>
                   {doneFlags[i] && (
                     <span className="plan-seg-ok">

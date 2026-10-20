@@ -411,7 +411,7 @@ export default function AppearanceSettings({ onClose, payload }) {
       {block === 'ui' && (
         <section className="settings-group">
           <Switch id="set-xr" checked={s.showXrefButtons} onChange={(showXrefButtons) => set({ showXrefButtons })} label={t('Кнопки параллельных мест')} />
-          <Switch id="set-il" checked={s.showIllustrations !== false} onChange={(showIllustrations) => set({ showIllustrations })} label={t('Значки иллюстраций у стихов')} hint={t('Картинка в конце стиха открывает иллюстрацию к нему')} />
+          <Switch id="set-il" checked={s.showIllustrations !== false} onChange={(showIllustrations) => set({ showIllustrations })} label={t('Значки иллюстраций у стихов')} />
           <Switch id="set-focus" checked={s.focusMode} onChange={(focusMode) => set({ focusMode })} label={t('Режим чтения')} hint={t('Без кнопок в тексте, панель прячется при прокрутке')} />
           <Switch id="set-anim" checked={s.animations} onChange={(animations) => set({ animations })} label={t('Анимации')} />
           <Slider id="set-uifs" label={t('Шрифт меню и окон')} value={s.uiFontSize} min={13} max={20} step={1} onChange={(uiFontSize) => set({ uiFontSize })} format={(v) => `${v} px`} />
