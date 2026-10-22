@@ -1,4 +1,5 @@
 {
+ "Лицензия:": "Lisensi:",
  "Книга или ссылка: Ин 3:16": "Kitab atau referensi: John 3:16",
  "Запустить таймер": "Mulai timer",
  "До конца главы": "Sampai akhir pasal",
@@ -203,7 +204,6 @@
  "ТЕСТ": "UJI",
  "О приложении": "Tentang aplikasi",
  "AO Bible · версия {v}": "AO Bible · versi {v}",
- "Лицензия: {license}.": "Lisensi: {license}.",
  "Авторы: {author}.": "Penulis: {author}.",
  "Оформление": "Tampilan",
  "Тема": "Tema",
@@ -416,7 +416,6 @@
  },
  "Ничего не нашлось. Попробуйте другое слово.": "Tidak ada hasil. Coba kata lain.",
  "Карта не загрузилась. Проверьте интернет.": "Peta gagal dimuat. Periksa internet.",
- "Снимки © Esri": "Citra © Esri",
  "Карта: {name}": "Peta: {name}",
  "Показать подписи, дороги и кнопки": "Tampilkan label, jalan, dan tombol",
  "Только карта и точка": "Hanya peta dan titik",

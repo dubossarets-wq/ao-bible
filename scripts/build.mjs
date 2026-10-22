@@ -8,7 +8,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 // Текст страницы политики конфиденциальности (privacy.html)
-const PRIVACY_HTML = "<!doctype html><html lang=\"ru\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<title>AO Bible — Политика конфиденциальности / Privacy Policy</title>\n<style>body{font:16px/1.55 -apple-system,Segoe UI,Roboto,sans-serif;max-width:720px;margin:0 auto;padding:24px 16px;color:#1d1c1a;background:#f6f5f2}h1{font-size:1.5rem}h2{font-size:1.15rem;margin-top:2em}li{margin:.3em 0}@media(prefers-color-scheme:dark){body{background:#161617;color:#dedbd4}a{color:#d9a35c}}</style></head><body>\n<h1>AO Bible — Политика конфиденциальности</h1>\n<p><b>Коротко: приложение ничего о вас не собирает.</b></p>\n<ul>\n<li>Нет регистрации, рекламы, счётчиков посещений и аналитики. Мы не получаем ваши данные и никому их не передаём.</li>\n<li>Закладки, заметки, выделения, проповеди, планы чтения и настройки хранятся только на вашем устройстве. Их можно сохранить в файл: Настройки → «Мои данные».</li>\n<li>Чтобы показать текст и материалы, приложение загружает файлы с нескольких сайтов. Как и при открытии любого сайта, они видят адрес подключения (IP) и тип браузера: GitHub Pages (приложение и модули), archive.org (записи чтения), Wikimedia Commons (иллюстрации), Google Fonts (шрифты), OpenFreeMap, Esri и jsDelivr (карты — только когда вы открываете карту). У каждого из этих сайтов своя политика конфиденциальности.</li>\n<li>Доступ к микрофону, камере, контактам и местоположению приложению не нужен и не запрашивается.</li>\n<li>Приложение бесплатное и некоммерческое, предназначено для всех возрастов.</li>\n</ul>\n<p>Вопросы: через страницу проекта на GitHub — <a href=\"https://github.com/dubossarets-wq\">github.com/dubossarets-wq</a>.</p>\n<h2>AO Bible — Privacy Policy</h2>\n<p><b>In short: the app does not collect any information about you.</b></p>\n<ul>\n<li>No accounts, no ads, no analytics or tracking. We do not receive your data and do not share it with anyone.</li>\n<li>Bookmarks, notes, highlights, sermons, reading plans and settings are stored only on your device. You can save them to a file: Settings → “My data”.</li>\n<li>To show texts and materials the app downloads files from several websites, which — as with any website — see your IP address and browser type: GitHub Pages (the app and modules), archive.org (audio readings), Wikimedia Commons (illustrations), Google Fonts (fonts), OpenFreeMap, Esri and jsDelivr (maps, only when you open a map). Each has its own privacy policy.</li>\n<li>The app does not need or request access to the microphone, camera, contacts or location.</li>\n<li>The app is free and non-commercial, suitable for all ages.</li>\n</ul>\n<p>Questions: via the project page on GitHub — <a href=\"https://github.com/dubossarets-wq\">github.com/dubossarets-wq</a>.</p>\n</body></html>\n";
+const PRIVACY_HTML = "<!doctype html><html lang=\"ru\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<title>AO Bible — Политика конфиденциальности / Privacy Policy</title>\n<style>body{font:16px/1.55 -apple-system,Segoe UI,Roboto,sans-serif;max-width:720px;margin:0 auto;padding:24px 16px;color:#1d1c1a;background:#f6f5f2}h1{font-size:1.5rem}h2{font-size:1.15rem;margin-top:2em}li{margin:.3em 0}@media(prefers-color-scheme:dark){body{background:#161617;color:#dedbd4}a{color:#d9a35c}}</style></head><body>\n<h1>AO Bible — Политика конфиденциальности</h1>\n<p><b>Коротко: приложение ничего о вас не собирает.</b></p>\n<ul>\n<li>Нет регистрации, рекламы, счётчиков посещений и аналитики. Мы не получаем ваши данные и никому их не передаём.</li>\n<li>Закладки, заметки, выделения, проповеди, планы чтения и настройки хранятся только на вашем устройстве. Их можно сохранить в файл: Настройки → «Мои данные».</li>\n<li>Чтобы показать текст и материалы, приложение загружает файлы с нескольких сайтов. Как и при открытии любого сайта, они видят адрес подключения (IP) и тип браузера: GitHub Pages и Cloudflare (приложение и модули — адреса dubossarets-wq.github.io и aobible.app), archive.org (записи чтения), Wikimedia Commons (иллюстрации), Google Fonts (шрифты), OpenFreeMap, Esri и jsDelivr (карты — только когда вы открываете карту). У каждого из этих сайтов своя политика конфиденциальности.</li>\n<li>Доступ к микрофону, камере, контактам и местоположению приложению не нужен и не запрашивается.</li>\n<li>Приложение бесплатное и некоммерческое, предназначено для всех возрастов.</li>\n</ul>\n<p>Вопросы: через страницу проекта на GitHub — <a href=\"https://github.com/dubossarets-wq\">github.com/dubossarets-wq</a>.</p>\n<h2>AO Bible — Privacy Policy</h2>\n<p><b>In short: the app does not collect any information about you.</b></p>\n<ul>\n<li>No accounts, no ads, no analytics or tracking. We do not receive your data and do not share it with anyone.</li>\n<li>Bookmarks, notes, highlights, sermons, reading plans and settings are stored only on your device. You can save them to a file: Settings → “My data”.</li>\n<li>To show texts and materials the app downloads files from several websites, which — as with any website — see your IP address and browser type: GitHub Pages and Cloudflare (the app and modules — dubossarets-wq.github.io and aobible.app), archive.org (audio readings), Wikimedia Commons (illustrations), Google Fonts (fonts), OpenFreeMap, Esri and jsDelivr (maps, only when you open a map). Each has its own privacy policy.</li>\n<li>The app does not need or request access to the microphone, camera, contacts or location.</li>\n<li>The app is free and non-commercial, suitable for all ages.</li>\n</ul>\n<p>Questions: via the project page on GitHub — <a href=\"https://github.com/dubossarets-wq\">github.com/dubossarets-wq</a>.</p>\n</body></html>\n";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dev = process.argv.includes('--dev');
@@ -23,7 +23,7 @@ const VERSION = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8
 const BUILT_AT = new Date();
 const BUILD = BUILT_AT.toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
 
-async function bundle(pwa) {
+async function bundle(pwa, native = false) {
   const res = await build({
     entryPoints: [path.join(root, 'src/main.jsx')],
     bundle: true,
@@ -34,8 +34,10 @@ async function bundle(pwa) {
     target: ['es2020', 'safari15'],
     jsx: 'automatic',
     loader: { '.json': 'json' },
-    define: { 'process.env.NODE_ENV': '"production"', __PWA__: String(pwa), __BUILD__: JSON.stringify(BUILD), __CHANNEL__: JSON.stringify(CHANNEL) },
+    define: { 'process.env.NODE_ENV': '"production"', __PWA__: String(pwa), __NATIVE__: String(native), __BUILD__: JSON.stringify(BUILD), __CHANNEL__: JSON.stringify(CHANNEL) },
     legalComments: 'none',
+    // Сайту плагины Capacitor не нужны — вместо них пустая заглушка (минус ~30 КБ)
+    alias: native ? {} : Object.fromEntries(['@capacitor/core', '@capacitor/share', '@capacitor/clipboard', '@capacitor/filesystem', '@capgo/capacitor-media-session'].map((m) => [m, path.join(root, 'src/core/native-stub.js')])),
   });
   const js = res.outputFiles.find((f) => f.path.endsWith('.js')).text.replace(/<\/script/gi, '<\\/script');
   const css = res.outputFiles.find((f) => f.path.endsWith('.css')).text;
@@ -229,6 +231,24 @@ self.addEventListener('fetch', (e) => {
 `;
   await writeFile(path.join(dir, 'sw.js'), sw);
   console.log(`${PWA_DIR} (${CHANNEL}): index.html ${(html.length / 1024).toFixed(0)} КБ`);
+}
+
+// --- Приложение для Google Play (Capacitor): AOB_APP=1 — та же основная сборка, упакованная внутрь приложения.
+// Без service worker и обновлений сайта (приложение обновляется через Play); модули скачиваются с aobible.app,
+// поэтому папки modules внутри нет. Картинки, планы, словари интерфейса и значки — внутри.
+if (process.env.AOB_APP === '1' && !STAGING) {
+  const { js } = await bundle(false, true);
+  const dir = path.join(out, 'app');
+  await rm(dir, { recursive: true, force: true });
+  await mkdir(dir, { recursive: true });
+  const pwaHtml = await readFile(path.join(out, PWA_DIR, 'index.html'), 'utf8');
+  const start = pwaHtml.indexOf('<script>', pwaHtml.indexOf('<div id="root"></div>')); // строка «<script>» бывает и внутри кода
+  const end = pwaHtml.indexOf('</script>', start);
+  const html = (pwaHtml.slice(0, start) + '<script>' + js + pwaHtml.slice(end)).replace(/<link rel="manifest"[^>]*>\s*/, '');
+  await writeFile(path.join(dir, 'index.html'), html);
+  for (const sub of ['i18n', 'icons', 'images', 'plans']) await cp(path.join(out, PWA_DIR, sub), path.join(dir, sub), { recursive: true });
+  await cp(path.join(out, PWA_DIR, 'privacy.html'), path.join(dir, 'privacy.html'));
+  console.log(`app (Google Play): index.html ${(html.length / 1024).toFixed(0)} КБ`);
 }
 
 let total = 0;

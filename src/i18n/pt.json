@@ -1,4 +1,5 @@
 {
+ "Лицензия:": "Licença:",
  "Книга или ссылка: Ин 3:16": "Livro ou referência: John 3:16",
  "Запустить таймер": "Iniciar timer",
  "До конца главы": "Até o fim do capítulo",
@@ -205,7 +206,6 @@
  "ТЕСТ": "TESTE",
  "О приложении": "Sobre o aplicativo",
  "AO Bible · версия {v}": "AO Bible · versão {v}",
- "Лицензия: {license}.": "Licença: {license}.",
  "Авторы: {author}.": "Autores: {author}.",
  "Оформление": "Aparência",
  "Тема": "Tema",
@@ -420,7 +420,6 @@
  },
  "Ничего не нашлось. Попробуйте другое слово.": "Nada encontrado. Tente outra palavra.",
  "Карта не загрузилась. Проверьте интернет.": "O mapa não carregou. Verifique a internet.",
- "Снимки © Esri": "Imagens © Esri",
  "Карта: {name}": "Mapa: {name}",
  "Показать подписи, дороги и кнопки": "Mostrar nomes, estradas e botões",
  "Только карта и точка": "Apenas o mapa e o ponto",

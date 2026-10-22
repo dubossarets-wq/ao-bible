@@ -4,6 +4,7 @@
 import { P } from './channel.js';
 import { SERVICE, snapshot, replaceAll } from './backup.js';
 import { t } from './i18n.js';
+import { saveBlob } from './native.js';
 
 const FORMAT = 'aob-userdata';
 // Резервные копии внутри приложения в файл не кладём — они только раздувают его
@@ -78,13 +79,6 @@ export async function saveDataFile() {
       if (e?.name === 'AbortError') return 'cancelled';
     }
   }
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  await saveBlob(blob, name);
   return 'downloaded';
 }

@@ -28,6 +28,8 @@ export const useAudio = () =>
     () => state
   );
 export const audioState = () => state;
+// Подписка без React (управление с экрана блокировки)
+export const subscribeAudio = (f) => (subs.add(f), () => subs.delete(f));
 
 let el = null; // HTMLAudioElement
 let timing = null; // { key, verses } текущей главы аудиомодуля

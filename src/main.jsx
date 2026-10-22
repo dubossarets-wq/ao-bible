@@ -6,6 +6,11 @@ import { bootBackup } from './core/backup.js';
 import { i18nReady } from './core/i18n.js';
 import './styles.css';
 import { startFadeEnd } from './core/fadeEnd.js';
+import { installNative } from './core/native.js';
+import { startMediaControls } from './core/mediaControls.js';
+
+installNative(); // приложение из Google Play: системные «Поделиться» и буфер обмена
+startMediaControls(); // ▶/⏸ и ⏮/⏭ на экране блокировки
 
 // Динамическая высота мобильного браузера и клавиатура: --vvh = высота видимой области
 // --kb = высота экранной клавиатуры (iOS не сжимает layout viewport, нижние панели уезжали бы под неё)

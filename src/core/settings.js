@@ -1,4 +1,5 @@
 // Настройки оформления: значения по умолчанию, темы и применение к CSS-переменным.
+import { syncSystemBars } from './native.js';
 import { N_ } from './i18n.js';
 
 // Темы. tone: 'dark' — тёмная (свои цвета успеха и ошибки, тёмные системные элементы);
@@ -190,4 +191,5 @@ export function applySettings(settings, themeName) {
   ensureFont(settings.fontFamily);
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', t.bar); // цвет строки состояния Android — как у верхней панели
+  syncSystemBars(t.bar, t.bg); // приложение из Google Play: цвет значков системных полос
 }

@@ -61,14 +61,14 @@ export default function MapPane({ pane }) {
           style: STYLE,
           center: [place.lng, place.lat],
           zoom: zoomFor(place.type),
-          attributionControl: { compact: true },
+          attributionControl: { compact: false }, // подписи источников видны всегда (условие Esri и ODbL)
           cooperativeGestures: false,
         });
         m.addControl(new ml.NavigationControl({ showCompass: false }), 'top-right');
         m.addControl(new ml.ScaleControl({ unit: 'metric' }), 'bottom-left');
         m.on('load', () => {
           const first = m.getStyle().layers[1]?.id;
-          m.addSource('satellite', { type: 'raster', tiles: [ESRI], tileSize: 256, maxzoom: 18, attribution: t('Снимки © Esri') });
+          m.addSource('satellite', { type: 'raster', tiles: [ESRI], tileSize: 256, maxzoom: 18, attribution: 'Powered by Esri. Source: Esri, Vantor (Maxar), Earthstar Geographics, and the GIS User Community' });
           m.addLayer({ id: 'satellite', type: 'raster', source: 'satellite', layout: { visibility: 'none' } }, first);
           alive && setState('ready');
         });

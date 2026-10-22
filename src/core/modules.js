@@ -4,6 +4,7 @@ import { load, save } from './storage.js';
 import * as db from './db.js';
 import { normalize, bytesToJson, ModuleError } from './schema.js';
 import { t } from './i18n.js';
+import { REMOTE } from './native.js';
 
 // Текст ошибки для человека: нехватку места браузер сообщает по-английски и непонятно — объясняем, что делать
 export const errorText = (e) =>
@@ -18,7 +19,7 @@ const payloadCache = new Map(); // moduleId -> Promise<payload>
 const listeners = new Set();
 let modulesCache = null;
 
-export const CATALOG_URL = 'modules/catalog.json';
+export const CATALOG_URL = REMOTE + 'modules/catalog.json'; // в приложении из Google Play — с aobible.app
 
 export function subscribe(fn) {
   listeners.add(fn);

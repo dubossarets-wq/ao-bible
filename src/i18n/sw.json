@@ -1,4 +1,5 @@
 {
+ "Лицензия:": "Leseni:",
  "Книга или ссылка: Ин 3:16": "Kitabu au rejeo: John 3:16",
  "Запустить таймер": "Anzisha kipima muda",
  "До конца главы": "Hadi mwisho wa sura",
@@ -204,7 +205,6 @@
  "ТЕСТ": "JARIBIO",
  "О приложении": "Kuhusu programu",
  "AO Bible · версия {v}": "AO Bible · toleo {v}",
- "Лицензия: {license}.": "Leseni: {license}.",
  "Авторы: {author}.": "Waandishi: {author}.",
  "Оформление": "Mwonekano",
  "Тема": "Mandhari",
@@ -418,7 +418,6 @@
  },
  "Ничего не нашлось. Попробуйте другое слово.": "Hakuna kilichopatikana. Jaribu neno lingine.",
  "Карта не загрузилась. Проверьте интернет.": "Ramani haikupakia. Angalia intaneti.",
- "Снимки © Esri": "Picha © Esri",
  "Карта: {name}": "Ramani: {name}",
  "Показать подписи, дороги и кнопки": "Onyesha majina, barabara na vitufe",
  "Только карта и точка": "Ramani na alama tu",

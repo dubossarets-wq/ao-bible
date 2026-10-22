@@ -8,6 +8,27 @@ import { fetchCatalog } from '../core/modules.js';
 import { MODULE_SECTIONS } from '../core/schema.js';
 import { Segmented } from './ui.jsx';
 import { t } from '../core/i18n.js';
+import { licenseUrl, EXTRA_ATTRIBUTION } from '../core/licenses.js';
+
+// Текст лицензии — ссылкой на её полный текст, если он известен
+const License = ({ name }) => {
+  const url = licenseUrl(name);
+  return url ? (
+    <a href={url} target="_blank" rel="noopener noreferrer">
+      {name}
+    </a>
+  ) : (
+    name
+  );
+};
+const Linkify = ({ text }) =>
+  /^https?:\/\/\S+$/.test(text) ? (
+    <a href={text} target="_blank" rel="noopener noreferrer">
+      {text}
+    </a>
+  ) : (
+    text
+  );
 
 // Сторонние программы и службы, которые использует само приложение
 const THIRD_PARTY = [
@@ -15,7 +36,10 @@ const THIRD_PARTY = [
   ['Lucide', 'Lucide Contributors', 'ISC', 'https://lucide.dev'],
   ['MapLibre GL JS', 'MapLibre contributors', 'BSD-3-Clause', 'https://maplibre.org'],
   ['OpenFreeMap / OpenStreetMap', '© OpenStreetMap contributors', 'ODbL', 'https://openfreemap.org'],
-  ['Esri World Imagery', 'Esri, Maxar, Earthstar Geographics et al.', 'Esri Terms of Use', 'https://www.esri.com'],
+  ['Esri World Imagery', 'Powered by Esri. Source: Esri, Vantor (Maxar), Earthstar Geographics, and the GIS User Community', 'Esri Terms of Use', 'https://www.esri.com'],
+  // Приложение для Google Play (оболочка Android)
+  ['Capacitor', 'Ionic', 'MIT', 'https://capacitorjs.com'],
+  ['capacitor-media-session', 'Capgo, Jonas Rothmann', 'MPL-2.0', 'https://github.com/Cap-go/capacitor-media-session'],
   ['Noto Serif, Noto Serif Hebrew', 'Google', 'SIL Open Font License 1.1', 'https://fonts.google.com/noto'],
   // разметка записей по словам при сборке; в само приложение модель не входит
   ['Torchaudio MMS_FA (forced alignment)', 'Meta AI', 'CC BY-NC 4.0', 'https://pytorch.org/audio'],
@@ -49,7 +73,16 @@ function Licenses() {
                   <b>{m.name}</b>
                   {m.title ? ` — ${m.title}` : ''}
                   {m.author && <span className="lic-line">{t('Авторы: {author}.', { author: m.author })}</span>}
-                  {m.license && <span className="lic-line">{t('Лицензия: {license}.', { license: m.license })}</span>}
+                  {m.license && (
+                    <span className="lic-line">
+                      {t('Лицензия:')} <License name={m.license} />
+                    </span>
+                  )}
+                  {(EXTRA_ATTRIBUTION[m.id] || []).map((x) => (
+                    <span key={x} className="lic-line">
+                      <Linkify text={x} />
+                    </span>
+                  ))}
                   {m.source && (
                     <span className="lic-line">
                       {t('Источник:')}{' '}

@@ -8,6 +8,7 @@ import { Segmented } from './ui.jsx';
 import { selectionLabel, selectionText } from './SelectionBar.jsx';
 import { ensureFont } from '../core/settings.js';
 import { t, N_ } from '../core/i18n.js';
+import { saveBlob } from '../core/native.js';
 
 // Цветные фоны — на случай, если фото не нужны или не загрузились
 const GRADIENTS = [
@@ -207,12 +208,7 @@ export default function VerseImageSheet({ payload, onClose }) {
   };
   const save = async (b) => {
     const data = b || (await blob());
-    const url = URL.createObjectURL(data);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    await saveBlob(data, fileName).catch(() => {});
     toast(t('Картинка сохранена'));
   };
 

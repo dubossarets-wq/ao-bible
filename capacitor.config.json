@@ -1,0 +1,15 @@
+{
+  "appId": "app.aobible",
+  "appName": "AO Bible",
+  "webDir": "dist/app",
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#f6f5f2"
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "native",
+      "initialViewportFitValueHint": "cover"
+    }
+  }
+}

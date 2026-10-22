@@ -1,4 +1,5 @@
 {
+ "Лицензия:": "Licență:",
  "Книга или ссылка: Ин 3:16": "Carte sau referință: John 3:16",
  "Запустить таймер": "Pornește temporizatorul",
  "До конца главы": "Până la sfârșitul capitolului",
@@ -205,7 +206,6 @@
  "ТЕСТ": "TEST",
  "О приложении": "Despre aplicație",
  "AO Bible · версия {v}": "AO Bible · versiunea {v}",
- "Лицензия: {license}.": "Licență: {license}.",
  "Авторы: {author}.": "Autori: {author}.",
  "Оформление": "Aspect",
  "Тема": "Temă",
@@ -420,7 +420,6 @@
  },
  "Ничего не нашлось. Попробуйте другое слово.": "Nu s-a găsit nimic. Încercați alt cuvânt.",
  "Карта не загрузилась. Проверьте интернет.": "Harta nu s-a încărcat. Verificați internetul.",
- "Снимки © Esri": "Imagini © Esri",
  "Карта: {name}": "Hartă: {name}",
  "Показать подписи, дороги и кнопки": "Arată etichete, drumuri și butoane",
  "Только карта и точка": "Doar harta și punctul",
