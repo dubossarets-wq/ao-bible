@@ -1,4 +1,5 @@
 {
+ "Вопросы и предложения:": "Preguntas y sugerencias:",
  "Выделение убрано": "Resaltado quitado",
  "Добавить в проповедь: {ref}": "Añadir al sermón: {ref}",
  "Добавить стих": "Añadir versículo",
@@ -183,7 +184,6 @@
  "OpenFreeMap, Esri и jsDelivr — карты (только когда вы открываете карту).": "OpenFreeMap, Esri y jsDelivr — mapas (solo cuando abre un mapa).",
  "Мы не управляем этими сайтами; у каждого из них своя политика конфиденциальности.": "No gestionamos estos sitios; cada uno tiene su propia política de privacidad.",
  "Доступ к микрофону, камере, контактам и местоположению приложению не нужен и не запрашивается.": "La aplicación no necesita ni solicita acceso al micrófono, la cámara, los contactos ni la ubicación.",
- "Вопросы о конфиденциальности: через страницу проекта на GitHub — github.com/dubossarets-wq.": "Preguntas sobre privacidad: a través de la página del proyecto en GitHub — github.com/dubossarets-wq.",
  "AO Bible — бесплатное приложение для чтения и изучения Библии, без рекламы и регистрации: переводы, подстрочник с ивритом и греческим, словари Стронга на русском, параллельные места, иллюстрации, живое чтение, проповеди и планы чтения.": "AO Bible es una aplicación gratuita para leer y estudiar la Biblia, sin publicidad ni registro: traducciones, interlineal con hebreo y griego, diccionarios Strong en ruso, pasajes paralelos, ilustraciones, lectura con voz real, sermones y planes de lectura.",
  "Приложение некоммерческое: часть материалов (подстрочник А. Винокурова, записи чтения на иврите и греческом) используется с разрешения авторов или по лицензиям, которые разрешают только бесплатное распространение.": "La aplicación no es comercial: algunos materiales (el interlineal de A. Vinokúrov, las lecturas en hebreo y griego) se usan con permiso de los autores o bajo licencias que solo permiten la distribución gratuita.",
  "Всё хранится на вашем устройстве; скачанные модули работают без интернета.": "Todo se guarda en su dispositivo; los módulos descargados funcionan sin internet.",

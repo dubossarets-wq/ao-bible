@@ -1,4 +1,5 @@
 {
+ "Вопросы и предложения:": "Pytania i sugestie:",
  "Выделение убрано": "Wyróżnienie usunięte",
  "Добавить в проповедь: {ref}": "Dodaj do kazania: {ref}",
  "Добавить стих": "Dodaj werset",
@@ -184,7 +185,6 @@
  "OpenFreeMap, Esri и jsDelivr — карты (только когда вы открываете карту).": "OpenFreeMap, Esri i jsDelivr — mapy (tylko po otwarciu mapy).",
  "Мы не управляем этими сайтами; у каждого из них своя политика конфиденциальности.": "Nie zarządzamy tymi serwisami; każdy z nich ma własną politykę prywatności.",
  "Доступ к микрофону, камере, контактам и местоположению приложению не нужен и не запрашивается.": "Aplikacja nie potrzebuje dostępu do mikrofonu, aparatu, kontaktów ani lokalizacji i o niego nie prosi.",
- "Вопросы о конфиденциальности: через страницу проекта на GitHub — github.com/dubossarets-wq.": "Pytania o prywatność: przez stronę projektu na GitHubie — github.com/dubossarets-wq.",
  "AO Bible — бесплатное приложение для чтения и изучения Библии, без рекламы и регистрации: переводы, подстрочник с ивритом и греческим, словари Стронга на русском, параллельные места, иллюстрации, живое чтение, проповеди и планы чтения.": "AO Bible to bezpłatna aplikacja do czytania i studiowania Biblii, bez reklam i rejestracji: przekłady, przekład interlinearny z hebrajskim i greckim, słowniki Stronga po rosyjsku, miejsca paralelne, ilustracje, czytanie na żywo, kazania i plany czytania.",
  "Приложение некоммерческое: часть материалов (подстрочник А. Винокурова, записи чтения на иврите и греческом) используется с разрешения авторов или по лицензиям, которые разрешают только бесплатное распространение.": "Aplikacja jest niekomercyjna: część materiałów (przekład interlinearny A. Winokurowa, nagrania czytania po hebrajsku i grecku) jest używana za zgodą autorów lub na licencjach, które pozwalają tylko na bezpłatne rozpowszechnianie.",
  "Всё хранится на вашем устройстве; скачанные модули работают без интернета.": "Wszystko jest przechowywane na urządzeniu; pobrane moduły działają bez internetu.",

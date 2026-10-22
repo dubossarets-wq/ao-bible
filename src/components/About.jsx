@@ -141,7 +141,12 @@ function Privacy() {
       </ul>
       <p>{t('Мы не управляем этими сайтами; у каждого из них своя политика конфиденциальности.')}</p>
       <p>{t('Доступ к микрофону, камере, контактам и местоположению приложению не нужен и не запрашивается.')}</p>
-      <p>{t('Вопросы о конфиденциальности: через страницу проекта на GitHub — github.com/dubossarets-wq.')}</p>
+      <p>
+        {t('Вопросы и предложения:')} <a href="mailto:dubossarets@gmail.com">dubossarets@gmail.com</a> ·{' '}
+        <a href="https://t.me/bystreetsky" target="_blank" rel="noopener noreferrer">
+          Telegram
+        </a>
+      </p>
     </>
   );
 }

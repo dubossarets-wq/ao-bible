@@ -1,4 +1,5 @@
 {
+ "Вопросы и предложения:": "Domande e suggerimenti:",
  "Выделение убрано": "Evidenziazione rimossa",
  "Добавить в проповедь: {ref}": "Aggiungi al sermone: {ref}",
  "Добавить стих": "Aggiungi versetto",
@@ -183,7 +184,6 @@
  "OpenFreeMap, Esri и jsDelivr — карты (только когда вы открываете карту).": "OpenFreeMap, Esri e jsDelivr — mappe (solo quando si apre una mappa).",
  "Мы не управляем этими сайтами; у каждого из них своя политика конфиденциальности.": "Non gestiamo questi siti; ognuno ha la propria informativa sulla privacy.",
  "Доступ к микрофону, камере, контактам и местоположению приложению не нужен и не запрашивается.": "L’app non ha bisogno dell’accesso a microfono, fotocamera, contatti e posizione e non lo richiede.",
- "Вопросы о конфиденциальности: через страницу проекта на GitHub — github.com/dubossarets-wq.": "Domande sulla privacy: tramite la pagina del progetto su GitHub — github.com/dubossarets-wq.",
  "AO Bible — бесплатное приложение для чтения и изучения Библии, без рекламы и регистрации: переводы, подстрочник с ивритом и греческим, словари Стронга на русском, параллельные места, иллюстрации, живое чтение, проповеди и планы чтения.": "AO Bible è un’app gratuita per leggere e studiare la Bibbia, senza pubblicità né registrazione: traduzioni, interlineare con ebraico e greco, dizionari Strong in russo, passi paralleli, illustrazioni, lettura con voce reale, sermoni e piani di lettura.",
  "Приложение некоммерческое: часть материалов (подстрочник А. Винокурова, записи чтения на иврите и греческом) используется с разрешения авторов или по лицензиям, которые разрешают только бесплатное распространение.": "L’app non è commerciale: alcuni materiali (l’interlineare di A. Vinokurov, le letture in ebraico e greco) sono usati con il permesso degli autori o con licenze che consentono solo la distribuzione gratuita.",
  "Всё хранится на вашем устройстве; скачанные модули работают без интернета.": "Tutto resta sul dispositivo; i moduli scaricati funzionano senza internet.",
