@@ -128,13 +128,18 @@ export default function App() {
   // Уведомление внизу — одно: новое заменяет предыдущее. Короткое показывается 1,6 с,
   // длинное — чуть дольше, чтобы его успели прочитать (не дольше 3,2 с)
   const toastTimer = useRef(0);
-  const toast = useCallback((text, kind = 'info') => {
+  // С кнопкой действия (opts.action = { label, run }, например «Отменить» после удаления) — висит 5 с
+  const toast = useCallback((text, kind = 'info', opts = {}) => {
     const id = Math.random();
-    setToasts([{ id, text, kind }]);
+    const hide = () => setToasts((t) => t.filter((x) => x.id !== id));
+    const action = opts.action ? { label: opts.action.label, run: () => (clearTimeout(toastTimer.current), hide(), opts.action.run()) } : null;
+    setToasts([{ id, text, kind, action }]);
     clearTimeout(toastTimer.current);
-    const ms = Math.min(3200, 1600 + Math.max(0, String(text).length - 40) * 20);
-    toastTimer.current = setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), ms);
+    const ms = action ? 5000 : Math.min(3200, 1600 + Math.max(0, String(text).length - 40) * 20);
+    toastTimer.current = setTimeout(hide, ms);
   }, []);
+  // Удалили — уведомление с «Отменить»
+  const undoToast = useCallback((text, undo) => toast(text, 'info', { action: { label: t('Отменить'), run: undo } }), [toast]);
 
   // Автообновление (по умолчанию) и экстренное обновление: переходим на новую версию сразу,
   // но не посреди открытого окна (например, недописанной заметки) — ждём, пока его закроют
@@ -567,6 +572,7 @@ export default function App() {
     // «‹ Назад» из подменю — к окну, из которого его открыли (с его прежним id, чтобы оно не переоткрывалось)
     returnSheet: (id, to, pane) => setSheet((s) => (!s || s.id === id ? { kind: to.kind, pane, payload: to.payload, id: to.id } : s)),
     toast,
+    undoToast,
     bookmarks,
     setBookmarks,
     favorites,
@@ -579,6 +585,7 @@ export default function App() {
     favParts,
     notes,
     setNote,
+    setNotes,
     marks,
     highlights,
     setHighlight,

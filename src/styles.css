@@ -1767,3 +1767,60 @@ html.kb-open .ap-live { position: relative; }
   .bn .num-grid { grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) { .bn-seg-pill, .bn-go { transition: none; animation: none; } }
+
+/* ===== Смахивание строк влево (SwipeRow.jsx): из-под строки выезжает красная «Удалить» =====
+   --swipe-w — насколько строку утянули влево; дальше середины (.armed) кнопка прилипает к строке — отпустить = удалить. */
+.swipe-row { position: relative; overflow: hidden; display: block; padding: 0; margin: 0; list-style: none; transition: height .2s ease; }
+.swipe-row.gone { pointer-events: none; }
+.swipe-content { position: relative; z-index: 1; background: var(--panel); touch-action: pan-y; transition: transform .24s cubic-bezier(.2,.8,.2,1); }
+.swipe-act { position: absolute; top: 0; right: 0; bottom: 0; width: var(--swipe-w, 0px); display: flex; justify-content: flex-end; overflow: hidden; background: #d1342b; } /* один и тот же насыщенный красный в любой теме: белая надпись читается */
+.swipe-row.swipe-anim .swipe-act { transition: width .24s cubic-bezier(.2,.8,.2,1); }
+.swipe-act button { flex: none; width: 88px; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: 0; padding: 0 8px; background: none; color: #fff; font: inherit; font-size: .78rem; font-weight: 600; cursor: pointer; }
+.swipe-act button:focus-visible { outline: 2px solid #fff; outline-offset: -4px; }
+.swipe-row.armed .swipe-act { justify-content: flex-start; }
+@media (prefers-reduced-motion: reduce) { .swipe-content, .swipe-row.swipe-anim .swipe-act, .swipe-row { transition: none; } }
+/* Строки, которые раньше сами были li: разметка — на содержимом */
+.search-history li.swipe-row, .pref-list li.swipe-row { display: block; padding: 0; gap: 0; border-bottom: 0; }
+.sh-row { display: flex; align-items: center; gap: 4px; border-bottom: 1px solid var(--line); }
+.pref-list-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.pref-list .swipe-act span { flex: none; }
+
+/* Уведомление с действием («Отменить» после удаления) */
+.toast.with-action { display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px 16px; text-align: left; pointer-events: auto; }
+.toast-text { flex: 1; min-width: 0; }
+.toast-act { flex: none; border: 0; border-radius: 999px; padding: 8px 14px; background: color-mix(in srgb, var(--bar-text) 16%, transparent); color: inherit; font: inherit; font-weight: 700; cursor: pointer; }
+@media (hover: hover) { .toast-act:hover { background: color-mix(in srgb, var(--bar-text) 24%, transparent); } }
+
+/* Окно-страница (проповеди) — всегда до самого низа экрана: правило высоты обычных окон при нижнем меню
+   (html.has-tabbar .sheet) задавало ей высоту по --sheet-h, и снизу выглядывала страница Библии */
+html.has-tabbar .sheet.page { top: 0; height: auto; max-height: none; }
+
+/* Проповедь: стихи диапазона — каждый своим абзацем, нажатие — к стиху, смахнуть — убрать стих.
+   Блок можно зажать (стих или готовый текст) и перетащить — без выделения текста и меню браузера. */
+.sermon-block { -webkit-touch-callout: none; }
+.sermon-verses { margin: 0 -12px; }
+.sermon-block .swipe-content { background: var(--bg); }
+.sermon-block.dragging .swipe-content { background: var(--panel); }
+.sv-line { display: flex; align-items: flex-start; gap: 2px; padding: 0 12px; }
+.sermon-block .sermon-verse-text { flex: 1; min-width: 0; display: block; margin: 0; padding: 1px 0; border: 0; border-radius: 0; background: none; color: var(--text); font-family: var(--font-text); font-size: 1.05rem; font-weight: 400; line-height: 1.5; letter-spacing: normal; text-align: left; cursor: pointer; -webkit-user-select: none; user-select: none; }
+.sermon-block.group .sv-row + .sv-row .sermon-verse-text { padding-top: 5px; }
+.sermon-block.group .sv-del { padding-top: 4px; }
+.sv-num { margin-right: 5px; font-family: var(--font-ui); font-size: .64em; font-weight: 700; line-height: 0; vertical-align: .55em; color: var(--accent); }
+.sv-del { flex: none; width: 30px; height: 30px; margin: 0 -8px 0 0; color: var(--muted); }
+.sermon-text-view { min-height: 1.5em; font-size: 1rem; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; cursor: text; }
+.sermon-text-view:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.sermon-block.just-added { animation: sermon-added 1.4s ease-out; }
+@keyframes sermon-added { 0%, 35% { outline: 3px solid color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: 2px; } 100% { outline: 3px solid transparent; outline-offset: 2px; } }
+.sermon-add { flex-direction: row; flex-wrap: wrap; }
+.sermon-add > .btn { flex: 1; justify-content: center; align-self: auto; }
+.pulpit-vline { margin: 0 0 .35em; }
+.pulpit-vline:last-child { margin-bottom: 0; }
+.pulpit-vline sup { margin-right: .25em; font-size: .55em; font-weight: 700; opacity: .7; }
+/* Поиск стихов для проповеди: у мест — «+», уже добавленные отмечены галочкой */
+.results .result-add { position: absolute; top: 5px; right: 0; width: 38px; height: 38px; color: var(--accent); }
+.results .result-add.on { color: var(--muted); }
+@media (hover: hover) { .results .result-add:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); } }
+/* Строка-кнопка внутри смахиваемой строки — во всю ширину, как была */
+.swipe-content > .sermon-pick-row { width: 100%; }
+.ref-hit-lines { display: flex; flex-direction: column; gap: 4px; }
+.ref-hit-line sup { font-size: .68em; font-weight: 700; color: var(--accent); }

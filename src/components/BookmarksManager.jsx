@@ -9,14 +9,21 @@ import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { formatRef, parseOsisRef, bookMeta } from '../core/books.js';
 import { Empty, ConfirmButton } from './ui.jsx';
+import SwipeRow from './SwipeRow.jsx';
 import { t, fmtDateTime } from '../core/i18n.js';
 
 const ORDER = new Map(BOOKS.map((b, i) => [b.id, i]));
+// «Отменить»: вернуть элемент на прежнее место списка (если его там уже нет)
+const putBack = (list, i, x, same = (a) => a === x) => (list.some(same) ? list : [...list.slice(0, i), x, ...list.slice(i)]);
 const byBible = (a, b) => (ORDER.get(a.book) ?? 999) - (ORDER.get(b.book) ?? 999) || a.chapter - b.chapter || a.verse - b.verse;
 
 // Выделения: фильтр по цвету, текст стиха из перевода панели
 function HighlightsTab({ moduleId, open }) {
-  const { highlights, setHighlight, hlLabels } = useApp();
+  const { highlights, setHighlight, hlLabels, undoToast } = useApp();
+  const unmark = (x) => {
+    setHighlight([x.ref], null);
+    undoToast(t('Выделение убрано'), () => setHighlight([x.ref], x.color));
+  };
   const [color, setColor] = useState('all');
   const [texts, setTexts] = useState({});
   const list = Object.entries(highlights)
@@ -52,17 +59,17 @@ function HighlightsTab({ moduleId, open }) {
       </div>
       <ul className="list">
         {list.map((x) => (
-          <li key={x.key} className="list-row">
+          <SwipeRow key={x.key} innerClassName="list-row" onDelete={() => unmark(x)} label={t('Убрать выделение')} actionText={t('Убрать')}>
             <button className="list-main stacked" onClick={() => open(x.ref)}>
               <span className="list-title">
                 <span className="hl-swatch" style={{ background: HL_COLORS.find((c) => c.id === x.color)?.css }} /> {formatRef(x.ref, { full: true })}
               </span>
               {texts[x.key] && <span className="list-text">{texts[x.key]}</span>}
             </button>
-            <button className="icon-btn subtle" aria-label={t('Убрать выделение')} onClick={() => setHighlight([x.ref], null)}>
+            <button className="icon-btn subtle" aria-label={t('Убрать выделение')} onClick={() => unmark(x)}>
               <Trash2 size={16} />
             </button>
-          </li>
+          </SwipeRow>
         ))}
       </ul>
     </>
@@ -71,9 +78,19 @@ function HighlightsTab({ moduleId, open }) {
 
 // Подборки: список → стихи подборки
 function CollectionsTab({ open }) {
-  const { collections, setCollections } = useApp();
+  const { collections, setCollections, undoToast } = useApp();
   const [cur, setCur] = useState(null);
   const c = collections.find((x) => x.id === cur);
+  const dropItem = (c, x) => {
+    const i = c.items.indexOf(x);
+    setCollections((cs) => cs.map((y) => (y.id === c.id ? { ...y, items: y.items.filter((it) => it !== x) } : y)));
+    undoToast(t('Убрано из подборки'), () => setCollections((cs) => cs.map((y) => (y.id === c.id ? { ...y, items: putBack(y.items, i, x) } : y))));
+  };
+  const dropCollection = (x) => {
+    const i = collections.indexOf(x);
+    setCollections((cs) => cs.filter((y) => y.id !== x.id));
+    undoToast(t('Подборка «{name}» удалена', { name: x.name }), () => setCollections((cs) => putBack(cs, i, x, (y) => y.id === x.id)));
+  };
   if (!collections.length)
     return (
       <Empty icon={Folder} title={t('Подборок пока нет')}>
@@ -91,19 +108,15 @@ function CollectionsTab({ open }) {
         </h4>
         <ul className="list">
           {[...c.items].sort(byBible).map((x) => (
-            <li key={`${x.book}.${x.chapter}.${x.verse}`} className="list-row">
+            <SwipeRow key={`${x.book}.${x.chapter}.${x.verse}`} innerClassName="list-row" onDelete={() => dropItem(c, x)} label={t('Убрать из подборки')} actionText={t('Убрать')}>
               <button className="list-main stacked" onClick={() => open(x)}>
                 <span className="list-title">{formatRef(x, { full: true })}</span>
                 {x.text && <span className="list-text">{x.text}</span>}
               </button>
-              <button
-                className="icon-btn subtle"
-                aria-label={t('Убрать из подборки')}
-                onClick={() => setCollections((cs) => cs.map((y) => (y.id === c.id ? { ...y, items: y.items.filter((i) => i !== x) } : y)))}
-              >
+              <button className="icon-btn subtle" aria-label={t('Убрать из подборки')} onClick={() => dropItem(c, x)}>
                 <Trash2 size={16} />
               </button>
-            </li>
+            </SwipeRow>
           ))}
         </ul>
       </>
@@ -111,7 +124,7 @@ function CollectionsTab({ open }) {
   return (
     <ul className="list">
       {collections.map((x) => (
-        <li key={x.id} className="list-row">
+        <SwipeRow key={x.id} innerClassName="list-row" onDelete={() => dropCollection(x)} label={t('Удалить подборку')}>
           <button className="list-main" onClick={() => setCur(x.id)}>
             <Folder size={16} className="accent" />
             <span className="list-title">{x.name}</span>
@@ -120,7 +133,7 @@ function CollectionsTab({ open }) {
           <ConfirmButton className="icon-btn subtle" confirmText={t('Удалить')} onConfirm={() => setCollections((cs) => cs.filter((y) => y.id !== x.id))} aria-label={t('Удалить подборку')}>
             <Trash2 size={16} />
           </ConfirmButton>
-        </li>
+        </SwipeRow>
       ))}
     </ul>
   );
@@ -129,7 +142,7 @@ function CollectionsTab({ open }) {
 const fmtDate = (at) => fmtDateTime(at, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
 export default function BookmarksManager({ pane, payload, onClose }) {
-  const { bookmarks, setBookmarks, favorites, setFavorites, notes, setNote, panes, navigate, go, openSheet, highlights, collections } = useApp();
+  const { bookmarks, setBookmarks, favorites, setFavorites, notes, setNote, setNotes, panes, navigate, go, openSheet, highlights, collections, undoToast } = useApp();
   const [nq, setNq] = useState('');
   const [tab, setTab] = useState(payload.tab || 'bookmarks');
   const p = panes[pane]?.kind === 'map' ? panes[0] : panes[pane];
@@ -139,6 +152,23 @@ export default function BookmarksManager({ pane, payload, onClose }) {
   };
 
   const history = p.history.map((r, i) => ({ r, i })).reverse();
+  // Удаление (кнопкой или смахиванием) — сразу, с «Отменить» в уведомлении
+  const dropBookmark = (b) => {
+    const i = bookmarks.indexOf(b);
+    setBookmarks((bs) => bs.filter((x) => x !== b));
+    undoToast(t('Закладка удалена'), () => setBookmarks((bs) => putBack(bs, i, b)));
+  };
+  const dropFavorite = (f) => {
+    const i = favorites.indexOf(f);
+    setFavorites((fs) => fs.filter((x) => x !== f));
+    undoToast(t('Убрано из любимых стихов'), () => setFavorites((fs) => putBack(fs, i, f, (x) => x.book === f.book && x.chapter === f.chapter && x.verse === f.verse)));
+  };
+  const dropNote = (n) => {
+    const key = `${n.ref.book}.${n.ref.chapter}.${n.ref.verse}`;
+    const saved = notes[key];
+    setNote(n.ref, '');
+    undoToast(t('Заметка удалена'), () => setNotes((ns) => (ns[key] ? ns : { ...ns, [key]: saved })));
+  };
   const noteList = Object.entries(notes)
     .map(([k, n]) => ({ ref: parseOsisRef(k), ...n }))
     .filter((n) => n.ref)
@@ -178,7 +208,7 @@ export default function BookmarksManager({ pane, payload, onClose }) {
           {bookmarks.length ? (
             <ul className="list">
               {bookmarks.map((b) => (
-                <li key={`${b.book}.${b.chapter}.${b.verse}.${b.at}`} className="list-row">
+                <SwipeRow key={`${b.book}.${b.chapter}.${b.verse}.${b.at}`} innerClassName="list-row" onDelete={() => dropBookmark(b)} label={t('Удалить закладку')}>
                   <button className="list-main stacked" onClick={() => open(b)}>
                     <span className="list-title">
                       <Bookmark size={14} className="accent" /> {formatRef(b, { full: true })}
@@ -186,10 +216,10 @@ export default function BookmarksManager({ pane, payload, onClose }) {
                     </span>
                     {b.text && <span className="list-text">{b.text}</span>}
                   </button>
-                  <button className="icon-btn subtle" aria-label={t('Удалить закладку')} onClick={() => setBookmarks((bs) => bs.filter((x) => x !== b))}>
+                  <button className="icon-btn subtle" aria-label={t('Удалить закладку')} onClick={() => dropBookmark(b)}>
                     <Trash2 size={16} />
                   </button>
-                </li>
+                </SwipeRow>
               ))}
             </ul>
           ) : (
@@ -204,17 +234,17 @@ export default function BookmarksManager({ pane, payload, onClose }) {
         (favorites.length ? (
           <ul className="list">
             {favorites.map((f) => (
-              <li key={`${f.book}.${f.chapter}.${f.verse}`} className="list-row">
+              <SwipeRow key={`${f.book}.${f.chapter}.${f.verse}`} innerClassName="list-row" onDelete={() => dropFavorite(f)} label={t('Убрать из любимых')} actionText={t('Убрать')}>
                 <button className="list-main stacked" onClick={() => open(f)}>
                   <span className="list-title">
                     <Heart size={14} className="love" fill="currentColor" /> {formatRef(f, { full: true })}
                   </span>
                   <span className="list-text">{f.text}</span>
                 </button>
-                <button className="icon-btn subtle" aria-label={t('Убрать из любимых')} onClick={() => setFavorites((fs) => fs.filter((x) => x !== f))}>
+                <button className="icon-btn subtle" aria-label={t('Убрать из любимых')} onClick={() => dropFavorite(f)}>
                   <Trash2 size={16} />
                 </button>
-              </li>
+              </SwipeRow>
             ))}
           </ul>
         ) : (
@@ -236,7 +266,7 @@ export default function BookmarksManager({ pane, payload, onClose }) {
         (noteList.length ? (
           <ul className="list">
             {notesShown.map((n) => (
-              <li key={`${n.ref.book}.${n.ref.chapter}.${n.ref.verse}`} className="list-row">
+              <SwipeRow key={`${n.ref.book}.${n.ref.chapter}.${n.ref.verse}`} innerClassName="list-row" onDelete={() => dropNote(n)} label={t('Удалить заметку')}>
                 <button className="list-main stacked" onClick={() => open(n.ref)}>
                   <span className="list-title">
                     <NotebookPen size={14} className="accent" /> {n.label || formatRef(n.ref, { full: true })}
@@ -247,10 +277,10 @@ export default function BookmarksManager({ pane, payload, onClose }) {
                 <button className="icon-btn subtle" aria-label={t('Изменить заметку')} onClick={() => openSheet('note', pane, { refs: [n.ref], moduleId: p.moduleId })}>
                   <NotebookPen size={16} />
                 </button>
-                <button className="icon-btn subtle" aria-label={t('Удалить заметку')} onClick={() => setNote(n.ref, '')}>
+                <button className="icon-btn subtle" aria-label={t('Удалить заметку')} onClick={() => dropNote(n)}>
                   <Trash2 size={16} />
                 </button>
-              </li>
+              </SwipeRow>
             ))}
           </ul>
         ) : (

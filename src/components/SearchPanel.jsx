@@ -1,7 +1,9 @@
 // Поиск слов и фраз по переводу панели (или по всем установленным переводам); ссылка вида «Ин 3:16» сразу открывает место.
 // Окно помнит последний поиск: запрос и настройки — в localStorage, результаты и прокрутка — в памяти до перезапуска.
+// pick — тот же поиск внутри другого окна для выбора стихов (проповедь): нажатие на место добавляет его,
+// а не открывает; ссылка «Ин 3:16-18» добавляет стихи целиком. Свой запрос и свои результаты, настройки — общие.
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Search, X, CornerDownLeft, Clock, Loader2, Copy } from 'lucide-react';
+import { Search, X, CornerDownLeft, Clock, Loader2, Copy, Plus, Check } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { search, queryRegex } from '../core/search.js';
@@ -13,6 +15,8 @@ import { shortName } from '../core/moduleShort.js';
 import { copyText } from '../core/clipboard.js';
 import { quoteVerse, quoteLabel } from './SelectionBar.jsx';
 import { Segmented, Switch, Progress } from './ui.jsx';
+import SwipeRow from './SwipeRow.jsx';
+import { refRangeLabel, isWholeChapter } from '../core/sermons.js';
 import { StrongPlaces } from './ConcordanceSheet.jsx';
 import { lookupStrong } from '../core/lexicon.js';
 import { t } from '../core/i18n.js';
@@ -21,7 +25,8 @@ const PAGE = 200;
 
 // Последний поиск по словам — в памяти, пока приложение открыто: при повторном открытии окна
 // те же результаты сразу, без нового поиска, и та же прокрутка. { key, results, done, shown, scroll }
-let memo = null;
+// Основной поиск и выбор стихов (pick) помнят каждый своё.
+const memos = { main: null, pick: null };
 
 // Номер Стронга в строке поиска: G26, H7225, «Г26», «Н7225»/«Е7225» (еврейский) или просто 3056 (оба Завета)
 export function strongQuery(q) {
@@ -34,6 +39,7 @@ export function strongQuery(q) {
 
 // Карточка номера Стронга: слово оригинала, чтение, краткое значение (нажатие — статья) и все места
 function StrongCard({ num, filter, onOpen, onArticle }) {
+  const Head = onArticle ? 'button' : 'div';
   const [e, setE] = useState(undefined);
   useEffect(() => {
     lookupStrong(num).then((r) => setE(r.find((x) => x.module.dictionaryKind === 'strongs' && x.module.id !== 'rst-symphony')?.found[0]?.entry || null));
@@ -42,7 +48,7 @@ function StrongCard({ num, filter, onOpen, onArticle }) {
   const heb = num.startsWith('H');
   return (
     <section className="strong-card">
-      <button className="strong-head" onClick={onArticle}>
+      <Head className="strong-head" onClick={onArticle}>
         <span className="strong-num">{t('Номер Стронга')} {num}</span>
         {e?.lemma && (
           <span className={`strong-lemma ${heb ? 'hebrew' : 'greek'}`} dir={heb ? 'rtl' : 'ltr'} lang={heb ? 'he' : 'grc'}>
@@ -51,8 +57,8 @@ function StrongCard({ num, filter, onOpen, onArticle }) {
         )}
         {e?.xlit && <span className="muted"> {e.xlit}</span>}
         {e?.definition && <span className="strong-def">{e.definition.length > 160 ? e.definition.slice(0, 160) + '…' : e.definition}</span>}
-        <span className="strong-more">{t('Статья словаря')} →</span>
-      </button>
+        {onArticle && <span className="strong-more">{t('Статья словаря')} →</span>}
+      </Head>
       <StrongPlaces num={num} filter={filter} onOpen={onOpen} />
     </section>
   );
@@ -72,13 +78,14 @@ function Highlighted({ text, re }) {
   return out;
 }
 
-export default function SearchPanel({ pane, payload = {}, onClose }) {
-  const { panes, bibles, navigate, openSheet, setPaneModule, toast } = useApp();
+export default function SearchPanel({ pane, payload = {}, onClose, pick = null }) {
+  const { panes, bibles, navigate, openSheet, setPaneModule, toast, undoToast } = useApp();
   const p = panes[pane];
   const module = bibles.find((b) => b.id === p.moduleId) || bibles[0];
-  // Явный запрос при открытии (например, из словаря) важнее сохранённого
+  const mk = pick ? 'pick' : 'main';
+  // Явный запрос при открытии (например, из словаря) важнее сохранённого; выбор стихов начинается с пустой строки
   const [savedQuery, setSavedQuery] = usePersistentState('searchQuery', '');
-  const [query, setQuery] = useState(() => (typeof payload.query === 'string' ? payload.query : savedQuery || ''));
+  const [query, setQuery] = useState(() => (pick ? '' : typeof payload.query === 'string' ? payload.query : savedQuery || ''));
   const [scope, setScope] = usePersistentState('searchScope', 'all');
   const [wholeWord, setWholeWord] = usePersistentState('searchWhole', false);
   const [allMods, setAllMods] = usePersistentState('searchAllModules', false);
@@ -93,7 +100,7 @@ export default function SearchPanel({ pane, payload = {}, onClose }) {
   useEffect(() => {
     if (typeof payload.query === 'string' && ['all', 'OT', 'NT', 'book'].includes(payload.scope)) setScope(payload.scope);
   }, []);
-  useEffect(() => setSavedQuery(query), [query]);
+  useEffect(() => void (!pick && setSavedQuery(query)), [query]);
 
   // «Во всех модулях»: открытый перевод первым, затем переводы того же языка, затем остальные.
   // Оригиналы (еврейский и греческий текст) — только по отдельному переключателю.
@@ -112,7 +119,7 @@ export default function SearchPanel({ pane, payload = {}, onClose }) {
   const keyOf = (q) => JSON.stringify([q, scope, scope === 'book' ? p.ref.book : '', wholeWord, targetsKey]);
 
   // Прежний поиск с теми же условиями уже закончен — показываем его сразу
-  const [restored] = useState(() => (memo?.done && memo.key === keyOf(query.trim()) ? memo : null));
+  const [restored] = useState(() => (memos[mk]?.done && memos[mk].key === keyOf(query.trim()) ? memos[mk] : null));
   const [results, setResults] = useState(restored ? restored.results : null);
   const [progress, setProgress] = useState(null);
   const [shown, setShownState] = useState(restored ? restored.shown : PAGE);
@@ -121,7 +128,7 @@ export default function SearchPanel({ pane, payload = {}, onClose }) {
   const setShown = (fn) =>
     setShownState((s) => {
       const v = typeof fn === 'function' ? fn(s) : fn;
-      if (memo) memo.shown = v;
+      if (memos[mk]) memos[mk].shown = v;
       return v;
     });
 
@@ -131,17 +138,17 @@ export default function SearchPanel({ pane, payload = {}, onClose }) {
     const timer = setTimeout(() => (!restored || !coarse) && inputRef.current?.focus({ preventScroll: true }), 220);
     // Прокрутка списка запоминается, при повторном открытии — на том же месте
     const body = formRef.current?.closest('.sheet-body');
-    const onScroll = () => memo && memo.key === shownKey.current && (memo.scroll = body.scrollTop);
+    const onScroll = () => memos[mk] && memos[mk].key === shownKey.current && (memos[mk].scroll = body.scrollTop);
     body?.addEventListener('scroll', onScroll, { passive: true });
     if (body && restored?.scroll) requestAnimationFrame(() => requestAnimationFrame(() => (body.scrollTop = restored.scroll)));
     return () => {
       clearTimeout(timer);
       body?.removeEventListener('scroll', onScroll);
       abort.current?.abort();
-      save('searchQuery', queryNow.current); // окно закрыли сразу после ввода — запрос всё равно сохранится
+      if (!pick) save('searchQuery', queryNow.current); // окно закрыли сразу после ввода — запрос всё равно сохранится
       // Запрос, по которому что-то нашлось, — в историю, даже если результат не открывали
       const q = queryNow.current?.trim();
-      if (q && q.length > 1 && memo?.results?.length) save('searchHistory', [q, ...load('searchHistory', []).filter((x) => x !== q)].slice(0, 15));
+      if (q && q.length > 1 && memos[mk]?.results?.length) save('searchHistory', [q, ...load('searchHistory', []).filter((x) => x !== q)].slice(0, 15));
     };
   }, []);
 
@@ -167,7 +174,7 @@ export default function SearchPanel({ pane, payload = {}, onClose }) {
     setRan(q);
     setProgress({ p: 0, label: t('Поиск…') });
     const acc = [];
-    const mine = (memo = { key, results: acc, done: false, shown: PAGE, scroll: 0 });
+    const mine = (memos[mk] = { key, results: acc, done: false, shown: PAGE, scroll: 0 });
     const list = targets;
     // Переводы — по одному, книги — по порядку: результаты идут в порядке Библии, интерфейс не замирает
     for (let i = 0; i < list.length; i++) {
@@ -216,19 +223,35 @@ export default function SearchPanel({ pane, payload = {}, onClose }) {
         if (r && module.books.some((b) => b.id === r.book)) {
           stop();
           const v = await getVerse(module.id, r);
-          setRefHit({ ref: r, text: v ? plainText(v) : null });
+          // Выбор стихов: показываем все стихи диапазона (каждый с новой строки), у главы — начало
+          let lines = null;
+          let more = false;
+          if (pick && v != null) {
+            const end = r.verseEnd || (isWholeChapter(q) ? 999 : r.verse);
+            lines = [];
+            for (let n = r.verse; n <= end; n++) {
+              const x = n === r.verse ? v : await getVerse(module.id, { ...r, verse: n });
+              if (x == null) break;
+              if (lines.length === (isWholeChapter(q) ? 3 : 12)) {
+                more = true;
+                break;
+              }
+              lines.push({ n, text: plainText(x) });
+            }
+          }
+          setRefHit({ ref: r, q, text: v ? plainText(v) : null, lines, more });
           return;
         }
         setRefHit(null);
         if (q.length < 2) return stop();
         // Вернулись к последнему законченному поиску — без повторного перебора
-        if (memo?.done && memo.key === key) {
+        if (memos[mk]?.done && memos[mk].key === key) {
           abort.current?.abort();
           shownKey.current = key;
           setProgress(null);
           setRan(q);
-          setShownState(memo.shown);
-          setResults(memo.results);
+          setShownState(memos[mk].shown);
+          setResults(memos[mk].results);
           return;
         }
         runSearch(q, key);
@@ -243,7 +266,7 @@ export default function SearchPanel({ pane, payload = {}, onClose }) {
   // Крестик в поле: стирает запрос и результаты, курсор остаётся в поле
   const clear = () => {
     stop();
-    memo = null;
+    memos[mk] = null;
     setRefHit(null);
     setStrongHit(null);
     setQuery('');
@@ -252,6 +275,7 @@ export default function SearchPanel({ pane, payload = {}, onClose }) {
 
   const goRef = (r) => {
     remember(query.trim());
+    if (pick) return pick.addRef(refHit?.q || query.trim());
     onClose();
     navigate(pane, r);
   };
@@ -269,6 +293,7 @@ export default function SearchPanel({ pane, payload = {}, onClose }) {
   // Место из другого перевода открывается в этом переводе
   const open = (r) => {
     remember(ran);
+    if (pick) return pick.add(r);
     onClose();
     if (r.moduleId && r.moduleId !== p.moduleId && byId.has(r.moduleId)) setPaneModule(pane, r.moduleId);
     navigate(pane, r, { highlight: ran });
@@ -286,12 +311,20 @@ export default function SearchPanel({ pane, payload = {}, onClose }) {
   );
   const openStrongPlace = (r) => {
     remember(query.trim());
+    if (pick) return pick.add(r);
     onClose();
     navigate(pane, r);
   };
 
-  return (
-    <BottomSheet title={t('Поиск')} subtitle={multi ? `${t('Во всех модулях')} · ${targets.length}` : `${module.name} · ${module.title || ''}`} onClose={onClose} initial={2}>
+  // Убрать запрос из истории — с «Отменить»
+  const forget = (h) => {
+    const i = history.indexOf(h);
+    setHistory((x) => x.filter((y) => y !== h));
+    undoToast(t('Убрано из истории'), () => setHistory((x) => (x.includes(h) ? x : [...x.slice(0, i), h, ...x.slice(i)])));
+  };
+
+  const content = (
+    <>
       <form
         ref={formRef}
         className="ref-form search-form"
@@ -346,9 +379,23 @@ export default function SearchPanel({ pane, payload = {}, onClose }) {
       {refHit && (
         <button className="ref-hit" onClick={() => goRef(refHit.ref)}>
           <span className="ref-hit-title">
-            <CornerDownLeft size={15} /> {t('Перейти: {ref}', { ref: formatRef(refHit.ref, { full: true }) })}
+            {pick ? <Plus size={15} /> : <CornerDownLeft size={15} />}{' '}
+            {pick ? t('Добавить в проповедь: {ref}', { ref: refRangeLabel(refHit.q, refHit.ref) }) : t('Перейти: {ref}', { ref: formatRef(refHit.ref, { full: true }) })}
           </span>
-          {refHit.text ? <span className="xref-text">{refHit.text}</span> : <span className="muted">{t('В переводе {module} нет такого стиха.', { module: module.name })}</span>}
+          {refHit.lines?.length > 1 ? (
+            <span className="ref-hit-lines">
+              {refHit.lines.map((x) => (
+                <span key={x.n} className="xref-text ref-hit-line">
+                  <sup>{x.n}</sup> {x.text}
+                </span>
+              ))}
+              {refHit.more && <span className="muted">…</span>}
+            </span>
+          ) : refHit.text ? (
+            <span className="xref-text">{refHit.text}</span>
+          ) : (
+            <span className="muted">{t('В переводе {module} нет такого стиха.', { module: module.name })}</span>
+          )}
         </button>
       )}
       {strongHit?.map((num) => (
@@ -357,7 +404,7 @@ export default function SearchPanel({ pane, payload = {}, onClose }) {
           num={num}
           filter={strongFilter}
           onOpen={openStrongPlace}
-          onArticle={() => (remember(query.trim()), openSheet('dict', pane, { token: { text: num, strongs: [num] }, ref: p.ref, autoOpen: true, initial: 'full' }))}
+          onArticle={pick ? null : () => (remember(query.trim()), openSheet('dict', pane, { token: { text: num, strongs: [num] }, ref: p.ref, autoOpen: true, initial: 'full' }))}
         />
       ))}
       {progress && <Progress value={progress.p} label={progress.label} />}
@@ -367,7 +414,7 @@ export default function SearchPanel({ pane, payload = {}, onClose }) {
           <h4>{t('Недавние')}</h4>
           <ul>
             {history.map((h) => (
-              <li key={h}>
+              <SwipeRow key={h} innerClassName="sh-row" onDelete={() => forget(h)} label={t('Убрать из истории')}>
                 <button
                   className="sh-q"
                   onClick={() => {
@@ -377,10 +424,10 @@ export default function SearchPanel({ pane, payload = {}, onClose }) {
                 >
                   <Clock size={16} /> <span>{h}</span>
                 </button>
-                <button className="icon-btn subtle" aria-label={t('Убрать из истории')} onClick={() => setHistory((x) => x.filter((y) => y !== h))}>
+                <button className="icon-btn subtle" aria-label={t('Убрать из истории')} onClick={() => forget(h)}>
                   <X size={16} />
                 </button>
-              </li>
+              </SwipeRow>
             ))}
           </ul>
           <button className="btn small" onClick={() => setHistory([])}>
@@ -399,9 +446,10 @@ export default function SearchPanel({ pane, payload = {}, onClose }) {
             {results.slice(0, shown).map((r) => {
               const m = byId.get(r.moduleId);
               const ref = formatRef(r);
+              const added = pick?.has(r);
               return (
                 <li key={`${r.moduleId}.${r.book}.${r.chapter}.${r.verse}`} className="result-item">
-                  <button className="result-row" onClick={() => open(r)}>
+                  <button className={`result-row${added ? ' added' : ''}`} onClick={() => open(r)}>
                     <span className="result-head">
                       <span className="xref-ref">{ref}</span>
                       {multi && m && (
@@ -414,6 +462,11 @@ export default function SearchPanel({ pane, payload = {}, onClose }) {
                       <Highlighted text={r.text} re={re} />
                     </span>
                   </button>
+                  {pick ? (
+                    <button type="button" className={`icon-btn subtle result-add${added ? ' on' : ''}`} aria-label={`${added ? t('Уже в проповеди — добавить ещё раз') : t('Добавить в проповедь')}: ${ref}`} title={added ? t('Уже в проповеди') : t('Добавить в проповедь')} onClick={() => open(r)}>
+                      {added ? <Check size={17} /> : <Plus size={17} />}
+                    </button>
+                  ) : (
                   <button
                     type="button"
                     className="icon-btn subtle result-copy"
@@ -426,6 +479,7 @@ export default function SearchPanel({ pane, payload = {}, onClose }) {
                   >
                     <Copy size={16} />
                   </button>
+                  )}
                 </li>
               );
             })}
@@ -437,6 +491,12 @@ export default function SearchPanel({ pane, payload = {}, onClose }) {
           )}
         </>
       )}
+    </>
+  );
+  if (pick) return <div className="search-pick">{content}</div>;
+  return (
+    <BottomSheet title={t('Поиск')} subtitle={multi ? `${t('Во всех модулях')} · ${targets.length}` : `${module.name} · ${module.title || ''}`} onClose={onClose} initial={2}>
+      {content}
     </BottomSheet>
   );
 }
