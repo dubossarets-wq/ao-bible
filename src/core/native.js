@@ -5,11 +5,13 @@
 import { Share } from '@capacitor/share';
 import { Clipboard } from '@capacitor/clipboard';
 import { Filesystem, Directory } from '@capacitor/filesystem';
-import { SystemBars, SystemBarsStyle, SystemBarType } from '@capacitor/core';
+import { SystemBars, SystemBarsStyle, SystemBarType, registerPlugin } from '@capacitor/core';
 
 export const NATIVE = typeof __NATIVE__ !== 'undefined' && __NATIVE__;
 // Откуда приложение берёт каталог и модули (у сайта — со своего адреса)
 export const REMOTE = NATIVE ? 'https://aobible.app/' : '';
+// Свой модуль Android (android/app/.../AppBarsPlugin.java): цвет полос под системными полосами
+const AppBars = NATIVE ? registerPlugin('AppBars') : null;
 
 const aborted = () => new DOMException('Share canceled', 'AbortError');
 const isCancel = (e) => /cancel/i.test(String(e?.message || e));
@@ -64,8 +66,11 @@ const isDark = (hex) => {
 export function syncSystemBars(bar, bg) {
   if (!NATIVE) return;
   const style = (c) => (isDark(c) ? SystemBarsStyle.Dark : SystemBarsStyle.Light);
-  SystemBars.setStyle({ style: style(bar), bar: SystemBarType.StatusBar }).catch(() => {});
-  SystemBars.setStyle({ style: style(bg), bar: SystemBarType.NavigationBar }).catch(() => {});
+  // setStyle сбрасывает фон окна на белый — поэтому цвета полос ставим после него
+  Promise.all([
+    SystemBars.setStyle({ style: style(bar), bar: SystemBarType.StatusBar }).catch(() => {}),
+    SystemBars.setStyle({ style: style(bg), bar: SystemBarType.NavigationBar }).catch(() => {}),
+  ]).then(() => AppBars.setColors({ top: bar, bottom: bg }).catch(() => {}));
 }
 
 export function installNative() {

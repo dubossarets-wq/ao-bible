@@ -7,3 +7,4 @@ export const SystemBars = {};
 export const SystemBarsStyle = {};
 export const SystemBarType = {};
 export const MediaSession = {};
+export const registerPlugin = () => ({});
