@@ -348,7 +348,8 @@ mark { background: var(--hl); color: inherit; border-radius: 2px; padding: 0 1px
 .verses.continuous .verse.speaking, .verses.continuous .verse.fav, .verses.continuous .verse[class*=" hl-"], .verses.continuous .verse.selected { box-shadow: none !important; border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 .verses.continuous .verse.fav { background: color-mix(in srgb, var(--love) 9%, transparent); }
 .verses.continuous .verse::before { display: none; }
-.scroller.selecting .w { cursor: default; }
+/* Курсор нужен только с мышью: на телефоне переключение .selecting пересчитывало стили всех слов главы */
+@media (hover: hover) and (pointer: fine) { .scroller.selecting .w { cursor: default; } }
 @media (hover: hover) { .scroller.selecting .w:hover { background: none; } .scroller.selecting .verse:not(.selected):hover { background: color-mix(in srgb, var(--accent) 6%, transparent); } }
 .selection-bar { animation: barIn .16s ease-out; }
 @keyframes barIn { from { opacity: .4; } }
@@ -1006,7 +1007,7 @@ html.kb-open .tour-ctrl.top { top: auto; bottom: calc(var(--kb, 0px) + 8px); }
 .part-btns { display: flex; gap: 8px; }
 .part-btns .btn.primary { flex: 1; }
 .part-btns .btn:not(.primary) { background: var(--panel); }
-.scroller.selecting .verse.selected .w { cursor: pointer; }
+@media (hover: hover) and (pointer: fine) { .scroller.selecting .verse.selected .w { cursor: pointer; } }
 
 /* «Кафедра»: длинные слова переносятся по слогам (на крупном шрифте иначе не помещаются) */
 .pulpit-body, .pulpit-body h1, .pulpit-verse, .pulpit-text { -webkit-hyphens: auto; hyphens: auto; overflow-wrap: anywhere; word-break: normal; }
@@ -1830,3 +1831,8 @@ html.has-tabbar .sheet.page { top: 0; height: auto; max-height: none; }
 html.is-android { --tb-side: 0px; --tb-bottom: 0px; --tabbar-base: calc(64px + env(safe-area-inset-bottom, 0px)); }
 html.is-android .tabbar { left: 0; right: 0; bottom: 0; height: calc(64px + env(safe-area-inset-bottom, 0px)); padding: 6px calc(env(safe-area-inset-right, 0px) + 6px) calc(6px + env(safe-area-inset-bottom, 0px)) calc(env(safe-area-inset-left, 0px) + 6px); border: 0; border-top: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 0; box-shadow: none; background: var(--panel); -webkit-backdrop-filter: none; backdrop-filter: none; }
 html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px)); left: calc(env(safe-area-inset-left, 0px) + 6px); width: calc((100% - 12px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)) / var(--tab-n)); }
+/* Высота окна при перетаскивании за ручку: переменная не наследуется — иначе каждое движение пальца пересчитывало
+   стили всего содержимого окна (в каталоге модулей 26–95 мс на шаг вместо ~1 мс) */
+@property --sheet-h { syntax: '<number>'; inherits: false; initial-value: 50; }
+/* Строки длинных списков, которых не видно, браузер не рисует (заметки, закладки, каталог; у результатов поиска — нет: сбивалось восстановление прокрутки) */
+.list-row, .mod-row { content-visibility: auto; contain-intrinsic-size: auto 56px; }

@@ -1,7 +1,7 @@
 // Библиотека модулей: установленные, онлайн-каталог, импорт файлов.
 // Модули разложены по видам (переводы, комментарии, словари, карты, параллельные места) и показаны
 // компактными строками: справа — действие (скачать / установлен / обновить) и стрелка «подробнее».
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import {
   Download, RefreshCw, Trash2, Star, CheckCircle2, Ban, Globe, BookOpen, BookText, Link2, ChevronDown,
   MessageSquareText, Map as MapIcon, Loader2,
@@ -365,7 +365,8 @@ export default function ModuleLibrary({ payload, onClose }) {
 
   const [lang, setLang] = useState('all');
   const [mq, setMq] = useState('');
-  const q = mq.trim().toLowerCase().replace(/ё/g, 'е');
+  // Список фильтруется с отложенным запросом: буквы в поле появляются сразу, каталог догоняет
+  const q = useDeferredValue(mq).trim().toLowerCase().replace(/ё/g, 'е');
   const base = tab === 'installed' ? modules : catalog || [];
   // Сначала русские модули, дальше — в порядке языков (внутри языка — как в каталоге)
   const list = base.filter((m) => (lang === 'all' || (m.language || '') === lang) && matches(m, q)).sort((a, b) => langRank(a.language || '') - langRank(b.language || ''));

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
 import { bootVersionGate } from './core/updates.js';
 import { bootBackup } from './core/backup.js';
+import { load } from './core/storage.js';
 import { i18nReady } from './core/i18n.js';
 import './styles.css';
 import { startFadeEnd } from './core/fadeEnd.js';
@@ -36,8 +37,17 @@ window.visualViewport?.addEventListener('resize', syncViewport);
 window.addEventListener('resize', syncViewport);
 
 // В PWA-сборке регистрируем service worker (в Claude Artifact он недоступен — тихо пропускаем)
+// Первый визит: service worker ставится, когда стартовые модули уже скачаны (событие от Bootstrap), — иначе
+// его кэш (фото, планы) отнимал канал у перевода и Библия на медленной связи открывалась в полтора раза дольше.
 if (typeof __PWA__ !== 'undefined' && __PWA__ && 'serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  const registerSW = () => navigator.serviceWorker.register('sw.js').catch(() => {});
+  if (load('bootstrapped', false)) window.addEventListener('load', registerSW);
+  else {
+    let done = false;
+    const once = () => !done && ((done = true), registerSW());
+    window.addEventListener('aob-bootstrapped', once);
+    setTimeout(once, 120000); // установка затянулась или прервалась — всё равно ставим
+  }
 }
 
 // После «Обновить приложение» адрес содержит ?v=… (обход кэша) — убираем его из строки адреса

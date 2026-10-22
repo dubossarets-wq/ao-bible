@@ -115,9 +115,21 @@ export async function removeModule(id) {
   emit();
 }
 
+// Книга без записи в кэш читалки (поиск и статистика проходят всю Библию и вытеснили бы книгу, которую читают)
+export async function peekBook(moduleId, bookId) {
+  const key = `${moduleId}|${bookId}`;
+  return bookCache.get(key) || (await db.get(db.STORES.bookdata, key)) || null;
+}
+
 export async function getBook(moduleId, bookId) {
   const key = `${moduleId}|${bookId}`;
-  if (bookCache.has(key)) return bookCache.get(key);
+  if (bookCache.has(key)) {
+    // Свежая книга — в конец очереди (вытесняется самая давно нужная, а не самая давно загруженная)
+    const hit = bookCache.get(key);
+    bookCache.delete(key);
+    bookCache.set(key, hit);
+    return hit;
+  }
   const data = await db.get(db.STORES.bookdata, key);
   if (data) {
     bookCache.set(key, data);

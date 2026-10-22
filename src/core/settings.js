@@ -137,6 +137,7 @@ export function ensureFont(key) {
   loadedFonts.add(key);
   const link = document.createElement('link');
   link.rel = 'stylesheet';
+  link.crossOrigin = 'anonymous'; // прозрачный ответ — service worker сохранит шрифт для работы без сети
   link.href = `https://fonts.googleapis.com/css2?family=${f.google}&display=swap`;
   document.head.appendChild(link);
 }

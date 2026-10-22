@@ -1,6 +1,7 @@
 // Страница «план на день»: все отрывки дня одной лентой, по порядку.
 // Отметки ставятся сами: отрывок засчитывается, когда его дочитали до конца и провели на нём
 // разумное время. В конце каждого отрывка — «Дальше по плану» и «Читать дальше — вне плана».
+import { visibleInterval } from '../core/visibleInterval.js';
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown, ChevronRight, Loader2, X, PartyPopper } from 'lucide-react';
 import { useApp } from '../App.jsx';
@@ -157,7 +158,7 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
   useEffect(() => {
     if (!books || !plan) return;
     track.current = new Map();
-    const timer = setInterval(() => {
+    return visibleInterval(() => {
       const el = scroller.current;
       const p = planRef.current;
       if (!el || !p || document.visibilityState !== 'visible' || document.querySelector('.sheet')) return;
@@ -187,7 +188,6 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
         if (r && readingDone(np, day, r)) toast(t('✓ Прочитано: {ref}', { ref: readingLabel(r, module) }));
       }
     }, 1000);
-    return () => clearInterval(timer);
   }, [books, uid, day]);
 
   // Текущий отрывок в строке плана всегда виден

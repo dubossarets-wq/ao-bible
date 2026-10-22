@@ -2,7 +2,7 @@
 // Главный экран: сверху живой образец текста (закреплён), под ним самое частое — тема, размер и вид текста;
 // ниже — подразделы (шрифт, номера и заголовки, фон, цвета, кнопки и панели, комментарии), внизу — сброс.
 // Подраздел выезжает справа внутри того же окна; стрелка ‹ возвращает на главный экран «Оформления».
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   RotateCcw, ChevronRight, Check, Minus, Plus, Image as ImageIcon, ImagePlus, Ban, Type, Hash, PanelTop, MessageSquareText, Palette,
   AlignLeft, AlignJustify, Columns2, Rows2, Pipette,
@@ -102,8 +102,21 @@ function ColorPick({ id, label, value, base, changed, list, onPick, onReset, onL
 }
 
 // Ползунок с кнопками «меньше / больше» по краям (крупные зоны нажатия) и понятным значением словами
-function Range({ id, label, hint, value, min, max, step, onChange, word, big }) {
+function Range({ id, label, hint, value: saved, min, max, step, onChange: commit, word, big }) {
   const fix = (x) => Math.min(max, Math.max(min, Math.round(x / step) * step));
+  // Пока ползунок тянут, он и подпись двигаются сразу, а в настройки (и на всю главу под окном) значение уходит
+  // не чаще раза в 180 мс и при отпускании: раньше каждый шаг перекладывал весь текст — 150–450 мс на телефоне
+  const [value, setValue] = useState(saved);
+  useEffect(() => setValue(saved), [saved]);
+  const timer = useRef(0);
+  const last = useRef(0);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const onChange = (x, now = false) => {
+    setValue(x);
+    clearTimeout(timer.current);
+    const wait = now ? 0 : Math.max(0, 180 - (Date.now() - last.current));
+    timer.current = setTimeout(() => ((last.current = Date.now()), commit(x)), wait);
+  };
   const shown = word(value);
   return (
     <div className="field ap-range">
@@ -115,11 +128,11 @@ function Range({ id, label, hint, value, min, max, step, onChange, word, big }) 
         <span className="field-value">{shown}</span>
       </span>
       <span className="ap-range-row">
-        <button type="button" className={`ap-step ${big ? 'aa' : ''}`} onClick={() => onChange(+fix(value - step).toFixed(3))} disabled={value <= min} aria-label={t('{label}: меньше', { label })}>
+        <button type="button" className={`ap-step ${big ? 'aa' : ''}`} onClick={() => onChange(+fix(value - step).toFixed(3), true)} disabled={value <= min} aria-label={t('{label}: меньше', { label })}>
           {big ? <span className="aa-s">A</span> : <Minus size={18} />}
         </button>
-        <input id={id} type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(+e.target.value)} aria-valuetext={String(shown)} />
-        <button type="button" className={`ap-step ${big ? 'aa' : ''}`} onClick={() => onChange(+fix(value + step).toFixed(3))} disabled={value >= max} aria-label={t('{label}: больше', { label })}>
+        <input id={id} type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(+e.target.value)} onPointerUp={(e) => onChange(+e.target.value, true)} onKeyUp={(e) => onChange(+e.target.value, true)} aria-valuetext={String(shown)} />
+        <button type="button" className={`ap-step ${big ? 'aa' : ''}`} onClick={() => onChange(+fix(value + step).toFixed(3), true)} disabled={value >= max} aria-label={t('{label}: больше', { label })}>
           {big ? <span className="aa-l">A</span> : <Plus size={18} />}
         </button>
       </span>

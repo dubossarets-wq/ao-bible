@@ -175,6 +175,22 @@ export default function SearchPanel({ pane, payload = {}, onClose, pick = null }
     setProgress({ p: 0, label: t('Поиск…') });
     const acc = [];
     const mine = (memos[mk] = { key, results: acc, done: false, shown: PAGE, scroll: 0 });
+    // Список перерисовываем не после каждой книги (до 300 раз за поиск во всех модулях), а не чаще раза в 130 мс;
+    // первая находка — сразу
+    let flushed = 0;
+    let lastProgress = 0;
+    let lastFlush = 0;
+    let flushTimer = 0;
+    const flushResults = (final = false) => {
+      clearTimeout(flushTimer);
+      if (ctrl.signal.aborted || (acc.length === flushed && !final)) return;
+      const now = performance.now();
+      if (final || flushed === 0 || now - lastFlush >= 130) {
+        flushed = acc.length;
+        lastFlush = now;
+        setResults([...acc]);
+      } else flushTimer = setTimeout(() => flushResults(), 130 - (now - lastFlush));
+    };
     const list = targets;
     // Переводы — по одному, книги — по порядку: результаты идут в порядке Библии, интерфейс не замирает
     for (let i = 0; i < list.length; i++) {
@@ -191,15 +207,23 @@ export default function SearchPanel({ pane, payload = {}, onClose, pick = null }
           onResult: (batch) => {
             if (ctrl.signal.aborted) return;
             for (const r of batch) acc.push({ ...r, moduleId: m.id });
-            setResults([...acc]);
+            flushResults();
           },
-          onProgress: (v, b) => !ctrl.signal.aborted && setProgress({ p: (i + v) / list.length, label: list.length > 1 ? `${shortName(m)} · ${bookMeta(b.id).name}` : bookMeta(b.id).name }),
+          // Полоску хода тоже обновляем не чаще раза в 130 мс: каждое обновление перерисовывает панель со списком
+          onProgress: (v, b) => {
+            if (ctrl.signal.aborted) return;
+            const now = performance.now();
+            if (now - lastProgress < 130) return;
+            lastProgress = now;
+            setProgress({ p: (i + v) / list.length, label: list.length > 1 ? `${shortName(m)} · ${bookMeta(b.id).name}` : bookMeta(b.id).name });
+          },
         });
       } catch {
         /* перевод недоступен — ищем в остальных */
       }
     }
     if (!ctrl.signal.aborted) {
+      flushResults(true);
       setProgress(null);
       mine.done = true;
     }

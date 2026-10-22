@@ -19,6 +19,8 @@ let state = {
 };
 const subs = new Set();
 const set = (patch) => {
+  // Ничего не изменилось (например, «загрузка» при каждой перемотке) — не будим подписчиков
+  if (Object.keys(patch).every((k) => state[k] === patch[k])) return;
   state = { ...state, ...patch };
   subs.forEach((f) => f());
 };
@@ -131,7 +133,8 @@ function chapterSpan() {
 function emitTime() {
   const s = chapterSpan();
   const next = s ? { pos: Math.max(0, Math.min(s.len || Infinity, el.currentTime - s.start)), len: s.len } : { pos: 0, len: 0 };
-  if (next.pos === timeSnap.pos && next.len === timeSnap.len) return;
+  // Подписчиков (ползунок и время в проигрывателе) будим раз в секунду, а не на каждое timeupdate (4 раза в секунду)
+  if (Math.floor(next.pos) === Math.floor(timeSnap.pos) && next.len === timeSnap.len) return;
   timeSnap = next;
   timeSubs.forEach((f) => f());
 }
@@ -241,8 +244,11 @@ export function setSleep(kind, minutes) {
 
 // --- Внутреннее ----------------------------------------------------------------------------
 
+let pendingMeta = null; // ожидающий loadedmetadata (перемотка к стиху, когда запись загрузится)
 function stopEngines() {
   gen++;
+  if (el && pendingMeta) el.removeEventListener('loadedmetadata', pendingMeta);
+  pendingMeta = null;
   try {
     speechSynthesis?.cancel();
   } catch {
@@ -374,7 +380,12 @@ async function playRecorded(ref) {
     } catch {
       /* перемотка не удалась */
     }
-  } else el.addEventListener('loadedmetadata', () => my === gen && (el.currentTime = start), { once: true });
+  } else {
+    // Один ожидающий слушатель: прежний (запись так и не загрузилась) снимаем, иначе они копились
+    if (pendingMeta) el.removeEventListener('loadedmetadata', pendingMeta);
+    pendingMeta = () => ((pendingMeta = null), my === gen && (el.currentTime = start));
+    el.addEventListener('loadedmetadata', pendingMeta, { once: true });
+  }
   if (graph && graph.ctx.state !== 'running') graph.ctx.resume().catch(() => {});
   el.play().then(
     () => set({ loading: false }),

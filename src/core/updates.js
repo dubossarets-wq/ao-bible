@@ -5,7 +5,7 @@
 // корня с более новой сборкой оно перенаправляет на сохранённую версию. О новой версии сообщает точка на ⋮,
 // обновление и откат — вручную, в «Версиях приложения». Включается и автообновление (aob.autoUpdate).
 import { P } from './channel.js';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { snapshot } from './backup.js';
 import { t, locale } from './i18n.js';
 
@@ -101,28 +101,38 @@ export async function fetchVersions() {
 export function useUpdates() {
   const [state, setState] = useState({ available: false, checking: false, latest: null, error: null, forced: false });
 
-  const check = useCallback(async () => {
+  // Фоновая проверка (auto) не трогает состояние, если ничего не изменилось, — раньше каждая проверка дважды
+  // перерисовывала всё приложение
+  const inFlight = useRef(false);
+  const check = useCallback(async (auto = false) => {
     if (!IS_PWA_BUILD) return { available: false };
-    setState((s) => ({ ...s, checking: true, error: null }));
+    if (auto && inFlight.current) return { available: false }; // visibilitychange и focus приходят почти разом
+    inFlight.current = true;
+    if (!auto) setState((s) => ({ ...s, checking: true, error: null }));
     try {
       const { latest, minBuild } = await fetchVersions();
       const available = !!latest && latest !== BUILD && latest > BUILD;
       const forced = !!minBuild && BUILD < minBuild && available;
-      setState({ available, checking: false, latest, error: null, forced, auto: autoUpdateEnabled() });
+      const next = { available, checking: false, latest, error: null, forced, auto: autoUpdateEnabled() };
+      setState((s) => (Object.keys(next).every((k) => s[k] === next[k]) ? s : next));
+      inFlight.current = false;
       return { available };
     } catch {
-      setState((s) => ({ ...s, checking: false, error: t('Нет связи с сервером') }));
+      inFlight.current = false;
+      if (!auto) setState((s) => ({ ...s, checking: false, error: t('Нет связи с сервером') }));
       return { available: false, error: t('Нет связи с сервером') };
     }
   }, []);
 
   useEffect(() => {
     if (!IS_PWA_BUILD) return;
-    check();
-    const onVisible = () => document.visibilityState === 'visible' && check();
+    check(true);
+    // При возврате в приложение приходят и visibilitychange, и focus — вторая проверка пропускается, пока идёт первая;
+    // по таймеру — только когда приложение на экране (иначе телефон будил радио каждые 5 минут)
+    const onVisible = () => document.visibilityState === 'visible' && check(true);
     document.addEventListener('visibilitychange', onVisible);
     window.addEventListener('focus', onVisible);
-    const t = setInterval(check, 5 * 60 * 1000); // раз в 5 минут
+    const t = setInterval(() => document.visibilityState === 'visible' && check(true), 5 * 60 * 1000); // раз в 5 минут
     return () => {
       document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('focus', onVisible);

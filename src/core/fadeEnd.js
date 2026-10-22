@@ -17,32 +17,67 @@ const textWidth = (el, text) => {
   return ctx.measureText(text).width;
 };
 
-function check() {
-  for (const el of document.querySelectorAll(CLIPPED)) el.classList.toggle('fade-end', el.scrollWidth > el.clientWidth + 1);
-  // Поля ввода внутри рамки .input-wrap (у самих полей рамки нет — затухание её не срежет): длинная подсказка или текст
-  for (const el of document.querySelectorAll('.input-wrap input')) {
-    const cs = getComputedStyle(el);
-    const room = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-    const over = el.value ? el.scrollWidth > el.clientWidth + 1 : textWidth(el, el.placeholder || '') > room + 1;
-    el.classList.toggle('fade-end', over);
+const INPUTS = '.input-wrap input';
+
+// Поле ввода внутри рамки .input-wrap (у самих полей рамки нет — затухание её не срежет): длинная подсказка или текст
+function fitInput(el) {
+  const cs = getComputedStyle(el);
+  const room = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const over = el.value ? el.scrollWidth > el.clientWidth + 1 : textWidth(el, el.placeholder || '') > room + 1;
+  el.classList.toggle('fade-end', over);
+}
+const fit = (el) => (el.matches(INPUTS) ? fitInput(el) : el.classList.toggle('fade-end', el.scrollWidth > el.clientWidth + 1));
+
+function checkAll() {
+  for (const el of document.querySelectorAll(CLIPPED)) fit(el);
+  for (const el of document.querySelectorAll(INPUTS)) fitInput(el);
+}
+
+// Проверяем только то, что изменилось: раньше любое изменение страницы (смена стиха в шапке, время в проигрывателе,
+// подгрузка главы) запускало поиск по всему документу — на длинной ленте глав до 30–55 мс за раз.
+const pending = new Set();
+let full = false;
+let queued = false;
+const flush = () => {
+  queued = false;
+  if (full) {
+    full = false;
+    pending.clear();
+    return checkAll();
+  }
+  for (const el of pending) if (el.isConnected) fit(el);
+  pending.clear();
+};
+// После отрисовки кадра (rAF → setTimeout): раскладка к этому моменту готова, замеры дешёвые и не задерживают кадр
+const queue = () => {
+  if (queued) return;
+  queued = true;
+  requestAnimationFrame(() => setTimeout(flush, 0));
+};
+const add = (el) => (pending.add(el), queue());
+const all = () => ((full = true), queue());
+
+// Текст Библии и стихи проигрывателя: обрезаемых подписей там нет
+const SKIP = '.text-col, .ap-lyrics';
+function onMutations(list) {
+  for (const m of list) {
+    const t = m.target.nodeType === 1 ? m.target : m.target.parentElement;
+    if (!t || t.closest(SKIP)) continue;
+    const own = t.closest(CLIPPED);
+    if (own) add(own);
+    for (const n of m.addedNodes) {
+      if (n.nodeType !== 1) continue;
+      if (n.matches(CLIPPED) || n.matches(INPUTS)) add(n);
+      for (const el of n.querySelectorAll(CLIPPED + ',' + INPUTS)) add(el);
+    }
   }
 }
 
-let queued = false;
-const schedule = () => {
-  if (queued) return;
-  queued = true;
-  requestAnimationFrame(() => {
-    queued = false;
-    check();
-  });
-};
-
 export function startFadeEnd() {
   if (typeof window === 'undefined' || !window.MutationObserver) return;
-  new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true, characterData: true });
-  window.addEventListener('resize', schedule);
-  document.addEventListener('input', schedule, true);
-  document.fonts?.ready.then(schedule);
-  schedule();
+  new MutationObserver(onMutations).observe(document.body, { childList: true, subtree: true, characterData: true });
+  window.addEventListener('resize', all);
+  document.addEventListener('input', (e) => e.target?.matches?.(INPUTS) && add(e.target), true);
+  document.fonts?.ready.then(all);
+  all();
 }

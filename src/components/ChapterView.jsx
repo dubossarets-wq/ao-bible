@@ -1,6 +1,7 @@
 // Текст Библии: непрерывная прокрутка глав внутри книги (главы подгружаются сверху и снизу),
 // нажатие на слово открывает словари, кнопка в конце стиха — параллельные места.
 // Слова рендерятся HTML-строкой с делегированием событий: в главе может быть больше тысячи слов.
+import { visibleInterval } from '../core/visibleInterval.js';
 import React, { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import { useApp } from '../App.jsx';
@@ -175,11 +176,26 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
   // Счётчики параллельных мест (пересчитываются при включении/выключении модулей)
   const [comments, setComments] = useState(null);
   const [illus, setIllus] = useState(null);
+  // Индексы (параллельные места — 1,3 МБ, иллюстрации — 2 МБ) читаем, когда текст уже на экране и браузер свободен:
+  // раньше они задерживали первый стих на 0,3–0,5 с. Значки ссылок и картинок появляются чуть позже.
+  const bookReady = !!book;
   useEffect(() => {
-    crossrefCounts().then(setCounts);
-    commentaryIndex().then((m) => setComments(m.size ? m : null));
-    illustrationIndex().then((m) => setIllus(m.size ? m : null));
-  }, [modules]);
+    if (!bookReady) return;
+    let alive = true;
+    const run = () => {
+      if (!alive) return;
+      crossrefCounts().then((m) => alive && setCounts(m));
+      commentaryIndex().then((m) => alive && setComments(m.size ? m : null));
+      illustrationIndex().then((m) => alive && setIllus(m.size ? m : null));
+    };
+    const idle = typeof requestIdleCallback === 'function';
+    const id = idle ? requestIdleCallback(run, { timeout: 1200 }) : setTimeout(run, 300);
+    return () => {
+      alive = false;
+      if (idle) cancelIdleCallback(id);
+      else clearTimeout(id);
+    };
+  }, [modules, bookReady]);
 
   // Навигация: загрузить книгу и прокрутить к стиху
   useEffect(() => {
@@ -255,7 +271,11 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     return () => document.removeEventListener('pointerdown', onDown, true);
   }, []);
 
-  // Слова выбранной части стиха и любимых частей — отмечаем классами прямо в тексте
+  // Плашки частей стихов стоят по координатам строк — перерисовываем при смене ширины и после загрузки шрифтов
+  const [relayoutN, setRelayout] = useState(0);
+  // Слова выбранной части стиха и любимых частей — отмечаем классами прямо в тексте.
+  // Только когда меняются сами части, текст или раскладка: раньше это шло на каждую перерисовку главы
+  // (каждый звучащий стих, каждое окно и уведомление) и с отмеченными частями тормозило в разы.
   const { favParts } = useApp();
   useEffect(() => {
     const el = scroller.current;
@@ -264,8 +284,10 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     clearPart(el); // прежняя подложка выбранной части
     const mark = (b, c, v, from, to, cls) =>
       el.querySelectorAll(`.verse[data-b="${b}"][data-c="${c}"][data-v="${v}"] .w`).forEach((w) => +w.dataset.i >= from && +w.dataset.i <= to && w.classList.add(cls));
+    // Только главы, которые сейчас на экране (раньше — все отмеченные части всей Библии с поиском по тексту)
     for (const [k, verses] of favParts) {
       const [b, c] = k.split('.');
+      if (!book || b !== book.id || !range || +c < range.start || +c > range.end) continue;
       for (const [v, [from, to]] of Object.entries(verses)) {
         mark(b, c, v, from, to, 'fav-part');
         drawPart(el, { key: `${b}.${c}.${v}`, from, to }, 'fav'); // любимая часть — цельной плашкой цвета сердечка
@@ -274,17 +296,20 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     if (part?.from != null) {
       drawPart(el, part); // выбранная часть — одной цельной плашкой под текстом
     }
-  });
+  }, [favParts, part, book, range, settings, relayoutN, pane.highlight, module.id]);
 
-  // Плашки частей стихов стоят по координатам строк — при смене ширины перерисовываем
-  const [, setRelayout] = useState(0);
   useEffect(() => {
     const el = scroller.current;
     if (!el || !window.ResizeObserver) return;
     let w = el.clientWidth;
     const ro = new ResizeObserver(() => el.clientWidth !== w && ((w = el.clientWidth), setRelayout((n) => n + 1)));
     ro.observe(el);
-    return () => ro.disconnect();
+    const fontsDone = () => setRelayout((n) => n + 1);
+    document.fonts?.addEventListener?.('loadingdone', fontsDone);
+    return () => {
+      ro.disconnect();
+      document.fonts?.removeEventListener?.('loadingdone', fontsDone);
+    };
   }, []);
 
   // Снимаем подсветку слова, когда закрыты и выборка словарей, и окно статьи
@@ -386,7 +411,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
   const dwell = useRef(new Map()); // «Книга.глава» -> { t, end, done }
   useEffect(() => {
     if (!book) return;
-    const timer = setInterval(() => {
+    return visibleInterval(() => {
       const el = scroller.current;
       if (!el || document.visibilityState !== 'visible' || document.querySelector('.sheet')) return;
       const top = el.scrollTop;
@@ -411,7 +436,6 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
         else if (credited.length) toast(t('Засчитано в план «{plan}»: {ref}', { plan: t(credited[0]), ref: formatRef({ book: book.id, chapter: c, verse: 1 }).replace(/:1$/, '') }));
       }
     }, 1000);
-    return () => clearInterval(timer);
   }, [book]);
 
   // Долгое нажатие на стих (палец или мышь) — выделение стиха и панель действий сверху.
@@ -597,7 +621,9 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     }
     if (audio.follow && Date.now() - userTouchAt.current > 4000) {
       const top = target.offsetTop - el.scrollTop;
-      if (top < 40 || top > el.clientHeight * 0.6) el.scrollTo({ top: target.offsetTop - el.clientHeight * 0.25, behavior: settings.animations ? 'smooth' : 'auto' });
+      // Под раскрытым проигрывателем текста не видно — без плавной прокрутки (она стоила кадров «караоке»)
+      const hidden = document.documentElement.classList.contains('player-open');
+      if (top < 40 || top > el.clientHeight * 0.6) el.scrollTo({ top: target.offsetTop - el.clientHeight * 0.25, behavior: settings.animations && !hidden ? 'smooth' : 'auto' });
     }
   }, [audio.active, audio.ref, audio.pane, audio.moduleId, audio.follow, book, range, module.id]);
 

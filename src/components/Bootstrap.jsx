@@ -32,6 +32,7 @@ export default function Bootstrap() {
           console.warn('Не удалось установить', m.id, e); // i18n-ignore: только для разработчика
         }
       }
+      window.dispatchEvent(new Event('aob-bootstrapped')); // стартовые модули скачаны — можно ставить service worker
     } catch (e) {
       setState({ phase: 'error', message: repo.errorText(e) });
     }

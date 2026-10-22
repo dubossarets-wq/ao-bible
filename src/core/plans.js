@@ -4,10 +4,20 @@ import { listModules } from './modules.js';
 import { bookMeta, BOOKS } from './books.js';
 import { t, N_ } from './i18n.js';
 
-export async function fetchPlanIndex() {
-  const res = await fetch('plans/index.json', { cache: 'no-cache' });
-  if (!res.ok) throw new Error(t('Список планов недоступен'));
-  return (await res.json()).plans || [];
+// Список планов — один раз за сеанс (раньше качался при каждом открытии, и сетка появлялась кадром позже)
+let planIndex = null;
+export function fetchPlanIndex() {
+  planIndex ||= fetch('plans/index.json', { cache: 'no-cache' })
+    .then((res) => {
+      if (!res.ok) throw new Error(t('Список планов недоступен'));
+      return res.json();
+    })
+    .then((j) => j.plans || [])
+    .catch((e) => {
+      planIndex = null; // не вышло — попробуем при следующем открытии
+      throw e;
+    });
+  return planIndex;
 }
 
 export async function fetchPlan(file) {

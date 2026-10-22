@@ -151,7 +151,9 @@ export default function SelectionBar({ index, module, selection, onDone }) {
       onClick={() => {
         setMore(false);
         fn();
-        onDone(); // действие выполнено — выделение снимается
+        // Выделение снимаем кадром позже: иначе окно (например, подстрочник) открывалось в одной перерисовке
+        // с перерисовкой главы и появлялось на ~100 мс позже
+        requestAnimationFrame(() => onDone());
       }}
     >
       <Icon size={18} />
