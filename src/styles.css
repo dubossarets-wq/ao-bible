@@ -1836,3 +1836,8 @@ html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px))
 @property --sheet-h { syntax: '<number>'; inherits: false; initial-value: 50; }
 /* Строки длинных списков, которых не видно, браузер не рисует (заметки, закладки, каталог; у результатов поиска — нет: сбивалось восстановление прокрутки) */
 .list-row, .mod-row { content-visibility: auto; contain-intrinsic-size: auto 56px; }
+/* Две панели друг над другом: полоска разделителя ближе к кнопкам второй панели */
+.split.rows .divider { flex-basis: 16px; }
+.split.rows .pane-slot.second .toolbar { height: calc(var(--bar-h) - 8px); }
+/* Верхняя из двух панелей: нижнего меню под ней нет — стрелки глав и «Слушать» отстоят от низа панели так же, как от боков (14 px) */
+.split.rows .pane-slot.first .reader, .app:has(.audio-bar) .split.rows .pane-slot.first .reader { --chap-bottom: 14px; }
