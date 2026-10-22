@@ -1,7 +1,7 @@
 # AO Bible — материалы для Google Play
 
 Всё, что нужно вставить в Play Console. Картинки лежат рядом:
-- `icon-512.png` — значок приложения (512×512);
+- `icon-512.png` — значок приложения (512×512, полный квадрат — Google скругляет сам);
 - `feature-1024x500.png` — баннер (Feature graphic);
 - `screens/*.png` — скриншоты телефона 1080×2160 (загрузить 4–8 штук по порядку номеров).
 
@@ -19,24 +19,24 @@ AO Bible — Библия и Стронг
 
 AO Bible — бесплатное приложение для чтения и изучения Библии. Без рекламы, без регистрации, без сбора данных.
 
-ЧИТАТЬ УДОБНО
+Читать удобно
 • Синодальный перевод с номерами Стронга и другие переводы на русском и десятках языков
 • Два перевода рядом — на телефоне и на планшете
 • Размер букв, шрифт, межстрочный интервал, темы и фон — всё под себя
 • Свайп влево и вправо — следующая и предыдущая глава
 • Работает без интернета: скачанные переводы и словари всегда с собой
 
-ИЗУЧАТЬ ГЛУБЖЕ
+Изучать глубже
 • Нажмите на слово — увидите слово оригинала на иврите или греческом и его значение по словарю Стронга
 • Подстрочник: еврейский текст, греческий Новый Завет, Септуагинта и Вульгата со значениями слов
 • Симфония: где ещё встречается то же слово
 • Параллельные места, комментарии, карты библейских мест, иллюстрации к стихам
 
-СЛУШАТЬ
+Слушать
 • Живое чтение Библии на русском и других языках (запись чтеца, не синтез речи)
 • Текст следует за чтецом, громкость, скорость и таймер сна
 
-ПЛАНЫ И ЗАМЕТКИ
+Планы и заметки
 • Планы чтения: Библия за год, Новый Завет за 90 дней, Псалтирь и другие, а также свой план
 • Стих дня с красивой картинкой
 • Закладки, любимые стихи, цветные выделения, заметки и подборки
@@ -58,23 +58,23 @@ Bible with Strong's dictionary, interlinear, reading plans and audio Bible
 
 AO Bible is a free app for reading and studying the Bible. No ads, no sign-up, no data collection.
 
-READ COMFORTABLY
+Read comfortably
 • Russian Synodal translation with Strong's numbers and many other translations in dozens of languages
 • Two translations side by side
 • Font, size, line spacing, themes and backgrounds — make it yours
 • Swipe left and right to move between chapters
 • Works offline: downloaded translations and dictionaries are always with you
 
-STUDY DEEPER
+Study deeper
 • Tap a word to see the original Hebrew or Greek word and its meaning from Strong's dictionary
 • Interlinear: Hebrew text, Greek New Testament, Septuagint and Vulgate with word meanings
 • Concordance, cross-references, commentaries, Bible maps and verse illustrations
 
-LISTEN
+Listen
 • Audio Bible read by real narrators (no speech synthesis)
 • Text follows the reader; volume, speed and sleep timer
 
-PLANS AND NOTES
+Plans and notes
 • Reading plans: the Bible in a year, the New Testament in 90 days, Psalms and more — or your own plan
 • Verse of the day
 • Bookmarks, favorite verses, highlights, notes and collections
