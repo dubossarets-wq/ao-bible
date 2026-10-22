@@ -1824,3 +1824,5 @@ html.has-tabbar .sheet.page { top: 0; height: auto; max-height: none; }
 .swipe-content > .sermon-pick-row { width: 100%; }
 .ref-hit-lines { display: flex; flex-direction: column; gap: 4px; }
 .ref-hit-line sup { font-size: .68em; font-weight: 700; color: var(--accent); }
+/* «Добавить стих» в проповеди: тот же поиск в обёртке — с теми же промежутками, что в окне поиска */
+.search-pick { display: flex; flex-direction: column; gap: 12px; }
