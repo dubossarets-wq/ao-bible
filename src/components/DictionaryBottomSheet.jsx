@@ -12,7 +12,7 @@ import LinkedText from './LinkedText.jsx';
 import WordStats from './WordStats.jsx';
 import { t, N_ } from '../core/i18n.js';
 import { ruInterlinear } from '../core/interlinear.js';
-import { playStrongWord, stopVerse } from '../core/origAudio.js';
+import { playStrongWord, stopVerse, ORIG_AUDIO } from '../core/origAudio.js';
 
 const KIND_LABEL = { strongs: N_('по номерам Стронга'), words: N_('по словам') };
 
@@ -45,6 +45,7 @@ function SayButton({ num, verseRef }) {
     setSt(ok ? 'playing' : 'none');
   };
   useEffect(() => () => stopVerse(), []);
+  if (!ORIG_AUDIO) return null; // озвучка слов пока выключена
   return (
     <button className={`say-btn ${st === 'playing' ? 'on' : ''}`} onClick={say} disabled={st === 'none'} aria-label={st === 'none' ? t('Записи этого слова пока нет') : t('Послушать слово')} title={st === 'none' ? t('Записи этого слова пока нет') : t('Послушать слово')}>
       {st === 'loading' ? <Loader2 className="spin" size={20} /> : <Volume2 size={22} />}

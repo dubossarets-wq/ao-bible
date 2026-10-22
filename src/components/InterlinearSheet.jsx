@@ -16,7 +16,7 @@ import { ensureOriginal, origInterlinear, originalFor, vinInterlinear, lxxInterl
 import { usePersistentState } from '../core/storage.js';
 import { Segmented } from './ui.jsx';
 import { translit } from '../core/translit.js';
-import { verseAudio, playSegment, stopVerse, wordStarts } from '../core/origAudio.js';
+import { verseAudio, playSegment, stopVerse, wordStarts, ORIG_AUDIO } from '../core/origAudio.js';
 import { t } from '../core/i18n.js';
 
 export default function InterlinearSheet({ pane, payload, sheetId, onClose }) {
@@ -33,7 +33,7 @@ export default function InterlinearSheet({ pane, payload, sheetId, onClose }) {
   // «Вульгата» — в обоих Заветах (латинский текст, значения по словарю)
   const vulg = (ot ? otSource : source) === 'vulg';
   const hebrew = ot && !lxx && !vulg;
-  const noSound = vin || lxx || vulg; // записей чтения нет
+  const noSound = !ORIG_AUDIO || vin || lxx || vulg; // записей чтения нет (или озвучка пока выключена)
   // Живое чтение стиха: playing — 'loading' | true | false; cur — звучащее слово
   const [playing, setPlaying] = useState(false);
   const [cur, setCur] = useState(-1);

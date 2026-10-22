@@ -6,6 +6,8 @@ import { testamentOf } from './books.js';
 
 const AUDIO = { OT: 'audio-hbo-shmuelof', NT: 'audio-grc-phemister' };
 
+// Озвучка слов оригинала (подстрочник, словарь Стронга) выключена до выхода приложения в Google Play — включить: true
+export const ORIG_AUDIO = false;
 export const origAudioFor = (bookId) => AUDIO[testamentOf(bookId)] || null;
 
 async function ensure(id) {
