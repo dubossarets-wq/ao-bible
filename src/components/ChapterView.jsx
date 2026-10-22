@@ -1,6 +1,7 @@
 // Текст Библии: непрерывная прокрутка глав внутри книги (главы подгружаются сверху и снизу),
 // нажатие на слово открывает словари, кнопка в конце стиха — параллельные места.
 // Слова рендерятся HTML-строкой с делегированием событий: в главе может быть больше тысячи слов.
+import { lookupWord } from '../core/lexicon.js';
 import { visibleInterval } from '../core/visibleInterval.js';
 import React, { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
@@ -550,6 +551,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       // Окошко словарей — после паузы двойного касания: иначе оно успевает открыться над пальцем
       // и второе касание попадает в него, а не в стих (двойное касание — в любимые)
       clearTimeout(pendingPop.current);
+      lookupWord({ token: tok, ref: vref }).catch(() => {}); // начинаем искать в словарях, пока ждём двойного касания
       pendingPop.current = setTimeout(() => {
         if (activeWord.current !== w) return;
         const r = w.getBoundingClientRect();

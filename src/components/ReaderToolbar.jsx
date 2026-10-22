@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Search, X, MoreVertical, ChevronDown, ArrowLeft, ArrowRight, Columns2 } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { bookMeta } from '../core/books.js';
-import { useLivePosition } from '../core/livePosition.js';
+import { useLivePosition, getLivePosition } from '../core/livePosition.js';
 import { t } from '../core/i18n.js';
 import { shortName } from '../core/moduleShort.js';
 import { usePhoneLayout } from '../core/layout.js';
@@ -25,8 +25,9 @@ export default function ReaderToolbar({ index, pane, module }) {
   const [menu, setMenu] = useState(false);
   const menuRef = useRef(null);
   const split = !!panes[1];
-  const ref = useLivePosition(index, pane.ref); // мгновенно при прокрутке
-  const label = `${bookMeta(ref.book).short} ${ref.chapter}:${ref.verse}`;
+  // Место при прокрутке меняется на каждом стихе — его показывает отдельная маленькая кнопка (RefButton),
+  // а шапка со всеми значками не перерисовывается
+  const ref = getLivePosition(index) || pane.ref;
 
   useEffect(() => {
     if (!menu) return;
@@ -51,12 +52,7 @@ export default function ReaderToolbar({ index, pane, module }) {
         <ChevronDown size={14} className="tb-chev" />
       </button>
     ),
-    ref: () => (
-      <button key="ref" className="tb tb-ref" onClick={() => openSheet('nav', index)} aria-label={t('{ref}. Выбрать место', { ref: `${bookMeta(ref.book).name} ${ref.chapter}:${ref.verse}` })}>
-        <span className="tb-ref-text">{label}</span>
-        <ChevronDown size={16} className="tb-chev" />
-      </button>
-    ),
+    ref: () => <RefButton key="ref" index={index} pane={pane} onOpen={() => openSheet('nav', index)} />,
     back: () => (
       <button key="back" className="tb tb-icon tb-hist" onClick={() => go(index, -1)} disabled={pane.hIndex <= 0} aria-label={t('Назад по истории')} title={t('Назад')}>
         <ArrowLeft size={21} />
@@ -109,4 +105,15 @@ export default function ReaderToolbar({ index, pane, module }) {
   };
 
   return <header className={`toolbar topbar ${phone ? 'is-phone' : ''}`}>{TOP_BAR[phone ? 'phone' : 'wide'].map((k) => buttons[k]?.())}</header>;
+}
+
+// Кнопка места «Нав. 13:32» — обновляется сама при прокрутке
+function RefButton({ index, pane, onOpen }) {
+  const ref = useLivePosition(index, pane.ref);
+  return (
+    <button className="tb tb-ref" onClick={onOpen} aria-label={t('{ref}. Выбрать место', { ref: `${bookMeta(ref.book).name} ${ref.chapter}:${ref.verse}` })}>
+      <span className="tb-ref-text">{`${bookMeta(ref.book).short} ${ref.chapter}:${ref.verse}`}</span>
+      <ChevronDown size={16} className="tb-chev" />
+    </button>
+  );
 }

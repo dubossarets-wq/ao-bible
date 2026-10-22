@@ -13,6 +13,9 @@ export function setLivePosition(pane, ref) {
   subs.get(pane)?.forEach((fn) => fn());
 }
 
+// Текущее место панели без подписки (например, для меню при открытии)
+export const getLivePosition = (pane) => state.get(pane) || null;
+
 export function clearLivePosition(pane) {
   if (!state.has(pane)) return;
   state.delete(pane);

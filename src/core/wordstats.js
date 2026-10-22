@@ -1,11 +1,17 @@
 // Статистика слова оригинала по номеру Стронга: сколько раз встречается, в каких книгах, как переведено.
 // Считается по установленному переводу с разметкой Стронга (RST+) один раз и запоминается.
-import { listModules, getBook } from './modules.js';
+import { listModules, peekBook } from './modules.js';
+import { testamentOf } from './books.js';
 
+// Кэшируем обещание: два одновременных запроса (статья и симфония) считают один раз
 const cache = new Map();
+export function strongStats(num) {
+  // Перевода с номерами ещё нет (null) — не запоминаем: посчитаем, когда он установится
+  if (!cache.has(num)) cache.set(num, countStats(num).then((r) => (r || cache.delete(num), r), (e) => (cache.delete(num), Promise.reject(e))));
+  return cache.get(num);
+}
 
-export async function strongStats(num) {
-  if (cache.has(num)) return cache.get(num);
+async function countStats(num) {
   const mods = (await listModules()).filter((m) => m.type === 'bible' && m.features?.strongs);
   const mod = mods.find((m) => m.id === 'rst-plus') || mods.find((m) => m.language === 'ru') || mods[0];
   if (!mod) return null;
@@ -16,8 +22,12 @@ export async function strongStats(num) {
   const renderings = new Map();
   const refs = [];
   let total = 0;
+  // В RST+ еврейские номера только в ВЗ, греческие — только в НЗ: другой Завет не читаем (на 60% меньше чтений).
+  // Книги — мимо кэша читалки, чтобы не вытеснять книгу, которую сейчас читают.
+  const only = mod.id === 'rst-plus' ? (/^G/i.test(esc) ? 'NT' : /^H/i.test(esc) ? 'OT' : null) : null;
   for (const b of mod.books) {
-    const data = await getBook(mod.id, b.id);
+    if (only && testamentOf(b.id) !== only) continue;
+    const data = await peekBook(mod.id, b.id);
     if (!data) continue;
     let n = 0;
     data.chapters.forEach((verses, ci) =>
@@ -47,6 +57,5 @@ export async function strongStats(num) {
     renderings: [...renderings.entries()].sort((a, b) => b[1] - a[1]),
     refs,
   };
-  cache.set(num, res);
   return res;
 }

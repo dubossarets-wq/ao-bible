@@ -337,10 +337,10 @@ export default function ModuleLibrary({ payload, onClose }) {
   const [url, setUrl] = useState('');
   const [persist, setPersist] = useState(true);
 
-  const loadCatalog = () => {
+  const loadCatalog = (fresh = false) => {
     setCatalog(null);
     setCatErr(null);
-    repo.fetchCatalog(sourceUrl).then(setCatalog, (e) => setCatErr(e.message));
+    repo.fetchCatalog(sourceUrl, { fresh }).then(setCatalog, (e) => setCatErr(e.message));
   };
   useEffect(loadCatalog, [sourceUrl]);
   useEffect(() => {
@@ -440,7 +440,7 @@ export default function ModuleLibrary({ payload, onClose }) {
                   {t('Встроенный каталог')}
                 </button>
               )}
-              <button className="btn small" onClick={loadCatalog}>
+              <button className="btn small" onClick={() => loadCatalog(true)}>
                 <RefreshCw size={14} /> {t('Обновить список')}
               </button>
             </div>

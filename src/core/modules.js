@@ -190,7 +190,17 @@ async function fetchWithProgress(url, onProgress, expected) {
   return out.buffer;
 }
 
-export async function fetchCatalog(url = CATALOG_URL) {
+// Каталог помним 2 минуты: при первом запуске его просили 4–5 раз подряд (установка, аудиокниги, объединение модулей).
+// fresh — «Обновить список» в библиотеке.
+const catalogMemo = new Map(); // url -> { at, promise }
+export function fetchCatalog(url = CATALOG_URL, { fresh = false } = {}) {
+  const hit = catalogMemo.get(url);
+  if (!fresh && hit && Date.now() - hit.at < 120000) return hit.promise;
+  const promise = fetchCatalogNow(url).catch((e) => (catalogMemo.delete(url), Promise.reject(e)));
+  catalogMemo.set(url, { at: Date.now(), promise });
+  return promise;
+}
+async function fetchCatalogNow(url) {
   const buf = await fetchWithProgress(url);
   const json = await bytesToJson(buf);
   if (json?.format !== 'aob-catalog' || !Array.isArray(json.modules)) throw new ModuleError(t('По этому адресу нет каталога в формате aob-catalog.'));
@@ -202,10 +212,17 @@ export async function fetchCatalog(url = CATALOG_URL) {
   }));
 }
 
-export async function installFromCatalog(entry, onProgress) {
-  if (entry.unavailable || !entry.url) throw new ModuleError(t('Этот модуль пока недоступен для загрузки.'));
+// Скачать файл модуля (без установки) — чтобы первая установка качала следующий, пока обрабатывается текущий
+export function downloadModule(entry, onProgress) {
+  if (entry.unavailable || !entry.url) return Promise.reject(new ModuleError(t('Этот модуль пока недоступен для загрузки.')));
   const useGz = entry.urlGz && typeof DecompressionStream !== 'undefined';
-  const buf = await fetchWithProgress(useGz ? entry.urlGz : entry.url, (p, l) => onProgress?.(p * 0.6, l), useGz ? entry.sizeGz : entry.size);
+  return fetchWithProgress(useGz ? entry.urlGz : entry.url, onProgress, useGz ? entry.sizeGz : entry.size);
+}
+
+// prefetched — уже идущее скачивание (обещание буфера) из downloadModule
+export async function installFromCatalog(entry, onProgress, prefetched = null) {
+  if (entry.unavailable || !entry.url) throw new ModuleError(t('Этот модуль пока недоступен для загрузки.'));
+  const buf = await (prefetched || downloadModule(entry, (p, l) => onProgress?.(p * 0.6, l)));
   const json = await bytesToJson(buf, (l) => onProgress?.(0.65, l));
   const norm = normalize(json, { fileName: entry.id });
   norm.meta.id = entry.id;

@@ -106,7 +106,18 @@ const strongKey = (s) => {
   return m ? `${m[1].toUpperCase()}${m[2]}${m[3] || ''}` : s;
 };
 
-export async function lookupWord({ token, ref }) {
+// Последние запросы помним (обещания): выборка словарей начинает искать при касании слова, во время паузы
+// на двойное касание, и окно открывается уже с готовым ответом
+const recent = new Map();
+export function lookupWord({ token, ref }) {
+  const key = `${token.text}|${(token.strongs || []).join(',')}|${(token.morph || []).join(',')}|${ref.book}.${ref.chapter}.${ref.verse}`;
+  if (!recent.has(key)) {
+    recent.set(key, lookupWordNow({ token, ref }).catch((e) => (recent.delete(key), Promise.reject(e))));
+    if (recent.size > 12) recent.delete(recent.keys().next().value);
+  }
+  return recent.get(key);
+}
+async function lookupWordNow({ token, ref }) {
   const modules = byRank((await listModules()).filter((m) => m.type === 'dictionary' && m.enabled !== false));
   const testament = testamentOf(ref.book);
   const prefix = testament === 'NT' ? 'G' : 'H';

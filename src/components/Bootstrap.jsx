@@ -25,9 +25,15 @@ export default function Bootstrap() {
       const [bible, ...rest] = list;
       await repo.installFromCatalog(bible, (p, label) => setState({ phase: 'run', label: `${bible.name}: ${label}`, p }));
       save('bootstrapped', true);
-      for (const m of rest) {
+      // Следующий модуль качается, пока текущий распаковывается и записывается (по одному наперёд — память не растёт)
+      let next = rest[0] ? repo.downloadModule(rest[0]).catch(() => null) : null;
+      for (let i = 0; i < rest.length; i++) {
+        const m = rest[i];
+        const mine = next;
+        next = rest[i + 1] ? repo.downloadModule(rest[i + 1]).catch(() => null) : null;
         try {
-          await repo.installFromCatalog(m);
+          const buf = await mine;
+          await repo.installFromCatalog(m, undefined, buf ? Promise.resolve(buf) : null);
         } catch (e) {
           console.warn('Не удалось установить', m.id, e); // i18n-ignore: только для разработчика
         }
