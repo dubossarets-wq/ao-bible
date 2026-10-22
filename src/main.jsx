@@ -10,6 +10,8 @@ import { installNative } from './core/native.js';
 import { startMediaControls } from './core/mediaControls.js';
 
 installNative(); // приложение из Google Play: системные «Поделиться» и буфер обмена
+// Android: свой вид нижнего меню (сплошная полоса во всю ширину, styles.css → html.is-android)
+if (/Android/i.test(navigator.userAgent)) document.documentElement.classList.add('is-android');
 startMediaControls(); // ▶/⏸ и ⏮/⏭ на экране блокировки
 
 // Динамическая высота мобильного браузера и клавиатура: --vvh = высота видимой области

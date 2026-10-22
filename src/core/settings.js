@@ -191,5 +191,5 @@ export function applySettings(settings, themeName) {
   ensureFont(settings.fontFamily);
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', t.bar); // цвет строки состояния Android — как у верхней панели
-  syncSystemBars(t.bar, t.bg); // приложение из Google Play: цвет значков системных полос
+  syncSystemBars(t.bar, t.panel); // приложение из Google Play: цвет системных полос (низ — как сплошное нижнее меню)
 }
