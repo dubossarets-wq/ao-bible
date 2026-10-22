@@ -12,7 +12,9 @@ const JDK = `${TOOLS}/jdk21/jdk-21.0.12.1+1`;
 const SDK = `${TOOLS}/sdk`;
 const KEY = `${TOOLS}/keys/aobible-upload.jks`;
 const versionName = process.argv[2] || '1.0';
-const versionCode = new Date().toISOString().replace(/[-:T]/g, '').slice(2, 10); // ГГММДДЧЧ, UTC
+// Номер версии для Play растёт каждую минуту: 30 000 000 + минуты с 1.1.2026 (UTC).
+// Больше прежних номеров вида ГГММДДЧЧ (26102210) и не повторяется, даже если собирать дважды за час.
+const versionCode = String(process.env.AOB_VERSION_CODE || 30000000 + Math.floor((Date.now() - Date.UTC(2026, 0, 1)) / 60000));
 const env = {
   ...process.env,
   AOB_CHANNEL: 'prod',
