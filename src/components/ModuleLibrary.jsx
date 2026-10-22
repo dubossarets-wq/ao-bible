@@ -296,6 +296,8 @@ export const langName = (code) => {
 function LangFilter({ value, onChange, items }) {
   const counts = {};
   items.forEach((m) => (counts[m.language || ''] = (counts[m.language || ''] || 0) + 1));
+  // Выбранный язык остаётся видимым, даже если в этой категории его модулей нет (с нулём) — чтобы фильтр можно было снять
+  if (value !== 'all' && !(value in counts)) counts[value] = 0;
   const codes = Object.keys(counts).sort((a, b) => langRank(a) - langRank(b) || a.localeCompare(b));
   if (codes.length < 2) return null;
   return (
@@ -395,7 +397,8 @@ export default function ModuleLibrary({ payload, onClose }) {
             <input id="mod-q" type="search" value={mq} onChange={(e) => setMq(e.target.value)} placeholder={t('Поиск: Лопухин, Стронг, KJV…')} autoComplete="off" />
           </div>
           <Filter value={filter} onChange={setFilter} counts={counts} />
-          <LangFilter value={lang} onChange={setLang} items={base} />
+          {/* Числа у языков — с учётом выбранной категории и строки поиска (как числа у категорий — с учётом языка) */}
+          <LangFilter value={lang} onChange={setLang} items={base.filter((m) => (filter === 'all' || m.type === filter) && matches(m, q))} />
         </>
       )}
       {tab === 'installed' && <Sections items={list} mode="installed" catalog={catalog} busy={busy} onInstall={install} filter={filter} />}

@@ -312,6 +312,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     } else if (el.scrollHeight - y - el.clientHeight < 1400 && range.end < total && !pending.current) {
       setRange((r) => ({ ...r, end: r.end + 1 }));
     }
+    emitPosition();
     // Текущий стих — раз в кадр, по закэшированным координатам (без перерисовки всего приложения)
     if (!frame.current) frame.current = requestAnimationFrame(trackPosition);
   };
@@ -322,14 +323,15 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
   const measure = () => {
     const els = scroller.current?.querySelectorAll('.verse') || [];
     positions.current = Array.from(els, (v) => ({ top: v.offsetTop, bottom: v.offsetTop + v.offsetHeight, c: +v.dataset.c, v: +v.dataset.v }));
+    positions.current.byKey = new Map(positions.current.map((p) => [`${p.c}:${p.v}`, p]));
   };
-  const trackPosition = () => {
-    frame.current = 0;
+  // Стих у верхнего края и где он (по закэшированным координатам — без чтения разметки на каждом кадре)
+  const verseAtTop = () => {
     const el = scroller.current;
-    if (!el || !book) return;
+    if (!el || !book) return null;
     if (!positions.current) measure();
     const list = positions.current;
-    if (!list.length) return;
+    if (!list.length) return null;
     const top = el.scrollTop + 12;
     let lo = 0;
     let hi = list.length - 1;
@@ -341,13 +343,25 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
         hi = mid - 1;
       } else lo = mid + 1;
     }
+    return { found, top };
+  };
+  // Синхронная прокрутка: ведущая панель передаёт стих и долю его высоты — сразу в событии прокрутки,
+  // не дожидаясь следующего кадра (иначе вторая панель заметно отставала при быстрой прокрутке)
+  const emitPosition = () => {
+    if (!settings.syncScroll || !isDriver(index)) return;
+    const at = verseAtTop();
+    if (!at) return;
+    const { found, top } = at;
+    const frac = Math.max(0, Math.min(1, (top - found.top) / Math.max(1, found.bottom - found.top)));
+    emitSync(index, { ref: { book: book.id, chapter: found.c, verse: found.v }, frac });
+  };
+  const trackPosition = () => {
+    frame.current = 0;
+    const at = verseAtTop();
+    if (!at) return;
+    const { found } = at;
     const ref = { book: book.id, chapter: found.c, verse: found.v };
     setLivePosition(index, ref);
-    // Синхронная прокрутка: ведущая панель передаёт стих и долю его высоты
-    if (settings.syncScroll && isDriver(index)) {
-      const frac = Math.max(0, Math.min(1, (top - found.top) / Math.max(1, found.bottom - found.top)));
-      emitSync(index, { ref, frac });
-    }
     // В историю и сохранение — когда прокрутка стихла
     clearTimeout(posTimer.current);
     posTimer.current = setTimeout(() => reportPosition(index, ref), 450);
@@ -534,9 +548,11 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
         const el = scroller.current;
         if (!settings.syncScroll || !el || isDriver(index) || !book) return;
         if (!module.books.some((b) => b.id === ref.book)) return;
-        const target = book.id === ref.book ? el.querySelector(`#v-${ref.chapter}-${ref.verse}`) : null;
-        if (target) {
-          el.scrollTop = target.offsetTop + frac * target.offsetHeight - 12;
+        // Координаты стиха — из кэша (без поиска по странице и замеров на каждом шаге прокрутки)
+        if (book.id === ref.book && !positions.current) measure();
+        const pos = book.id === ref.book ? positions.current?.byKey?.get(`${ref.chapter}:${ref.verse}`) : null;
+        if (pos) {
+          el.scrollTop = pos.top + frac * (pos.bottom - pos.top) - 12;
           lastY.current = el.scrollTop;
           return;
         }
