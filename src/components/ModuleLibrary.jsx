@@ -296,8 +296,6 @@ export const langName = (code) => {
 function LangFilter({ value, onChange, items }) {
   const counts = {};
   items.forEach((m) => (counts[m.language || ''] = (counts[m.language || ''] || 0) + 1));
-  // Выбранный язык остаётся видимым, даже если в этой категории его модулей нет (с нулём) — чтобы фильтр можно было снять
-  if (value !== 'all' && !(value in counts)) counts[value] = 0;
   const codes = Object.keys(counts).sort((a, b) => langRank(a) - langRank(b) || a.localeCompare(b));
   if (codes.length < 2) return null;
   return (
@@ -372,6 +370,10 @@ export default function ModuleLibrary({ payload, onClose }) {
   // Сначала русские модули, дальше — в порядке языков (внутри языка — как в каталоге)
   const list = base.filter((m) => (lang === 'all' || (m.language || '') === lang) && matches(m, q)).sort((a, b) => langRank(a.language || '') - langRank(b.language || ''));
   const counts = useMemo(() => Object.fromEntries(MODULE_SECTIONS.map(([type]) => [type, list.filter((m) => m.type === type).length])), [list]);
+  const langItems = base.filter((m) => (filter === 'all' || m.type === filter) && matches(m, q));
+  // В выбранной категории нет модулей этого языка — фильтр языка снимается сам (иначе пустой экран)
+  const langEmpty = lang !== 'all' && !langItems.some((m) => (m.language || '') === lang);
+  useEffect(() => void (langEmpty && setLang('all')), [langEmpty]);
 
   return (
     <BottomSheet title={t('Библиотека модулей')} onClose={onClose} variant="wide">
@@ -397,8 +399,8 @@ export default function ModuleLibrary({ payload, onClose }) {
             <input id="mod-q" type="search" value={mq} onChange={(e) => setMq(e.target.value)} placeholder={t('Поиск: Лопухин, Стронг, KJV…')} autoComplete="off" />
           </div>
           <Filter value={filter} onChange={setFilter} counts={counts} />
-          {/* Числа у языков — с учётом выбранной категории и строки поиска (как числа у категорий — с учётом языка) */}
-          <LangFilter value={lang} onChange={setLang} items={base.filter((m) => (filter === 'all' || m.type === filter) && matches(m, q))} />
+          {/* Числа у языков — с учётом выбранной категории и строки поиска; языков без модулей не показываем */}
+          <LangFilter value={lang} onChange={setLang} items={langItems} />
         </>
       )}
       {tab === 'installed' && <Sections items={list} mode="installed" catalog={catalog} busy={busy} onInstall={install} filter={filter} />}
