@@ -24,8 +24,13 @@ export function Toasts({ items }) {
   return (
     <div className="toasts" role="status" aria-live="polite">
       {items.map((x) => (
-        <div key={x.id} className={`toast ${x.kind}`}>
-          {x.text}
+        <div key={x.id} className={`toast ${x.kind}${x.action ? ' with-action' : ''}`}>
+          <span className="toast-text">{x.text}</span>
+          {x.action && (
+            <button type="button" className="toast-act" onClick={x.action.run}>
+              {x.action.label}
+            </button>
+          )}
         </div>
       ))}
     </div>

@@ -49,6 +49,8 @@ export default function BottomSheet({ title, subtitle, onClose, onBack, children
     };
     const onEnd = (e) => {
       if (!s) return;
+      // Этим жестом смахивали строку списка (SwipeRow) — вкладки не листаем
+      if (e.target.closest?.('[data-swiped]')) return void (s = null);
       const t1 = e.changedTouches[0];
       const dx = t1.clientX - s.x;
       const dy = t1.clientY - s.y;

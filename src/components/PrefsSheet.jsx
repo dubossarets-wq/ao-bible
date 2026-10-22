@@ -5,6 +5,7 @@ import { ChevronRight, Library, Palette, RefreshCw, History, Info, Download, Upl
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { Switch, Hint, ConfirmButton } from './ui.jsx';
+import SwipeRow from './SwipeRow.jsx';
 import { IS_PWA_BUILD, applyUpdate, buildDate, BUILD } from '../core/updates.js';
 import { saveDataFile, readDataFile, describeData, importData } from '../core/dataFile.js';
 import { listOffline, removeBook } from '../core/offlineAudio.js';
@@ -139,7 +140,7 @@ function MyData() {
 }
 
 function OfflineList() {
-  const { modules } = useApp();
+  const { modules, toast } = useApp();
   const [list, setList] = useState(listOffline);
   const items = Object.entries(list);
   if (!items.length)
@@ -152,14 +153,21 @@ function OfflineList() {
         {items.map(([k, v]) => {
           const [audioId, book] = k.split('|');
           return (
-            <li key={k}>
+            // Смахнуть влево — кнопка «Удалить» (удалить сразу длинным свайпом нельзя: вернуть книгу — только скачать заново)
+            <SwipeRow
+              key={k}
+              innerClassName="pref-list-row"
+              full={false}
+              onDelete={() => removeBook(audioId, book).then(() => (setList(listOffline()), toast(t('Удалено из телефона: {book}', { book: bookMeta(book).name }))))}
+              label={t('Удалить скачанную книгу {book}', { book: bookMeta(book).name })}
+            >
               <span>
                 {bookMeta(book).name} <small>{modules.find((m) => m.id === audioId)?.name || audioId} · {t('{n} МБ', { n: (v.bytes / 1048576).toFixed(0) })}</small>
               </span>
               <ConfirmButton className="icon-btn subtle" confirmText={t('Удалить')} onConfirm={() => removeBook(audioId, book).then(() => setList(listOffline()))} aria-label={t('Удалить скачанную книгу {book}', { book: bookMeta(book).name })}>
                 <Trash2 size={15} />
               </ConfirmButton>
-            </li>
+            </SwipeRow>
           );
         })}
       </ul>
