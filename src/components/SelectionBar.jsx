@@ -126,7 +126,11 @@ export default function SelectionBar({ index, module, selection, onDone }) {
     if (others.length === 1) {
       openParallel(index, refs[0], others[0].id);
       onDone();
-    } else openSheet('compare', index, { refs, moduleId: module.id, pick: true });
+    } else {
+      // Выбор перевода — в окне; выделение снимаем сразу, как и при прямом открытии второй панели
+      openSheet('compare', index, { refs, moduleId: module.id, pick: true });
+      onDone();
+    }
   };
 
   const fav = refs.every((r) => isFavorite(r));

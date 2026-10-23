@@ -163,7 +163,7 @@ export default function App() {
   useEffect(() => {
     if (!modules || !bibles.length) return;
     const done = load('lateStarter', []);
-    const todo = repo.LATE_STARTER.filter((id) => !done.includes(id) && !modules.some((m) => m.id === id));
+    const todo = repo.lateStarter().filter((id) => !done.includes(id) && !modules.some((m) => m.id === id));
     if (!todo.length) return;
     save('lateStarter', [...done, ...todo]);
     repo
@@ -172,10 +172,15 @@ export default function App() {
         // Модуля ещё нет в каталоге — не отмечаем его, поставим при следующем запуске
         const missing = todo.filter((id) => !cat.some((c) => c.id === id));
         if (missing.length) save('lateStarter', [...done, ...todo.filter((id) => !missing.includes(id))]);
+        const study = []; // модули для изучения — одним уведомлением в конце
         for (const id of todo) {
           const entry = cat.find((c) => c.id === id);
           if (!entry) continue;
           await repo.installFromCatalog(entry);
+          if (repo.STUDY.includes(entry.id) || entry.id === repo.langDictionary()) {
+            study.push(entry.name);
+            continue;
+          }
           if (entry.id === 'strongs-ru-greek' || repo.ORIGINALS.includes(entry.id)) continue; // о русском Стронге — одно уведомление на оба модуля; оригиналы ставятся молча
           toast(
             entry.type === 'illustrations'
@@ -185,6 +190,7 @@ export default function App() {
                 : t('Установлен «{name}»: нажмите на город в стихе — он покажется на карте', { name: entry.name })
           );
         }
+        if (study.length) toast(t('Добавлено для изучения: {names}', { names: study.join(', ') }));
       })
       .catch(() => save('lateStarter', done));
   }, [modules, bibles.length]);

@@ -15,12 +15,12 @@ export default function Bootstrap() {
 
   const run = async () => {
     // Первую установку делает только этот экран — автодоустановка в App её не дублирует
-    save('lateStarter', repo.LATE_STARTER);
+    save('lateStarter', repo.lateStarter());
     save('welcomePending', true); // когда библиотека будет готова, App покажет приветствие
     setState({ phase: 'run', label: t('Подключаю каталог…'), p: 0 });
     try {
       const catalog = await repo.fetchCatalog();
-      const list = repo.STARTER.map((id) => catalog.find((c) => c.id === id)).filter(Boolean);
+      const list = repo.starter().map((id) => catalog.find((c) => c.id === id)).filter(Boolean);
       // Перевод ставим первым: как только он готов, можно читать; остальное доустановится следом.
       const [bible, ...rest] = list;
       await repo.installFromCatalog(bible, (p, label) => setState({ phase: 'run', label: `${bible.name}: ${label}`, p }));

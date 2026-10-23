@@ -268,6 +268,9 @@ async function run(label, viewport, isMobile) {
   check(`${label}: долгое нажатие выделяет стих`, selRef.includes('13:33') && selected.join() === 'v-13-33', `${selRef}, ${selected}`);
   await page.screenshot({ path: `${shots}/${label}-7b-selection.png` });
   await page.click('[aria-label="Открыть параллельно в другом переводе"]');
+  // Переводов больше одного (стартовые подстрочники) — открывается выбор; берём RST
+  const pickRst = page.locator('[aria-label="Читать параллельно: RST"]');
+  if (await pickRst.waitFor({ timeout: 3000 }).then(() => true, () => false)) await pickRst.click();
   await page.waitForSelector('.pane-slot.second .verse', { timeout: 15000 });
   await page.waitForTimeout(800);
   const pm = await page.$$eval('.tb-module-name', (e) => e.map((x) => x.textContent));

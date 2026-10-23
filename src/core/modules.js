@@ -3,7 +3,7 @@
 import { load, save } from './storage.js';
 import * as db from './db.js';
 import { normalize, bytesToJson, ModuleError } from './schema.js';
-import { t } from './i18n.js';
+import { t, getLang } from './i18n.js';
 import { REMOTE } from './native.js';
 
 // Текст ошибки для человека: нехватку места браузер сообщает по-английски и непонятно — объясняем, что делать
@@ -254,10 +254,16 @@ export async function importFile(file, onProgress) {
 // Первый запуск: ставим базовый набор из каталога, сначала перевод — чтобы сразу можно было читать.
 // Оригиналы для подстрочника (еврейский и греческий текст) — тоже сразу, чтобы подстрочник работал без интернета
 export const ORIGINALS = ['oshb', 'byz-rp2018'];
-export const STARTER = ['rst-plus', 'xrefs-rst', 'rst-symphony', 'strongs-ru-hebrew', 'strongs-ru-greek', 'bible-places', 'bible-illustrations', ...ORIGINALS];
+// Словарь на языке интерфейса: русский — для русского, украинского и белорусского; на других языках в каталоге
+// только английские словари
+const LANG_DICTIONARY = { ru: 'nikifor', uk: 'nikifor', be: 'nikifor' };
+export const langDictionary = () => LANG_DICTIONARY[getLang()] || 'easton';
+// Для изучения — у каждого сразу: карты, толкования Лопухина, подстрочники (большой «Подстрочник» — последним)
+export const STUDY = ['bible-maps', 'lopukhin', 'vin-interlinear', 'rst-interlinear'];
+export const starter = () => ['rst-plus', 'xrefs-rst', 'rst-symphony', 'strongs-ru-hebrew', 'strongs-ru-greek', 'bible-places', 'bible-illustrations', ...ORIGINALS, langDictionary(), ...STUDY];
 
 // Модули, которые один раз доустанавливаются тем, кто начал пользоваться приложением до их появления
-export const LATE_STARTER = ['bible-places', 'bible-illustrations', 'strongs-ru-hebrew', 'strongs-ru-greek', ...ORIGINALS];
+export const lateStarter = () => ['bible-places', 'bible-illustrations', 'strongs-ru-hebrew', 'strongs-ru-greek', ...ORIGINALS, langDictionary(), ...STUDY];
 
 // Модули, собранные в один: многотомный комментарий одного автора стал одним модулем.
 // У кого стоят старые части — ставится общий модуль, части удаляются (см. App.jsx).
