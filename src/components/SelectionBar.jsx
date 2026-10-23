@@ -6,7 +6,7 @@ import { X, Languages, BookCopy, Heart, Link2, Share2, Copy, NotebookPen, Bookma
 import { useApp } from '../App.jsx';
 import { getVerse, ORIGINALS } from '../core/modules.js';
 import { listenFrom } from '../core/listen.js';
-import { swallowNextClick } from './ui.jsx';
+import { swallowNextClick, fitMenu } from './ui.jsx';
 import { HL_COLORS, hlLabel } from '../core/highlights.js';
 import { plainText } from '../core/verseMarkup.js';
 import { bookMeta, formatRef, BOOKS } from '../core/books.js';
@@ -219,7 +219,7 @@ export default function SelectionBar({ index, module, selection, onDone }) {
           <MoreHorizontal size={22} />
         </button>
         {more && (
-          <div className="menu" role="menu">
+          <div className="menu" role="menu" ref={fitMenu}>
             {moreItem(WholeWord, t('Подстрочник'), () => openSheet('interlinear', index, { ref: first, moduleId: module.id }))}
             {moreItem(Compass, t('Всё о стихе'), () => openSheet('guide', index, { ref: first, moduleId: module.id }))}
             {moreItem(ScrollText, t('В проповедь'), () => openSheet('sermon-add', index, { refs, moduleId: module.id }))}

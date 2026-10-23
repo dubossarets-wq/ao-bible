@@ -6,6 +6,17 @@ import { t } from '../core/i18n.js';
 
 // Нажатие мимо открытого меню только закрывает его: следующий щелчок (по слову, стиху) гасим.
 // Если вместо щелчка была прокрутка — через мгновение снимаем запрет, чтобы не съесть настоящее нажатие.
+// Выпадающее меню (ref={fitMenu}): высота — до нижнего меню вкладок или низа экрана, остальное прокручивается.
+// Нужна, когда меню открывается из второй панели (середина экрана) и иначе ушло бы за край.
+export function fitMenu(el) {
+  if (!el) return;
+  const top = el.getBoundingClientRect().top;
+  const bar = document.querySelector('.tabbar');
+  const barTop = bar && getComputedStyle(bar).visibility !== 'hidden' && !document.documentElement.classList.contains('reading-hidden') ? bar.getBoundingClientRect().top : Infinity;
+  const bottom = Math.min(window.visualViewport?.height || window.innerHeight, barTop) - 8;
+  el.style.maxHeight = `${Math.max(160, bottom - top)}px`;
+}
+
 export function swallowNextClick() {
   const block = (e) => {
     e.stopPropagation();

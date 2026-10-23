@@ -8,7 +8,7 @@ import { useLivePosition, getLivePosition } from '../core/livePosition.js';
 import { t } from '../core/i18n.js';
 import { shortName } from '../core/moduleShort.js';
 import { usePhoneLayout } from '../core/layout.js';
-import { swallowNextClick } from './ui.jsx';
+import { swallowNextClick, fitMenu } from './ui.jsx';
 import { moreItems, MoreItem } from './moreItems.jsx';
 
 // Кнопки: module — перевод (пилюля), ref — место (пилюля), back/forward — история переходов,
@@ -93,7 +93,7 @@ export default function ReaderToolbar({ index, pane, module }) {
           {updates.available && <span className="update-dot" aria-hidden="true" />}
         </button>
         {menu && (
-          <div className="menu" role="menu">
+          <div className="menu" role="menu" ref={fitMenu}>
             {moreItems(app, { index, ref, module }).map((it) => (
               <MoreItem key={it.key} item={it} onDone={() => setMenu(false)} />
             ))}
