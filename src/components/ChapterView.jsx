@@ -349,7 +349,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
   const frame = useRef(0);
   const measure = () => {
     const els = scroller.current?.querySelectorAll('.verse') || [];
-    positions.current = Array.from(els, (v) => ({ top: v.offsetTop, bottom: v.offsetTop + v.offsetHeight, c: +v.dataset.c, v: +v.dataset.v }));
+    positions.current = Array.from(els, (v, i) => ({ i, top: v.offsetTop, bottom: v.offsetTop + v.offsetHeight, c: +v.dataset.c, v: +v.dataset.v }));
     positions.current.byKey = new Map(positions.current.map((p) => [`${p.c}:${p.v}`, p]));
   };
   // Стих у верхнего края и где он (по закэшированным координатам — без чтения разметки на каждом кадре)
@@ -374,12 +374,29 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
   };
   // Синхронная прокрутка: ведущая панель передаёт стих и долю его высоты — сразу в событии прокрутки,
   // не дожидаясь следующего кадра (иначе вторая панель заметно отставала при быстрой прокрутке)
+  // Доля считается от начала стиха до начала следующего (вместе с отступом и заголовком между ними) —
+  // так вторая панель едет непрерывно, без скачка на каждой границе стихов
+  const span = (list, p) => Math.max(1, (list[p.i + 1]?.top ?? p.bottom) - p.top);
   const emitPosition = () => {
     if (!settings.syncScroll || !isDriver(index)) return;
-    const at = verseAtTop();
-    if (!at) return;
-    const { found, top } = at;
-    const frac = Math.max(0, Math.min(1, (top - found.top) / Math.max(1, found.bottom - found.top)));
+    const el = scroller.current;
+    if (!el || !book) return;
+    if (!positions.current) measure();
+    const list = positions.current;
+    if (!list.length) return;
+    const top = el.scrollTop + 12;
+    // последний стих, начало которого уже выше линии
+    let lo = 0;
+    let hi = list.length - 1;
+    let found = list[0];
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (list[mid].top <= top) {
+        found = list[mid];
+        lo = mid + 1;
+      } else hi = mid - 1;
+    }
+    const frac = Math.max(0, Math.min(1, (top - found.top) / span(list, found)));
     emitSync(index, { ref: { book: book.id, chapter: found.c, verse: found.v }, frac });
   };
   // Две панели с синхронной прокруткой на телефоне — прокрутку пальцем ведём сами, чтобы вторая панель не отставала
@@ -582,7 +599,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
         if (book.id === ref.book && !positions.current) measure();
         const pos = book.id === ref.book ? positions.current?.byKey?.get(`${ref.chapter}:${ref.verse}`) : null;
         if (pos) {
-          el.scrollTop = pos.top + frac * (pos.bottom - pos.top) - 12;
+          el.scrollTop = pos.top + frac * span(positions.current, pos) - 12;
           lastY.current = el.scrollTop;
           return;
         }
