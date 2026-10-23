@@ -540,6 +540,8 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     const ro = new ResizeObserver(() => {
       positions.current = null;
       keepAnchor();
+      // Текст перестроился (ширина, шрифт, подписи) — место в шапке и истории пересчитываем по новой раскладке
+      if (!frame.current) frame.current = requestAnimationFrame(trackPosition);
     });
     ro.observe(col);
     return () => {
