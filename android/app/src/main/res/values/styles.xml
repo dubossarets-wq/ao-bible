@@ -16,7 +16,13 @@
     </style>
 
 
+    <!-- Запуск без заставки: сразу фон приложения, без логотипа (на Android 12+ — и без значка в системной
+         заставке); дальше страница показывает снимок последнего экрана (src/core/snapshot.js) -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">@drawable/splash</item>
+        <item name="android:background">@color/launch_bg</item>
+        <item name="android:windowBackground">@color/launch_bg</item>
+        <item name="windowSplashScreenBackground">@color/launch_bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>

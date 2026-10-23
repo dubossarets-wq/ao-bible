@@ -7,6 +7,8 @@ import { useApp } from '../App.jsx';
 import { Switch, Hint, ConfirmButton } from './ui.jsx';
 import SwipeRow from './SwipeRow.jsx';
 import { IS_PWA_BUILD, applyUpdate, buildDate, BUILD } from '../core/updates.js';
+import { NATIVE } from '../core/native.js';
+import { usePlayUpdate, checkPlayUpdate, installPlayUpdate } from '../core/playUpdate.js';
 import { saveDataFile, readDataFile, describeData, importData } from '../core/dataFile.js';
 import { listOffline, removeBook } from '../core/offlineAudio.js';
 import { bookMeta } from '../core/books.js';
@@ -200,6 +202,16 @@ export default function PrefsSheet({ pane, payload, sheetId, onClose }) {
   // Пункты настроек открываются со стрелкой «‹ Назад» — обратно в «Настройки»
   const go = (kind) => openSheet(kind, pane, { returnTo: { kind: 'prefs', payload: payload || {}, id: sheetId } });
 
+  // Приложение из Google Play: новая версия — по данным самого Google Play
+  const play = usePlayUpdate();
+  const playCheck = async () => {
+    if (play.available) return installPlayUpdate();
+    setChecking(true);
+    const r = await checkPlayUpdate();
+    setChecking(false);
+    if (r.available) installPlayUpdate();
+    else toast(t('У вас последняя версия'));
+  };
   const check = async () => {
     if (updates.available) return applyUpdate();
     setChecking(true);
@@ -235,6 +247,19 @@ export default function PrefsSheet({ pane, payload, sheetId, onClose }) {
           <Row icon={HardDrive} onClick={() => setPage('data')} sub={t('Сохранить и перенести на новый телефон')}>
             {t('Мои данные')}
           </Row>
+          <Row icon={Sparkles} onClick={() => go('news')} sub={t('Последнее обновление')}>
+            {t('Что нового')}
+          </Row>
+          {NATIVE && (
+            <Row
+              icon={RefreshCw}
+              onClick={playCheck}
+              sub={play.available ? t('Нажмите, чтобы обновить') : t('Версия от {date}', { date: buildDate(BUILD) })}
+              extra={checking ? <Loader2 size={16} className="spin" /> : play.available ? <span className="badge-new">{t('новая')}</span> : null}
+            >
+              {play.available ? t('Обновить приложение') : t('Проверить обновления')}
+            </Row>
+          )}
           {IS_PWA_BUILD && (
             <Row icon={RefreshCw} onClick={() => setPage('app')} sub={updates.available ? t('Есть новая версия') : t('Версия от {date}', { date: buildDate(BUILD) })} extra={updates.available ? <span className="badge-new">{t('новая')}</span> : null}>
               {t('Обновления')}
@@ -281,9 +306,6 @@ export default function PrefsSheet({ pane, payload, sheetId, onClose }) {
         <section className="settings-group">
           <Row icon={RefreshCw} onClick={check} sub={updates.available ? t('Нажмите, чтобы обновить') : t('Версия от {date}', { date: buildDate(BUILD) })} extra={checking ? <Loader2 size={16} className="spin" /> : null}>
             {updates.available ? t('Обновить приложение') : t('Проверить обновления')}
-          </Row>
-          <Row icon={Sparkles} onClick={() => go('news')} sub={t('Последнее обновление')}>
-            {t('Что нового')}
           </Row>
           <Row icon={History} onClick={() => go('versions')} sub={t('Откат и резервные копии')}>
             {t('Версии приложения')}

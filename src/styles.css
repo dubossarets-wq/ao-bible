@@ -1863,3 +1863,5 @@ html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px))
 .confirm-group.end { margin-left: auto; }
 .sv-line .confirm-group { flex: none; align-self: center; margin-left: 6px; }
 .sermon-block-tools .confirm-group { margin-left: auto; }
+/* Снимок экрана при запуске (core/snapshot.js): поверх, пока не нарисована настоящая глава; не нажимается */
+#snap { position: fixed; inset: 0; z-index: 2147483000; pointer-events: none; overflow: hidden; background: var(--bg); }

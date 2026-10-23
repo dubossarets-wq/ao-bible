@@ -2,6 +2,7 @@
 // нажатие на слово открывает словари, кнопка в конце стиха — параллельные места.
 // Слова рендерятся HTML-строкой с делегированием событий: в главе может быть больше тысячи слов.
 import { useSyncTouchScroll } from './useSyncTouchScroll.js';
+import { dropSnapshot } from '../core/snapshot.js';
 import { lookupWord } from '../core/lexicon.js';
 import { visibleInterval } from '../core/visibleInterval.js';
 import React, { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -235,6 +236,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       const target = p.v > 1 ? el.querySelector(`#v-${p.c}-${p.v}`) : el.querySelector(`.chapter[data-c="${p.c}"]`);
       el.scrollTop = target ? target.offsetTop - 8 : 0;
       lastY.current = el.scrollTop;
+      requestAnimationFrame(dropSnapshot); // настоящая глава на месте — снимок запуска больше не нужен
     } else if (p.type === 'prepend') {
       // Сверху добавилась глава — сдвигаем прокрутку на её высоту, чтобы текст остался на месте.
       // Берём текущее положение (прокрутка могла уйти дальше, пока глава рисовалась); подстройка браузера

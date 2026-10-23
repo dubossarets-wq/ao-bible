@@ -1,5 +1,7 @@
 package app.aobible;
 
+import android.app.Activity;
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.view.View;
@@ -29,12 +31,30 @@ public class AppBarsPlugin extends Plugin {
             call.reject("bad color");
             return;
         }
+        // Запоминаем: при следующем запуске окно сразу этих цветов (тёмная тема — без светлой вспышки)
+        getContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putInt("top", top).putInt("bottom", bottom).apply();
         getActivity()
             .runOnUiThread(() -> {
-                View decor = getActivity().getWindow().getDecorView();
-                GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[] { top, top, bottom, bottom });
-                decor.setBackground(bg);
+                apply(getActivity(), top, bottom);
                 call.resolve();
             });
+    }
+
+    static final String PREFS = "app_bars";
+
+    static void apply(Activity activity, int top, int bottom) {
+        View decor = activity.getWindow().getDecorView();
+        GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[] { top, top, bottom, bottom });
+        decor.setBackground(bg);
+    }
+
+    // Запуск: цвета прошлой темы — окну и подложке страницы, ещё до загрузки приложения
+    static void restore(Activity activity, View webView) {
+        android.content.SharedPreferences p = activity.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        if (!p.contains("bottom")) return;
+        int top = p.getInt("top", 0);
+        int bottom = p.getInt("bottom", 0);
+        apply(activity, top, bottom);
+        if (webView != null) webView.setBackgroundColor(bottom);
     }
 }

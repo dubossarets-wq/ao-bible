@@ -20,6 +20,9 @@ import { IS_STAGING } from './core/channel.js';
 import { usePlans } from './core/planStore.js';
 import { startReminders, scheduleReminders } from './core/reminders.js';
 import { updateWidget } from './core/widget.js';
+import { NATIVE } from './core/native.js';
+import { checkPlayUpdate, installPlayUpdate } from './core/playUpdate.js';
+import { dropSnapshot } from './core/snapshot.js';
 import { Toasts } from './components/ui.jsx';
 import { t, useLang } from './core/i18n.js';
 
@@ -102,6 +105,10 @@ export default function App() {
   // расписание пересобирается при запуске и при каждом изменении планов (отметили день — завтра другой текст)
   useEffect(() => startReminders(() => setSheet({ kind: 'plans', pane: 0, payload: {}, id: Date.now() })), []);
   const [readingPlans] = usePlans();
+  // Читать пока нечего (первая установка, нет переводов) — снимок запуска убираем сразу
+  useEffect(() => {
+    if (modules && !bibles.length) dropSnapshot();
+  }, [modules, bibles.length]);
   // Виджет «Стих дня» (Android): раз в день — стихи на месяц вперёд из перевода первой панели
   const widgetModule = bibles.length ? (bibles.some((b) => b.id === panes[0]?.moduleId) ? panes[0].moduleId : bibles[0].id) : null;
   useEffect(() => {
@@ -182,6 +189,17 @@ export default function App() {
     save('notifiedBuild', updates.latest);
     toast(isPhoneLayout() ? t('Доступна новая версия — «Ещё» → «Обновить приложение»') : t('Доступна новая версия — меню ⋮ → «Обновить приложение»'));
   }, [updates.available, updates.latest, toast]);
+  // Приложение из Google Play: вышла новая версия — одно уведомление на версию, с кнопкой «Обновить»
+  useEffect(() => {
+    if (!NATIVE) return;
+    const id = setTimeout(async () => {
+      const r = await checkPlayUpdate();
+      if (!r.available || load('playUpdateNotified', null) === r.version) return;
+      save('playUpdateNotified', r.version);
+      toast(t('Вышла новая версия приложения'), 'info', { action: { label: t('Обновить'), run: installPlayUpdate } });
+    }, 6000);
+    return () => clearTimeout(id);
+  }, [toast]);
 
   // Один раз доустанавливаем новые базовые модули (например, «Места» для карты) у прежних пользователей
   useEffect(() => {

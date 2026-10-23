@@ -12,5 +12,7 @@ public class MainActivity extends BridgeActivity {
         // Виджет «Стих дня»: приложение передаёт ему стихи на месяц вперёд (см. VerseWidgetPlugin)
         registerPlugin(VerseWidgetPlugin.class);
         super.onCreate(savedInstanceState);
+        // Сразу цвета прошлой темы (без вспышки светлого фона у тёмной темы)
+        AppBarsPlugin.restore(this, getBridge() != null ? getBridge().getWebView() : null);
     }
 }

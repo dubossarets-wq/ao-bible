@@ -8,4 +8,6 @@ export const SystemBarsStyle = {};
 export const SystemBarType = {};
 export const MediaSession = {};
 export const LocalNotifications = {};
+export const AppUpdate = {};
+export const AppUpdateAvailability = {};
 export const registerPlugin = () => ({});

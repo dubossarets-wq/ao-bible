@@ -10,8 +10,11 @@ import { startFadeEnd } from './core/fadeEnd.js';
 import { installNative } from './core/native.js';
 import { startMediaControls } from './core/mediaControls.js';
 import { installErrorLog } from './core/errorLog.js';
+import { installSnapshot, dropSnapshot } from './core/snapshot.js';
 
 installErrorLog(); // последние ошибки — для письма «Сообщить о проблеме» (только на устройстве)
+installSnapshot(); // снимок экрана для мгновенного запуска (см. core/snapshot.js)
+setTimeout(dropSnapshot, 6000); // страховка: снимок не висит, даже если глава так и не нарисовалась
 installNative(); // приложение из Google Play: системные «Поделиться» и буфер обмена
 // Android: свой вид нижнего меню (сплошная полоса во всю ширину, styles.css → html.is-android)
 if (/Android/i.test(navigator.userAgent)) document.documentElement.classList.add('is-android');

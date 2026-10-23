@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Фон при запуске — цвет страницы приложения (без заставки с логотипом) -->
+<resources>
+    <color name="launch_bg">#F6F5F2</color>
+</resources>
