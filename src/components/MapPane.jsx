@@ -1,5 +1,6 @@
 // Карта одного места во второй половине экрана: только точка этого места, остальные скрыты.
-// Карта — MapLibre GL (загружается с CDN при первом открытии), подложка OpenFreeMap, спутник Esri.
+// Карта — MapLibre GL (загружается с CDN при первом открытии), подложка OpenFreeMap, спутник — Sentinel-2 cloudless 2016 от EOX
+// (CC BY 4.0: можно в любом приложении с подписью; свои снимки — до приближения 13, дальше растягиваются).
 import React, { useEffect, useRef, useState } from 'react';
 import { X, MapPin, Satellite, Map as MapIcon, Loader2, ChevronDown, ExternalLink, Layers } from 'lucide-react';
 import { useApp } from '../App.jsx';
@@ -8,7 +9,7 @@ import { t } from '../core/i18n.js';
 
 const ML_VERSION = '4.7.1';
 const STYLE = 'https://tiles.openfreemap.org/styles/liberty';
-const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+const SATELLITE = 'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/g/{z}/{y}/{x}.jpg';
 
 let mlPromise = null;
 function loadMapLibre() {
@@ -61,14 +62,15 @@ export default function MapPane({ pane }) {
           style: STYLE,
           center: [place.lng, place.lat],
           zoom: zoomFor(place.type),
-          attributionControl: { compact: false }, // подписи источников видны всегда (условие Esri и ODbL)
+          attributionControl: false, // подпись источников — сверху (внизу её закрывают меню и карточка места)
           cooperativeGestures: false,
         });
         m.addControl(new ml.NavigationControl({ showCompass: false }), 'top-right');
+        m.addControl(new ml.AttributionControl({ compact: false }), 'top-left'); // видна всегда (условие CC BY и ODbL)
         m.addControl(new ml.ScaleControl({ unit: 'metric' }), 'bottom-left');
         m.on('load', () => {
           const first = m.getStyle().layers[1]?.id;
-          m.addSource('satellite', { type: 'raster', tiles: [ESRI], tileSize: 256, maxzoom: 18, attribution: 'Powered by Esri. Source: Esri, Vantor (Maxar), Earthstar Geographics, and the GIS User Community' });
+          m.addSource('satellite', { type: 'raster', tiles: [SATELLITE], tileSize: 256, maxzoom: 13, attribution: 'Sentinel-2 cloudless — https://s2maps.eu by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2016)' });
           m.addLayer({ id: 'satellite', type: 'raster', source: 'satellite', layout: { visibility: 'none' } }, first);
           alive && setState('ready');
         });

@@ -37,6 +37,7 @@ TYPES = {
     "landmark": "ориентир", "people group": "народ", "tree": "дерево", "cave": "пещера", "building": "здание",
     "stone": "камень", "pass": "перевал", "harbor": "гавань", "cape": "мыс", "ford": "брод", "canal": "канал",
 }
+MIN_CONFIDENCE = 10  # %
 SKIP_WORDS = ("гора", "река", "море", "поток", "долина", "пустыня", "земля", "город", "страна")
 
 
@@ -67,8 +68,12 @@ def main():
         except (KeyError, IndexError, ValueError):
             return ""
 
+    # Места с вероятностью отождествления ниже 10% не показываем (и ссылки на них как на основное место)
+    weak = {p["slug"] for p in base if p["confidence"] < MIN_CONFIDENCE}
     places, total, found = [], 0, 0
     for p in base:
+        if p["slug"] in weak or p.get("alias_of") in weak:
+            continue
         r = ru.get(p["key"], {})
         name = (r.get("name") or p["name_en"]).strip()
         st = stems(name)
@@ -97,7 +102,7 @@ def main():
         "description": f"{len(places)} мест Библии с координатами, современным отождествлением, степенью уверенности, "
                        "описанием и всеми стихами, где место упомянуто. Нажмите на название города в стихе — "
                        "в выборке появится «Карта», и место откроется на карте во второй половине экрана.",
-        "language": "ru", "version": "BibleMap 2026-09-29", "versification": "synodal",
+        "language": "ru", "version": "BibleMap 2026-10-23", "versification": "synodal",
         "author": "OpenBible.info (координаты и стихи); русские названия и описания — проект BibleMap",
         "source": "OpenBible.info Bible Geocoding Data (https://github.com/openbibleinfo/Bible-Geocoding-Data) "
                   "через проект BibleMap",

@@ -36,7 +36,7 @@ const THIRD_PARTY = [
   ['Lucide', 'Lucide Contributors', 'ISC', 'https://lucide.dev'],
   ['MapLibre GL JS', 'MapLibre contributors', 'BSD-3-Clause', 'https://maplibre.org'],
   ['OpenFreeMap / OpenStreetMap', '© OpenStreetMap contributors', 'ODbL', 'https://openfreemap.org'],
-  ['Esri World Imagery', 'Powered by Esri. Source: Esri, Vantor (Maxar), Earthstar Geographics, and the GIS User Community', 'Esri Terms of Use', 'https://www.esri.com'],
+  ['Sentinel-2 cloudless 2016 (EOX)', 'EOX IT Services GmbH; contains modified Copernicus Sentinel data 2016', 'CC BY 4.0', 'https://s2maps.eu'],
   // Приложение для Google Play (оболочка Android)
   ['Capacitor', 'Ionic', 'MIT', 'https://capacitorjs.com'],
   ['capacitor-media-session', 'Capgo, Jonas Rothmann', 'MPL-2.0', 'https://github.com/Cap-go/capacitor-media-session'],
@@ -137,7 +137,7 @@ function Privacy() {
         <li>{t('archive.org — записи чтения Библии.')}</li>
         <li>{t('Wikimedia Commons — иллюстрации к стихам.')}</li>
         <li>{t('Google Fonts — шрифты для иврита и греческого.')}</li>
-        <li>{t('OpenFreeMap, Esri и jsDelivr — карты (только когда вы открываете карту).')}</li>
+        <li>{t('OpenFreeMap, EOX и jsDelivr — карты (только когда вы открываете карту).')}</li>
       </ul>
       <p>{t('Мы не управляем этими сайтами; у каждого из них своя политика конфиденциальности.')}</p>
       <p>{t('Доступ к микрофону, камере, контактам и местоположению приложению не нужен и не запрашивается.')}</p>

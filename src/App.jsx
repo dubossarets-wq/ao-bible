@@ -267,9 +267,10 @@ export default function App() {
         const todo = cat.filter(
           (e) => e.type === 'audio' && !e.unavailable && !tried.includes(e.id) && !modules.some((m) => m.id === e.id) && bibles.some((b) => fitsTranslation(e.translation, b.id))
         );
-        // Уже стоящие аудиокниги обновляем сами, без вопросов: они маленькие, а в новой версии — новые главы и точнее разметка
+        // Уже стоящие аудиокниги и «Места» обновляем сами, без вопросов: они маленькие, а в новой версии — новые главы,
+        // точнее разметка, исправленный список мест
         const stale = cat.filter((e) => {
-          const m = e.type === 'audio' && modules.find((x) => x.id === e.id);
+          const m = (e.type === 'audio' || e.id === 'bible-places') && modules.find((x) => x.id === e.id);
           return m && m.origin === 'catalog' && !e.unavailable && (m.catalogVersion !== e.version || (e.size && m.size !== e.size));
         });
         for (const e of stale) {

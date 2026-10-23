@@ -415,6 +415,10 @@ async function run(label, viewport, isMobile) {
   await page.locator('#v-14-15 .w', { hasText: 'Хеврону' }).click();
   await page.waitForSelector('.word-pop .wp-place', { timeout: 15000 });
   const placeItem = await page.textContent('.word-pop .wp-place');
+  // Спутник — снимки Sentinel-2 cloudless (EOX, CC BY 4.0): плитки ловим с открытия карты
+  const satTiles = [];
+  const onTile = (r) => r.url().includes('tiles.maps.eox.at') && satTiles.push(r.status());
+  page.on('response', onTile);
   await page.click('.word-pop .wp-place');
   await page.waitForSelector('.maplibregl-marker', { timeout: 60000 });
   await page.waitForTimeout(3500);
@@ -430,6 +434,20 @@ async function run(label, viewport, isMobile) {
   });
   check(`${label}: карта места из стиха`, placeItem.includes('Хеврон') && mapInfo.markers === 1 && mapInfo.h > 150 && mapInfo.inArea && !mapInfo.underCard && mapInfo.ref0.includes('14:15'), JSON.stringify(mapInfo));
   await page.screenshot({ path: `${shots}/${label}-7g-map.png` });
+  // Спутник включён по умолчанию; если выключен — включаем. Подпись источников — сверху, не под меню
+  if (await page.$('[aria-label="Спутник"]')) await page.click('[aria-label="Спутник"]');
+  await page.waitForFunction(() => /Sentinel-2 cloudless/.test(document.querySelector('.maplibregl-ctrl-attrib')?.textContent || ''), null, { timeout: 30000 }).catch(() => {});
+  await page.waitForTimeout(2500);
+  page.off('response', onTile);
+  const attrib = await page.evaluate(() => {
+    const a = document.querySelector('.maplibregl-ctrl-attrib');
+    if (!a) return { text: '', visible: false };
+    const r = a.getBoundingClientRect();
+    const hit = document.elementFromPoint(r.left + 8, r.top + r.height / 2);
+    return { text: a.textContent, visible: r.height > 0 && !!hit && a.contains(hit) };
+  });
+  check(`${label}: спутник EOX с подписью`, satTiles.length > 0 && satTiles.every((s) => s === 200) && /Sentinel-2 cloudless/.test(attrib.text) && attrib.visible, `плиток ${satTiles.length} [${[...new Set(satTiles)]}]; видна ${attrib.visible}; ${attrib.text.slice(0, 100)}`);
+  await page.screenshot({ path: `${shots}/${label}-7h-satellite.png` });
   await page.click('[aria-label="Закрыть карту"]');
   await page.waitForTimeout(300);
   await page.click('.pane-slot.first .tb-ref');

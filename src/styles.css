@@ -475,6 +475,8 @@ button.wp-item:active { background: rgba(255,255,255,.08); }
 .conf-bar i { display: block; height: 100%; background: var(--accent); }
 .source-note a { color: var(--accent); display: inline-flex; align-items: center; gap: 3px; }
 .maplibregl-ctrl-attrib { font-size: 10px; }
+.map-canvas .maplibregl-ctrl-top-left { max-width: calc(100% - 64px); }
+.map-canvas .maplibregl-ctrl-top-left .maplibregl-ctrl-attrib { margin: 6px 0 0 6px; border-radius: 6px; line-height: 1.35; background: rgba(255, 255, 255, .86); }
 
 /* ---------- Отметки в тексте: избранное, закладки, заметки ---------- */
 .verse.fav { background: linear-gradient(90deg, color-mix(in srgb, var(--love) 11%, transparent), color-mix(in srgb, var(--love) 4%, transparent) 75%); border-radius: 4px; box-shadow: -6px 0 0 color-mix(in srgb, var(--love) 11%, transparent); }
