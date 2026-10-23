@@ -5,7 +5,7 @@
 // Нажатия, долгое нажатие, свайп между главами и щипок не трогаем: короткие и горизонтальные жесты пропускаем.
 import { useEffect, useRef } from 'react';
 
-const DECAY = 0.996; // затухание инерции за 1 мс (близко к прокрутке Android/iOS)
+const DECAY = 0.9975; // затухание инерции за 1 мс (между Android и iPhone: бросок уезжает далеко и плавно гаснет)
 const MAX_V = 6; // px/мс
 
 export function useSyncTouchScroll(ref, enabled, emit) {
@@ -71,11 +71,18 @@ export function useSyncTouchScroll(ref, enabled, emit) {
       if (Math.abs(v) < 0.08) return;
       let last = performance.now();
       const step = (now) => {
-        const ms = Math.min(48, now - last);
+        // Время кадра rAF бывает чуть раньше момента отпускания — такой кадр считаем обычным (~16 мс),
+        // иначе сдвиг выходил нулевым и инерция гасла сразу
+        let ms = now - last;
         last = now;
-        const moved = scrollBy(v * ms);
+        if (!(ms > 0)) ms = 16;
+        ms = Math.min(48, ms);
+        const dy = v * ms;
+        const before = el.scrollTop;
+        scrollBy(dy);
+        const atEdge = Math.abs(dy) >= 1 && el.scrollTop === before; // упёрлись в начало или конец текста
         v *= DECAY ** ms;
-        raf = moved && Math.abs(v) > 0.02 ? requestAnimationFrame(step) : 0;
+        raf = !atEdge && Math.abs(v) > 0.02 ? requestAnimationFrame(step) : 0;
       };
       raf = requestAnimationFrame(step);
     };
