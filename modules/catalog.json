@@ -71,7 +71,7 @@
    "id": "kjv",
    "type": "bible",
    "name": "KJV",
-   "title": "King James Version (1769) с номерами Стронга",
+   "title": "King James Version (1769), Strong's numbers",
    "description": "Английская Библия короля Якова (Authorized Version, стандартный текст 1769 г.) с номерами Стронга и курсивом добавленных слов. 66 книг. Нумерация стихов переведена в синодальную (Псалтирь, Иов, Малахия и др.), надписания псалмов — отдельным стихом, как в синодальном.",
    "language": "en",
    "version": "eBible.org eng-kjv2006 (2026-09-26)",
@@ -86,14 +86,14 @@
    "versification": "synodal",
    "url": "kjv.json",
    "urlGz": "kjv.json.gz",
-   "size": 7080257,
-   "sizeGz": 1825100
+   "size": 7080240,
+   "sizeGz": 1825110
   },
   {
    "id": "bsb",
    "type": "bible",
    "name": "BSB",
-   "title": "Berean Standard Bible с номерами Стронга",
+   "title": "Berean Standard Bible, Strong's numbers",
    "description": "Современный английский перевод Berean Standard Bible с номерами Стронга у каждого слова или фразы и заголовками разделов. Нумерация стихов переведена в синодальную.",
    "language": "en",
    "version": "CrossWire BSB 2.0",
@@ -107,8 +107,8 @@
    "versification": "synodal",
    "url": "bsb.json",
    "urlGz": "bsb.json.gz",
-   "size": 7142148,
-   "sizeGz": 1976998
+   "size": 7142131,
+   "sizeGz": 1977013
   },
   {
    "id": "oshb",
@@ -1658,23 +1658,6 @@
    "sizeGz": 317923
   },
   {
-   "id": "bible-places",
-   "type": "maps",
-   "name": "Места",
-   "title": "Библейские места на карте",
-   "description": "1335 мест Библии с координатами, современным отождествлением, степенью уверенности, описанием и всеми стихами, где место упомянуто. Нажмите на название города в стихе — в выборке появится «Карта», и место откроется на карте во второй половине экрана.",
-   "language": "ru",
-   "version": "BibleMap 2026-09-29",
-   "author": "OpenBible.info (координаты и стихи); русские названия и описания — проект BibleMap",
-   "source": "OpenBible.info Bible Geocoding Data (https://github.com/openbibleinfo/Bible-Geocoding-Data) через проект BibleMap",
-   "license": "CC BY 4.0 (OpenBible.info); русские тексты — BibleMap",
-   "versification": "synodal",
-   "url": "bible-places.json",
-   "urlGz": "bible-places.json.gz",
-   "size": 811430,
-   "sizeGz": 193137
-  },
-  {
    "id": "bible-maps",
    "type": "maps",
    "name": "Карты",
@@ -1802,6 +1785,23 @@
    "urlGz": "vulg-interlinear.json.gz",
    "size": 12690525,
    "sizeGz": 3166997
+  },
+  {
+   "id": "bible-places",
+   "type": "maps",
+   "name": "Места",
+   "title": "Библейские места на карте",
+   "description": "1321 мест Библии с координатами, современным отождествлением, степенью уверенности, описанием и всеми стихами, где место упомянуто. Нажмите на название города в стихе — в выборке появится «Карта», и место откроется на карте во второй половине экрана.",
+   "language": "ru",
+   "version": "BibleMap 2026-10-23",
+   "author": "OpenBible.info (координаты и стихи); русские названия и описания — проект BibleMap",
+   "source": "OpenBible.info Bible Geocoding Data (https://github.com/openbibleinfo/Bible-Geocoding-Data) через проект BibleMap",
+   "license": "CC BY 4.0 (OpenBible.info); русские тексты — BibleMap",
+   "versification": "synodal",
+   "url": "bible-places.json",
+   "urlGz": "bible-places.json.gz",
+   "size": 803331,
+   "sizeGz": 191519
   }
  ]
 }
