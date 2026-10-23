@@ -22,7 +22,6 @@ import { startReminders, scheduleReminders } from './core/reminders.js';
 import { updateWidget } from './core/widget.js';
 import { NATIVE } from './core/native.js';
 import { checkPlayUpdate, installPlayUpdate } from './core/playUpdate.js';
-import { dropSnapshot } from './core/snapshot.js';
 import { Toasts } from './components/ui.jsx';
 import { t, useLang } from './core/i18n.js';
 
@@ -105,10 +104,6 @@ export default function App() {
   // расписание пересобирается при запуске и при каждом изменении планов (отметили день — завтра другой текст)
   useEffect(() => startReminders(() => setSheet({ kind: 'plans', pane: 0, payload: {}, id: Date.now() })), []);
   const [readingPlans] = usePlans();
-  // Читать пока нечего (первая установка, нет переводов) — снимок запуска убираем сразу
-  useEffect(() => {
-    if (modules && !bibles.length) dropSnapshot();
-  }, [modules, bibles.length]);
   // Виджет «Стих дня» (Android): раз в день — стихи на месяц вперёд из перевода первой панели
   const widgetModule = bibles.length ? (bibles.some((b) => b.id === panes[0]?.moduleId) ? panes[0].moduleId : bibles[0].id) : null;
   useEffect(() => {

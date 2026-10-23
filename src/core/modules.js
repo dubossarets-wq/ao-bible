@@ -130,13 +130,26 @@ export async function getBook(moduleId, bookId) {
     bookCache.set(key, hit);
     return hit;
   }
-  const data = await db.get(db.STORES.bookdata, key);
-  if (data) {
-    bookCache.set(key, data);
-    if (bookCache.size > 24) bookCache.delete(bookCache.keys().next().value);
-  }
-  return data || null;
+  // Книгу уже читают (ранний старт в main.jsx) — ждём то же чтение, а не начинаем второе
+  if (bookLoading.has(key)) return bookLoading.get(key);
+  const p = db.get(db.STORES.bookdata, key).then(
+    (data) => {
+      bookLoading.delete(key);
+      if (data) {
+        bookCache.set(key, data);
+        if (bookCache.size > 24) bookCache.delete(bookCache.keys().next().value);
+      }
+      return data || null;
+    },
+    (e) => {
+      bookLoading.delete(key);
+      throw e;
+    }
+  );
+  bookLoading.set(key, p);
+  return p;
 }
+const bookLoading = new Map();
 
 export function getPayload(moduleId) {
   if (!payloadCache.has(moduleId)) {

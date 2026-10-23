@@ -10,11 +10,24 @@ import { startFadeEnd } from './core/fadeEnd.js';
 import { installNative } from './core/native.js';
 import { startMediaControls } from './core/mediaControls.js';
 import { installErrorLog } from './core/errorLog.js';
-import { installSnapshot, dropSnapshot } from './core/snapshot.js';
+import { P } from './core/channel.js';
+import { listModules, getBook } from './core/modules.js';
 
 installErrorLog(); // последние ошибки — для письма «Сообщить о проблеме» (только на устройстве)
-installSnapshot(); // снимок экрана для мгновенного запуска (см. core/snapshot.js)
-setTimeout(dropSnapshot, 6000); // страховка: снимок не висит, даже если глава так и не нарисовалась
+// Ранний старт: список модулей и книга последнего места читаются из памяти устройства,
+// пока загружаются словари интерфейса и рисуется оболочка приложения
+try {
+  const p0 = load('panes', null)?.[0];
+  listModules().catch(() => {});
+  if (p0?.moduleId && p0.ref?.book) getBook(p0.moduleId, p0.ref.book).catch(() => {});
+} catch {
+  /* хранилище недоступно — всё загрузится обычным порядком */
+}
+try {
+  localStorage.removeItem(P + 'snap'); // снимок экрана из версии 23.10 больше не используется
+} catch {
+  /* хранилище недоступно */
+}
 installNative(); // приложение из Google Play: системные «Поделиться» и буфер обмена
 // Android: свой вид нижнего меню (сплошная полоса во всю ширину, styles.css → html.is-android)
 if (/Android/i.test(navigator.userAgent)) document.documentElement.classList.add('is-android');

@@ -2,7 +2,6 @@
 // нажатие на слово открывает словари, кнопка в конце стиха — параллельные места.
 // Слова рендерятся HTML-строкой с делегированием событий: в главе может быть больше тысячи слов.
 import { useSyncTouchScroll } from './useSyncTouchScroll.js';
-import { dropSnapshot } from '../core/snapshot.js';
 import { lookupWord } from '../core/lexicon.js';
 import { visibleInterval } from '../core/visibleInterval.js';
 import React, { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -217,7 +216,9 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       const c = Math.min(Math.max(1, ref.chapter), total);
       pending.current = { type: 'nav', c, v: ref.verse };
       setBook({ id: ref.book, data, meta });
-      setRange({ start: Math.max(1, c - 1), end: Math.min(total, c + 1) });
+      // Сначала текущая и следующая глава (снизу нужен запас, чтобы стих встал к верхнему краю), предыдущая —
+      // следом, когда первый кадр уже на экране (loadEdges после смены ленты; место держит keepAnchor)
+      setRange({ start: c, end: Math.min(total, c + 1) });
     }).catch(() => alive && setError(t('Книга не открылась. Перезапустите приложение.')));
     return () => {
       alive = false;
@@ -236,7 +237,8 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       const target = p.v > 1 ? el.querySelector(`#v-${p.c}-${p.v}`) : el.querySelector(`.chapter[data-c="${p.c}"]`);
       el.scrollTop = target ? target.offsetTop - 8 : 0;
       lastY.current = el.scrollTop;
-      requestAnimationFrame(dropSnapshot); // настоящая глава на месте — снимок запуска больше не нужен
+      ownTop.current = el.scrollTop;
+      setAnchor();
     } else if (p.type === 'prepend') {
       // Сверху добавилась глава — сдвигаем прокрутку на её высоту, чтобы текст остался на месте.
       // Берём текущее положение (прокрутка могла уйти дальше, пока глава рисовалась); подстройка браузера
@@ -247,6 +249,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       el.style.overflowY = 'hidden';
       el.scrollTop = target;
       lastY.current = target;
+      ownTop.current = el.scrollTop;
       requestAnimationFrame(() => {
         el.style.overflowY = '';
         if (Math.abs(el.scrollTop - target) > 40) el.scrollTop = target;
@@ -258,6 +261,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       const anchor = el.querySelector(`.chapter[data-c="${p.c}"]`);
       if (anchor) el.scrollTop = p.st + anchor.offsetTop - p.top;
       lastY.current = el.scrollTop;
+      ownTop.current = el.scrollTop;
     }
   }, [range, book]);
 
@@ -339,6 +343,11 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     if (Math.abs(y - lastY.current) > 24) {
       onScrollDirection?.(y > lastY.current && y > 80);
       lastY.current = y;
+    }
+    if (Math.abs(el.scrollTop - ownTop.current) >= 1) {
+      keep.current = null;
+      clearTimeout(keepTimer.current);
+      keepTimer.current = setTimeout(setAnchor, 150);
     }
     loadEdges();
     emitPosition();
@@ -497,12 +506,40 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     clearTimeout(posTimer.current);
     posTimer.current = setTimeout(() => reportPosition(index, ref), 450);
   };
+  // Верхний стих стоит на месте, когда выше экрана меняется высота: после открытия догружаются подписи
+  // толкований, значки ссылок и картинок, шрифт. Привязки прокрутки браузера у нас нет (в Safari её нет вовсе,
+  // а в ленте она отключена — главы сверху добавляем сами), поэтому держим место сами — пока человек не листает.
+  const keep = useRef(null); // { node, top } — стих у верхнего края и его отступ от края
+  const keepTimer = useRef(0);
+  const ownTop = useRef(-1); // прокрутка, которую поставило само приложение: событие с ней — не прокрутка человека
+  useEffect(() => () => clearTimeout(keepTimer.current), []);
+  const setAnchor = () => {
+    const el = scroller.current;
+    const at = el && verseAtTop();
+    const node = at && el.querySelector(`.verse[data-c="${at.found.c}"][data-v="${at.found.v}"]`);
+    keep.current = node ? { node, top: node.offsetTop - el.scrollTop } : null;
+  };
+  const keepAnchor = () => {
+    const el = scroller.current;
+    const a = keep.current;
+    if (!el || !a || !a.node.isConnected) return;
+    const d = a.node.offsetTop - el.scrollTop - a.top;
+    if (Math.abs(d) < 1) return;
+    el.scrollTop += d;
+    ownTop.current = el.scrollTop;
+    lastY.current = el.scrollTop;
+  };
+  // После каждой перерисовки главы (догрузились подписи, значки) — поправка до показа кадра
+  useLayoutEffect(() => {
+    keepAnchor();
+  });
   useEffect(() => {
     positions.current = null;
     const col = scroller.current?.firstElementChild;
     if (!col) return;
     const ro = new ResizeObserver(() => {
       positions.current = null;
+      keepAnchor();
     });
     ro.observe(col);
     return () => {

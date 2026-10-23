@@ -104,14 +104,6 @@ ${FONTS}
   console.log(`artifact: index.html ${(html.length / 1024).toFixed(0)} КБ`);
 }
 
-// Мгновенный запуск (см. src/core/snapshot.js): до загрузки кода показываем снимок экрана, сохранённый
-// при прошлом закрытии, — с той же темой и прокруткой. Код приложения запускается после первой отрисовки:
-// он лежит в странице как текст и подключается на следующем кадре (в фоновой вкладке — по таймеру).
-const SNAP_PREFIX = STAGING ? 'aobs.' : 'aob.';
-const SNAP_LOADER = `(function(){try{var s=JSON.parse(localStorage.getItem('${SNAP_PREFIX}snap')||'null');if(!s||s.b!=='${BUILD}')return;var d=document.documentElement;d.className=s.cls;if(s.style)d.setAttribute('style',s.style);d.classList.add('snap-on');var w=document.createElement('div');w.id='snap';w.setAttribute('aria-hidden','true');w.setAttribute('inert','');w.innerHTML=s.html;document.body.appendChild(w);var sc=w.querySelectorAll('.text-scroller');var fit=function(){for(var i=0;i<sc.length;i++){var a=s.anchor&&s.anchor[i],q=a&&sc[i].querySelector('.verse[data-c="'+a[0]+'"][data-v="'+a[1]+'"]');sc[i].scrollTop=q?q.offsetTop-8:s.scroll[i]||0;}};fit();if(document.fonts)document.fonts.addEventListener('loadingdone',function(){if(w.isConnected)fit();});}catch(e){}})();`;
-const CODE_START = '<script type="text/plain" id="aob-code">';
-const RUN_CODE = `(function(){var done=0;function go(){if(done)return;done=1;var c=document.getElementById('aob-code'),s=document.createElement('script');s.textContent=c.textContent;c.remove();document.body.appendChild(s);}requestAnimationFrame(function(){setTimeout(go,0);});setTimeout(go,60);})();`;
-
 // --- PWA ---
 {
   const { js, css } = await bundle(true);
@@ -140,9 +132,7 @@ ${FONTS}
 </head>
 <body>
 <div id="root"></div>
-<script>${SNAP_LOADER}</script>
-${CODE_START}${js}</script>
-<script>${RUN_CODE}</script>
+<script>${js}</script>
 </body>
 </html>
 `;
@@ -267,9 +257,9 @@ if (process.env.AOB_APP === '1' && !STAGING) {
   await rm(dir, { recursive: true, force: true });
   await mkdir(dir, { recursive: true });
   const pwaHtml = await readFile(path.join(out, PWA_DIR, 'index.html'), 'utf8');
-  const start = pwaHtml.indexOf(CODE_START); // код приложения — текстом, подключается после первой отрисовки
-  const end = pwaHtml.indexOf('</script>', start + CODE_START.length);
-  const html = (pwaHtml.slice(0, start) + CODE_START + js + pwaHtml.slice(end)).replace(/<link rel="manifest"[^>]*>\s*/, '');
+  const start = pwaHtml.indexOf('<script>', pwaHtml.indexOf('<div id="root"></div>')); // строка «<script>» бывает и внутри кода
+  const end = pwaHtml.indexOf('</script>', start);
+  const html = (pwaHtml.slice(0, start) + '<script>' + js + pwaHtml.slice(end)).replace(/<link rel="manifest"[^>]*>\s*/, '');
   await writeFile(path.join(dir, 'index.html'), html);
   for (const sub of ['i18n', 'icons', 'images', 'plans']) await cp(path.join(out, PWA_DIR, sub), path.join(dir, sub), { recursive: true });
   await cp(path.join(out, PWA_DIR, 'privacy.html'), path.join(dir, 'privacy.html'));
