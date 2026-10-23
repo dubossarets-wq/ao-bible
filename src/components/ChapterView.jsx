@@ -250,6 +250,12 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
         if (Math.abs(el.scrollTop - target) > 40) el.scrollTop = target;
         lastY.current = el.scrollTop;
       });
+    } else if (p.type === 'trim') {
+      // Лента обрезана: текущая глава должна остаться на том же месте экрана. Отсчёт — от прокрутки до обрезки:
+      // браузер, убрав главы сверху, сам урезает scrollTop до новой высоты
+      const anchor = el.querySelector(`.chapter[data-c="${p.c}"]`);
+      if (anchor) el.scrollTop = p.st + anchor.offsetTop - p.top;
+      lastY.current = el.scrollTop;
     }
   }, [range, book]);
 
@@ -332,14 +338,11 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       onScrollDirection?.(y > lastY.current && y > 80);
       lastY.current = y;
     }
-    if (y < 900 && range.start > 1 && !pending.current && Date.now() - prependAt.current > 300) {
-      prependAt.current = Date.now();
-      pending.current = { type: 'prepend', top: y, height: el.scrollHeight };
-      setRange((r) => ({ ...r, start: r.start - 1 }));
-    } else if (el.scrollHeight - y - el.clientHeight < 1400 && range.end < total && !pending.current) {
-      setRange((r) => ({ ...r, end: r.end + 1 }));
-    }
+    loadEdges();
     emitPosition();
+    // Долгое чтение: лента глав растёт — когда прокрутка стихла, оставляем по две главы вокруг текущей
+    clearTimeout(trimTimer.current);
+    if (range.end - range.start > 6) trimTimer.current = setTimeout(trimRibbon, 600);
     // Колесо и обычная прокрутка: остановились — доводим вторую панель (пальцем на телефоне — сигнал из useSyncTouchScroll)
     if (settings.syncScroll && !touchSync && isDriver(index)) {
       clearTimeout(settleTimer.current);
@@ -349,6 +352,49 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     if (!frame.current) frame.current = requestAnimationFrame(trackPosition);
   };
 
+  // Подгрузка соседних глав у краёв ленты
+  const loadEdges = () => {
+    const el = scroller.current;
+    if (!el || !range || pending.current) return;
+    const y = el.scrollTop;
+    if (y < 900 && range.start > 1 && Date.now() - prependAt.current > 300) {
+      prependAt.current = Date.now();
+      pending.current = { type: 'prepend', top: y, height: el.scrollHeight };
+      setRange((r) => ({ ...r, start: r.start - 1 }));
+    } else if (el.scrollHeight - y - el.clientHeight < 1400 && range.end < total) {
+      setRange((r) => ({ ...r, end: r.end + 1 }));
+    }
+  };
+  // После каждого изменения ленты — ещё раз: у самого верха прокрутки событий уже нет, а сверху может
+  // не хватать глав (быстро долистали до начала ленты)
+  useEffect(() => {
+    const id = setTimeout(loadEdges, 350);
+    return () => clearTimeout(id);
+  }, [range]);
+
+  const trimTimer = useRef(0);
+  useEffect(() => () => clearTimeout(trimTimer.current), []);
+  const trimRibbon = () => {
+    const el = scroller.current;
+    const at = verseAtTop();
+    if (!el || !at || !range || pending.current) return;
+    const c = at.found.c;
+    const start = Math.max(range.start, c - 2);
+    const end = Math.min(range.end, c + 2);
+    if (start === range.start && end === range.end) return;
+    const anchor = el.querySelector(`.chapter[data-c="${c}"]`);
+    if (!anchor) return;
+    pending.current = { type: 'trim', c, top: anchor.offsetTop, st: el.scrollTop };
+    setRange((r) => {
+      const s = Math.max(r.start, c - 2);
+      const e = Math.min(r.end, c + 2);
+      if (s === r.start && e === r.end) {
+        pending.current = null; // обрезать нечего — без перерисовки, иначе подгрузка глав осталась бы заблокированной
+        return r;
+      }
+      return { ...r, start: s, end: e };
+    });
+  };
   // Координаты низа каждого стиха; кэш сбрасывается, когда меняется высота текста (подгрузка глав, шрифт)
   const positions = useRef(null);
   const frame = useRef(0);
