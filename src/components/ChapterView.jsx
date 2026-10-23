@@ -1,6 +1,7 @@
 // Текст Библии: непрерывная прокрутка глав внутри книги (главы подгружаются сверху и снизу),
 // нажатие на слово открывает словари, кнопка в конце стиха — параллельные места.
 // Слова рендерятся HTML-строкой с делегированием событий: в главе может быть больше тысячи слов.
+import { useSyncTouchScroll } from './useSyncTouchScroll.js';
 import { lookupWord } from '../core/lexicon.js';
 import { visibleInterval } from '../core/visibleInterval.js';
 import React, { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -158,7 +159,7 @@ export function selectedIn(selection, bookId, c) {
 
 // selection — Set ключей «Книга.глава.стих»; onSelect(ref, 'start' | 'toggle') — выделение стихов
 export default function ChapterView({ index, pane, module, onScrollDirection, selection, onSelect, selActions, part, onPart }) {
-  const { settings, openSheet, openPopover, closePopover, popover, reportPosition, navigate, clearHighlight, sheet, modules, marks, toast, toggleFavorite } = useApp();
+  const { settings, openSheet, openPopover, closePopover, popover, reportPosition, navigate, clearHighlight, sheet, modules, marks, toast, toggleFavorite, panes } = useApp();
   const scroller = useRef(null);
   usePinchFont(scroller);
   const [book, setBook] = useState(null); // { id, data, meta }
@@ -381,6 +382,9 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     const frac = Math.max(0, Math.min(1, (top - found.top) / Math.max(1, found.bottom - found.top)));
     emitSync(index, { ref: { book: book.id, chapter: found.c, verse: found.v }, frac });
   };
+  // Две панели с синхронной прокруткой на телефоне — прокрутку пальцем ведём сами, чтобы вторая панель не отставала
+  const touchSync = !!settings.syncScroll && !!panes[1] && typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  useSyncTouchScroll(scroller, touchSync, emitPosition);
   const trackPosition = () => {
     frame.current = 0;
     const at = verseAtTop();
