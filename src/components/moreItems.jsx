@@ -1,7 +1,7 @@
 // Пункты меню «Ещё»: одни и те же для выпадающего меню ⋮ (компьютер) и для листа «Ещё» (телефон).
 // Каждый пункт: { key, icon, label, sub?, extra?, cls?, keep?, run } — keep: лист не закрывается (переключатели).
 import { Bookmark, BookmarkCheck, Heart, Eye, EyeOff, Columns2, Rows2, ScrollText, Settings as SettingsIcon, BookOpenCheck, Palette } from 'lucide-react';
-import { RefreshCw, Map as MapIcon, PlayCircle, Link2, Headphones, BookOpenText, CalendarCheck, History } from 'lucide-react';
+import { RefreshCw, Map as MapIcon, PlayCircle, Link2, Headphones, BookOpenText, CalendarCheck, History, MessageSquareWarning } from 'lucide-react';
 import { bookMeta } from '../core/books.js';
 import { getVerse } from '../core/modules.js';
 import { listenFrom } from '../core/listen.js';
@@ -9,6 +9,7 @@ import { plainText } from '../core/verseMarkup.js';
 import { IS_STAGING } from '../core/channel.js';
 import { IS_PWA_BUILD, applyUpdate } from '../core/updates.js';
 import { t } from '../core/i18n.js';
+import { problemReportUrl } from '../core/errorLog.js';
 
 // sheet: true — для листа «Ещё» на телефоне: там нет «Планов» и «Закладок, заметок…» (у них свои вкладки)
 export function moreItems(app, { index, ref, module, sheet = false }) {
@@ -62,6 +63,14 @@ export function moreItems(app, { index, ref, module, sheet = false }) {
   add({ key: 'appearance', icon: Palette, label: t('Оформление'), run: () => open('settings', index) });
   add({ key: 'prefs', icon: SettingsIcon, label: t('Настройки'), run: () => open('prefs', index) });
   if (m.help) add({ key: 'help', icon: BookOpenCheck, label: t('Инструкция'), run: () => open('help', index) });
+  // Письмо разработчику: версия, устройство и последние ошибки — человек видит текст и отправляет сам
+  if (m.help)
+    add({
+      key: 'report',
+      icon: MessageSquareWarning,
+      label: t('Сообщить о проблеме'),
+      run: () => (location.href = problemReportUrl({ subject: t('AO Bible: проблема'), intro: t('Что случилось и что вы делали перед этим:'), modules: modules.map((x) => x.id) })),
+    });
   // Без двух разделителей подряд и без разделителя в конце
   return out.filter((x, i, a) => !x.sep || (i > 0 && i < a.length - 1 && !a[i + 1].sep && !a[i - 1].sep));
 }

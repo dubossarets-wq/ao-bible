@@ -13,7 +13,7 @@ const MAX = 5;
 // Копии не должны съедать место под сами данные: все вместе — не больше ~1,5 млн символов
 const BUDGET = 1_500_000;
 // Служебные ключи версий — не копируем и не восстанавливаем, чтобы восстановление не откатывало приложение
-export const SERVICE = new Set([K_BACKUPS, K_LAST, P + 'activeBuild', P + 'autoUpdate2', P + 'knownBuilds', P + 'notifiedBuild', P + 'lateStarter', P + 'bootstrapped']);
+export const SERVICE = new Set([K_BACKUPS, K_LAST, P + 'activeBuild', P + 'autoUpdate2', P + 'knownBuilds', P + 'notifiedBuild', P + 'lateStarter', P + 'bootstrapped', P + 'errorLog']);
 
 function read() {
   try {
