@@ -1,4 +1,5 @@
 {
+ "Добавить текст": "Add text",
  "Вопросы и предложения:": "Questions and suggestions:",
  "Выделение убрано": "Highlight removed",
  "Добавить в проповедь: {ref}": "Add to sermon: {ref}",
@@ -728,8 +729,6 @@
  "Открыть в Библии": "Open in Bible",
  "Мысль, пояснение, пример…": "A thought, explanation, example…",
  "Зажмите, чтобы перетащить": "Press and hold to drag",
- "+ текст выше": "+ text above",
- "+ текст ниже": "+ text below",
  "Удалить стих из проповеди": "Remove verse from sermon",
  "Удалить текст": "Delete text",
  "Стих": "Verse",

@@ -1,4 +1,5 @@
 {
+ "Добавить текст": "Dodaj tekst",
  "Вопросы и предложения:": "Pytania i sugestie:",
  "Выделение убрано": "Wyróżnienie usunięte",
  "Добавить в проповедь: {ref}": "Dodaj do kazania: {ref}",
@@ -736,8 +737,6 @@
  "Открыть в Библии": "Otwórz w Biblii",
  "Мысль, пояснение, пример…": "Myśl, objaśnienie, przykład…",
  "Зажмите, чтобы перетащить": "Przytrzymaj, aby przeciągnąć",
- "+ текст выше": "+ tekst wyżej",
- "+ текст ниже": "+ tekst niżej",
  "Удалить стих из проповеди": "Usuń werset z kazania",
  "Удалить текст": "Usuń tekst",
  "Стих": "Werset",

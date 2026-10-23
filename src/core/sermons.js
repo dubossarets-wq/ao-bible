@@ -53,7 +53,8 @@ export const setSermonDate = (id, date) => touch(id, (s) => ({ ...s, date }));
 
 // Выделенные стихи → блоки: стихи подряд одной главы складываются в один блок «Ин 3:16–18»
 // (каждый стих — своим абзацем, см. texts)
-export function addVerses(id, items, moduleId) {
+// at — куда вставить (номер блока); без него — в конец
+export function addVerses(id, items, moduleId, at = null) {
   const blocks = [];
   for (const it of items) {
     const last = blocks[blocks.length - 1];
@@ -63,7 +64,11 @@ export function addVerses(id, items, moduleId) {
       last.text += ' ' + it.text;
     } else blocks.push({ id: uid(), type: 'verse', book: it.book, chapter: it.chapter, verse: it.verse, to: null, text: it.text, moduleId: it.moduleId || moduleId, ...(it.part ? { part: true } : {}) });
   }
-  touch(id, (s) => ({ ...s, blocks: [...s.blocks, ...blocks] }));
+  touch(id, (s) => {
+    const all = [...s.blocks];
+    all.splice(at == null ? all.length : Math.max(0, Math.min(all.length, at)), 0, ...blocks);
+    return { ...s, blocks: all };
+  });
   return blocks.map((b) => b.id);
 }
 

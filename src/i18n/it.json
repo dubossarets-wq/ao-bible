@@ -1,4 +1,5 @@
 {
+ "Добавить текст": "Aggiungi testo",
  "Вопросы и предложения:": "Domande e suggerimenti:",
  "Выделение убрано": "Evidenziazione rimossa",
  "Добавить в проповедь: {ref}": "Aggiungi al sermone: {ref}",
@@ -732,8 +733,6 @@
  "Открыть в Библии": "Apri nella Bibbia",
  "Мысль, пояснение, пример…": "Pensiero, spiegazione, esempio…",
  "Зажмите, чтобы перетащить": "Tenga premuto per trascinare",
- "+ текст выше": "+ testo sopra",
- "+ текст ниже": "+ testo sotto",
  "Удалить стих из проповеди": "Rimuovi il versetto dal sermone",
  "Удалить текст": "Elimina il testo",
  "Стих": "Versetto",

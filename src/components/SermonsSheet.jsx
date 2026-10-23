@@ -180,6 +180,20 @@ function Pulpit({ sermon, onClose }) {
   );
 }
 
+// Компактная строка между блоками: добавить текст или стих именно сюда
+function Inserter({ onText, onVerse }) {
+  return (
+    <div className="sermon-insert">
+      <button type="button" className="sermon-insert-btn" onClick={onText} aria-label={t('Добавить текст')}>
+        <Plus size={14} /> {t('Текст')}
+      </button>
+      <button type="button" className="sermon-insert-btn" onClick={onVerse} aria-label={t('Добавить стих')}>
+        <Plus size={14} /> {t('Стих')}
+      </button>
+    </div>
+  );
+}
+
 function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) {
   const { navigate, closeSheet, toast, undoToast } = useApp();
   const [pulpit, setPulpit] = useState(false);
@@ -233,7 +247,7 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
   const scrollBox = () => list.current?.closest('.sheet-body');
   const justDragged = useRef(0);
   const dragDown = (e) => {
-    if (e.button > 0 || e.target.closest('textarea, input, .sermon-block-tools button, .sv-del, .swipe-act')) return;
+    if (e.button > 0 || e.target.closest('textarea, input, .sermon-block-tools button, .sv-del, .sermon-insert, .confirm-group')) return;
     const li = e.target.closest('li[data-id]');
     if (!li) return;
     const d = { id: li.dataset.id, li, x: e.clientX, y: e.clientY, pid: e.pointerId, on: false };
@@ -278,7 +292,7 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
     let dy = e.clientY - d.startY + scrolled;
     const items = [...list.current.children];
     const idx = items.indexOf(d.li);
-    const gap = 10;
+    const gap = parseFloat(getComputedStyle(list.current).rowGap) || 0;
     const next = items[idx + 1];
     const prev = items[idx - 1];
     if (next && dy > next.offsetHeight / 2 + gap / 2) {
@@ -341,6 +355,7 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
         </div>
       )}
 
+      {sermon.blocks.length > 0 && <Inserter onText={() => setFresh(addTextBlock(sermon.id, -1))} onVerse={() => onAddVerse(0)} />}
       <ol
         className="sermon-blocks"
         ref={list}
@@ -363,70 +378,61 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
           // Старый диапазон, который не удалось разбить, — одним абзацем, как раньше
           const lines = texts ? texts.map((x, k) => ({ v: b.verse + k, text: x })) : b.type === 'verse' ? [{ v: b.verse, text: b.text }] : [];
           return (
-          <li key={b.id} data-id={b.id} className={`sermon-block ${b.type}${group ? ' group' : ''}`}>
-            {b.type === 'verse' ? (
-              <>
-                <button className="sermon-ref" onClick={() => goVerse(b, b.verse)} title={t('Открыть в Библии')}>
-                  {blockRef(b)}
-                </button>
-                <div className="sermon-verses">
-                  {lines.map(({ v, text }) => {
-                    const one = blockRef(group ? { ...b, verse: v, to: null } : b);
-                    return (
-                      <SwipeRow
-                        key={v}
-                        as="div"
-                        className="sv-row"
-                        innerClassName="sv-line"
-                        onDelete={() => dropVerse(b, v)}
-                        label={t('Убрать из проповеди: {ref}', { ref: one })}
-                        actionText={t('Убрать')}
-                      >
-                        <button type="button" className="sermon-verse-text" onClick={() => goVerse(b, v)} aria-label={`${one}. ${text}`} title={t('Открыть в Библии')}>
-                          {group && <sup className="sv-num">{v}</sup>}
-                          {text}
-                        </button>
-                        {group && (
-                          <button type="button" className="icon-btn subtle sv-del" onClick={() => dropVerse(b, v)} aria-label={t('Убрать из проповеди: {ref}', { ref: one })} title={t('Убрать стих')}>
-                            <X size={15} />
-                          </button>
-                        )}
-                      </SwipeRow>
-                    );
-                  })}
-                </div>
-              </>
-            ) : (
-              <TextBlock sermonId={sermon.id} block={b} fresh={fresh === b.id} onDone={() => fresh === b.id && setFresh(null)} />
-            )}
-            <div className="sermon-block-tools">
-              <span className="sermon-grip" title={t('Зажмите, чтобы перетащить')} aria-hidden="true">
-                <GripVertical size={17} />
-              </span>
-              <button className="link-btn sermon-add-after" onClick={() => setFresh(addTextBlock(sermon.id, i - 1))}>
-                {t('+ текст выше')}
-              </button>
-              <button className="link-btn sermon-add-after" onClick={() => setFresh(addTextBlock(sermon.id, i))}>
-                {t('+ текст ниже')}
-              </button>
-              <span className="sermon-tools-gap" />
-              <ConfirmButton className="icon-btn subtle" confirmText={t('Удалить')} onConfirm={() => removeBlock(sermon.id, b.id)} aria-label={b.type === 'verse' ? t('Удалить стих из проповеди') : t('Удалить текст')}>
-                <Trash2 size={16} />
-              </ConfirmButton>
+          <li key={b.id} data-id={b.id} className="sermon-item">
+            <div className={`sermon-block ${b.type}${group ? ' group' : ''}`}>
+              {b.type === 'verse' ? (
+                <>
+                  <button className="sermon-ref" onClick={() => goVerse(b, b.verse)} title={t('Открыть в Библии')}>
+                    {blockRef(b)}
+                  </button>
+                  <div className="sermon-verses">
+                    {lines.map(({ v, text }) => {
+                      const one = blockRef(group ? { ...b, verse: v, to: null } : b);
+                      return (
+                        <div key={v} className="sv-row">
+                          <div className="sv-line">
+                            <button type="button" className="sermon-verse-text" onClick={() => goVerse(b, v)} aria-label={`${one}. ${text}`} title={t('Открыть в Библии')}>
+                              {group && <sup className="sv-num">{v}</sup>}
+                              {text}
+                            </button>
+                            {group && (
+                              <ConfirmButton className="icon-btn subtle sv-del" end small confirmText={t('Убрать')} onConfirm={() => dropVerse(b, v)} aria-label={t('Убрать из проповеди: {ref}', { ref: one })} title={t('Убрать стих')}>
+                                <X size={15} />
+                              </ConfirmButton>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <TextBlock sermonId={sermon.id} block={b} fresh={fresh === b.id} onDone={() => fresh === b.id && setFresh(null)} />
+              )}
+              <div className="sermon-block-tools">
+                <span className="sermon-grip" title={t('Зажмите, чтобы перетащить')} aria-hidden="true">
+                  <GripVertical size={17} />
+                </span>
+                <span className="sermon-tools-gap" />
+                <ConfirmButton className="icon-btn subtle" end small confirmText={t('Удалить')} onConfirm={() => removeBlock(sermon.id, b.id)} aria-label={b.type === 'verse' ? t('Удалить стих из проповеди') : t('Удалить текст')}>
+                  <Trash2 size={16} />
+                </ConfirmButton>
+              </div>
             </div>
+            <Inserter onText={() => setFresh(addTextBlock(sermon.id, i))} onVerse={() => onAddVerse(i + 1)} />
           </li>
           );
         })}
       </ol>
 
-      <div className="sermon-add">
+      {sermon.blocks.length === 0 && <div className="sermon-add">
         <button className="btn" onClick={() => setFresh(addTextBlock(sermon.id))}>
           <Plus size={17} /> {t('Текст')}
         </button>
-        <button className="btn sermon-add-verse" onClick={onAddVerse}>
+        <button className="btn sermon-add-verse" onClick={() => onAddVerse(null)}>
           <Search size={17} /> {t('Стих')}
         </button>
-      </div>
+      </div>}
       <p className="sermon-foot">
         {t('{n} место Писания|{n} места Писания|{n} мест Писания', { n: verses })} · {t('сохраняется само')}
         <ConfirmButton
@@ -470,7 +476,9 @@ export default function SermonsSheet({ pane, payload, onClose }) {
 
   // Поиск стихов: открыть поверх редактора и вернуться к тому же месту
   const sheetBody = () => document.querySelector('.sheet.page .sheet-body');
-  const openSearch = () => {
+  const insertAt = useRef(null); // куда вставлять найденные стихи (null — в конец)
+  const openSearch = (at = null) => {
+    insertAt.current = at;
     bodyScroll.current = sheetBody()?.scrollTop || 0;
     setScrollTo(null);
     setAdding(true);
@@ -487,14 +495,15 @@ export default function SermonsSheet({ pane, payload, onClose }) {
     add: async (r) => {
       const mid = r.moduleId || moduleId;
       const text = typeof r.text === 'string' ? r.text : plainText((await getVerse(mid, r)) || '');
-      addVerses(sermon.id, [{ book: r.book, chapter: r.chapter, verse: r.verse, text }], mid);
+      const ids = addVerses(sermon.id, [{ book: r.book, chapter: r.chapter, verse: r.verse, text }], mid, insertAt.current);
+      if (insertAt.current != null) insertAt.current += ids.length; // следующий найденный — после этого
       toast(t('Добавлено в проповедь: {ref}', { ref: formatRef(r) }));
     },
     // Ссылка «Ин 3:16-18» — все стихи вместе (каждый своим абзацем), и обратно к проповеди
     addRef: async (q) => {
       const items = await versesForRef(moduleId, q);
       if (!items?.length) return toast(t('Такого места нет в выбранном переводе.'), 'error');
-      const ids = addVerses(sermon.id, items, moduleId);
+      const ids = addVerses(sermon.id, items, moduleId, insertAt.current);
       toast(t('Добавлено в проповедь: {ref}', { ref: refRangeLabel(q, items[0]) }));
       closeSearch(ids[0]);
     },

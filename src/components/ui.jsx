@@ -288,17 +288,22 @@ export function Slider({ id, label, value, min, max, step, onChange, format = (v
 }
 
 // Подтверждение прямо в интерфейсе (confirm() в артефакте не работает)
-export function ConfirmButton({ children, confirmText = t('Точно?'), onConfirm, className = 'btn', ...rest }) {
+// end — подтверждение справа (там же, где была кнопка у правого края), «Отмена» — слева от него; small — мелкие кнопки
+export function ConfirmButton({ children, confirmText = t('Точно?'), onConfirm, className = 'btn', end = false, small = false, ...rest }) {
   const [armed, setArmed] = useState(false);
+  const sz = small ? ' small' : '';
+  const yes = (
+    <button key="yes" className={`btn danger${sz}`} onClick={() => (setArmed(false), onConfirm())}>
+      {confirmText}
+    </button>
+  );
+  const no = (
+    <button key="no" className={`btn${sz}`} onClick={() => setArmed(false)}>
+      {t('Отмена')}
+    </button>
+  );
   return armed ? (
-    <span className="confirm-group">
-      <button className="btn danger" onClick={() => (setArmed(false), onConfirm())}>
-        {confirmText}
-      </button>
-      <button className="btn" onClick={() => setArmed(false)}>
-        {t('Отмена')}
-      </button>
-    </span>
+    <span className={`confirm-group${end ? ' end' : ''}`}>{end ? [no, yes] : [yes, no]}</span>
   ) : (
     <button className={className} onClick={() => setArmed(true)} {...rest}>
       {children}

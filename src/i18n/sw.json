@@ -1,4 +1,5 @@
 {
+ "Добавить текст": "Ongeza maandishi",
  "Вопросы и предложения:": "Maswali na mapendekezo:",
  "Выделение убрано": "Alama ya rangi imeondolewa",
  "Добавить в проповедь: {ref}": "Ongeza kwenye mahubiri: {ref}",
@@ -728,8 +729,6 @@
  "Открыть в Библии": "Fungua katika Biblia",
  "Мысль, пояснение, пример…": "Wazo, maelezo, mfano…",
  "Зажмите, чтобы перетащить": "Bonyeza kwa muda ili kuburuta",
- "+ текст выше": "+ maandishi juu",
- "+ текст ниже": "+ maandishi chini",
  "Удалить стих из проповеди": "Ondoa mstari kwenye mahubiri",
  "Удалить текст": "Futa maandishi",
  "Стих": "Mstari",

@@ -1,4 +1,5 @@
 {
+ "Добавить текст": "Adaugă text",
  "Вопросы и предложения:": "Întrebări și sugestii:",
  "Выделение убрано": "Evidențiere eliminată",
  "Добавить в проповедь: {ref}": "Adaugă în predică: {ref}",
@@ -732,8 +733,6 @@
  "Открыть в Библии": "Deschide în Biblie",
  "Мысль, пояснение, пример…": "O idee, o explicație, un exemplu…",
  "Зажмите, чтобы перетащить": "Țineți apăsat pentru a trage",
- "+ текст выше": "+ text sus",
- "+ текст ниже": "+ text jos",
  "Удалить стих из проповеди": "Șterge versetul din predică",
  "Удалить текст": "Șterge textul",
  "Стих": "Verset",

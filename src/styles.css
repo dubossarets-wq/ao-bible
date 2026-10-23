@@ -1845,3 +1845,20 @@ html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px))
 .text-scroller.js-scroll { touch-action: none; }
 /* Стихи в проповеди — без цветной полосы слева: рамка как у остальных блоков */
 .sermon-block.verse { border-left: 1px solid var(--line); box-shadow: none; }
+/* Редактор проповеди: блок — карточка, под каждой — компактная строка «+ Текст · + Стих» (и одна над первым) */
+.sermon-blocks { gap: 0; }
+.sermon-item { list-style: none; position: relative; }
+.sermon-item.dragging { z-index: 5; }
+.sermon-item.dragging > .sermon-block { box-shadow: 0 14px 34px rgba(0,0,0,.22); border-color: var(--accent); background: var(--panel); }
+.sermon-item.dragging > .sermon-insert { visibility: hidden; }
+.sermon-insert { position: relative; display: flex; justify-content: center; align-items: center; gap: 8px; padding: 6px 0; }
+.sermon-insert::before { content: ''; position: absolute; left: 14px; right: 14px; top: 50%; border-top: 1px dashed var(--line); }
+.sermon-insert-btn { position: relative; display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); color: var(--muted); font: inherit; font-size: .84rem; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.sermon-insert-btn svg { color: var(--accent); }
+.sermon-insert-btn:active { transform: scale(.96); }
+@media (hover: hover) { .sermon-insert-btn:hover { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); } }
+.sermon-insert-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Подтверждение удаления — справа, на месте кнопки; «Отмена» слева от него */
+.confirm-group.end { margin-left: auto; }
+.sv-line .confirm-group { flex: none; align-self: center; margin-left: 6px; }
+.sermon-block-tools .confirm-group { margin-left: auto; }
