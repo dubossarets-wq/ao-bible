@@ -1843,3 +1843,5 @@ html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px))
 .split.rows.is-split .pane-slot.first .reader, .app:has(.audio-bar) .split.rows.is-split .pane-slot.first .reader { --chap-bottom: 14px; }
 /* Две панели с синхронной прокруткой на телефоне: прокрутку пальцем ведёт приложение (useSyncTouchScroll) */
 .text-scroller.js-scroll { touch-action: none; }
+/* Стихи в проповеди — без цветной полосы слева: рамка как у остальных блоков */
+.sermon-block.verse { border-left: 1px solid var(--line); box-shadow: none; }
