@@ -69,7 +69,7 @@ def bible(meta, col, skip=()):
 def m_kjv():
     col = B.usfm_bible(SRC / "ebible" / "eng-kjv2006", kjv2syn)
     return bible({
-        "id": "kjv", "name": "KJV", "title": "King James Version (1769) с номерами Стронга", "language": "en",
+        "id": "kjv", "name": "KJV", "title": "King James Version (1769), Strong's numbers", "language": "en",
         "description": "Английская Библия короля Якова (Authorized Version, стандартный текст 1769 г.) с номерами "
                        "Стронга и курсивом добавленных слов. 66 книг. Нумерация стихов переведена в синодальную "
                        "(Псалтирь, Иов, Малахия и др.), надписания псалмов — отдельным стихом, как в синодальном.",
@@ -83,7 +83,7 @@ def m_kjv():
 def m_bsb():
     col = B.sword_bible("BSB", "kjv", kjv2syn)
     return bible({
-        "id": "bsb", "name": "BSB", "title": "Berean Standard Bible с номерами Стронга", "language": "en",
+        "id": "bsb", "name": "BSB", "title": "Berean Standard Bible, Strong's numbers", "language": "en",
         "description": "Современный английский перевод Berean Standard Bible с номерами Стронга у каждого слова или "
                        "фразы и заголовками разделов. Нумерация стихов переведена в синодальную.",
         "version": "CrossWire BSB " + B.sword_version("BSB"), "author": "Bible Hub / Berean Bible (2016–2023)",

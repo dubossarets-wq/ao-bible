@@ -3,7 +3,8 @@
 Всё, что нужно вставить в Play Console. Картинки лежат рядом:
 - `icon-512.png` — значок приложения (512×512, полный квадрат — Google скругляет сам);
 - `feature-1024x500.png` — баннер (Feature graphic);
-- `screens/*.png` — скриншоты телефона 1080×2160 (загрузить 4–8 штук по порядку номеров).
+- `screens/*.png` — скриншоты телефона 1080×2160 для русской страницы (загрузить 4–8 штук по порядку номеров);
+- `screens-en/*.png` — скриншоты с английским интерфейсом и переводом BSB — для английской страницы (Play Console → Страница в магазине → «Добавить перевод» → English).
 
 ---
 
@@ -21,7 +22,7 @@ AO Bible — бесплатное приложение для чтения и и
 
 Читать удобно
 • Синодальный перевод с номерами Стронга и другие переводы на русском и десятках языков
-• Два перевода рядом — на телефоне и на планшете
+• Два перевода рядом с синхронной прокруткой — на телефоне и на планшете
 • Размер букв, шрифт, межстрочный интервал, темы и фон — всё под себя
 • Свайп влево и вправо — следующая и предыдущая глава
 • Работает без интернета: скачанные переводы и словари всегда с собой
@@ -30,7 +31,8 @@ AO Bible — бесплатное приложение для чтения и и
 • Нажмите на слово — увидите слово оригинала на иврите или греческом и его значение по словарю Стронга
 • Подстрочник: еврейский текст, греческий Новый Завет, Септуагинта и Вульгата со значениями слов
 • Симфония: где ещё встречается то же слово
-• Параллельные места, комментарии, карты библейских мест, иллюстрации к стихам
+• Толкования Лопухина, энциклопедия Никифора, параллельные места, иллюстрации к стихам
+• Карты библейских мест со спутниковыми снимками
 
 Слушать
 • Живое чтение Библии на русском и других языках (запись чтеца, не синтез речи)
@@ -38,7 +40,9 @@ AO Bible — бесплатное приложение для чтения и и
 
 Планы и заметки
 • Планы чтения: Библия за год, Новый Завет за 90 дней, Псалтирь и другие, а также свой план
-• Стих дня с красивой картинкой
+• Напоминание о чтении в удобное время — с отрывками на сегодня
+• Стих дня с красивой картинкой и виджет «Стих дня» на главный экран
+• Проповеди: стихи и свои мысли в одном месте, режим «Кафедра» для чтения с экрана
 • Закладки, любимые стихи, цветные выделения, заметки и подборки
 • Картинка со стихом, чтобы поделиться
 • Все ваши данные хранятся только на устройстве; их можно сохранить в файл
@@ -60,7 +64,7 @@ AO Bible is a free app for reading and studying the Bible. No ads, no sign-up, n
 
 Read comfortably
 • Russian Synodal translation with Strong's numbers and many other translations in dozens of languages
-• Two translations side by side
+• Two translations side by side with synchronized scrolling
 • Font, size, line spacing, themes and backgrounds — make it yours
 • Swipe left and right to move between chapters
 • Works offline: downloaded translations and dictionaries are always with you
@@ -68,7 +72,8 @@ Read comfortably
 Study deeper
 • Tap a word to see the original Hebrew or Greek word and its meaning from Strong's dictionary
 • Interlinear: Hebrew text, Greek New Testament, Septuagint and Vulgate with word meanings
-• Concordance, cross-references, commentaries, Bible maps and verse illustrations
+• Concordance, cross-references, commentaries and verse illustrations
+• Maps of Bible places with satellite imagery
 
 Listen
 • Audio Bible read by real narrators (no speech synthesis)
@@ -76,7 +81,9 @@ Listen
 
 Plans and notes
 • Reading plans: the Bible in a year, the New Testament in 90 days, Psalms and more — or your own plan
-• Verse of the day
+• Daily reading reminder with today's passages
+• Verse of the day and a home-screen widget
+• Sermon notes: verses and your own thoughts together, with a full-screen pulpit view
 • Bookmarks, favorite verses, highlights, notes and collections
 • Your data stays on your device; you can save it to a file
 
@@ -104,6 +111,7 @@ Non-commercial app. All texts and materials are public domain, freely licensed, 
 - (Пояснение для себя: закладки, заметки, настройки хранятся только на устройстве; аналитики, рекламы и аккаунтов нет. Файлы переводов, записи и картинки загружаются с GitHub Pages, archive.org, Wikimedia — это загрузка контента, а не сбор данных.)
 - Шифрование при передаче: да (всё по HTTPS).
 - Можно ли запросить удаление данных: данные не собираются — пункт не требуется.
+- Напоминания о чтении — локальные уведомления на самом телефоне (без сервера); резервная копия закладок и заметок — системная копия Android в Google-аккаунте самого человека. Ни то, ни другое не считается сбором данных разработчиком.
 
 ## Анкета возрастного рейтинга (IARC)
 
