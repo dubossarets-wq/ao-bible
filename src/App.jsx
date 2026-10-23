@@ -3,7 +3,7 @@ import { usePersistentState, useEvent, load, save } from './core/storage.js';
 import { DEFAULT_SETTINGS, applySettings, resolveTheme, migrateSettings } from './core/settings.js';
 import { loadBg } from './core/userBg.js';
 import * as repo from './core/modules.js';
-import { bookMeta, registerModuleBooks } from './core/books.js';
+import { bookMeta, registerModuleBooks, localizeModuleBooks } from './core/books.js';
 import SplitScreenReader from './components/SplitScreenReader.jsx';
 import SheetHost from './components/SheetHost.jsx';
 import Bootstrap from './components/Bootstrap.jsx';
@@ -52,7 +52,7 @@ function usePrefersDark() {
 }
 
 export default function App() {
-  useLang(); // смена языка перерисовывает всё приложение
+  const lang = useLang(); // смена языка перерисовывает всё приложение
   const [settings, setSettings] = usePersistentState('settings', DEFAULT_SETTINGS, migrateSettings);
   const fullSettings = useMemo(() => ({ ...DEFAULT_SETTINGS, ...settings, colors: { ...DEFAULT_SETTINGS.colors, ...settings.colors }, menu: { ...DEFAULT_SETTINGS.menu, ...settings.menu } }), [settings]);
   const prefersDark = usePrefersDark();
@@ -79,14 +79,20 @@ export default function App() {
   }, [fullSettings.bgImage]);
 
   const [modules, setModules] = useState(null);
+  // Названия книг в переводах — на языке интерфейса (только для показа; в базе модули не меняются)
+  const rawModules = useRef(null);
   useEffect(() => {
     const update = (l) => {
       registerModuleBooks(l);
-      setModules([...l]);
+      rawModules.current = l;
+      setModules(l.map(localizeModuleBooks));
     };
     repo.listModules().then(update);
     return repo.subscribe(update);
   }, []);
+  useEffect(() => {
+    if (rawModules.current) setModules(rawModules.current.map(localizeModuleBooks));
+  }, [lang]);
   // Служебные модули (features.helper — подстрочник к Вульгате) читает только окно «Подстрочник», в переводах их нет
   const bibles = useMemo(() => (modules || []).filter((m) => m.type === 'bible' && !m.features?.helper), [modules]);
 

@@ -1,12 +1,52 @@
 // Канонический справочник книг (OSIS-идентификаторы, русские названия) и разбор ссылок.
 import BOOKS from './books.json';
+import { getLang } from './i18n.js';
 
 export { BOOKS };
 
 const BY_ID = new Map(BOOKS.map((b, i) => [b.id, { ...b, order: i }]));
 
+// Названия книг на языке интерфейса: для кириллических языков — русские (справочник), для остальных — английские
+// (немцу или испанцу «John 3:16» понятнее, чем «Ин. 3:16»). [полное, краткое]
+const EN = {
+  Gen: ['Genesis', 'Gen'], Exod: ['Exodus', 'Exod'], Lev: ['Leviticus', 'Lev'], Num: ['Numbers', 'Num'], Deut: ['Deuteronomy', 'Deut'],
+  Josh: ['Joshua', 'Josh'], Judg: ['Judges', 'Judg'], Ruth: ['Ruth', 'Ruth'], '1Sam': ['1 Samuel', '1 Sam'], '2Sam': ['2 Samuel', '2 Sam'],
+  '1Kgs': ['1 Kings', '1 Kgs'], '2Kgs': ['2 Kings', '2 Kgs'], '1Chr': ['1 Chronicles', '1 Chr'], '2Chr': ['2 Chronicles', '2 Chr'],
+  PrMan: ['Prayer of Manasseh', 'Pr Man'], Ezra: ['Ezra', 'Ezra'], Neh: ['Nehemiah', 'Neh'], '1Esd': ['1 Esdras', '1 Esd'], Tob: ['Tobit', 'Tob'],
+  Jdt: ['Judith', 'Jdt'], Esth: ['Esther', 'Esth'], Job: ['Job', 'Job'], Ps: ['Psalms', 'Ps'], Prov: ['Proverbs', 'Prov'],
+  Eccl: ['Ecclesiastes', 'Eccl'], Song: ['Song of Songs', 'Song'], Wis: ['Wisdom of Solomon', 'Wis'], Sir: ['Sirach', 'Sir'],
+  Isa: ['Isaiah', 'Isa'], Jer: ['Jeremiah', 'Jer'], Lam: ['Lamentations', 'Lam'], EpJer: ['Letter of Jeremiah', 'Ep Jer'], Bar: ['Baruch', 'Bar'],
+  Ezek: ['Ezekiel', 'Ezek'], Dan: ['Daniel', 'Dan'], Hos: ['Hosea', 'Hos'], Joel: ['Joel', 'Joel'], Amos: ['Amos', 'Amos'],
+  Obad: ['Obadiah', 'Obad'], Jonah: ['Jonah', 'Jonah'], Mic: ['Micah', 'Mic'], Nah: ['Nahum', 'Nah'], Hab: ['Habakkuk', 'Hab'],
+  Zeph: ['Zephaniah', 'Zeph'], Hag: ['Haggai', 'Hag'], Zech: ['Zechariah', 'Zech'], Mal: ['Malachi', 'Mal'],
+  '1Macc': ['1 Maccabees', '1 Macc'], '2Macc': ['2 Maccabees', '2 Macc'], '3Macc': ['3 Maccabees', '3 Macc'], '2Esd': ['2 Esdras', '2 Esd'],
+  Matt: ['Matthew', 'Matt'], Mark: ['Mark', 'Mark'], Luke: ['Luke', 'Luke'], John: ['John', 'John'], Acts: ['Acts', 'Acts'],
+  Jas: ['James', 'Jas'], '1Pet': ['1 Peter', '1 Pet'], '2Pet': ['2 Peter', '2 Pet'], '1John': ['1 John', '1 John'], '2John': ['2 John', '2 John'],
+  '3John': ['3 John', '3 John'], Jude: ['Jude', 'Jude'], Rom: ['Romans', 'Rom'], '1Cor': ['1 Corinthians', '1 Cor'], '2Cor': ['2 Corinthians', '2 Cor'],
+  Gal: ['Galatians', 'Gal'], Eph: ['Ephesians', 'Eph'], Phil: ['Philippians', 'Phil'], Col: ['Colossians', 'Col'],
+  '1Thess': ['1 Thessalonians', '1 Thess'], '2Thess': ['2 Thessalonians', '2 Thess'], '1Tim': ['1 Timothy', '1 Tim'], '2Tim': ['2 Timothy', '2 Tim'],
+  Titus: ['Titus', 'Titus'], Phlm: ['Philemon', 'Phlm'], Heb: ['Hebrews', 'Heb'], Rev: ['Revelation', 'Rev'],
+};
+const CYRILLIC_UI = new Set(['ru', 'uk', 'be', 'bg', 'sr']);
+export const latinBookNames = () => !CYRILLIC_UI.has(getLang());
+
+// Книга (из справочника или из модуля) с названиями на языке интерфейса
+const LOCAL = new Map();
+let localLang = null;
+export function localBook(b) {
+  if (!b || !latinBookNames()) return b;
+  const en = EN[b.id];
+  if (!en) return b;
+  if (localLang !== getLang()) (LOCAL.clear(), (localLang = getLang()));
+  let x = LOCAL.get(b);
+  if (!x) LOCAL.set(b, (x = { ...b, name: en[0], short: en[1] }));
+  return x;
+}
+// Перевод для показа: список книг — с названиями на языке интерфейса (в базе остаются прежние)
+export const localizeModuleBooks = (m) => (m.type === 'bible' && m.books && latinBookNames() ? { ...m, books: m.books.map(localBook) } : m);
+
 export function bookMeta(id) {
-  return BY_ID.get(id) || { id, name: id, short: id, t: 'OT', order: 999 };
+  return localBook(BY_ID.get(id)) || { id, name: id, short: id, t: 'OT', order: 999 };
 }
 
 // Книги, которых нет в справочнике (апокрифы и т. п.), берут название из установленного модуля.
@@ -34,6 +74,7 @@ const ALIASES = (() => {
     add(b.id, b.id);
     add(b.name, b.id);
     add(b.short, b.id);
+    for (const n of EN[b.id] || []) add(n, b.id);
   }
   const extra = {
     Gen: ['бт', 'бытия'], Exod: ['исход'], Num: ['чисел', 'числ'], Deut: ['вт', 'второзак'],

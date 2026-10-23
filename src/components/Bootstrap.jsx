@@ -8,7 +8,7 @@ import { Progress } from './ui.jsx';
 import { t } from '../core/i18n.js';
 
 export default function Bootstrap() {
-  const { openSheet, modules } = useApp();
+  const { openSheet, modules, setSettings } = useApp();
   // Первый запуск — или данные восстановлены из резервной копии Android на новом телефоне (настройки и закладки
   // вернулись, а модулей нет совсем): ставим стартовый набор сами
   const firstRun = !load('bootstrapped', false) || modules?.length === 0;
@@ -18,7 +18,10 @@ export default function Bootstrap() {
   const run = async () => {
     // Первую установку делает только этот экран — автодоустановка в App её не дублирует
     save('lateStarter', repo.lateStarter());
-    if (!load('bootstrapped', false)) save('welcomePending', true); // приветствие — только новому человеку, не после восстановления
+    if (!load('bootstrapped', false)) {
+      save('welcomePending', true); // приветствие — только новому человеку, не после восстановления
+      setSettings({ primaryModule: repo.homeBible() }); // основной перевод — на языке интерфейса
+    }
     setState({ phase: 'run', label: t('Подключаю каталог…'), p: 0 });
     try {
       const catalog = await repo.fetchCatalog();
