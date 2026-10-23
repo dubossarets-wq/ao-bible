@@ -340,6 +340,11 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       setRange((r) => ({ ...r, end: r.end + 1 }));
     }
     emitPosition();
+    // Колесо и обычная прокрутка: остановились — доводим вторую панель (пальцем на телефоне — сигнал из useSyncTouchScroll)
+    if (settings.syncScroll && !touchSync && isDriver(index)) {
+      clearTimeout(settleTimer.current);
+      settleTimer.current = setTimeout(emitSettle, 160);
+    }
     // Текущий стих — раз в кадр, по закэшированным координатам (без перерисовки всего приложения)
     if (!frame.current) frame.current = requestAnimationFrame(trackPosition);
   };
@@ -397,11 +402,42 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       } else hi = mid - 1;
     }
     const frac = Math.max(0, Math.min(1, (top - found.top) / span(list, found)));
+    // То же место второй раз не передаём: при ведении пальцем сюда приходят и сдвиг, и событие прокрутки
+    const last = lastEmit.current;
+    if (last && last.found === found && Math.abs(last.frac - frac) < 1e-4) return;
+    lastEmit.current = { found, frac };
     emitSync(index, { ref: { book: book.id, chapter: found.c, verse: found.v }, frac });
+  };
+  const lastEmit = useRef(null);
+  // Прокрутка остановилась: вторая панель доводится так, чтобы стих стоял на той же высоте, что и здесь
+  // (на ходу доли стихов разной длины не дают строкам совпасть). Опорный стих — тот, чьё начало видно
+  // в верхней половине экрана, иначе тот, что закрывает верх.
+  const settleTimer = useRef(0);
+  useEffect(() => () => clearTimeout(settleTimer.current), []);
+  const emitSettle = () => {
+    if (!settings.syncScroll || !isDriver(index)) return;
+    const el = scroller.current;
+    if (!el || !book) return;
+    if (!positions.current) measure();
+    const list = positions.current;
+    if (!list.length) return;
+    const y0 = el.scrollTop;
+    let lo = 0;
+    let hi = list.length - 1;
+    let i = list.length;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (list[mid].top >= y0) {
+        i = mid;
+        hi = mid - 1;
+      } else lo = mid + 1;
+    }
+    const a = i < list.length && list[i].top - y0 <= el.clientHeight / 2 ? list[i] : list[Math.max(0, i - 1)];
+    emitSync(index, { settle: { ref: { book: book.id, chapter: a.c, verse: a.v }, y: a.top - y0 } });
   };
   // Две панели с синхронной прокруткой на телефоне — прокрутку пальцем ведём сами, чтобы вторая панель не отставала
   const touchSync = !!settings.syncScroll && !!panes[1] && typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
-  useSyncTouchScroll(scroller, touchSync, emitPosition);
+  useSyncTouchScroll(scroller, touchSync, emitPosition, emitSettle);
   const trackPosition = () => {
     frame.current = 0;
     const at = verseAtTop();
@@ -589,20 +625,67 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
 
   // Ведомая панель: встаём на стих ведущей. Если стих не загружен или книга другая — переходим туда.
   const syncNav = useRef(null);
+  // Доводка после остановки: bias — сдвиг от положения по доле стиха; при следующей прокрутке он плавно сходит на нет
+  const bias = useRef(0);
+  const base = useRef(null); // { list, y } — последнее положение по доле стиха
+  const settleRaf = useRef(0);
+  const stopSettle = () => {
+    if (!settleRaf.current) return;
+    cancelAnimationFrame(settleRaf.current);
+    settleRaf.current = 0;
+    if (base.current) bias.current = scroller.current.scrollTop - base.current.y;
+  };
+  const resetFollow = () => {
+    if (settleRaf.current) cancelAnimationFrame(settleRaf.current);
+    settleRaf.current = 0;
+    bias.current = 0;
+    base.current = null;
+    lastEmit.current = null;
+  };
+  useEffect(() => () => cancelAnimationFrame(settleRaf.current), []);
   useEffect(
     () =>
-      onSync(index, ({ ref, frac }) => {
+      onSync(index, ({ ref: r, frac, settle }) => {
         const el = scroller.current;
+        const ref = settle ? settle.ref : r;
         if (!settings.syncScroll || !el || isDriver(index) || !book) return;
         if (!module.books.some((b) => b.id === ref.book)) return;
         // Координаты стиха — из кэша (без поиска по странице и замеров на каждом шаге прокрутки)
         if (book.id === ref.book && !positions.current) measure();
-        const pos = book.id === ref.book ? positions.current?.byKey?.get(`${ref.chapter}:${ref.verse}`) : null;
+        const list = positions.current;
+        const pos = book.id === ref.book ? list?.byKey?.get(`${ref.chapter}:${ref.verse}`) : null;
+        if (settle) {
+          if (!pos) return;
+          let target = pos.top - settle.y;
+          if (settle.y < 0) target = Math.min(target, pos.top + span(list, pos) - 24); // стих здесь короче — не уходим за него
+          target = Math.max(0, Math.min(el.scrollHeight - el.clientHeight, Math.round(target)));
+          const from = el.scrollTop;
+          if (Math.abs(target - from) < 1) return;
+          if (settleRaf.current) cancelAnimationFrame(settleRaf.current);
+          const t0 = performance.now();
+          const step = (now) => {
+            const k = Math.min(1, (now - t0) / 220);
+            el.scrollTop = from + (target - from) * (1 - (1 - k) ** 3);
+            lastY.current = el.scrollTop;
+            settleRaf.current = k < 1 ? requestAnimationFrame(step) : 0;
+            if (!settleRaf.current && base.current) bias.current = el.scrollTop - base.current.y;
+          };
+          settleRaf.current = requestAnimationFrame(step);
+          return;
+        }
         if (pos) {
-          el.scrollTop = pos.top + frac * span(positions.current, pos) - 12;
+          stopSettle();
+          const y = pos.top + frac * span(list, pos) - 12;
+          // доводка уходит по мере прокрутки: за ~160 px движения — в e раз
+          const moved = base.current?.list === list ? Math.abs(y - base.current.y) : 0;
+          bias.current *= Math.exp(-moved / 160);
+          if (Math.abs(bias.current) < 0.5) bias.current = 0;
+          base.current = { list, y };
+          el.scrollTop = y + bias.current;
           lastY.current = el.scrollTop;
           return;
         }
+        resetFollow();
         const key = `${ref.book}.${ref.chapter}`;
         if (syncNav.current === key) return;
         syncNav.current = key;
@@ -706,8 +789,8 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
         dropHighlight();
         onPointerDown(e);
       }}
-      onWheel={() => (setDriver(index), (userTouchAt.current = Date.now()))}
-      onTouchStart={() => (setDriver(index), (userTouchAt.current = Date.now()))}
+      onWheel={() => (setDriver(index), resetFollow(), (userTouchAt.current = Date.now()))}
+      onTouchStart={() => (setDriver(index), resetFollow(), (userTouchAt.current = Date.now()))}
       onPointerMove={onPointerMove}
       onPointerUp={cancelPress}
       onPointerCancel={cancelPress}
