@@ -4,7 +4,7 @@ import { load, save } from './storage.js';
 import * as db from './db.js';
 import { normalize, bytesToJson, ModuleError } from './schema.js';
 import { t, getLang } from './i18n.js';
-import { REMOTE } from './native.js';
+import { REMOTE, MIRROR } from './native.js';
 
 // Текст ошибки для человека: нехватку места браузер сообщает по-английски и непонятно — объясняем, что делать
 export const errorText = (e) =>
@@ -159,10 +159,26 @@ export async function getVerse(moduleId, ref) {
 
 // --- Загрузка из сети -------------------------------------------------------------------
 
+// Приложение из Google Play: aobible.app не отвечает (старый Android не принимает сертификат, сеть режет домен) —
+// тот же файл с зеркала; дальше в этом сеансе — сразу с зеркала
+let useMirror = false;
+async function fetchRemote(url, opts) {
+  if (!MIRROR || !url.startsWith(REMOTE)) return fetch(url, opts);
+  const alt = MIRROR + url.slice(REMOTE.length);
+  if (useMirror) return fetch(alt, opts);
+  try {
+    return await fetch(url, opts);
+  } catch (e) {
+    const res = await fetch(alt, opts);
+    useMirror = true;
+    return res;
+  }
+}
+
 async function fetchWithProgress(url, onProgress, expected) {
   let res;
   try {
-    res = await fetch(url, { cache: 'no-cache' });
+    res = await fetchRemote(url, { cache: 'no-cache' });
   } catch (e) {
     throw new ModuleError(
       t('Не удалось подключиться к {url}. Проверьте адрес и интернет.', { url })

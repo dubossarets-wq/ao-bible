@@ -10,6 +10,9 @@ import { SystemBars, SystemBarsStyle, SystemBarType, registerPlugin } from '@cap
 export const NATIVE = typeof __NATIVE__ !== 'undefined' && __NATIVE__;
 // Откуда приложение берёт каталог и модули (у сайта — со своего адреса)
 export const REMOTE = NATIVE ? 'https://aobible.app/' : '';
+// Зеркало тех же файлов на GitHub Pages: у aobible.app сертификат Let's Encrypt (через Cloudflare), а старые Android
+// (7.0 и ниже) его корень не знают — подключение не устанавливается. Сертификат github.io они принимают.
+export const MIRROR = NATIVE ? 'https://dubossarets-wq.github.io/ao-bible/' : '';
 // Свой модуль Android (android/app/.../AppBarsPlugin.java): цвет полос под системными полосами
 const AppBars = NATIVE ? registerPlugin('AppBars') : null;
 
