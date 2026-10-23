@@ -17,6 +17,9 @@ import { useSermons } from './core/sermons.js';
 import { pendingNews, markNewsSeen } from './core/whatsNew.js';
 import { useUpdates, applyUpdate } from './core/updates.js';
 import { IS_STAGING } from './core/channel.js';
+import { usePlans } from './core/planStore.js';
+import { startReminders, scheduleReminders } from './core/reminders.js';
+import { updateWidget } from './core/widget.js';
 import { Toasts } from './components/ui.jsx';
 import { t, useLang } from './core/i18n.js';
 
@@ -89,6 +92,21 @@ export default function App() {
 
   const [panes, setPanes] = usePersistentState('panes', () => [newPane(DEFAULT_SETTINGS.primaryModule), null]);
   const [sheet, setSheet] = useState(null);
+  // Напоминание о плане (приложение из Google Play): нажатие на уведомление открывает планы;
+  // расписание пересобирается при запуске и при каждом изменении планов (отметили день — завтра другой текст)
+  useEffect(() => startReminders(() => setSheet({ kind: 'plans', pane: 0, payload: {}, id: Date.now() })), []);
+  const [readingPlans] = usePlans();
+  // Виджет «Стих дня» (Android): раз в день — стихи на месяц вперёд из перевода первой панели
+  const widgetModule = bibles.length ? (bibles.some((b) => b.id === panes[0]?.moduleId) ? panes[0].moduleId : bibles[0].id) : null;
+  useEffect(() => {
+    if (!widgetModule) return;
+    const id = setTimeout(() => updateWidget(widgetModule), 4000);
+    return () => clearTimeout(id);
+  }, [widgetModule]);
+  useEffect(() => {
+    const id = setTimeout(scheduleReminders, 1500);
+    return () => clearTimeout(id);
+  }, [readingPlans]);
   // Кнопка «Назад» телефона (Android) и жест «назад» закрывают открытое окно, а не приложение:
   // пока окно открыто, в истории браузера лежит одна запись; закрыли окно сами — запись убираем
   const sheetOpen = !!sheet;

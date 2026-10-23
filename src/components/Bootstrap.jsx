@@ -8,15 +8,17 @@ import { Progress } from './ui.jsx';
 import { t } from '../core/i18n.js';
 
 export default function Bootstrap() {
-  const { openSheet } = useApp();
-  const firstRun = !load('bootstrapped', false);
+  const { openSheet, modules } = useApp();
+  // Первый запуск — или данные восстановлены из резервной копии Android на новом телефоне (настройки и закладки
+  // вернулись, а модулей нет совсем): ставим стартовый набор сами
+  const firstRun = !load('bootstrapped', false) || modules?.length === 0;
   const [state, setState] = useState(firstRun ? { phase: 'run', label: t('Подключаю каталог…'), p: 0 } : { phase: 'idle' });
   const started = useRef(false);
 
   const run = async () => {
     // Первую установку делает только этот экран — автодоустановка в App её не дублирует
     save('lateStarter', repo.lateStarter());
-    save('welcomePending', true); // когда библиотека будет готова, App покажет приветствие
+    if (!load('bootstrapped', false)) save('welcomePending', true); // приветствие — только новому человеку, не после восстановления
     setState({ phase: 'run', label: t('Подключаю каталог…'), p: 0 });
     try {
       const catalog = await repo.fetchCatalog();

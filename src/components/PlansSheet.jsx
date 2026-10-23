@@ -8,7 +8,8 @@ import { usePlans } from '../core/planStore.js';
 import { readStats } from '../core/readLog.js';
 import { bookMeta } from '../core/books.js';
 import { fetchPlanIndex, fetchPlan, makeCustomPlan, SCOPES, parseReading, planToday, behindDays, readingDone, localDate } from '../core/plans.js';
-import { ConfirmButton, Hint } from './ui.jsx';
+import { ConfirmButton, Hint, Switch } from './ui.jsx';
+import { REMINDERS, getReminder, setReminder } from '../core/reminders.js';
 import VerseOfDayCard from './VerseOfDayCard.jsx';
 import { t, fmtDate, locale } from '../core/i18n.js';
 
@@ -194,6 +195,29 @@ function PlanTile({ m, on, onPick }) {
   );
 }
 
+// Напоминание о чтении (приложение из Google Play): каждый день в выбранное время — что читать сегодня
+function ReminderCard() {
+  const { toast } = useApp();
+  const [r, setR] = useState(getReminder);
+  const apply = async (next) => {
+    const ok = await setReminder(next);
+    if (!ok) return toast(t('Уведомления запрещены — разрешите их в настройках телефона'), 'error');
+    setR(getReminder());
+    if (next.on) toast(t('Напомню в {time}', { time: getReminder().time }));
+  };
+  return (
+    <section className="reminder-card" aria-label={t('Напоминание о чтении')}>
+      <Switch id="plan-reminder" checked={r.on} onChange={(on) => apply({ on })} label={t('Напоминать о чтении')} hint={t('Каждый день в это время — уведомление с отрывками на сегодня')} />
+      {r.on && (
+        <label className="reminder-time">
+          <span>{t('Время')}</span>
+          <input type="time" value={r.time} onChange={(e) => e.target.value && apply({ time: e.target.value })} />
+        </label>
+      )}
+    </section>
+  );
+}
+
 export default function PlansSheet({ pane, onClose }) {
   const { navigate, toast, openPlanDay } = useApp();
   const [plans, setPlans] = usePlans();
@@ -260,6 +284,8 @@ export default function PlansSheet({ pane, onClose }) {
           onRemove={() => setPlans((ps) => ps.filter((x) => x.uid !== p.uid))}
         />
       ))}
+
+      {REMINDERS && plans.length > 0 && <ReminderCard />}
 
       <ReadHero open={openChapter} />
 

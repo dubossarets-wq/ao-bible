@@ -1264,6 +1264,9 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .plan-tile-days { position: absolute; z-index: 1; top: 10px; left: 10px; display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: rgba(0,0,0,.45); font-size: .74rem; font-weight: 600; }
 .plan-tile-name { position: absolute; z-index: 1; left: 12px; right: 12px; bottom: 12px; font-weight: 800; font-size: 1.02rem; line-height: 1.2; text-shadow: 0 1px 4px rgba(0,0,0,.4); }
 .plan-detail { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding: 14px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--bg); }
+.reminder-card { display: flex; flex-direction: column; gap: 8px; padding: 4px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+.reminder-time { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0 10px; color: var(--muted); }
+.reminder-time input { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; min-height: 40px; }
 .plan-detail .plan-desc { margin: 2px 0 6px; }
 .plan-offer { gap: 12px; padding: 10px 0; }
 .plan-offer-main { display: flex; align-items: flex-start; gap: 12px; flex: 1; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }

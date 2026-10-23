@@ -37,7 +37,7 @@ async function bundle(pwa, native = false) {
     define: { 'process.env.NODE_ENV': '"production"', __PWA__: String(pwa), __NATIVE__: String(native), __BUILD__: JSON.stringify(BUILD), __CHANNEL__: JSON.stringify(CHANNEL) },
     legalComments: 'none',
     // Сайту плагины Capacitor не нужны — вместо них пустая заглушка (минус ~30 КБ)
-    alias: native ? {} : Object.fromEntries(['@capacitor/core', '@capacitor/share', '@capacitor/clipboard', '@capacitor/filesystem', '@capgo/capacitor-media-session'].map((m) => [m, path.join(root, 'src/core/native-stub.js')])),
+    alias: native ? {} : Object.fromEntries(['@capacitor/core', '@capacitor/share', '@capacitor/clipboard', '@capacitor/filesystem', '@capacitor/local-notifications', '@capgo/capacitor-media-session'].map((m) => [m, path.join(root, 'src/core/native-stub.js')])),
   });
   const js = res.outputFiles.find((f) => f.path.endsWith('.js')).text.replace(/<\/script/gi, '<\\/script');
   const css = res.outputFiles.find((f) => f.path.endsWith('.css')).text;
