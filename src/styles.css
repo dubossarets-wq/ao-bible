@@ -369,21 +369,24 @@ mark { background: var(--hl); color: inherit; border-radius: 2px; padding: 0 1px
 .copy-area { width: 100%; font: inherit; font-family: var(--font-text); padding: 10px 12px; border: 1px solid var(--line); border-radius: calc(var(--radius) * .75); background: var(--bg); resize: vertical; }
 
 /* ---------- Выборка словарей над словом ---------- */
-.word-pop { position: fixed; z-index: 45; min-width: 210px; max-width: min(340px, calc(100vw - 16px)); background: #3b3a3d; color: #f3f1ec; border-radius: calc(var(--radius) * .9); box-shadow: 0 14px 44px rgba(0,0,0,.38); padding: 4px 0; animation: wpIn .14s ease-out; font-size: 1.02rem; }
+/* В стиле окон приложения: карточка цвета панели, тонкая рамка, мягкая тень; строки — как пункты меню */
+.word-pop { position: fixed; z-index: 45; min-width: 230px; max-width: min(340px, calc(100vw - 16px)); background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 14px 38px rgba(0,0,0,.16), 0 2px 8px rgba(0,0,0,.06); padding: 4px; animation: wpIn .14s ease-out; font-size: 1rem; }
 .word-pop.measuring { visibility: hidden; left: 0; top: 0; }
 @keyframes wpIn { from { opacity: 0; transform: scale(.96); } }
-.word-pop::before { content: ""; position: absolute; left: calc(var(--arrow, 50%) - 9px); width: 18px; height: 18px; background: inherit; transform: rotate(45deg); border-radius: 3px; }
-.word-pop.below::before { top: -6px; }
-.word-pop.above::before { bottom: -6px; }
-.wp-item { position: relative; width: 100%; display: flex; align-items: center; gap: 8px; padding: 14px 18px; background: none; border: 0; border-top: 1px solid rgba(255,255,255,.1); color: inherit; text-align: left; font: inherit; }
-.wp-item:first-child, .wp-note + .wp-item { border-top: 0; }
-@media (hover: hover) { button.wp-item:hover { background: rgba(255,255,255,.08); } }
-button.wp-item:active { background: rgba(255,255,255,.08); }
-.wp-key { font-variant-numeric: tabular-nums; letter-spacing: .01em; }
-.wp-sep { opacity: .5; }
-.wp-dict { min-width: 0; overflow: hidden; text-overflow: clip; white-space: nowrap; }
-.wp-muted { opacity: .7; font-size: .92rem; }
-.wp-note { position: relative; padding: 8px 18px 6px; font-size: .78rem; opacity: .7; }
+.word-pop::before { content: ""; position: absolute; left: calc(var(--arrow, 50%) - 8px); width: 14px; height: 14px; background: var(--panel); transform: rotate(45deg); border-radius: 2px; border: 1px solid var(--line); }
+.word-pop.below::before { top: -8px; border-right: 0; border-bottom: 0; }
+.word-pop.above::before { bottom: -8px; border-left: 0; border-top: 0; }
+.wp-item { position: relative; width: 100%; display: flex; align-items: center; gap: 10px; padding: 11px 10px 11px 12px; background: none; border: 0; border-radius: calc(var(--radius) * .6); color: inherit; text-align: left; font: inherit; }
+@media (hover: hover) { button.wp-item:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); } }
+button.wp-item:active { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.wp-key { font-variant-numeric: tabular-nums; letter-spacing: .01em; font-weight: 600; }
+.wp-key.wp-num { flex: none; padding: 2px 8px; border-radius: 7px; background: color-mix(in srgb, var(--accent) 12%, var(--bg)); color: var(--accent); font-size: .88rem; font-weight: 700; }
+.wp-sep { display: none; }
+.wp-place .wp-sep { display: inline; color: var(--muted); }
+.wp-dict { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wp-go { flex: none; color: var(--muted); }
+.wp-muted { color: var(--muted); font-size: .92rem; }
+.wp-note { position: relative; padding: 8px 12px 4px; font-size: .78rem; color: var(--muted); }
 
 /* ---------- Прогресс чтения книги ---------- */
 .read-progress { flex: none; height: 3px; background: color-mix(in srgb, var(--accent) 16%, var(--bg)); position: relative; z-index: 2; }
@@ -454,7 +457,7 @@ button.wp-item:active { background: rgba(255,255,255,.08); }
 @media (max-width: 420px) { .mod-more { padding-left: 14px; } }
 
 /* ---------- Карта места во второй панели ---------- */
-.wp-pin { flex: none; color: #f0b866; }
+.wp-pin { flex: none; color: var(--accent); }
 .wp-place .wp-key { font-weight: 600; }
 .map-pane .toolbar { gap: 0; }
 .tb-place { flex: 1 1 auto; min-width: 0; justify-content: flex-start; gap: 8px; padding: 0 14px; font-size: 1.08rem; font-weight: 600; cursor: default; }

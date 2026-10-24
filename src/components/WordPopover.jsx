@@ -1,7 +1,7 @@
 // Всплывающая выборка над словом: «H7887 · Стронг: иврит», «H7887 · Симфония RST+» …
 // Выбор пункта открывает статью в нижнем окне на половину экрана.
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Loader2, MapPin } from 'lucide-react';
+import { Loader2, MapPin, ChevronRight } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { lookupWord } from '../core/lexicon.js';
 import { markClosedOnWord } from '../core/tapState.js';
@@ -104,14 +104,16 @@ export default function WordPopover() {
           <span className="wp-key">{pl.name}</span>
           <span className="wp-sep">·</span>
           <span className="wp-dict">{t('Карта')}</span>
+          <ChevronRight size={16} className="wp-go" aria-hidden="true" />
         </button>
       ))}
       {res &&
         items.map((it) => (
           <button key={`${it.module.id}|${it.key}`} role="menuitem" className="wp-item" onClick={() => choose(it)}>
-            <span className="wp-key">{it.key.startsWith('H') || it.key.startsWith('G') ? it.key : it.label || it.key}</span>
+            <span className={`wp-key${/^[HG]\d/.test(it.key) ? ' wp-num' : ''}`}>{/^[HG]\d/.test(it.key) ? it.key : it.label || it.key}</span>
             <span className="wp-sep">·</span>
             <span className="wp-dict">{it.module.name}</span>
+            <ChevronRight size={16} className="wp-go" aria-hidden="true" />
           </button>
         ))}
       {res && !items.length && !places.length && (
