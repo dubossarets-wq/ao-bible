@@ -9,5 +9,6 @@ export const SystemBarType = {};
 export const MediaSession = {};
 export const LocalNotifications = {};
 export const AppUpdate = {};
+export const CapacitorHttp = {};
 export const AppUpdateAvailability = {};
 export const registerPlugin = () => ({});

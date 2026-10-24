@@ -5,6 +5,7 @@ import * as db from './db.js';
 import { normalize, bytesToJson, ModuleError } from './schema.js';
 import { t, getLang } from './i18n.js';
 import { REMOTE, MIRROR } from './native.js';
+import { CapacitorHttp } from '@capacitor/core';
 
 // Текст ошибки для человека: нехватку места браузер сообщает по-английски и непонятно — объясняем, что делать
 export const errorText = (e) =>
@@ -182,10 +183,25 @@ async function fetchRemote(url, opts) {
   try {
     return await fetch(url, opts);
   } catch (e) {
-    const res = await fetch(alt, opts);
-    useMirror = true;
-    return res;
+    try {
+      const res = await fetch(alt, opts);
+      useMirror = true;
+      return res;
+    } catch {
+      return nativeFetch(url); // встроенный браузер не подключается вовсе — качаем средствами Android
+    }
   }
+}
+
+// Последний запасной путь: загрузка средствами самого Android (а не встроенного браузера) — она точно учитывает
+// корни Let's Encrypt, встроенные в приложение (network_security_config.xml), на Android 7.0
+async function nativeFetch(url) {
+  const r = await CapacitorHttp.request({ url, method: 'GET', responseType: 'arraybuffer', headers: { 'Cache-Control': 'no-cache' } });
+  if (typeof r.data !== 'string') throw new Error('no data');
+  const bin = atob(r.data);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Response(bytes, { status: r.status });
 }
 
 async function fetchWithProgress(url, onProgress, expected) {
