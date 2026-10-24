@@ -28,7 +28,8 @@ import { t, useLang } from './core/i18n.js';
 const AppCtx = createContext(null);
 export const useApp = () => useContext(AppCtx);
 
-const START_REF = { book: 'Josh', chapter: 13, verse: 32 };
+// Самое первое открытие — с начала Библии; дальше — с последнего места (панели хранятся в localStorage)
+const START_REF = { book: 'Gen', chapter: 1, verse: 1 };
 const newPane = (moduleId, ref = START_REF) => ({ moduleId, ref, history: [ref], hIndex: 0, nav: 1, highlight: null, flash: null });
 
 function usePrefersDark() {

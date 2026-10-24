@@ -74,7 +74,13 @@ async function run(label, viewport, isMobile) {
   await page.keyboard.press('Escape');
   await page.waitForTimeout(500);
   const refLabel = await page.textContent('.tb-ref');
-  check(`${label}: стартовая позиция`, refLabel.includes('13:3'), refLabel);
+  check(`${label}: первое открытие — Бытие 1:1`, /Быт\. 1:1$/.test(refLabel.trim()), refLabel);
+  // Дальше проверки идут на Нав 13:32
+  await page.click('.pane-slot.first .tb-ref');
+  await page.fill('#ref-input', 'Нав 13:32');
+  await page.keyboard.press('Enter');
+  await page.waitForSelector('#v-13-32');
+  await page.waitForTimeout(800);
   await page.screenshot({ path: `${shots}/${label}-1-reader.png` });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   check(`${label}: нет горизонтальной прокрутки`, overflow <= 0, `${overflow}px`);
