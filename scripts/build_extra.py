@@ -202,6 +202,11 @@ def world_bible(d):
         em = ebible_meta(name)
         version = f"eBible.org {name}" + (f" ({em['UpdateDate']})" if em.get("UpdateDate") else "")
         source = f"https://ebible.org/find/details.php?id={name} (лицензия: https://ebible.org/{name}/copr.htm)"
+    elif kind == "usfm":
+        # готовая папка USFM в data-src/extra (scripts/extra_free_ru.py: ROB, тексты bible.by)
+        src, heads = W.read_usfm(SRC / name)
+        prefer = d.get("prefer") or "syn"
+        version, source = d["version"], d["source"]
     elif kind == "wikisource":
         import extra_wiki as WK
         src, heads = WK.read(name)

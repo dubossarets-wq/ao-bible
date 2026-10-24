@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Переводы С. С. Аверинцева — издательство «Дух і Літера»</title><style>
+:root { --bg:#f7f6f3; --card:#fff; --text:#1c1c1e; --muted:#6a6a6f; --line:#e4e2dd; --accent:#1c1c1e; --on:#fff; --ok:#2f6339; }
+@media (prefers-color-scheme: dark) { :root { --bg:#161617; --card:#212123; --text:#e8e6e1; --muted:#9a9893; --line:#333336; --accent:#e8e6e1; --on:#161617; --ok:#7cc68a; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+main { max-width: 760px; margin: 0 auto; padding: 24px 16px 60px; }
+h1 { font-size: 1.45rem; margin: 0 0 4px; }
+h2 { font-size: 1.1rem; margin: 26px 0 10px; }
+.what { color: var(--muted); margin: 0 0 18px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin: 0 0 14px; }
+.note { border-left: 4px solid var(--accent); }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.row.stack { flex-direction: column-reverse; align-items: flex-start; }
+.label { font-size: .78rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+.val { flex: 1; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+pre { white-space: pre-wrap; font: inherit; margin: 0; }
+button, a.btn { font: inherit; font-weight: 600; padding: 8px 14px; border-radius: 10px; border: 0; background: var(--accent); color: var(--on); cursor: pointer; text-decoration: none; display: inline-block; }
+a.btn.alt { background: transparent; color: var(--text); border: 1px solid var(--line); }
+button.done { background: var(--ok); color: #fff; }
+input { font: inherit; width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); }
+.me { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 560px) { .me { grid-template-columns: 1fr; } }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 10px 0 0; font-size: .92rem; }
+@media (max-width: 560px) { dl { grid-template-columns: 1fr; } dd { margin-bottom: 6px; } }
+dt { color: var(--muted); } dd { margin: 0; overflow-wrap: anywhere; }
+a { color: inherit; }
+ul.list { list-style: none; padding: 0; margin: 0; }
+ul.list li { margin: 0 0 10px; }
+ul.list a { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; text-decoration: none; }
+ul.list small { display: block; color: var(--muted); }
+ul.free { margin: 0; padding-left: 20px; } ul.free li { margin: 0 0 8px; }
+</style></head>
+<body><main><p><a href="index.html">← Все письма</a></p>
+<h1>Переводы С. С. Аверинцева — издательство «Дух і Літера»</h1><p class="what">Евангелия, книга Иова и Псалмы в переводе Сергея Аверинцева (Киев, «Дух і Літера», 2004)</p>
+<section class="card note"><div>Аверинцев умер в 2004 году — права у наследников и у издательства. Почту издательства найти не удалось (сайт не открылся): возьмите адрес с duh-i-litera.com или с выходных данных книги. Письмо по-русски — издательство двуязычное.</div><dl><dt>Сайт</dt><dd>https://duh-i-litera.com</dd><dt>Город</dt><dd>Киев, при Национальном университете «Киево-Могилянская академия»</dd></dl></section>
+<section class="card"><p class="label">Ваши данные — подставятся в письмо</p><div class="me">
+<input data-me="name" placeholder="Ваше имя" autocomplete="name"><input data-me="email" placeholder="Ваша почта" autocomplete="email" type="email"></div></section>
+
+<section class="card"><p class="label">Тема</p><div class="row stack"><div class="val" id="subject" data-tpl="Просьба о разрешении: переводы С. С. Аверинцева в бесплатном приложении AO Bible"></div><button data-copy="subject">Скопировать</button></div></section>
+<section class="card"><p class="label">Текст письма</p><div class="row stack"><pre class="val" id="body" data-tpl="Здравствуйте!
+
+Меня зовут {NAME}. Я разрабатываю бесплатное некоммерческое библейское приложение AO Bible (https://aobible.app): без рекламы, без платных функций, без сбора платежей и без регистрации. Оно работает в браузере и проходит тестирование в Google Play.
+
+Просим разрешения включить в приложение переводы Сергея Сергеевича Аверинцева — Евангелия, книгу Иова и Псалмы — по изданию «Дух і Літера» 2004 года, без изменений текста, для чтения и сравнения переводов. Переводчик, издательство и комментарии будут указаны в той формулировке, которую вы назовёте.
+
+Просим сообщить, принадлежат ли права издательству или к кому из наследников следует обратиться, и на каких условиях возможно такое использование.
+
+С уважением,
+{NAME}
+{EMAIL}
+AO Bible: https://aobible.app"></pre><button data-copy="body">Скопировать</button></div></section></main><script>
+const me = { name: localStorage.getItem('aob-letters-name') || '', email: localStorage.getItem('aob-letters-email') || '' };
+const fill = (s) => s.replaceAll('{NAME}', me.name || '[ваше имя]').replaceAll('{EMAIL}', me.email || '[ваша почта]');
+const text = (id) => document.getElementById(id)?.textContent || '';
+function render() {
+  document.querySelectorAll('[data-tpl]').forEach((el) => (el.textContent = fill(el.dataset.tpl)));
+  const to = text('to'), su = text('subject'), body = text('body'), q = encodeURIComponent;
+  const mail = document.getElementById('mailto'), gm = document.getElementById('gmail');
+  if (mail) mail.href = 'mailto:' + to + '?subject=' + q(su) + '&body=' + q(body);
+  if (gm) gm.href = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + q(to) + '&su=' + q(su) + '&body=' + q(body);
+}
+document.querySelectorAll('input[data-me]').forEach((inp) => {
+  inp.value = me[inp.dataset.me];
+  inp.addEventListener('input', () => { me[inp.dataset.me] = inp.value.trim(); try { localStorage.setItem('aob-letters-' + inp.dataset.me, me[inp.dataset.me]); } catch {} render(); });
+});
+document.querySelectorAll('button[data-copy]').forEach((b) => b.addEventListener('click', async () => {
+  const t = text(b.dataset.copy);
+  try { await navigator.clipboard.writeText(t); } catch { const a = document.createElement('textarea'); a.value = t; document.body.append(a); a.select(); document.execCommand('copy'); a.remove(); }
+  const old = b.textContent; b.textContent = 'Скопировано ✓'; b.classList.add('done');
+  setTimeout(() => { b.textContent = old; b.classList.remove('done'); }, 1600);
+}));
+render();
+</script></body></html>

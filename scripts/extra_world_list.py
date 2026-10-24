@@ -14,6 +14,12 @@ BYSA = "CC BY-SA 4.0"
 # изменения указываются (copr.htm пакета). Поэтому в названиях нет «Biblica», правообладатель — в license/author.
 BIBLICA = BYSA + " (© Biblica, Inc.; изменено: нумерация стихов приведена к синодальной)"
 
+# Бокун (eBible bel): в названии лицензии — CC BY-ND, но текст условий на eBible прямо разрешает «share,
+# redistribute, or adapt» при указании правообладателя и без коммерческого использования. AO Bible некоммерческое.
+BOKUN = ("© 2016–2023 John the Forerunner Church of Christians of Evangelical Faith of Minsk City; eBible.org: "
+         "можно распространять и адаптировать с указанием правообладателя, только некоммерчески "
+         "(изменено: нумерация стихов приведена к синодальной)")
+
 BIBLES = [
     # --- английский ---
     dict(id="web", src="ebible:engwebp", lang="en", name="WEB", title="World English Bible",
@@ -118,6 +124,17 @@ BIBLES = [
          author="Лука Дзекуць-Малей (1888–1955), Антон Луцкевіч (1884–1942)",
          source="https://be.wikisource.org/wiki/Новы_Запавет_(Дзекуць-Малей,_Луцкевіч) (беларуская Вікікрыніца)",
          schemes=("syn",)),
+    # --- русский (scripts/extra_free_ru.py готовит папки USFM) ---
+    dict(id="rus-rob", src="usfm:door43/ru_rob-usfm", lang="ru", name="ROB", title="Русская открытая Библия",
+         desc="Открытая редакция Синодального перевода с осовремененной лексикой (Door43). В Новом Завете и части "
+              "книг Ветхого Завета слова связаны с номерами Стронга.",
+         license="CC BY-SA 4.0 (© 2020 Door43 World Missions Community; изменено: нумерация стихов приведена к "
+                 "синодальной, разметка выравнивания заменена номерами Стронга)",
+         author="Door43 World Missions Community (на основе Синодального перевода 1876 г.)",
+         version="Door43-Catalog/ru_rob (master, 2021)", source="https://git.door43.org/Door43-Catalog/ru_rob"),
+    dict(id="bel-bokun", src="ebible:bel", lang="be", name="Бокун", title="Біблія (пераклад А. Бокуна)",
+         desc="Современный белорусский перевод Библии Антония Бокуна (2016–2023).",
+         license=BOKUN, author="Антоній Бокун; Церковь Иоанна Предтечи ХВЕ г. Минска"),
     dict(id="ukr-nup", src="ebible:ukronpu", lang="uk", name="НУП", title="Новий український переклад (НЗ і Псалми)",
          desc="Современный украинский перевод Нового Завета и Псалтири.", license=BIBLICA, author="Biblica, Inc."),
     dict(id="ronbl", src="ebible:ronbl", lang="ro", name="Biblia Liberă", title="Biblia Liberă (Новый Завет)",

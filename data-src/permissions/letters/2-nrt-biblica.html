@@ -1,12 +1,13 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Новый русский перевод (НРП) — Biblica</title><style>
+<title>Новый русский перевод (НРП) и «Слово Жизни» — Biblica</title><style>
 :root { --bg:#f7f6f3; --card:#fff; --text:#1c1c1e; --muted:#6a6a6f; --line:#e4e2dd; --accent:#1c1c1e; --on:#fff; --ok:#2f6339; }
 @media (prefers-color-scheme: dark) { :root { --bg:#161617; --card:#212123; --text:#e8e6e1; --muted:#9a9893; --line:#333336; --accent:#e8e6e1; --on:#161617; --ok:#7cc68a; } }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
 main { max-width: 760px; margin: 0 auto; padding: 24px 16px 60px; }
 h1 { font-size: 1.45rem; margin: 0 0 4px; }
+h2 { font-size: 1.1rem; margin: 26px 0 10px; }
 .what { color: var(--muted); margin: 0 0 18px; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin: 0 0 14px; }
 .note { border-left: 4px solid var(--accent); }
@@ -15,31 +16,38 @@ h1 { font-size: 1.45rem; margin: 0 0 4px; }
 .label { font-size: .78rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
 .val { flex: 1; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
 pre { white-space: pre-wrap; font: inherit; margin: 0; }
-button { font: inherit; font-weight: 600; padding: 8px 14px; border-radius: 10px; border: 0; background: var(--accent); color: var(--on); cursor: pointer; }
+button, a.btn { font: inherit; font-weight: 600; padding: 8px 14px; border-radius: 10px; border: 0; background: var(--accent); color: var(--on); cursor: pointer; text-decoration: none; display: inline-block; }
+a.btn.alt { background: transparent; color: var(--text); border: 1px solid var(--line); }
 button.done { background: var(--ok); color: #fff; }
 input { font: inherit; width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); }
 .me { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 @media (max-width: 560px) { .me { grid-template-columns: 1fr; } }
 dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 10px 0 0; font-size: .92rem; }
+@media (max-width: 560px) { dl { grid-template-columns: 1fr; } dd { margin-bottom: 6px; } }
 dt { color: var(--muted); } dd { margin: 0; overflow-wrap: anywhere; }
 a { color: inherit; }
 ul.list { list-style: none; padding: 0; margin: 0; }
 ul.list li { margin: 0 0 10px; }
 ul.list a { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; text-decoration: none; }
 ul.list small { display: block; color: var(--muted); }
+ul.free { margin: 0; padding-left: 20px; } ul.free li { margin: 0 0 8px; }
 </style></head>
 <body><main><p><a href="index.html">← Все письма</a></p>
-<h1>Новый русский перевод (НРП) — Biblica</h1><p class="what">Новый русский перевод, полный текст</p>
+<h1>Новый русский перевод (НРП) и «Слово Жизни» — Biblica</h1><p class="what">Новый русский перевод, Новый Завет «Слово Жизни» (1991), аудиозапись НРП</p>
 <section class="card note"><div>У Biblica нет адреса почты для таких запросов — только форма на сайте: вставьте текст письма в поле описания. Важно: полный текст Библии они лицензируют только зарегистрированным организациям, частному лицу могут отказать. Для разработчиков Biblica советует партнёров (api.bible) — в письме спрашиваем, какой путь подходит нам.</div><dl><dt>Язык письма</dt><dd>английский</dd></dl></section>
 <section class="card"><p class="label">Ваши данные — подставятся в письмо</p><div class="me">
 <input data-me="name" placeholder="Ваше имя" autocomplete="name"><input data-me="email" placeholder="Ваша почта" autocomplete="email" type="email"></div></section>
 <section class="card"><p class="label">Куда отправить</p><div class="val">Форма на сайте: <a href="https://www.biblica.com/permission-request-form/" target="_blank" rel="noopener">https://www.biblica.com/permission-request-form/</a></div></section>
-<section class="card"><p class="label">Тема</p><div class="row stack"><div class="val" id="subject">Permission request: New Russian Translation (NRT) in a free non-commercial Bible app</div><button data-copy="subject">Скопировать</button></div></section>
+<section class="card"><p class="label">Тема</p><div class="row stack"><div class="val" id="subject" data-tpl="Permission request: New Russian Translation (NRT) and Slovo Zhizni NT in a free non-commercial Bible app"></div><button data-copy="subject">Скопировать</button></div></section>
 <section class="card"><p class="label">Текст письма</p><div class="row stack"><pre class="val" id="body" data-tpl="Dear Biblica Permissions Team,
 
-My name is {NAME}. I am the developer of AO Bible (https://dubossarets-wq.github.io/ao-bible/), a free, non-commercial Bible reading app with no advertising, no subscriptions, no in-app purchases and no user registration. It is being prepared for the App Store and Google Play.
+My name is {NAME}. I am the developer of AO Bible (https://aobible.app), a free, non-commercial Bible reading app with no advertising, no subscriptions, no in-app purchases and no user registration. It runs in the browser and is in testing on Google Play.
 
 We would like to request permission to include the New Russian Translation (Новый русский перевод, NRT), latest edition, in the app: the complete Bible text, unaltered. The text will be used for reading, full-text search and side-by-side comparison with other Russian translations. We will display the notice &quot;© Biblica, Inc.® Used by permission. All rights reserved worldwide.&quot; on the translation&#x27;s screen and in the app&#x27;s About section, and will not modify or sell the text.
+
+If possible, we would also like to include:
+1. the New Testament &quot;Slovo Zhizni&quot; (Слово Жизни, International Bible Society, 1991), as a historical edition;
+2. the NRT audio recording, if it is owned by Biblica — or please tell us whom to contact about it.
 
 We understand that licenses for a complete Bible are granted to registered legal entities. AO Bible is currently developed by an individual on a non-commercial basis. Could you please advise whether a license is possible in this case, or whether we should access the NRT through one of your partners (for example, api.bible)?
 
@@ -50,17 +58,24 @@ Thank you for your time.
 Sincerely,
 {NAME}
 {EMAIL}
-AO Bible: https://dubossarets-wq.github.io/ao-bible/"></pre><button data-copy="body">Скопировать</button></div></section></main><script>
+AO Bible: https://aobible.app"></pre><button data-copy="body">Скопировать</button></div></section></main><script>
 const me = { name: localStorage.getItem('aob-letters-name') || '', email: localStorage.getItem('aob-letters-email') || '' };
 const fill = (s) => s.replaceAll('{NAME}', me.name || '[ваше имя]').replaceAll('{EMAIL}', me.email || '[ваша почта]');
-function render() { document.querySelectorAll('[data-tpl]').forEach((el) => (el.textContent = fill(el.dataset.tpl))); }
+const text = (id) => document.getElementById(id)?.textContent || '';
+function render() {
+  document.querySelectorAll('[data-tpl]').forEach((el) => (el.textContent = fill(el.dataset.tpl)));
+  const to = text('to'), su = text('subject'), body = text('body'), q = encodeURIComponent;
+  const mail = document.getElementById('mailto'), gm = document.getElementById('gmail');
+  if (mail) mail.href = 'mailto:' + to + '?subject=' + q(su) + '&body=' + q(body);
+  if (gm) gm.href = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + q(to) + '&su=' + q(su) + '&body=' + q(body);
+}
 document.querySelectorAll('input[data-me]').forEach((inp) => {
   inp.value = me[inp.dataset.me];
   inp.addEventListener('input', () => { me[inp.dataset.me] = inp.value.trim(); try { localStorage.setItem('aob-letters-' + inp.dataset.me, me[inp.dataset.me]); } catch {} render(); });
 });
 document.querySelectorAll('button[data-copy]').forEach((b) => b.addEventListener('click', async () => {
-  const text = document.getElementById(b.dataset.copy).textContent;
-  try { await navigator.clipboard.writeText(text); } catch { const t = document.createElement('textarea'); t.value = text; document.body.append(t); t.select(); document.execCommand('copy'); t.remove(); }
+  const t = text(b.dataset.copy);
+  try { await navigator.clipboard.writeText(t); } catch { const a = document.createElement('textarea'); a.value = t; document.body.append(a); a.select(); document.execCommand('copy'); a.remove(); }
   const old = b.textContent; b.textContent = 'Скопировано ✓'; b.classList.add('done');
   setTimeout(() => { b.textContent = old; b.classList.remove('done'); }, 1600);
 }));
