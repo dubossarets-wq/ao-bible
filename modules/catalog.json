@@ -1296,6 +1296,40 @@
    "sizeGz": 5215
   },
   {
+   "id": "chrysostom",
+   "type": "commentary",
+   "name": "Златоуст",
+   "title": "Беседы свт. Иоанна Златоуста на Новый Завет",
+   "description": "Беседы святителя Иоанна Златоуста (IV в.) на Евангелия от Матфея и Иоанна, Деяния и Послания апостола Павла в дореволюционном русском переводе. Каждая беседа стоит у стиха, с которого начинается.",
+   "language": "ru",
+   "version": "bible.by/zlatoust (10.2026)",
+   "author": "Святитель Иоанн Златоуст (347–407)",
+   "source": "https://bible.by/zlatoust/",
+   "license": "Public Domain (дореволюционный русский перевод; текст с привязкой к стихам — bible.by, отмечен как общественное достояние)",
+   "versification": "synodal",
+   "url": "chrysostom.json",
+   "urlGz": "chrysostom.json.gz",
+   "size": 21065744,
+   "sizeGz": 5441987
+  },
+  {
+   "id": "augustine",
+   "type": "commentary",
+   "name": "Августин",
+   "title": "Толкования блаж. Августина",
+   "description": "Толкования блаженного Августина (354–430) на места Ветхого и Нового Завета из его сочинений в дореволюционном русском переводе. Синодальная нумерация.",
+   "language": "ru",
+   "version": "bible.by/aic (10.2026)",
+   "author": "Блаженный Августин Иппонийский",
+   "source": "https://bible.by/aic/",
+   "license": "Public Domain (дореволюционный русский перевод; текст с привязкой к стихам — bible.by, отмечен как общественное достояние)",
+   "versification": "synodal",
+   "url": "augustine.json",
+   "urlGz": "augustine.json.gz",
+   "size": 5226027,
+   "sizeGz": 1301574
+  },
+  {
    "id": "bible-illustrations",
    "type": "illustrations",
    "name": "Иллюстрации",
@@ -1920,6 +1954,48 @@
    "urlGz": "rus-otnt.json.gz",
    "size": 1426199,
    "sizeGz": 365673
+  },
+  {
+   "id": "rst-stress",
+   "type": "bible",
+   "name": "Синод. с ударениями",
+   "title": "Синодальный перевод с ударениями",
+   "description": "Синодальный перевод (66 книг) со знаками ударения — удобно для чтения вслух и для изучающих русский язык. Ударения расставлены на bible.by (сервис russiangram.com, вычитка продолжается). Нумерация стихов приведена к синодальной.",
+   "language": "ru",
+   "version": "bible.by/synu (10.2026)",
+   "author": "Синодальный перевод; ударения — bible.by",
+   "source": "https://bible.by/synu/",
+   "license": "Public Domain (Синодальный перевод 1876 г.; текст с ударениями bible.by отмечен как общественное достояние)",
+   "features": {
+    "strongs": false,
+    "headings": false
+   },
+   "versification": "synodal",
+   "url": "rst-stress.json",
+   "urlGz": "rst-stress.json.gz",
+   "size": 6783359,
+   "sizeGz": 1539223
+  },
+  {
+   "id": "be-skoryna",
+   "type": "bible",
+   "name": "Скарына",
+   "title": "Апостол Францыска Скарыны (1525)",
+   "description": "«Апостол» Франциска Скорины (Вильно, 1525) — Деяния и Послания на старобелорусском языке, транскрипция bible.by и biblia.by. Только Новый Завет. Нумерация стихов приведена к синодальной.",
+   "language": "be",
+   "version": "bible.by/skoryna (2024)",
+   "author": "Францыск Скарына (ок. 1490 — ок. 1551)",
+   "source": "https://bible.by/skoryna/",
+   "license": "Public Domain (издание 1525 г.; транскрипция bible.by & biblia.by отмечена как общественное достояние)",
+   "features": {
+    "strongs": false,
+    "headings": false
+   },
+   "versification": "synodal",
+   "url": "be-skoryna.json",
+   "urlGz": "be-skoryna.json.gz",
+   "size": 677609,
+   "sizeGz": 175480
   },
   {
    "id": "bible-places",
