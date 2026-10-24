@@ -57,11 +57,16 @@ const yieldNow = () =>
 
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-// Регулярное выражение для запроса: все слова фразы по порядку; «ё» = «е».
+// Регулярное выражение для запроса: все слова фразы по порядку; «ё» = «е»; знак ударения в тексте
+// (Синодальный с ударениями: «возлюби́л») не мешает — после каждой буквы он допускается.
 export function queryRegex(query, { wholeWord = false, flags = 'giu' } = {}) {
-  const q = query.trim().replace(/\s+/g, ' ');
+  const q = query.trim().replace(/\s+/g, ' ').replace(/́/g, '');
   if (!q) return null;
-  const body = escapeRe(q).replace(/[её]/gi, '[её]').replace(/ /g, '[\\s\\p{P}]+');
+  const body = [...q].map((ch) => {
+    if (ch === ' ') return '[\\s\\p{P}]+';
+    if (/[её]/i.test(ch)) return '[её]\\u0301?';
+    return /\p{L}/u.test(ch) ? escapeRe(ch) + '\\u0301?' : escapeRe(ch);
+  }).join('');
   const pat = wholeWord ? `(?<![\\p{L}])${body}(?![\\p{L}])` : body;
   return new RegExp(pat, flags);
 }

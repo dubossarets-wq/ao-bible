@@ -331,14 +331,15 @@ def chrysostom():
     entries = {}
     for book, c, t in bibleby_pages("zlatoust"):
         body = _comm_body(t)
-        parts = re.split(r"(?i)(<p[^>]*>\s*БЕСЕДА[^<]{0,40}</p>)", body)
+        parts = re.split(r"(?i)(<p[^>]*>\s*(?:<strong>\s*)?БЕСЕДА[^<]{0,40}(?:</strong>\s*)?</p>)", body)
         # до первой «БЕСЕДЫ» — продолжение беседы с прошлой главы или вступление: к стиху 1
         _add(entries, f"{book}.{c}.1", "\n\n".join(_paras(parts[0])))
         for i in range(1, len(parts), 2):
             title = re.sub(r"^БЕСЕДА", "Беседа", _paras(parts[i])[0])
             rest = parts[i + 1]
             v = 1
-            lm = re.search(r'<span class="link">[^<]*?(\d+):(\d+)', rest)
+            # «(Мф 1:1)», «(<span class="link">Рим 1:1</span>−2)» или просто «(1:1)» — в начале беседы
+            lm = re.search(r"(\d+):(\d+)", re.sub(r"<[^>]+>", "", rest[:3000]))
             if lm and int(lm.group(1)) == c:
                 v = int(lm.group(2))
             _add(entries, f"{book}.{c}.{v}", "\n\n".join(_paras(rest)), title=re.sub(r"\s+", " ", title))

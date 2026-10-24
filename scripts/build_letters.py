@@ -432,9 +432,9 @@ def index_page():
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     for l in LETTERS:
-        (OUT / l['file']).write_text(letter_page(l), encoding='utf-8')
-    (OUT / 'index.html').write_text(index_page(), encoding='utf-8')
-    print(f'{len(LETTERS)} писем → {OUT}')
+        (OUT / l['file']).write_text(letter_page(l), encoding='utf-8', newline='\n')
+    (OUT / 'index.html').write_text(index_page(), encoding='utf-8', newline='\n')
+    print(f'{len(LETTERS)} писем -> {OUT}')
 
 
 if __name__ == '__main__':
