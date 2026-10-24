@@ -94,6 +94,11 @@
   "vulg-interlinear",
   "vulgata",
   "rus-rob",
-  "bel-bokun"
+  "bel-bokun",
+  "rus-desp",
+  "rus-otnt",
+  "desp-notes",
+  "otnt-notes",
+  "theophylact"
  ]
 }

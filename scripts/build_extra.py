@@ -285,6 +285,86 @@ def m_lopukhin():
     }, entries)
 
 
+def _rst_chapter():
+    """(книга, глава) -> [стихи синодального перевода без разметки] — для привязки абзацев Феофилакта."""
+    rst = json.loads((OUT / "rst.json").read_text(encoding="utf-8"))
+    books = {b["id"]: b["chapters"] for b in rst["books"]}
+
+    def get(book, c):
+        ch = books.get(book, [])
+        return [re.sub(r"\{([^|}]*)\|[^}]*\}", r"\1", v) for v in (ch[c - 1] if 0 < c <= len(ch) else [])]
+    return get
+
+
+def m_desp_notes():
+    import extra_free_ru as F
+    return commentary({
+        "id": "desp-notes", "name": "Десницкий: примечания", "title": "Примечания к переводу Нового Завета А. Десницкого",
+        "language": "ru",
+        "description": "Примечания Андрея Десницкого к его переводу Нового Завета: варианты оригинала, другие "
+                       "толкования, исторические и языковые пояснения. Синодальная нумерация.",
+        "version": "bible.by/desp (10.2026)", "author": "Андрей Сергеевич Десницкий",
+        "source": "https://bible.by/desp/",
+        "license": "© А. С. Десницкий, 2017, 2023, 2024. Автор допускает использование текста в некоммерческих целях "
+                   "в любых объёмах (заявление автора на bible.by)",
+    }, F.bibleby_notes("desp"))
+
+
+def m_otnt_notes():
+    import extra_free_ru as F
+    return commentary({
+        "id": "otnt-notes", "name": "Открытый НЗ: примечания", "title": "Примечания к Открытому переводу Нового Завета",
+        "language": "ru",
+        "description": "Примечания переводчиков Открытого перевода Нового Завета: значения слов, реалии, варианты "
+                       "рукописей. Синодальная нумерация.",
+        "version": "редакция 3.07.2018 (текст — bible.by/otnt)",
+        "author": "Межконфессиональная группа переводчиков, координатор С. В. Ирюпин",
+        "source": "https://bible.by/otnt/ (проект: biblelamp.ru/openbible)",
+        "license": "CC BY-SA 3.0 (© 2013 Открытый перевод)",
+    }, F.bibleby_notes("otnt"))
+
+
+PD_BIBLEBY ="Public Domain (дореволюционный русский перевод; текст с привязкой к стихам — bible.by, отмечен как общественное достояние)"
+
+
+def m_theophylact():
+    import extra_free_ru as F
+    return commentary({
+        "id": "theophylact", "name": "Феофилакт", "title": "Толкование блаж. Феофилакта Болгарского на Новый Завет",
+        "language": "ru",
+        "description": "Толкования архиепископа Феофилакта Болгарского (XI–XII вв.) на Евангелия, Деяния и Послания "
+                       "(кроме Откровения) в русском переводе XIX в. Абзацы привязаны к стихам по цитате, с которой "
+                       "начинаются. Синодальная нумерация.",
+        "version": "bible.by/feofilakt (10.2026)", "author": "Блаженный Феофилакт, архиепископ Охридский",
+        "source": "https://bible.by/feofilakt/", "license": PD_BIBLEBY,
+    }, F.theophylact(_rst_chapter()))
+
+
+def m_chrysostom():
+    import extra_free_ru as F
+    return commentary({
+        "id": "chrysostom", "name": "Златоуст", "title": "Беседы свт. Иоанна Златоуста на Новый Завет",
+        "language": "ru",
+        "description": "Беседы святителя Иоанна Златоуста (IV в.) на Евангелия от Матфея и Иоанна, Деяния и Послания "
+                       "апостола Павла в дореволюционном русском переводе. Каждая "
+                       "беседа стоит у стиха, с которого начинается.",
+        "version": "bible.by/zlatoust (10.2026)", "author": "Святитель Иоанн Златоуст (347–407)",
+        "source": "https://bible.by/zlatoust/", "license": PD_BIBLEBY,
+    }, F.chrysostom())
+
+
+def m_augustine():
+    import extra_free_ru as F
+    return commentary({
+        "id": "augustine", "name": "Августин", "title": "Толкования блаж. Августина",
+        "language": "ru",
+        "description": "Толкования блаженного Августина (354–430) на места Ветхого и Нового Завета из его сочинений "
+                       "в дореволюционном русском переводе. Синодальная нумерация.",
+        "version": "bible.by/aic (10.2026)", "author": "Блаженный Августин Иппонийский",
+        "source": "https://bible.by/aic/", "license": PD_BIBLEBY,
+    }, F.augustine())
+
+
 def m_mhcc():
     return commentary({
         "id": "mhcc", "name": "M. Henry", "title": "Matthew Henry's Concise Commentary", "language": "en",
@@ -674,7 +754,7 @@ def m_maps():
 
 # m_makarij (только Пятикнижие) заменён полным модулем rus-makarij из scripts/build_ru_old.py
 BUILDERS = [m_kjv, m_bsb, m_oshb, m_byz, m_csl, m_kulish,
-            m_lopukhin, m_mhcc, m_jfb, m_barnes,
+            m_lopukhin, m_desp_notes, m_otnt_notes, m_theophylact, m_chrysostom, m_augustine, m_mhcc, m_jfb, m_barnes,
             m_nikifor, m_dal, m_pbe, m_esbe_bible, m_eebe_bible,
             m_easton, m_smith, m_hitchcock, m_nave, m_isbe, m_amtract, m_torrey, m_webster1828,
             m_abbott_smith, m_bdb,
@@ -683,6 +763,8 @@ BUILDERS = [m_kjv, m_bsb, m_oshb, m_byz, m_csl, m_kulish,
 BUILDER_IDS = {"m_kjv": ["kjv"], "m_bsb": ["bsb"], "m_oshb": ["oshb"], "m_byz": ["byz-rp2018"],
                "m_csl": ["csl-elizabeth"], "m_makarij": ["rus-makarij"], "m_kulish": ["ukr-kulish"],
                "m_lopukhin": ["lopukhin"], "m_mhcc": ["mhcc"], "m_jfb": ["jfb"],
+               "m_desp_notes": ["desp-notes"], "m_otnt_notes": ["otnt-notes"], "m_theophylact": ["theophylact"], "m_chrysostom": ["chrysostom"],
+               "m_augustine": ["augustine"],
                "m_barnes": ["barnes"], "m_nikifor": ["nikifor"], "m_dal": ["dal"],
                "m_pbe": ["pbe"], "m_esbe_bible": ["esbe-bible"], "m_eebe_bible": ["eebe-bible"], "m_easton": ["easton"],
                "m_smith": ["smith"], "m_hitchcock": ["hitchcock"], "m_nave": ["nave"], "m_isbe": ["isbe"],

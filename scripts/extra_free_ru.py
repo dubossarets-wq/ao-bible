@@ -145,7 +145,8 @@ def _chapter_count(slug, book, cdir):
     return max(nums + [1])
 
 
-TIP = re.compile(r'<span class="tooltips"[^>]*data-original-title="([^"]*)"[^>]*>.*?</span>\s*</span>', re.S)
+TIP = re.compile(r'<span class="tooltips"[^>]*data-original-title="([^"]*)"[^>]*>.*?</span>\s*</span>'
+                 r'|<span title="([^"]*)"><span class="sup2b[^"]*">[^<]*</span></span>', re.S)
 
 
 def _plain(s):
@@ -170,7 +171,7 @@ def _parse_chapter(t):
                 pending.append(h)
             continue
         v, raw = int(m.group(2)), m.group(3)
-        notes = [_plain(html.unescape(n)) for n in TIP.findall(raw)]
+        notes = [_plain(html.unescape(a or b)) for a, b in TIP.findall(raw)]
         notes = [re.sub(r"^\d+:\d+(?:[-–]\d+)?\s*", "", n) for n in notes]
         raw = TIP.sub("", raw)
         raw = re.sub(r"<sup>\d+</sup>", "", raw, count=1)
@@ -298,10 +299,17 @@ def theophylact(syn_text):
     for book, c, t in bibleby_pages("feofilakt"):
         verses = [set(_words(v)) for v in syn_text(book, c)]
         body = _comm_body(t)
-        cur = 1
-        # абзац: <P>…</p>; цитата стиха — <strong> в начале абзаца
+        cur, key = 1, f"{book}.{c}.1"
+        # абзац: <P>…</p>; цитата стиха — <strong> в начале абзаца. В Деяниях иначе: сначала абзац-цитата
+        # нескольких стихов с номерами <sup>N</sup>, за ним толкование на всю группу.
         for m in re.finditer(r"(?is)<p[^>]*>(.*?)</p>", body):
             raw = m.group(1)
+            nums = [int(x) for x in re.findall(r"<sup>(\d+)</sup>", raw)]
+            if nums:
+                cur = min(nums)
+                key = f"{book}.{c}.{cur}" + (f"-{max(nums)}" if max(nums) > cur else "")
+                _add(entries, key, "\n\n".join(_paras(re.sub(r"<sup>(\d+)</sup>\s*", r"\1 ", raw))))
+                continue
             lm = re.match(r"\s*<strong>(.*?)</strong>", raw, re.S)
             if lm and verses:
                 lw = _words(re.sub(r"<[^>]+>", "", lm.group(1)))[:8]
@@ -312,9 +320,9 @@ def theophylact(syn_text):
                         if sc > best + 0.1:
                             best, best_v = sc, v
                     if best_v and best >= 0.5:
-                        cur = best_v
+                        cur, key = best_v, f"{book}.{c}.{best_v}"
             text = "\n\n".join(_paras(raw))
-            _add(entries, f"{book}.{c}.{cur}", text)
+            _add(entries, key, text)
     return entries
 
 
