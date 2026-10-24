@@ -1787,6 +1787,48 @@
    "sizeGz": 3166997
   },
   {
+   "id": "rus-rob",
+   "type": "bible",
+   "name": "ROB",
+   "title": "Русская открытая Библия",
+   "description": "Открытая редакция Синодального перевода с осовремененной лексикой (Door43). В Новом Завете и части книг Ветхого Завета слова связаны с номерами Стронга. Нумерация стихов приведена к синодальной.",
+   "language": "ru",
+   "version": "Door43-Catalog/ru_rob (master, 2021)",
+   "author": "Door43 World Missions Community (на основе Синодального перевода 1876 г.)",
+   "source": "https://git.door43.org/Door43-Catalog/ru_rob",
+   "license": "CC BY-SA 4.0 (© 2020 Door43 World Missions Community; изменено: нумерация стихов приведена к синодальной, разметка выравнивания заменена номерами Стронга)",
+   "features": {
+    "strongs": true,
+    "headings": false
+   },
+   "versification": "synodal",
+   "url": "rus-rob.json",
+   "urlGz": "rus-rob.json.gz",
+   "size": 7333712,
+   "sizeGz": 1760629
+  },
+  {
+   "id": "bel-bokun",
+   "type": "bible",
+   "name": "Бокун",
+   "title": "Біблія (пераклад А. Бокуна)",
+   "description": "Современный белорусский перевод Библии Антония Бокуна (2016–2023). Нумерация стихов приведена к синодальной.",
+   "language": "be",
+   "version": "eBible.org bel (2025-05-09)",
+   "author": "Антоній Бокун; Церковь Иоанна Предтечи ХВЕ г. Минска",
+   "source": "https://ebible.org/find/details.php?id=bel (лицензия: https://ebible.org/bel/copr.htm)",
+   "license": "© 2016–2023 John the Forerunner Church of Christians of Evangelical Faith of Minsk City; eBible.org: можно распространять и адаптировать с указанием правообладателя, только некоммерчески (изменено: нумерация стихов приведена к синодальной)",
+   "features": {
+    "strongs": false,
+    "headings": false
+   },
+   "versification": "synodal",
+   "url": "bel-bokun.json",
+   "urlGz": "bel-bokun.json.gz",
+   "size": 6249499,
+   "sizeGz": 1474000
+  },
+  {
    "id": "bible-places",
    "type": "maps",
    "name": "Места",
