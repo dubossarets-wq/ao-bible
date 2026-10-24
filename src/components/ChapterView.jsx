@@ -350,12 +350,15 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       keepTimer.current = setTimeout(setAnchor, 150);
     }
     loadEdges();
-    emitPosition();
+    // Поправка удержания места (текст перестроился) — не движение: вторую панель не тянем и не доводим
+    const kept = Math.abs(el.scrollTop - keepTop.current) < 1;
+    if (kept) keepTop.current = -1;
+    else emitPosition();
     // Долгое чтение: лента глав растёт — когда прокрутка стихла, оставляем по две главы вокруг текущей
     clearTimeout(trimTimer.current);
     if (range.end - range.start > 6) trimTimer.current = setTimeout(trimRibbon, 600);
     // Колесо и обычная прокрутка: остановились — доводим вторую панель (пальцем на телефоне — сигнал из useSyncTouchScroll)
-    if (settings.syncScroll && !touchSync && isDriver(index)) {
+    if (settings.syncScroll && !touchSync && isDriver(index) && !kept) {
       clearTimeout(settleTimer.current);
       settleTimer.current = setTimeout(emitSettle, 160);
     }
@@ -511,6 +514,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
   // а в ленте она отключена — главы сверху добавляем сами), поэтому держим место сами — пока человек не листает.
   const keep = useRef(null); // { node, top } — стих у верхнего края и его отступ от края
   const keepTimer = useRef(0);
+  const keepTop = useRef(-1); // прокрутка после поправки удержания места
   const ownTop = useRef(-1); // прокрутка, которую поставило само приложение: событие с ней — не прокрутка человека
   useEffect(() => () => clearTimeout(keepTimer.current), []);
   const setAnchor = () => {
@@ -527,6 +531,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     if (Math.abs(d) < 1) return;
     el.scrollTop += d;
     ownTop.current = el.scrollTop;
+    keepTop.current = el.scrollTop;
     lastY.current = el.scrollTop;
   };
   // После каждой перерисовки главы (догрузились подписи, значки) — поправка до показа кадра
