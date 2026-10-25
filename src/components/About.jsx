@@ -47,10 +47,15 @@ const THIRD_PARTY = [
 
 function Licenses() {
   const [cat, setCat] = useState(null);
+  const [photos, setPhotos] = useState([]); // фото стиха дня, планов и картинок со стихом
   useEffect(() => {
     fetchCatalog()
       .then((c) => setCat(c.filter((m) => !m.unavailable)))
       .catch(() => setCat([]));
+    fetch('images/verse-bg/index.json')
+      .then((r) => (r.ok ? r.json() : { images: [] }))
+      .then((j) => setPhotos(j.images || []))
+      .catch(() => {});
   }, []);
   if (!cat)
     return (
@@ -101,6 +106,30 @@ function Licenses() {
           </section>
         );
       })}
+      {photos.length > 0 && (
+        <section className="lic-group">
+          <h4>{t('Фотографии')}</h4>
+          <ul className="lic-list">
+            {photos.map((p) => (
+              <li key={p.id}>
+                <b>{t(p.title)}</b>
+                <span className="lic-line">
+                  {p.author ? `${p.author} · ` : ''}
+                  <License name={p.license} />
+                </span>
+                {p.source && (
+                  <span className="lic-line">
+                    {t('Источник:')}{' '}
+                    <a href={p.source} target="_blank" rel="noopener noreferrer">
+                      {p.source.replace(/^https:\/\//, '')}
+                    </a>
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <section className="lic-group">
         <h4>{t('Программы и службы')}</h4>
         <ul className="lic-list">

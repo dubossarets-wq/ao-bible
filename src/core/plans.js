@@ -26,8 +26,8 @@ export async function fetchPlan(file) {
   return res.json();
 }
 
-// Свой план: главы выбранных книг поровну по дням (по числу стихов — чтобы дни были ровными)
-export async function makeCustomPlan(bookIds, days) {
+// Главы книг по порядку: [{ ref: 'Isa.1', n: стихов }] — по основному переводу
+export async function chapterList(bookIds) {
   const mods = (await listModules()).filter((m) => m.type === 'bible');
   const mod = mods.find((m) => m.id === 'rst-plus') || mods[0];
   const chapters = [];
@@ -36,6 +36,12 @@ export async function makeCustomPlan(bookIds, days) {
     if (!b) continue;
     b.verses.forEach((n, i) => chapters.push({ ref: `${id}.${i + 1}`, n }));
   }
+  return chapters;
+}
+
+// Свой план: главы выбранных книг поровну по дням (по числу стихов — чтобы дни были ровными)
+export async function makeCustomPlan(bookIds, days) {
+  const chapters = await chapterList(bookIds);
   const total = chapters.reduce((a, c) => a + c.n, 0);
   const per = total / days;
   const readings = Array.from({ length: days }, () => []);
@@ -55,6 +61,41 @@ export const SCOPES = {
   gospels: { label: N_('Евангелия'), books: () => ['Matt', 'Mark', 'Luke', 'John'] },
   ps: { label: N_('Псалтирь'), books: () => ['Ps'] },
 };
+
+// Параллельное чтение: каждый день — из каждого раздела своё число глав. Короткий раздел (Псалтирь) начинается
+// заново, пока не кончится самый длинный. Разделы: ВЗ, НЗ — широкие; остальные — узкие.
+export const STREAMS = {
+  ot: { label: N_('Ветхий Завет'), short: N_('ВЗ'), books: () => SCOPES.ot.books() },
+  nt: { label: N_('Новый Завет'), short: N_('НЗ'), books: () => SCOPES.nt.books() },
+  ps: { label: N_('Псалтирь'), short: N_('Псалтирь'), books: () => ['Ps'] },
+  prov: { label: N_('Притчи'), short: N_('Притчи'), books: () => ['Prov'] },
+  gospels: { label: N_('Евангелия'), short: N_('Евангелия'), books: () => SCOPES.gospels.books() },
+  own: { label: N_('Свои книги'), short: N_('Свои книги'), books: (own) => own || [] },
+};
+const WIDE = ['ot', 'nt'];
+
+// Книги разделов без повторов: книги включённых узких разделов (Псалтирь, Евангелия, свои) не читаются ещё раз в ВЗ/НЗ.
+// on — { ключ: глав в день }
+export function streamList(on, own) {
+  const keys = Object.keys(STREAMS).filter((k) => on[k] != null);
+  const narrow = new Set(keys.filter((k) => !WIDE.includes(k)).flatMap((k) => STREAMS[k].books(own)));
+  return keys.map((k) => ({
+    key: k,
+    perDay: on[k],
+    books: WIDE.includes(k) ? STREAMS[k].books().filter((b) => !narrow.has(b)) : STREAMS[k].books(own),
+  }));
+}
+
+// Дни параллельного плана: [['Gen.1', 'Matt.1', 'Ps.1'], …]; длина — по самому длинному разделу
+export async function makeParallelPlan(streams) {
+  const lists = await Promise.all(streams.map((x) => chapterList(x.books)));
+  const ok = streams.map((x, i) => ({ per: x.perDay, ch: lists[i] })).filter((x) => x.ch.length && x.per > 0);
+  if (!ok.length) return [];
+  const days = Math.min(3650, Math.max(...ok.map((x) => Math.ceil(x.ch.length / x.per))));
+  return Array.from({ length: days }, (_, d) => [
+    ...new Set(ok.flatMap((x) => Array.from({ length: Math.min(x.per, x.ch.length) }, (_, k) => x.ch[(d * x.per + k) % x.ch.length].ref))),
+  ]);
+}
 
 // «Gen.1» — глава; «Ps.9.1-21» — стихи главы; «Zech.13.1» — стих; «Ps.119-120» — главы
 export function parseReading(r) {

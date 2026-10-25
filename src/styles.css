@@ -1296,7 +1296,7 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .today-act.primary { background: var(--accent); color: var(--on-accent); }
 .today-act svg { flex: none; } /* значок не сжимается, когда подписи тесно */
 .today-act:disabled { opacity: .55; }
-.today-credit { padding: 0 16px 10px; margin-top: -6px; font-size: .64rem; opacity: .72; text-align: right; }
+.today-act.icon-only { flex: none; width: 44px; padding: 11px 0; }
 @media (min-width: 700px) { .today-verse { min-height: 340px; } }
 
 /* ---------- Новая навигация: нижняя панель вкладок на телефоне (до 900 px) ----------
@@ -1671,6 +1671,23 @@ html.kb-open .ap-live { position: relative; }
 .cp-presets { display: flex; flex-wrap: wrap; gap: 8px; }
 .cp-presets .chip { min-height: 36px; padding: 6px 14px; cursor: pointer; }
 .cp-start { width: 100%; min-height: 48px; justify-content: center; margin-top: 4px; font-size: 1rem; }
+/* Свой план: параллельные разделы (галочка, название, глав в день) и выбор своих книг */
+.cp-streams { display: flex; flex-direction: column; gap: 8px; }
+.cp-stream { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 4px 6px 4px 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
+.cp-stream.on { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); background: color-mix(in srgb, var(--accent) 7%, var(--bg)); }
+.cp-stream-name { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 8px; border: 0; background: none; color: var(--text); font: inherit; font-size: .95rem; font-weight: 600; text-align: left; cursor: pointer; }
+.cp-check { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid color-mix(in srgb, var(--muted) 60%, transparent); color: var(--on-accent); }
+.cp-stream.on .cp-check { background: var(--accent); border-color: var(--accent); }
+.cp-per { flex: none; display: flex; align-items: center; gap: 6px; font-size: .86rem; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cp-step.small { width: 34px; height: 34px; border-radius: 10px; }
+.cp-step:disabled { opacity: .4; }
+.cp-note { margin: 0; font-size: .82rem; line-height: 1.4; color: var(--muted); }
+.cp-books { display: flex; flex-direction: column; gap: 10px; }
+.cp-books-h { font-size: .8rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+.cp-books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 6px; }
+.cp-book { min-height: 38px; padding: 4px 2px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); font: inherit; font-size: .86rem; font-weight: 600; cursor: pointer; white-space: nowrap; overflow: hidden; }
+.cp-book.on { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.cp-books-sum { font-size: .82rem; color: var(--muted); }
 /* «Оформление» → «Комментарии»: образец текста и подзаголовок */
 .cm-sample { margin: 0; line-height: 1.6; }
 .ap-sub { margin: 6px 0 -4px; font-size: .86rem; font-weight: 600; color: var(--muted); }

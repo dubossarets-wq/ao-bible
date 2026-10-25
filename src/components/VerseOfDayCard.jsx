@@ -101,16 +101,11 @@ export default function VerseOfDayCard({ pane = 0, onClose }) {
         <button className="today-act" onClick={image} disabled={!v}>
           <ImageIcon size={18} /> {t('Картинка')}
         </button>
-        <button className="today-act" onClick={share} disabled={!v}>
-          <Share2 size={18} /> {t('Поделиться')}
+        {/* «Поделиться» — только значком; автор и лицензия фото — в «О приложении → Лицензии» */}
+        <button className="today-act icon-only" onClick={share} disabled={!v} aria-label={t('Поделиться')} title={t('Поделиться')}>
+          <Share2 size={18} />
         </button>
       </div>
-      {photo && (
-        <span className="today-credit">
-          {t('Фото: {title}', { title: t(photo.title) })}
-          {photo.author ? ` — ${photo.author}` : ''} ({photo.license})
-        </span>
-      )}
     </section>
   );
 }

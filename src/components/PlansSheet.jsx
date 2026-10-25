@@ -6,12 +6,13 @@ import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { usePlans } from '../core/planStore.js';
 import { readStats } from '../core/readLog.js';
-import { bookMeta } from '../core/books.js';
-import { fetchPlanIndex, fetchPlan, makeCustomPlan, SCOPES, parseReading, planToday, behindDays, readingDone, localDate } from '../core/plans.js';
-import { ConfirmButton, Hint, Switch } from './ui.jsx';
+import { bookMeta, BOOKS } from '../core/books.js';
+import { fetchPlanIndex, fetchPlan, makeCustomPlan, makeParallelPlan, chapterList, streamList, SCOPES, STREAMS, parseReading, planToday, behindDays, readingDone, localDate } from '../core/plans.js';
+import { ConfirmButton, Hint, Switch, Segmented } from './ui.jsx';
+import { usePersistentState } from '../core/storage.js';
 import { REMINDERS, getReminder, setReminder } from '../core/reminders.js';
 import VerseOfDayCard from './VerseOfDayCard.jsx';
-import { t, fmtDate, locale } from '../core/i18n.js';
+import { t, N_, fmtDate, locale } from '../core/i18n.js';
 
 // Кольцо прогресса: доля 0…1, в середине — подпись
 function Ring({ value, size = 64, stroke = 7, children }) {
@@ -218,6 +219,34 @@ function ReminderCard() {
   );
 }
 
+// Свои книги для плана: сетка коротких названий по Заветам, нажатие — выбрать или убрать
+function BookPicker({ value, onChange }) {
+  const toggle = (id) => onChange((v) => (v.includes(id) ? v.filter((x) => x !== id) : [...v, id]));
+  return (
+    <div className="cp-books">
+      {[
+        ['OT', t('Ветхий Завет')],
+        ['NT', t('Новый Завет')],
+      ].map(([tt, label]) => (
+        <div key={tt} className="cp-books-group">
+          <div className="cp-books-h">{label}</div>
+          <div className="cp-books-grid">
+            {BOOKS.filter((b) => b.t === tt && !b.dc).map((b) => {
+              const on = value.includes(b.id);
+              return (
+                <button key={b.id} type="button" className={`cp-book ${on ? 'on' : ''}`} aria-pressed={on} title={bookMeta(b.id).name} onClick={() => toggle(b.id)}>
+                  {bookMeta(b.id).short.replace(/\.$/, '')}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+      {value.length > 0 && <div className="cp-books-sum">{t('Выбрано книг: {n}', { n: value.length })}</div>}
+    </div>
+  );
+}
+
 export default function PlansSheet({ pane, onClose }) {
   const { navigate, toast, openPlanDay } = useApp();
   const [plans, setPlans] = usePlans();
@@ -226,6 +255,22 @@ export default function PlansSheet({ pane, onClose }) {
   const [busy, setBusy] = useState(null);
   const [scope, setScope] = useState('nt');
   const [days, setDays] = useState(90);
+  // Свой план: «Подряд» (раздел или свои книги за N дней) или «Параллельно» (из каждого раздела по N глав в день)
+  const [cpMode, setCpMode] = usePersistentState('customPlanMode', 'seq');
+  const [own, setOwn] = usePersistentState('customPlanBooks', []);
+  const [streams, setStreams] = usePersistentState('customPlanStreams', { ot: 1, nt: 1, ps: 1 });
+  const [parDays, setParDays] = useState(null); // сколько дней выйдет у параллельного плана
+  const ownOrdered = useMemo(() => BOOKS.filter((b) => own.includes(b.id)).map((b) => b.id), [own]);
+  useEffect(() => {
+    if (cpMode !== 'par') return;
+    let live = true;
+    Promise.all(streamList(streams, ownOrdered).map(async (x) => ({ per: x.perDay, n: (await chapterList(x.books)).length })))
+      .then((r) => live && setParDays(r.filter((x) => x.n).reduce((m, x) => Math.max(m, Math.ceil(x.n / x.per)), 0)))
+      .catch(() => live && setParDays(null));
+    return () => {
+      live = false;
+    };
+  }, [cpMode, streams, ownOrdered]);
   const [pick, setPick] = useState(null); // выбранный в сетке план — под сеткой его описание и «Начать»
 
   useEffect(() => {
@@ -257,13 +302,28 @@ export default function PlansSheet({ pane, onClose }) {
       setBusy(null);
     }
   };
+  // «Исаия, Деяния» или «Исаия, Деяния и ещё 3»
+  const ownLabel = () => {
+    const names = ownOrdered.map((id) => bookMeta(id).name);
+    return names.length > 2 ? t('{books} и ещё {n}', { books: names.slice(0, 2).join(', '), n: names.length - 2 }) : names.join(', ');
+  };
   const startCustom = async () => {
     const n = Math.max(7, Math.min(730, +days || 90));
     setBusy('custom');
     try {
-      const readings = await makeCustomPlan(SCOPES[scope].books(), n);
+      if (cpMode === 'par') {
+        const list = streamList(streams, ownOrdered);
+        const readings = await makeParallelPlan(list);
+        if (!readings.length) throw new Error(t('Выберите книги'));
+        const names = list.map((x) => (x.key === 'own' ? ownLabel() : t(STREAMS[x.key].short))).join(' + ');
+        add({ planId: 'custom', name: t('{list} параллельно', { list: names }), readings });
+        return;
+      }
+      const books = scope === 'own' ? ownOrdered : SCOPES[scope].books();
+      if (!books.length) throw new Error(t('Выберите книги'));
+      const readings = await makeCustomPlan(books, n);
       // Глав меньше, чем дней (Евангелия за 730 дней) — дней столько, сколько глав
-      add({ planId: 'custom', name: t('{scope} за {n} дн.', { scope: t(SCOPES[scope].label), n: readings.length }), readings });
+      add({ planId: 'custom', name: t('{scope} за {n} дн.', { scope: scope === 'own' ? ownLabel() : t(SCOPES[scope].label), n: readings.length }), readings });
     } catch (e) {
       toast(e.message || t('Не удалось составить план'), 'error');
     } finally {
@@ -327,19 +387,70 @@ export default function PlansSheet({ pane, onClose }) {
           </span>
           <div className="cp-titles">
             <h3 id="custom-plan-h">{t('Свой план')}</h3>
-            <p>{t('Главы делятся на дни поровну по числу стихов.')}</p>
+            <p>{cpMode === 'par' ? t('Каждый день — понемногу из каждого раздела.') : t('Главы делятся на дни поровну по числу стихов.')}</p>
           </div>
         </div>
-        <div className="cp-label" id="plan-scope-l">
-          {t('Что читать')}
-        </div>
-        <div className="cp-scopes" id="plan-scope" role="radiogroup" aria-labelledby="plan-scope-l">
-          {Object.entries(SCOPES).map(([k, v]) => (
-            <button key={k} type="button" role="radio" aria-checked={scope === k} className={`cp-scope ${scope === k ? 'on' : ''}`} onClick={() => setScope(k)}>
-              {t(v.label)}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          id="plan-mode"
+          value={cpMode}
+          onChange={setCpMode}
+          options={[
+            ['seq', t('Подряд')],
+            ['par', t('Параллельно')],
+          ]}
+        />
+        {cpMode === 'par' ? (
+          <>
+            <div className="cp-label">{t('Разделы и глав в день')}</div>
+            <div className="cp-streams">
+              {Object.entries(STREAMS).map(([k, v]) => {
+                const on = streams[k] != null;
+                const per = (d) => setStreams((x) => ({ ...x, [k]: Math.max(1, Math.min(10, (x[k] || 1) + d)) }));
+                return (
+                  <div key={k} className={`cp-stream ${on ? 'on' : ''}`}>
+                    <button
+                      type="button"
+                      role="checkbox"
+                      aria-checked={on}
+                      className="cp-stream-name"
+                      onClick={() => setStreams((x) => (on ? Object.fromEntries(Object.entries(x).filter(([y]) => y !== k)) : { ...x, [k]: 1 }))}
+                    >
+                      <span className="cp-check" aria-hidden="true">
+                        {on && <Check size={14} />}
+                      </span>
+                      {t(v.label)}
+                    </button>
+                    {on && (
+                      <div className="cp-per">
+                        <button type="button" className="cp-step small" onClick={() => per(-1)} disabled={streams[k] <= 1} aria-label={t('Уменьшить')}>
+                          <Minus size={16} />
+                        </button>
+                        <span>{t('{n} гл. в день', { n: streams[k] })}</span>
+                        <button type="button" className="cp-step small" onClick={() => per(1)} disabled={streams[k] >= 10} aria-label={t('Увеличить')}>
+                          <Plus size={16} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {streams.own != null && <BookPicker value={own} onChange={setOwn} />}
+            <p className="cp-note">{t('Короткие разделы начинаются заново, пока идут длинные.')}</p>
+          </>
+        ) : (
+          <>
+            <div className="cp-label" id="plan-scope-l">
+              {t('Что читать')}
+            </div>
+            <div className="cp-scopes" id="plan-scope" role="radiogroup" aria-labelledby="plan-scope-l">
+              {[...Object.entries(SCOPES), ['own', { label: N_('Свои книги') }]].map(([k, v]) => (
+                <button key={k} type="button" role="radio" aria-checked={scope === k} className={`cp-scope ${scope === k ? 'on' : ''}`} onClick={() => setScope(k)}>
+                  {t(v.label)}
+                </button>
+              ))}
+            </div>
+            {scope === 'own' && <BookPicker value={own} onChange={setOwn} />}
         <label className="cp-label" htmlFor="plan-days">
           {t('За сколько дней')}
         </label>
@@ -353,14 +464,25 @@ export default function PlansSheet({ pane, onClose }) {
           </button>
         </div>
         <div className="cp-presets">
-          {[30, 90, 180, 365].map((n) => (
+          {[7, 14, 30, 90, 180, 365].map((n) => (
             <button key={n} type="button" className={`chip ${+days === n ? 'on' : ''}`} aria-pressed={+days === n} onClick={() => setDays(n)}>
               {t('{n} дн.', { n })}
             </button>
           ))}
         </div>
-        <button className="btn primary cp-start" onClick={startCustom} disabled={!!busy}>
-          {busy === 'custom' ? <Loader2 size={16} className="spin" /> : <Plus size={16} />} {t('Начать на {n} дн.', { n: Math.max(7, Math.min(730, +days || 90)) })}
+          </>
+        )}
+        <button
+          className="btn primary cp-start"
+          onClick={startCustom}
+          disabled={!!busy || ((cpMode === 'par' ? streams.own != null : scope === 'own') && !own.length) || (cpMode === 'par' && !parDays)}
+        >
+          {busy === 'custom' ? <Loader2 size={16} className="spin" /> : <Plus size={16} />}{' '}
+          {cpMode === 'par'
+            ? parDays
+              ? t('Начать на {n} дн.', { n: parDays })
+              : t('Выберите книги')
+            : t('Начать на {n} дн.', { n: Math.max(7, Math.min(730, +days || 90)) })}
         </button>
       </section>
     </BottomSheet>
