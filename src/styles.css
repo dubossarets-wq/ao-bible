@@ -380,7 +380,7 @@ mark { background: var(--hl); color: inherit; border-radius: 2px; padding: 0 1px
 @media (hover: hover) { button.wp-item:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); } }
 button.wp-item:active { background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .wp-key { font-variant-numeric: tabular-nums; letter-spacing: .01em; font-weight: 600; }
-.wp-key.wp-num { flex: none; padding: 2px 8px; border-radius: 7px; background: color-mix(in srgb, var(--accent) 12%, var(--bg)); color: var(--accent); font-size: .88rem; font-weight: 700; }
+.wp-key.wp-num { flex: none; padding: 2px 8px; border-radius: 7px; background: color-mix(in srgb, var(--accent) 12%, var(--bg)); color: color-mix(in srgb, var(--accent) 85%, var(--text)); font-size: .88rem; font-weight: 700; }
 .wp-sep { display: none; }
 .wp-place .wp-sep { display: inline; color: var(--muted); }
 .wp-dict { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -593,6 +593,8 @@ button.wp-item:active { background: color-mix(in srgb, var(--accent) 12%, transp
 .verse.hl-4 { --hlc: color-mix(in srgb, #f2a65a 42%, transparent); }
 .verse.hl-5 { --hlc: color-mix(in srgb, #e79ac0 42%, transparent); }
 .verse.hl-6 { --hlc: color-mix(in srgb, #b7a3e3 45%, transparent); }
+/* Тёмные темы: жёлтый на 45 % давал светлому тексту контраст ниже 4.5 (WCAG) — 36 % */
+[data-app-tone="dark"] .verse.hl-1 { --hlc: color-mix(in srgb, #f3d36b 36%, transparent); }
 .verse.selected[class*=" hl-"] { background: var(--sel-bg); }
 .hl-palette { position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); display: flex; gap: 8px; padding: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 14px 40px rgba(0,0,0,.22); z-index: 20; animation: pop .14s ease-out; }
 .hl-dot { width: 32px; height: 32px; border-radius: 50%; border: 2px solid transparent; padding: 0; display: grid; place-items: center; color: var(--text); }
@@ -672,6 +674,8 @@ mark.diff { background: color-mix(in srgb, #f2a65a 38%, transparent); border-rad
 .toolbar .tb:active:not(:disabled) { background: color-mix(in srgb, var(--bar-text) 20%, transparent); }
 .toolbar .tb-module { color: var(--bar-text); background: color-mix(in srgb, var(--bar-text) 14%, var(--bar)); }
 .toolbar .tb-icon.on { color: color-mix(in srgb, var(--accent) 55%, #fff); }
+/* Светлая панель с цветным акцентом: осветлённый значок сливался с панелью — полный акцент (контраст ≥ 4.5) */
+[data-app-theme="mint"] .toolbar .tb-icon.on, [data-app-theme="lavender"] .toolbar .tb-icon.on, [data-app-theme="sunset"] .toolbar .tb-icon.on { color: var(--accent); }
 .update-dot { box-shadow: 0 0 0 2px var(--bar); }
 .map-pane .tb-place { color: var(--bar-text); }
 
@@ -1663,7 +1667,7 @@ html.kb-open .ap-live { position: relative; }
 .cp-scopes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .cp-scope { min-height: 44px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--text); font: inherit; font-size: .92rem; font-weight: 600; text-align: center; cursor: pointer; }
 .cp-scope:first-child { grid-column: 1 / -1; }
-.cp-scope.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--bg)); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.cp-scope.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--bg)); color: color-mix(in srgb, var(--accent) 85%, var(--text)); box-shadow: inset 0 0 0 1px var(--accent); }
 .cp-days { display: flex; align-items: stretch; gap: 8px; }
 .cp-days input { flex: 1; min-width: 0; height: 44px; text-align: center; font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
 .cp-days input::-webkit-outer-spin-button, .cp-days input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
