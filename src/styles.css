@@ -1672,7 +1672,9 @@ html.kb-open .ap-live { position: relative; }
 .cp-days input { flex: 1; min-width: 0; height: 44px; text-align: center; font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
 .cp-days input::-webkit-outer-spin-button, .cp-days input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .cp-step { flex: none; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--text); cursor: pointer; }
-.cp-presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.cp-presets { display: flex; flex-wrap: nowrap; gap: 8px; overflow-x: auto; scrollbar-width: none; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
+.cp-presets::-webkit-scrollbar { display: none; }
+.cp-presets .chip { flex: none; } /* в один ряд, по ширине текста */
 .cp-presets .chip { min-height: 36px; padding: 6px 14px; cursor: pointer; }
 .cp-start { width: 100%; min-height: 48px; justify-content: center; margin-top: 4px; font-size: 1rem; }
 /* Свой план: параллельные разделы (галочка, название, глав в день) и выбор своих книг */

@@ -96,6 +96,35 @@ const ALIASES = (() => {
     Heb: ['евр'], Rev: ['откр', 'апок', 'откровение', 'апокалипсис'],
   };
   for (const [id, keys] of Object.entries(extra)) keys.forEach((k) => add(k, id));
+  // Все варианты сокращений: начала названия от двух букв («фе», «фес», «фесс»), сокращения по согласным («фс», «флп»,
+  // «тм», «кр»), номер книги в любом виде («1фс», «1-е фес»); без номера — первая книга («фс» → 1 Фес).
+  // Готовые сокращения не перезаписываются; при совпадении — книга, что раньше в Библии (неканонические — последними).
+  const put = (key, id) => key.length >= 2 && !map.has(key) && map.set(key, id);
+  const forms = [...BOOKS.filter((b) => !b.dc), ...BOOKS.filter((b) => b.dc)].map((b) => {
+    const m = /^([1-4])(?:-?[а-яё]{1,2})?\s*(.*)$/.exec(b.name.toLowerCase());
+    const n = m?.[1] || null;
+    const base = (m ? m[2] : b.name.toLowerCase()).replace(/ё/g, 'е');
+    const bases = new Set([base.replace(/[\s.-]/g, '')]);
+    if (base.startsWith('от ')) bases.add(base.slice(3).replace(/[\s.-]/g, '')); // «От Матфея» → «матфея»
+    const starts = [];
+    const skel = [];
+    for (const x of bases) {
+      for (let k = 2; k <= x.length; k++) starts.push(x.slice(0, k));
+      const cons = x[0] + x.slice(1).replace(/[аеиоуыэюяйъь]/g, ''); // «фессалоникийцам» → «фсслнкцм»
+      for (let k = 2; k <= cons.length; k++) skel.push(cons.slice(0, k));
+    }
+    return { id: b.id, n, starts, skel };
+  });
+  for (const pass of ['starts', 'skel']) {
+    for (const f of forms) {
+      for (const x of f[pass]) {
+        if (f.n) {
+          put(f.n + x, f.id);
+          if (f.n === '1') put(x, f.id);
+        } else put(x, f.id);
+      }
+    }
+  }
   return map;
 })();
 
