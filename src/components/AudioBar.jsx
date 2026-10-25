@@ -1,5 +1,5 @@
 // Нижняя панель «аудиокниги»: ▶/⏸, предыдущий/следующий стих, текущее место, скорость, таймер сна,
-// кнопка «скачать книгу» для прослушивания без интернета. Нет записи — предложение включить ИИ-диктора.
+// кнопка «скачать книгу» для прослушивания без интернета. Нет записи — сообщение об этом.
 // Нажатие на свободную часть панели (или на место чтения) раскрывает проигрыватель на весь экран (AudioPlayer.jsx).
 import React, { useEffect, useRef, useState } from 'react';
 import { Play, Pause, SkipBack, SkipForward, X, SlidersHorizontal, Loader2, CornerUpLeft, Download, CheckCircle2, Sparkles } from 'lucide-react';

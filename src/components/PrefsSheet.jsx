@@ -1,4 +1,4 @@
-// Настройки: язык, что показывать в меню ⋮, аудио (ИИ-диктор, книги без интернета),
+// Настройки: язык, что показывать в меню ⋮, аудио (книги без интернета),
 // библиотека модулей, мои данные (сохранить в файл / перенести на другой телефон), обновления и «О приложении».
 import React, { useRef, useState } from 'react';
 import { ChevronRight, Library, Palette, RefreshCw, History, Info, Download, Upload, Trash2, BookOpenCheck, Loader2, MoreVertical, Headphones, HardDrive, Check, Sparkles } from 'lucide-react';
@@ -238,7 +238,7 @@ export default function PrefsSheet({ pane, payload, sheetId, onClose }) {
           <Row icon={MoreVertical} onClick={() => setPage('menu')} sub={phone ? t('Что показывать в разделе «Ещё»') : t('Выбрать пункты меню')}>
             {phone ? t('Меню «Ещё»') : t('Меню ⋮')}
           </Row>
-          <Row icon={Headphones} onClick={() => setPage('audio')} sub={t('ИИ-диктор, книги без интернета')}>
+          <Row icon={Headphones} onClick={() => setPage('audio')} sub={t('Книги без интернета')}>
             {t('Аудио')}
           </Row>
           <Row icon={Library} onClick={() => go('library')} sub={t('Переводы, словари, аудиокниги')}>
@@ -288,13 +288,6 @@ export default function PrefsSheet({ pane, payload, sheetId, onClose }) {
 
       {page === 'audio' && (
         <section className="settings-group">
-          <Switch
-            id="pref-tts"
-            checked={s.ttsFallback}
-            onChange={(ttsFallback) => set({ ttsFallback })}
-            label={t('ИИ-диктор, когда нет записи')}
-            hint={t('Если живой записи нет, главу прочитает синтезированный голос')}
-          />
           <h4>{t('Книги без интернета')}</h4>
           <OfflineList />
         </section>
