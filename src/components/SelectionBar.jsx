@@ -171,9 +171,9 @@ export default function SelectionBar({ index, module, selection, onDone }) {
         <X size={24} />
       </button>
       <div className="tb tb-sel-ref" aria-live="polite">
-        <span className="sel-ref">{label}</span>
-        <span className="sel-count" aria-label={t('Выделено стихов: {n}', { n: refs.length })}>
-          {refs.length}
+        {/* число выделенных стихов в кружке убрано по просьбе владельца — подпись «Быт. 1:7–9» и так его показывает */}
+        <span className="sel-ref" aria-label={`${label} · ${t('Выделено стихов: {n}', { n: refs.length })}`}>
+          {label}
         </span>
       </div>
       <button className="tb tb-icon" onClick={parallel} aria-label={t('Открыть параллельно в другом переводе')} title={t('Читать параллельно')}>
@@ -218,6 +218,10 @@ export default function SelectionBar({ index, module, selection, onDone }) {
       <button className={`tb tb-icon ${bm ? 'on' : ''}`} onClick={toggleBm} aria-label={bm ? t('Убрать закладку') : t('Закладка: продолжить отсюда')} title={bm ? t('Убрать закладку') : t('Закладка')}>
         {bm ? <BookmarkCheck size={21} /> : <Bookmark size={21} />}
       </button>
+      {/* «Копировать» — значком на панели (раньше — в меню «⋯») */}
+      <button className="tb tb-icon" onClick={copy} aria-label={t('Копировать')} title={t('Копировать')}>
+        <Copy size={20} />
+      </button>
       <div className="tb-menu-wrap" ref={moreRef}>
         <button className="tb tb-icon tb-more" onClick={() => setMore((m) => !m)} aria-haspopup="menu" aria-expanded={more} aria-label={t('Ещё действия')}>
           <MoreHorizontal size={22} />
@@ -232,7 +236,6 @@ export default function SelectionBar({ index, module, selection, onDone }) {
             {moreItem(BookCopy, t('Сравнить переводы'), () => openSheet('compare', index, { refs, moduleId: module.id }))}
             {refs.length === 1 && moreItem(Link2, t('Параллельные места'), () => openSheet('xrefs', index, { ref: first }))}
             {moreItem(Headphones, t('Слушать отсюда'), () => (listenFrom(index, module.id, first), onDone()))}
-            {moreItem(Copy, t('Копировать'), copy)}
             {moreItem(ImageIcon, t('Картинка со стихом'), () => openSheet('verse-image', index, { refs, moduleId: module.id }))}
             {moreItem(Share2, t('Поделиться'), share)}
           </div>
