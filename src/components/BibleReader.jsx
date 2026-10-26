@@ -101,14 +101,7 @@ function ChapterNav({ index, module, pane }) {
         if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
         s.dir = Math.abs(dx) > Math.abs(dy) * 1.6 ? 1 : -1; // -1 — прокрутка, не трогаем
       }
-      if (s.dir !== 1) return;
-      const c = col();
-      const can = dx < 0 ? nav.current.next : nav.current.prev;
-      if (c) {
-        c.style.transition = '';
-        c.style.transform = `translateX(${dx * (can ? 0.35 : 0.12)}px)`;
-        c.style.opacity = String(1 - Math.min(0.35, Math.abs(dx) / 900));
-      }
+      // текст за пальцем не сдвигается (по просьбе владельца): глава меняется только после отпускания — в onEnd
     };
     const onEnd = (e) => {
       if (!s) return;
@@ -188,15 +181,18 @@ function PartInline({ index, module, refs, part, setPart, onDone }) {
         <button className="btn primary" disabled={!ready} onClick={() => (openSheet('sermon-add', index, { refs: [ref], moduleId: module.id, fragment: { text } }), onDone())}>
           <ScrollText size={17} /> {t('В проповедь')}
         </button>
-        <button className="btn" disabled={!ready} onClick={() => (addFavoritePart(ref, text, Math.min(part.from, part.to), Math.max(part.from, part.to)), onDone())} aria-label={t('В любимые')}>
-          <Heart size={17} />
-        </button>
-        <button className="btn" disabled={!ready} onClick={copy} aria-label={t('Копировать')}>
-          <Copy size={17} />
-        </button>
-        <button className="btn" onClick={() => setPart(null)}>
-          {t('Отмена')}
-        </button>
+        {/* «♥ | копировать | ×» — одна кнопка, разделённая вертикальными линиями */}
+        <div className="part-group" role="group">
+          <button className="part-seg" disabled={!ready} onClick={() => (addFavoritePart(ref, text, Math.min(part.from, part.to), Math.max(part.from, part.to)), onDone())} aria-label={t('В любимые')} title={t('В любимые')}>
+            <Heart size={18} />
+          </button>
+          <button className="part-seg" disabled={!ready} onClick={copy} aria-label={t('Копировать')} title={t('Копировать')}>
+            <Copy size={18} />
+          </button>
+          <button className="part-seg" onClick={() => setPart(null)} aria-label={t('Отмена')} title={t('Отмена')}>
+            <X size={18} />
+          </button>
+        </div>
       </div>
     </div>
   );

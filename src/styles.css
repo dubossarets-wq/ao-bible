@@ -1014,6 +1014,14 @@ html.kb-open .tour-ctrl.top { top: auto; bottom: calc(var(--kb, 0px) + 8px); }
 .part-btns { display: flex; gap: 8px; }
 .part-btns .btn.primary { flex: 1; }
 .part-btns .btn:not(.primary) { background: var(--panel); }
+/* все кнопки строки — высотой 44; «♥ | копировать | ×» — одной кнопкой с вертикальными линиями */
+.part-btns .btn.primary { min-height: 44px; min-width: 0; justify-content: center; white-space: nowrap; overflow: hidden; }
+.part-group { flex: none; display: flex; align-items: center; height: 44px; border: 1px solid var(--line); border-radius: calc(var(--radius) * .75); background: var(--panel); overflow: hidden; }
+.part-seg { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; background: none; color: var(--text); cursor: pointer; }
+.part-seg + .part-seg { position: relative; }
+.part-seg + .part-seg::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 1px; background: var(--line); }
+.part-seg:disabled { opacity: .4; cursor: default; }
+.part-seg:active:not(:disabled) { background: color-mix(in srgb, var(--accent) 10%, transparent); }
 @media (hover: hover) and (pointer: fine) { .scroller.selecting .verse.selected .w { cursor: pointer; } }
 
 /* «Кафедра»: длинные слова переносятся по слогам (на крупном шрифте иначе не помещаются) */
