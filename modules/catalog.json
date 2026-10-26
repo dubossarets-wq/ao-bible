@@ -2350,6 +2350,28 @@
    "added": "2026-10-26"
   },
   {
+   "id": "vamvas",
+   "type": "bible",
+   "name": "Βάμβας",
+   "title": "Η Αγία Γραφή (перевод Вамваса)",
+   "description": "Перевод Библии на новогреческий язык Неофита Вамваса (1850). Нумерация стихов приведена к синодальной.",
+   "language": "el",
+   "version": "CrossWire GreVamvas 1.0.3",
+   "author": "Νεόφυτος Βάμβας (1770–1855)",
+   "source": "CrossWire Bible Society, модуль GreVamvas (https://crosswire.org/sword/modules/) (DistributionLicense в conf-файле модуля)",
+   "license": "Public Domain",
+   "features": {
+    "strongs": false,
+    "headings": false
+   },
+   "versification": "synodal",
+   "url": "vamvas.json",
+   "urlGz": "vamvas.json.gz",
+   "size": 7648430,
+   "sizeGz": 1619418,
+   "added": "2026-10-26"
+  },
+  {
    "id": "bible-places",
    "type": "maps",
    "name": "Места",
