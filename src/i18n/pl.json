@@ -183,6 +183,10 @@
   "many": "dni",
   "other": "dnia"
  },
+ "Озвучка — на языке перевода": "Nagranie w języku przekładu",
+ "Сменили перевод во время чтения вслух — запись переключится на его язык (если такая запись есть)": "Zmiana przekładu podczas słuchania przełączy nagranie na jego język (jeśli takie istnieje)",
+ "Псалтирь и Притчи читаются по кругу, остальные разделы — один раз. Чтобы все разделы закончились в один день, выберите «{mode}».": "Psalmy i Przysłowia czyta się w kółko, pozostałe działy — raz. Aby wszystkie działy skończyły się tego samego dnia, wybierz „{mode}”.",
+ "Короткий раздел (например, Псалтирь) закончится раньше — тогда он начнётся снова и пойдёт по кругу, пока не дочитаете самый длинный.": "Krótki dział (na przykład Psalmy) skończy się wcześniej — wtedy zacznie się od nowa i będzie się powtarzał, aż skończysz najdłuższy.",
  "Неделя": "Tydzień",
  "2 недели": "2 tygodnie",
  "Системная": "Systemowy",

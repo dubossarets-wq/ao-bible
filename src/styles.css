@@ -1451,7 +1451,7 @@ input.fade-end { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 
 :root { --tab-sab: 0px; --tabbar-base: 80px; } /* отступ капсулы снизу = отступу слева и справа (12 px) */
 html.has-tabbar:not(.reading-hidden):not(.kb-open) { --tabbar-h: calc(var(--tabbar-base) + var(--tab-sab)); }
 html.has-tabbar .app.with-tabbar { background: var(--bg); }
-.tabbar { height: 64px; margin: 4px calc(env(safe-area-inset-right, 0px) + 12px) calc(12px + var(--tab-sab)) calc(env(safe-area-inset-left, 0px) + 12px); padding: 0 5px; border-radius: 32px; background: color-mix(in srgb, var(--panel) 80%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); border: 1px solid color-mix(in srgb, var(--text) 9%, transparent); box-shadow: 0 6px 24px rgba(0,0,0,.14); transition: margin-bottom .22s ease; }
+.tabbar { height: 64px; margin: 4px calc(env(safe-area-inset-right, 0px) + 12px) calc(12px + var(--tab-sab)) calc(env(safe-area-inset-left, 0px) + 12px); padding: 0 5px; border-radius: 32px; background: var(--panel); /* сплошное, без просвечивания */ -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); border: 1px solid color-mix(in srgb, var(--text) 9%, transparent); box-shadow: 0 6px 24px rgba(0,0,0,.14); transition: margin-bottom .22s ease; }
 html.reading-hidden .tabbar { margin-bottom: -68px; }
 .tab { margin: 5px 0; padding: 3px 2px; border-radius: 26px; color: var(--muted); }
 .tab-icon { height: 26px; }

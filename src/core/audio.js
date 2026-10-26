@@ -77,6 +77,22 @@ export async function startAudio({ pane, moduleId, ref, source }) {
   await playFrom(ref);
 }
 
+// Сменили перевод панели во время чтения вслух: запись подходит и к нему — читает дальше; нет — берём запись на его
+// языке (ту, что слушали раньше, или первую) с того же места; записи нет — звучит прежняя
+export async function followTranslation(pane, moduleId) {
+  const a = state;
+  if (!a.active || a.pane !== pane || !a.ref || !moduleId || moduleId === a.moduleId || a.source === 'none' || a.source === 'tts') return;
+  const src = await audioSourcesFor(moduleId, a.ref);
+  if (!state.active || state.pane !== pane) return;
+  if (src.recorded.some((m) => m.id === a.source)) return set({ moduleId });
+  const pref = load('audioSource', null);
+  const next = src.recorded.find((m) => m.id === pref)?.id || src.recorded[0]?.id;
+  if (!next) return;
+  const was = state.playing;
+  await startAudio({ pane, moduleId, ref: state.ref, source: next });
+  if (!was) pauseAudio();
+}
+
 export function pauseAudio() {
   gen++;
   if (state.source === 'tts') speechSynthesis.cancel();

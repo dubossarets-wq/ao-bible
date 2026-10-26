@@ -180,6 +180,10 @@
   "one": "jour",
   "other": "jours"
  },
+ "Озвучка — на языке перевода": "Audio dans la langue de la traduction",
+ "Сменили перевод во время чтения вслух — запись переключится на его язык (если такая запись есть)": "Si vous changez de traduction pendant l’écoute, l’enregistrement passe à sa langue (s’il existe)",
+ "Псалтирь и Притчи читаются по кругу, остальные разделы — один раз. Чтобы все разделы закончились в один день, выберите «{mode}».": "Les Psaumes et les Proverbes sont lus en boucle, les autres sections une seule fois. Pour tout terminer le même jour, choisissez «{mode}».",
+ "Короткий раздел (например, Псалтирь) закончится раньше — тогда он начнётся снова и пойдёт по кругу, пока не дочитаете самый длинный.": "Une section courte (par exemple les Psaumes) se termine plus tôt : elle recommence alors et tourne en boucle jusqu’à la fin de la plus longue.",
  "Неделя": "Semaine",
  "2 недели": "2 semaines",
  "Системная": "Système",

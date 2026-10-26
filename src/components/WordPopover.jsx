@@ -36,7 +36,10 @@ export default function WordPopover() {
     const h = box.current.offsetHeight;
     const vw = window.innerWidth;
     const vh = window.visualViewport?.height || window.innerHeight;
-    const below = a.bottom + GAP + h < vh - 8 || a.top - GAP - h < 8;
+    // низ экрана закрывают нижнее меню и проигрыватель — если под словом места до них мало, выборка встаёт над словом
+    const covers = [...document.querySelectorAll('.tabbar, .audio-bar')].map((el) => el.getBoundingClientRect()).filter((r) => r.height > 0 && r.top < vh);
+    const limit = Math.min(vh, ...covers.map((r) => r.top));
+    const below = a.bottom + GAP + h < limit - 8 || a.top - GAP - h < 8;
     const left = Math.max(8, Math.min(vw - w - 8, a.left + a.width / 2 - w / 2));
     const arrow = Math.max(16, Math.min(w - 16, a.left + a.width / 2 - left));
     setPos({ left, top: below ? a.bottom + GAP : a.top - GAP - h, below, arrow });

@@ -288,6 +288,13 @@ export default function PrefsSheet({ pane, payload, sheetId, onClose }) {
 
       {page === 'audio' && (
         <section className="settings-group">
+          <Switch
+            id="audio-follow"
+            checked={s.audioFollowsTranslation !== false}
+            onChange={(v) => set({ audioFollowsTranslation: v })}
+            label={t('Озвучка — на языке перевода')}
+            hint={t('Сменили перевод во время чтения вслух — запись переключится на его язык (если такая запись есть)')}
+          />
           <h4>{t('Книги без интернета')}</h4>
           <OfflineList />
         </section>

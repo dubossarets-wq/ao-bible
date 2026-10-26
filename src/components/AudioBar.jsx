@@ -4,7 +4,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Play, Pause, SkipBack, SkipForward, X, SlidersHorizontal, Loader2, CornerUpLeft, Download, CheckCircle2, Sparkles } from 'lucide-react';
 import { listenFrom } from '../core/listen.js';
-import { useAudio, pauseAudio, resumeAudio, stopAudio, stepVerse, setRate, setSleep, resumeFollow, startAudio, setVolume } from '../core/audio.js';
+import { useAudio, pauseAudio, resumeAudio, stopAudio, stepVerse, setRate, setSleep, resumeFollow, startAudio, setVolume, followTranslation } from '../core/audio.js';
 import { downloadBook, isBookOffline, removeBook } from '../core/offlineAudio.js';
 import { useApp } from '../App.jsx';
 import { formatRef, bookMeta } from '../core/books.js';
@@ -84,7 +84,12 @@ export function DownloadNote({ note, setNote }) {
 
 export default function AudioBar() {
   const a = useAudio();
-  const { navigate, setSettings, panes } = useApp();
+  const { navigate, setSettings, panes, settings } = useApp();
+  // перевод звучащей панели сменили — озвучка переходит на запись на его языке (настройка «Озвучка — на языке перевода»)
+  const paneModule = panes?.[a.pane]?.moduleId;
+  useEffect(() => {
+    if (settings?.audioFollowsTranslation !== false) followTranslation(a.pane, paneModule);
+  }, [paneModule, a.pane, settings?.audioFollowsTranslation]);
   const [opts, setOpts] = useState(false);
   // панель настроек остаётся на экране, пока уезжает (280 мс), — потом убирается
   const [optsShown, setOptsShown] = useState(false);

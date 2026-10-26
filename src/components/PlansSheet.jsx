@@ -7,7 +7,7 @@ import { useApp } from '../App.jsx';
 import { usePlans } from '../core/planStore.js';
 import { readStats } from '../core/readLog.js';
 import { bookMeta, BOOKS } from '../core/books.js';
-import { fetchPlanIndex, fetchPlan, makeCustomPlan, makeParallelPlan, chapterList, streamList, firstDayText, SCOPES, STREAMS, parseReading, planToday, behindDays, readingDone, localDate } from '../core/plans.js';
+import { fetchPlanIndex, fetchPlan, makeCustomPlan, makeParallelPlan, chapterList, streamList, firstDayText, CYCLIC, SCOPES, STREAMS, parseReading, planToday, behindDays, readingDone, localDate } from '../core/plans.js';
 import { ConfirmButton, Hint, Switch, Segmented, Reveal } from './ui.jsx';
 import { usePersistentState } from '../core/storage.js';
 import { REMINDERS, getReminder, setReminder } from '../core/reminders.js';
@@ -328,8 +328,13 @@ export default function PlansSheet({ pane, onClose }) {
   useEffect(() => {
     if (cpMode !== 'par' || parMode !== 'perday') return;
     let live = true;
-    Promise.all(streamList(streams, ownOrdered).map(async (x) => ({ per: x.perDay, n: (await chapterList(x.books)).length })))
-      .then((r) => live && setParDays(r.filter((x) => x.n).reduce((m, x) => Math.max(m, Math.ceil(x.n / x.per)), 0)))
+    // длина — по самому длинному из читаемых один раз (Псалтирь и Притчи идут по кругу)
+    Promise.all(streamList(streams, ownOrdered).map(async (x) => ({ per: x.perDay, loop: CYCLIC.includes(x.key), n: (await chapterList(x.books)).length })))
+      .then((r) => {
+        const ok = r.filter((x) => x.n);
+        const once = ok.filter((x) => !x.loop);
+        if (live) setParDays((once.length ? once : ok).reduce((m, x) => Math.max(m, Math.ceil(x.n / x.per)), 0));
+      })
       .catch(() => live && setParDays(null));
     firstDayText(streamList(streams, ownOrdered))
       .then((s) => live && setFirstDay(s))
@@ -578,7 +583,7 @@ export default function PlansSheet({ pane, onClose }) {
             </Reveal>
             <Reveal open={parMode !== 'period'}>
               {firstDay && Object.keys(streams).length > 0 && <p className="cp-first">{t('Первый день: {list}', { list: firstDay })}</p>}
-              <p className="cp-note">{t('Короткие разделы начинаются заново, пока идут длинные.')}</p>
+              <p className="cp-note">{t('Псалтирь и Притчи читаются по кругу, остальные разделы — один раз. Чтобы все разделы закончились в один день, выберите «{mode}».', { mode: t('За срок') })}</p>
             </Reveal>
           </div>
         </Reveal>

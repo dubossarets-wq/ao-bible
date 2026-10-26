@@ -120,7 +120,12 @@ export async function firstDayText(streams) {
   return parts.join(' · ');
 }
 
-// Дни параллельного плана: [['Gen.1', 'Ps.1', 'Matt.1'], …]; длина — по самому длинному разделу.
+// Разделы, которые читаются по кругу: Псалтирь и Притчи задуманы для постоянного чтения (псалом каждый день, Притчи —
+// по главе на день месяца). Остальные (ВЗ, НЗ, Евангелия, свои книги) — сплошное чтение, один раз
+export const CYCLIC = ['ps', 'prov'];
+
+// Дни параллельного плана: [['Gen.1', 'Ps.1', 'Matt.1'], …]; Псалтирь и Притчи идут по кругу, остальные — один раз
+// (закончившийся раздел пропадает из дней); длина — по самому длинному из читаемых один раз.
 // period — число дней: тогда каждый раздел делится на эти дни поровну по числу стихов (без повторов), все кончаются в последний день
 export async function makeParallelPlan(streams, period) {
   const lists = await Promise.all(streams.map((x) => chapterList(x.books)));
@@ -128,12 +133,19 @@ export async function makeParallelPlan(streams, period) {
     const parts = lists.filter((l) => l.length).map((l) => splitChapters(l, period));
     return Array.from({ length: period }, (_, d) => [...new Set(parts.flatMap((p) => p[d]))]).filter((r) => r.length);
   }
-  const ok = streams.map((x, i) => ({ per: x.perDay, ch: lists[i] })).filter((x) => x.ch.length && x.per > 0);
+  const ok = streams.map((x, i) => ({ loop: CYCLIC.includes(x.key), per: x.perDay, ch: lists[i] })).filter((x) => x.ch.length && x.per > 0);
   if (!ok.length) return [];
-  const days = Math.min(3650, Math.max(...ok.map((x) => Math.ceil(x.ch.length / x.per))));
+  const once = ok.filter((x) => !x.loop);
+  const days = Math.min(3650, Math.max(...(once.length ? once : ok).map((x) => Math.ceil(x.ch.length / x.per))));
   return Array.from({ length: days }, (_, d) => [
-    ...new Set(ok.flatMap((x) => Array.from({ length: Math.min(x.per, x.ch.length) }, (_, k) => x.ch[(d * x.per + k) % x.ch.length].ref))),
-  ]);
+    ...new Set(
+      ok.flatMap((x) =>
+        Array.from({ length: Math.min(x.per, x.ch.length) }, (_, k) => d * x.per + k)
+          .filter((i) => x.loop || i < x.ch.length)
+          .map((i) => x.ch[i % x.ch.length].ref),
+      ),
+    ),
+  ]).filter((r) => r.length);
 }
 
 // «Gen.1» — глава; «Ps.9.1-21» — стихи главы; «Zech.13.1» — стих; «Ps.119-120» — главы

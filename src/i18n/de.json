@@ -179,6 +179,10 @@
   "one": "Tag",
   "other": "Tage"
  },
+ "Озвучка — на языке перевода": "Vorlesen in der Sprache der Übersetzung",
+ "Сменили перевод во время чтения вслух — запись переключится на его язык (если такая запись есть)": "Wechseln Sie beim Vorlesen die Übersetzung, wechselt die Aufnahme in deren Sprache (falls vorhanden)",
+ "Псалтирь и Притчи читаются по кругу, остальные разделы — один раз. Чтобы все разделы закончились в один день, выберите «{mode}».": "Psalmen und Sprüche werden im Kreis gelesen, die übrigen Abschnitte einmal. Damit alle Abschnitte am selben Tag enden, wählen Sie „{mode}“.",
+ "Короткий раздел (например, Псалтирь) закончится раньше — тогда он начнётся снова и пойдёт по кругу, пока не дочитаете самый длинный.": "Ein kurzer Abschnitt (zum Beispiel die Psalmen) ist früher zu Ende – dann beginnt er von vorn, bis der längste fertig gelesen ist.",
  "Неделя": "Woche",
  "2 недели": "2 Wochen",
  "Системная": "System",
