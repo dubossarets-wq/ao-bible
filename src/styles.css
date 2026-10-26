@@ -1450,6 +1450,15 @@ html.kb-open .chap-nav { display: none; }
 .toolbar.is-phone .tb-ref { padding: 0 10px 0 13px; font-size: 1.02rem; font-weight: 700; }
 @media (hover: hover) { .toolbar.is-phone .tb-module:hover, .toolbar.is-phone .tb-ref:hover { background: color-mix(in srgb, var(--bar-text) 17%, var(--bar)); } }
 .toolbar.is-phone .tb-module:active, .toolbar.is-phone .tb-ref:active { background: color-mix(in srgb, var(--bar-text) 22%, var(--bar)); }
+/* Перевод и место — одна капсула «RST+ │ Второзаконие 34:1 ˅»: перевод мельче и приглушённо (как подпись),
+   тонкий разделитель, место — крупно; подсветка нажатия — у своей части (как во Flutter) */
+.toolbar .tb-module, .toolbar .tb-ref { height: 40px; min-height: 40px; background: color-mix(in srgb, var(--bar-text) 12%, var(--bar)); color: var(--bar-text); }
+.toolbar .tb-module { position: relative; border-radius: 999px 0 0 999px; padding: 0 11px 0 14px; font-size: .86rem; font-weight: 700; letter-spacing: .03em; color: color-mix(in srgb, var(--bar-text) 78%, transparent); }
+.toolbar .tb-module .tb-chev { display: none; }
+.toolbar .tb-module::after { content: ''; position: absolute; right: 0; top: 10px; bottom: 10px; width: 1px; background: color-mix(in srgb, var(--bar-text) 20%, transparent); }
+.toolbar .tb-module + .tb-ref { flex: 0 1 auto; margin-left: -4px; border-radius: 0 999px 999px 0; padding: 0 10px 0 11px; font-size: 1.08rem; font-weight: 700; } /* по ширине содержимого, слева */
+.toolbar:not(.is-phone) .tb-module + .tb-ref { margin-left: -2px; }
+.toolbar .tb-ref .tb-chev { opacity: .6; }
 /* Обрезанный текст — плавное затухание в конце строки вместо многоточия (класс ставит core/fadeEnd.js) */
 .fade-end { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2.2em), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 2.2em), transparent); }
 input.fade-end { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 3em), transparent 100%); mask-image: linear-gradient(to right, #000 calc(100% - 3em), transparent 100%); }
@@ -1907,7 +1916,14 @@ html.kb-open .ap-live { position: relative; }
 .bn-empty { margin: 8px 0 0; text-align: center; color: var(--bn-muted); }
 
 /* Недавние книги — лента (свайп по ней листает её, а не окно) */
-.bn-recent { display: flex; flex-direction: column; gap: 8px; }
+.bn-recent { display: flex; flex-direction: row; align-items: center; gap: 6px; min-height: 30px; }
+/* Недавние — одной строкой ссылками, без плашек: заметны меньше и места почти не занимают */
+.bn-recent .bn-label { flex: none; margin: 0 0 0 2px; font-size: .82rem; }
+.bn-recent .bn-chips { flex: 1; min-width: 0; margin: 0 -16px 0 0; padding: 0 16px 0 0; gap: 2px; }
+.bn-recent .bn-chip { min-height: 30px; padding: 0 4px 0 6px; border-radius: 8px; background: none; box-shadow: none; font-size: .88rem; font-weight: 600; color: var(--accent); }
+.bn-recent .bn-chip::after { content: '›'; margin-left: 3px; opacity: .55; font-weight: 400; } /* ссылка со стрелкой — видно, что можно перейти */
+.bn-recent .bn-chip.on { background: none; box-shadow: none; font-weight: 700; }
+@media (hover: hover) { .bn-recent .bn-chip:hover { background: var(--bn-fill); } }
 .bn-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 2px 16px; scroll-padding: 0 16px; }
 .bn-chips::-webkit-scrollbar { display: none; }
 .bn-chip { flex: none; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--bn-fill); color: var(--text); font-size: .92rem; font-weight: 500; white-space: nowrap; transition: background .15s; }
