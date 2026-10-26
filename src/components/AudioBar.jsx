@@ -86,6 +86,14 @@ export default function AudioBar() {
   const a = useAudio();
   const { navigate, setSettings, panes } = useApp();
   const [opts, setOpts] = useState(false);
+  // панель настроек остаётся на экране, пока гаснет (160 мс), — потом убирается
+  const [optsShown, setOptsShown] = useState(false);
+  useEffect(() => {
+    if (opts) return setOptsShown(true);
+    const id = setTimeout(() => setOptsShown(false), 160);
+    return () => clearTimeout(id);
+  }, [opts]);
+  const optsOn = opts || optsShown;
   const [note, setNote] = useState(null); // подпись о скачивании книги
   const [full, setFull] = useState(false); // раскрытый проигрыватель
   const [vol, setVol] = usePersistentState('audioVolume', 1);
@@ -142,7 +150,7 @@ export default function AudioBar() {
 
   return (
     <>
-      <div ref={bar} className="audio-bar" role="region" aria-label={t('Аудиокнига')}>
+      <div ref={bar} className={`audio-bar${optsOn ? ' opts-open' : ''}`} role="region" aria-label={t('Аудиокнига')}>
         {/* Записи нет — предлагаем ИИ-диктора */}
         {a.offerTts && !a.playing && (
           <div className="audio-offer">
@@ -167,8 +175,10 @@ export default function AudioBar() {
           </div>
         )}
         {!full && <DownloadNote note={note} setNote={setNote} />}
-        {opts && (
-          <div className="audio-opts">
+        {/* настройки появляются плавно: высота меняется один раз, а панель проявляется и чуть выезжает снизу
+            (прозрачность и сдвиг не пересчитывают раскладку главы на каждом кадре) */}
+        {optsOn && (
+          <div className={`audio-opts${opts ? '' : ' closing'}`}>
             <Segmented id="audio-rate" label={t('Скорость')} value={a.rate} onChange={setRate} options={RATES.map((r) => [r, `${r}×`])} />
             <Segmented
               id="audio-sleep"

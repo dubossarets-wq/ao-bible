@@ -572,6 +572,7 @@ button.wp-item:active { background: color-mix(in srgb, var(--accent) 12%, transp
 
 /* ---------- Чтение вслух ---------- */
 .verse.speaking { background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: -10px 0 0 color-mix(in srgb, var(--accent) 14%, transparent), 10px 0 0 color-mix(in srgb, var(--accent) 14%, transparent); border-radius: 4px; transition: background .25s; }
+.audio-bar.opts-open { border-radius: 16px; } /* раскрыты настройки — скругление 16 по всему периметру */
 .audio-bar { position: fixed; left: calc(env(safe-area-inset-left, 0px) + 8px); right: calc(env(safe-area-inset-right, 0px) + 8px); bottom: calc(env(safe-area-inset-bottom, 0px) + 8px); z-index: 35; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 32px; /* капсула, как панель вкладок */ box-shadow: 0 10px 34px rgba(0,0,0,.2); max-width: 640px; margin: 0 auto; animation: up .25s ease-out; }
 .audio-main { display: flex; align-items: center; gap: 2px; padding: 6px; }
 .audio-btn { flex: none; width: 40px; height: 40px; display: grid; place-items: center; border: 0; background: none; border-radius: 50%; color: var(--text); }
@@ -582,6 +583,9 @@ button.wp-item:active { background: color-mix(in srgb, var(--accent) 12%, transp
 .audio-info { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 0 6px; }
 .audio-ref { font-weight: 700; font-size: .95rem; }
 .audio-src { font-size: .78rem; color: var(--muted); overflow: hidden; text-overflow: clip; white-space: nowrap; }
+.audio-opts { animation: opts-in .18s cubic-bezier(.2,.8,.3,1); }
+.audio-opts.closing { opacity: 0; transform: translateY(6px); transition: opacity .16s ease-in, transform .16s ease-in; pointer-events: none; }
+@keyframes opts-in { from { opacity: 0; transform: translateY(6px); } }
 .audio-opts { display: flex; flex-direction: column; gap: 10px; padding: 12px 12px 4px; border-bottom: 1px solid var(--line); }
 .audio-opt-row { display: flex; flex-direction: column; gap: 6px; }
 
