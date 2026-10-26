@@ -1,6 +1,6 @@
 // Настройки: язык, что показывать в меню ⋮, аудио (книги без интернета),
 // библиотека модулей, мои данные (сохранить в файл / перенести на другой телефон), обновления и «О приложении».
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ChevronRight, Library, Palette, RefreshCw, History, Info, Download, Upload, Trash2, BookOpenCheck, Loader2, MoreVertical, Headphones, HardDrive, Check, Sparkles } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
@@ -221,8 +221,15 @@ export default function PrefsSheet({ pane, payload, sheetId, onClose }) {
     else if (!r.available) toast(t('У вас последняя версия'));
   };
 
+  // первая страница при открытии окна — без слайда
+  const first = useRef(true);
+  useEffect(() => {
+    first.current = false;
+  }, []);
   return (
     <BottomSheet title={page ? (page === 'menu' && phone ? t('Меню «Ещё»') : t(PAGES[page])) : t('Настройки')} onClose={onClose} onBack={page ? () => setPage(null) : null} initial={2}>
+      {/* переход в подменю и обратно — слайдом: вглубь страница въезжает справа, назад — слева */}
+      <div key={page || 'root'} className={`pref-page ${first.current ? '' : page ? 'in-right' : 'in-left'}`}>
       {!page && (
         <div className="pref-list-main">
           {/* «Language» по-английски — чтобы найти строку, даже если случайно выбран незнакомый язык */}
@@ -312,6 +319,7 @@ export default function PrefsSheet({ pane, payload, sheetId, onClose }) {
           </Row>
         </section>
       )}
+      </div>
     </BottomSheet>
   );
 }

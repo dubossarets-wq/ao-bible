@@ -238,10 +238,15 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .list-title { font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
 .list-meta { margin-left: auto; color: var(--muted); font-size: .82rem; }
 .list-text { color: var(--muted); font-size: .88rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.pick-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.pick-list li { display: flex; align-items: center; gap: 4px; }
-.pick-row { flex: 1; min-width: 0; display: grid; grid-template-columns: 1fr auto; text-align: left; gap: 2px 8px; border: 1px solid var(--line); background: var(--bg); border-radius: var(--radius); padding: 10px 12px; }
-.pick-row.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--bg)); }
+/* Выбор перевода: строки без плашек, разделены линией; подсветка и линии — от края до края окна;
+   открытый перевод — отмечен фоном (как во Flutter) */
+.pick-list { list-style: none; margin: -12px -16px 0; padding: 0; display: flex; flex-direction: column; }
+.pick-list li { display: flex; align-items: center; gap: 4px; padding-right: 12px; border-bottom: 1px solid var(--line); transition: background-color .24s cubic-bezier(.4,0,.2,1); }
+.pick-list li:last-child { border-bottom: 0; }
+.pick-list li:has(.pick-row.on) { background: color-mix(in srgb, var(--accent) 9%, var(--panel)); }
+.pick-row { flex: 1; min-width: 0; display: grid; grid-template-columns: 1fr auto; text-align: left; gap: 2px 8px; border: 0; background: none; border-radius: 0; padding: 12px 8px 12px 20px; color: var(--text); }
+@media (hover: hover) { .pick-list li:not(:has(.pick-row.on)):hover { background: color-mix(in srgb, var(--accent) 5%, transparent); } }
+.pick-row.on .pick-name { color: var(--accent); }
 .pick-name { font-weight: 700; }
 .pick-desc { grid-column: 1; font-size: .85rem; color: var(--muted); }
 .pick-check { grid-row: 1 / span 2; grid-column: 2; align-self: center; color: var(--accent); }
@@ -804,6 +809,14 @@ html, body, .app { touch-action: manipulation; }
 .pref-list-main { display: flex; flex-direction: column; }
 .pref-row { display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 4px; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--text); text-align: left; font: inherit; cursor: pointer; }
 .pref-row:last-child { border-bottom: 0; }
+/* как список переводов: подсветка и линии — от края до края окна (поля .sheet-body — 16 px), отступы — у содержимого */
+.pref-page { display: flex; flex-direction: column; gap: 12px; }
+.pref-page.in-right { animation: pref-in-right .3s cubic-bezier(.4,0,.2,1); }
+.pref-page.in-left { animation: pref-in-left .3s cubic-bezier(.4,0,.2,1); }
+@keyframes pref-in-right { from { transform: translateX(100%); } }
+@keyframes pref-in-left { from { transform: translateX(-100%); } }
+.sheet-body:has(> .pref-page) { overflow-x: hidden; }
+.sheet-body .pref-row { width: calc(100% + 32px); margin: 0 -16px; padding-left: 20px; padding-right: 20px; }
 .pref-row > svg:first-child { flex: none; width: 38px; height: 38px; padding: 9px; border-radius: 11px; background: color-mix(in srgb, var(--accent) 12%, var(--bg)); color: var(--accent); }
 .pref-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 1.04rem; font-weight: 600; }
 .pref-row-text small { font-size: .84rem; font-weight: 400; color: var(--muted); }
@@ -1384,7 +1397,9 @@ html.has-tabbar .plan-view .text-col { padding-bottom: calc(var(--sab) + 76px); 
 html.has-tabbar .place-card { bottom: calc(10px + var(--sab)); }
 
 /* Лист «Ещё» — пункты бывшего меню ⋮ */
-.more-list { display: flex; flex-direction: column; flex: none; margin: -4px -6px 0; }
+.more-list { display: flex; flex-direction: column; flex: none; margin: -4px -16px 0; } /* от края до края окна */
+.more-list .menu-item { border-radius: 0; padding-left: 20px; padding-right: 20px; }
+.more-list .menu-sep { margin-left: 0; margin-right: 0; }
 .more-list .menu-2-sub { max-width: none; }
 
 /* Соседняя глава: круглые стрелки внизу слева и справа; «Слушать» — над правой стрелкой.
@@ -1503,7 +1518,7 @@ html.has-tabbar .toasts { bottom: calc(max(var(--kb, 0px), var(--sab)) + 16px); 
 html.has-tabbar .app:has(.plan-return) .toasts, html.has-tabbar .app:has(.sheet-foot) .toasts { bottom: calc(var(--sab) + 70px); }
 html.has-tabbar .staging-badge { bottom: calc(var(--sab) + 6px); }
 /* Нижнее меню: подсветка — одна плашка, переезжает к выбранному пункту (и идёт за пальцем при свайпе) */
-.tab-pill { position: absolute; z-index: 0; top: 6px; bottom: 6px; left: calc(6px + (100% - 12px) / var(--tab-n) * var(--tab-i) - var(--tab-x, 0px)); width: calc((100% - 12px) / var(--tab-n) + 2 * var(--tab-x, 0px)); /* у средних — чуть шире пункта */ border-radius: 26px; background: color-mix(in srgb, var(--text) 9%, transparent); transition: left .3s cubic-bezier(.2,.8,.2,1), width .3s cubic-bezier(.2,.8,.2,1); pointer-events: none; }
+.tab-pill { position: absolute; z-index: 0; top: 6px; bottom: 6px; left: calc(6px + (100% - 12px) / var(--tab-n) * var(--tab-i)); width: calc((100% - 12px) / var(--tab-n)); border-radius: 26px; background: color-mix(in srgb, var(--text) 9%, transparent); transition: left .3s cubic-bezier(.2,.8,.2,1), width .3s cubic-bezier(.2,.8,.2,1); pointer-events: none; }
 .tabbar.swiping .tab-pill { transition-duration: .14s; }
 .tab { position: relative; z-index: 1; touch-action: pan-y; }
 .tab.on, .tab:active, .tab.on:hover { background: none; }
@@ -1584,7 +1599,7 @@ html.no-anim .ap { animation: none; transition: none; }
 html.no-anim .ap-verse { color: var(--text) !important; text-shadow: none !important; transition: none; transform: none; }
 html.no-anim .ap-verse .ap-vn { color: var(--accent) !important; text-shadow: none !important; }
 .tab-label { font-size: calc(.72rem - 1px); line-height: 1.15; } /* подписи нижнего меню — на 1 px меньше */
-.tabbar .tab { gap: 1px; padding-bottom: 5px; } /* подпись — чуть выше, ближе к значку */
+.tabbar .tab { gap: 2px; padding-bottom: 5px; } /* зазор между значком и подписью */
 /* Свайп между вкладками окна: новая вкладка слегка въезжает с той стороны, куда вели */
 .sheet-body.tab-in-r { animation: tab-in-r .22s ease-out; }
 .sheet-body.tab-in-l { animation: tab-in-l .22s ease-out; }
@@ -1981,7 +1996,7 @@ html.has-tabbar .sheet.page { top: 0; height: auto; max-height: none; }
 /* Android: нижнее меню — сплошная полоса во всю ширину, прижатая к низу, без скруглений (на iPhone и компьютере — капсула) */
 html.is-android { --tb-side: 0px; --tb-bottom: 0px; --tabbar-base: calc(64px + env(safe-area-inset-bottom, 0px)); }
 html.is-android .tabbar { left: 0; right: 0; bottom: 0; height: calc(64px + env(safe-area-inset-bottom, 0px)); padding: 6px calc(env(safe-area-inset-right, 0px) + 6px) calc(6px + env(safe-area-inset-bottom, 0px)) calc(env(safe-area-inset-left, 0px) + 6px); border: 0; border-top: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 0; box-shadow: none; background: var(--panel); -webkit-backdrop-filter: none; backdrop-filter: none; }
-html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px)); left: calc(env(safe-area-inset-left, 0px) + 6px + (100% - 12px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)) / var(--tab-n) * var(--tab-i) - var(--tab-x, 0px)); width: calc((100% - 12px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)) / var(--tab-n) + 2 * var(--tab-x, 0px)); }
+html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px)); left: calc(env(safe-area-inset-left, 0px) + 6px + (100% - 12px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)) / var(--tab-n) * var(--tab-i)); width: calc((100% - 12px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)) / var(--tab-n)); }
 /* Высота окна при перетаскивании за ручку: переменная не наследуется — иначе каждое движение пальца пересчитывало
    стили всего содержимого окна (в каталоге модулей 26–95 мс на шаг вместо ~1 мс) */
 @property --sheet-h { syntax: '<number>'; inherits: false; initial-value: 50; }

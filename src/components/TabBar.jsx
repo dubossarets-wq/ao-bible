@@ -94,8 +94,7 @@ export default function TabBar() {
       ref={navRef}
       className={`tabbar ${hover != null ? 'swiping' : ''}`}
       aria-label={t('Разделы приложения')}
-      // у трёх средних пунктов плашка чуть шире пункта (--tab-x = 3px), у крайних — в пределах отступов
-      style={{ '--tab-i': shown, '--tab-n': TABS.length, '--tab-x': shown > 0 && shown < TABS.length - 1 ? '3px' : '0px' }}
+      style={{ '--tab-i': shown, '--tab-n': TABS.length }}
       onPointerDown={onDown}
       onPointerMove={onMove}
       onPointerUp={onUp}
