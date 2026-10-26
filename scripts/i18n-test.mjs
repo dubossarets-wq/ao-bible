@@ -344,13 +344,13 @@ for (const code of langs) {
   await screen(code, '26-verse-part', async () => {
     await fresh();
     await selectVerse();
-    await page.click('.pane-slot.first .sel-inline .btn:has(svg.lucide-text-select)');
+    await page.click('.pane-slot.first .sel-inline .btn:has(svg.lucide-scan-text)');
     await page.waitForSelector('.part-inline');
   });
   await screen(code, '27-interlinear', async () => {
     await fresh();
     await selectVerse();
-    await page.click('.pane-slot.first .sel-inline .btn:has(svg.lucide-whole-word)');
+    await page.click('.pane-slot.first .sel-inline .btn:has(svg.lucide-letter-text)');
     await page.waitForSelector('.il-grid .il-cell', { timeout: 90000 });
     await page.waitForTimeout(500);
   });

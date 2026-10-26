@@ -3,7 +3,7 @@
 // Стихи добавляются тем же поиском, что и в приложении (SearchPanel в режиме выбора).
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2, Plus, Presentation, Share2, ScrollText, X, Minus, Type, Copy, GripVertical, Search, TextSelect, TextQuote, Undo2, Redo2 } from 'lucide-react';
+import { Trash2, Plus, Presentation, Share2, ScrollText, X, Minus, Type, Copy, GripVertical, Search, ScanText, TextQuote, Undo2, Redo2 } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import SearchPanel from './SearchPanel.jsx';
 import SwipeRow from './SwipeRow.jsx';
@@ -433,7 +433,7 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
                 {b.type === 'verse' && !b.to && b.moduleId && pe?.id !== b.id && (
                   <>
                     <button className="icon-btn subtle" onClick={() => startPart(b)} aria-label={t('Часть стиха')} title={t('Часть стиха')}>
-                      <TextSelect size={16} />
+                      <ScanText size={16} />
                     </button>
                     {b.part && (
                       <button

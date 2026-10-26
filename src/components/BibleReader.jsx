@@ -14,7 +14,7 @@ import { useLivePosition } from '../core/livePosition.js';
 import { usePlan } from '../core/planStore.js';
 import { dayUnits, unitDone, readingDone } from '../core/plans.js';
 import { t } from '../core/i18n.js';
-import { CornerUpLeft, X, Headphones, ScrollText, Heart, Copy, TextSelect, WholeWord, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CornerUpLeft, X, Headphones, ScrollText, Heart, Copy, ScanText, LetterText, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // В режиме плана полоса показывает, сколько отрывков дня уже прочитано
 function PlanProgress({ uid, day }) {
@@ -203,8 +203,9 @@ function PartInline({ index, module, refs, part, setPart, onDone }) {
 function SelectionInline({ index, module, refs, onDone, onPartStart }) {
   const { openSheet } = useApp();
   const first = refs[0];
+  // карточка с «язычком» к стиху: «Слушать» (акцентная таблетка) │ «В проповедь» │ «Часть стиха» │ «Подстрочник»
   return (
-    <div className="sel-inline">
+    <div className="sel-inline sel-cap">
       <button
         className="btn primary sel-listen"
         onClick={() => {
@@ -214,7 +215,12 @@ function SelectionInline({ index, module, refs, onDone, onPartStart }) {
         aria-label={t('Слушать с этого стиха')}
         title={t('Слушать')}
       >
-        <Headphones size={20} />
+        <span className="sel-pill">
+          <span className="sel-ic">
+            <Headphones size={18} />
+          </span>
+          <span className="sel-lb">{t('Слушать')}</span>
+        </span>
       </button>
       <button
         className="btn"
@@ -223,11 +229,17 @@ function SelectionInline({ index, module, refs, onDone, onPartStart }) {
           onDone();
         }}
       >
-        <ScrollText size={17} /> {t('В проповедь')}
+        <span className="sel-ic">
+          <ScrollText size={20} />
+        </span>
+        <span className="sel-lb">{t('В проповедь')}</span>
       </button>
       {refs.length === 1 && (
         <button className="btn" onClick={onPartStart}>
-          <TextSelect size={17} /> {t('Часть стиха')}
+          <span className="sel-ic">
+            <ScanText size={20} />
+          </span>
+          <span className="sel-lb">{t('Часть стиха')}</span>
         </button>
       )}
       <button
@@ -237,7 +249,10 @@ function SelectionInline({ index, module, refs, onDone, onPartStart }) {
           onDone();
         }}
       >
-        <WholeWord size={17} /> {t('Подстрочник')}
+        <span className="sel-ic">
+          <LetterText size={20} />
+        </span>
+        <span className="sel-lb">{t('Подстрочник')}</span>
       </button>
     </div>
   );

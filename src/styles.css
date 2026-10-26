@@ -1270,7 +1270,33 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .sel-inline:not(.part-inline) .btn.sel-listen { flex: none; width: 44px; height: 44px; padding: 0; border-radius: 50%; justify-content: center; }
 .sel-inline:not(.part-inline) .btn:not(.sel-listen) { padding: 10px 6px; gap: 4px; font-size: .86rem; }
 .sel-inline:not(.part-inline) .btn:not(.sel-listen) svg { flex: none; width: 16px; height: 16px; }
-@media (max-width: 430px) { .sel-inline:not(.part-inline) .btn:not(.sel-listen) svg { display: none; } }
+@media (max-width: 430px) { .sel-inline:not(.part-inline):not(.sel-cap) .btn:not(.sel-listen) svg { display: none; } }
+/* действия под стихом — карточка с «язычком» к стиху; широко — одна строка «значок + подпись»,
+   тесно — ячейки поровну, значок над подписью; у «Слушать» акцентная подложка под значком.
+   Скругления вложенные: внутреннее = внешнее − поле */
+.sel-inline.sel-cap.sel-cap:not(.part-inline) { container-type: inline-size; position: relative; display: flex; flex-wrap: nowrap; gap: 0; margin-top: 8px; padding: 4px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); box-shadow: 0 3px 12px rgba(0,0,0,.1); animation: sel-in .2s cubic-bezier(.22,1,.36,1); }
+.sel-inline.sel-cap.sel-cap:not(.part-inline)::before { content: ''; position: absolute; left: 19px; top: -6px; width: 10px; height: 10px; background: var(--panel); border-left: 1px solid var(--line); border-top: 1px solid var(--line); border-top-left-radius: 2px; transform: rotate(45deg); }
+@keyframes sel-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.sel-inline.sel-cap.sel-cap:not(.part-inline) .btn, .sel-inline.sel-cap.sel-cap:not(.part-inline) .btn.primary, .sel-inline.sel-cap.sel-cap:not(.part-inline) .btn.sel-listen { flex: 1 1 auto; min-width: 0; width: auto; height: 44px; padding: 0 10px; gap: 6px; border: 0; border-radius: 10px; background: transparent; color: var(--text); font-size: .86rem; font-weight: 500; white-space: nowrap; transition: transform .12s ease-out, background-color .12s; }
+.sel-inline.sel-cap.sel-cap:not(.part-inline) .btn:active { transform: scale(.96); background: color-mix(in srgb, var(--text) 7%, transparent); }
+@media (hover: hover) { .sel-inline.sel-cap.sel-cap:not(.part-inline) .btn:hover { background: color-mix(in srgb, var(--text) 5%, transparent); } }
+.sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-ic { display: grid; place-items: center; flex: none; }
+.sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-ic svg { width: 16px; height: 16px; }
+.sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-lb { min-width: 0; overflow: hidden; transform: translateY(-1px); }
+.sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-pill { display: contents; }
+/* «Слушать»: подложка 30×28, слева поле как сверху и снизу — (44 − 28) / 2 = 8 */
+.sel-inline.sel-cap.sel-cap:not(.part-inline) .btn.sel-listen { flex-grow: 0; justify-content: flex-start; padding-left: 8px; font-weight: 600; }
+.sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-listen .sel-ic { width: 30px; height: 28px; border-radius: 8px; background: var(--accent); color: var(--on-accent); }
+@container (max-width: 520px) {
+  /* ячейка 54: подложка значка во всю ширину, поле 4 сверху и по бокам (от края карточки 8 со всех сторон) */
+  .sel-inline.sel-cap.sel-cap:not(.part-inline) { border-radius: 16px; }
+  .sel-inline.sel-cap.sel-cap:not(.part-inline) .btn, .sel-inline.sel-cap.sel-cap:not(.part-inline) .btn.primary, .sel-inline.sel-cap.sel-cap:not(.part-inline) .btn.sel-listen { flex: 1 1 0; height: 54px; padding: 4px 4px 0; flex-direction: column; justify-content: flex-start; gap: 3px; border-radius: 12px; }
+  .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-ic, .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-listen .sel-ic { align-self: stretch; width: auto; height: 30px; border-radius: 8px; }
+  .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-ic svg { width: 20px; height: 20px; }
+  .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-lb { max-width: 100%; transform: none; font-size: .75rem; color: color-mix(in srgb, var(--text) 65%, var(--muted)); }
+  .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-listen .sel-lb { color: var(--text); font-weight: 600; }
+}
+@media (prefers-reduced-motion: reduce) { .sel-inline.sel-cap.sel-cap:not(.part-inline) { animation: none; } }
 .il-tr { font-size: .78rem; color: var(--muted); font-style: italic; }
 
 /* Все места слова оригинала */

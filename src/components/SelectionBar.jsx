@@ -2,7 +2,7 @@
 // ✓ · ссылка и число стихов · параллельно в другом переводе · любимые · заметка · закладка · копировать · ⋯
 // В «⋯»: сравнить переводы, параллельные места, поделиться.
 import React, { useEffect, useRef, useState } from 'react';
-import { X, Languages, BookCopy, Heart, Link2, Share2, Copy, NotebookPen, Bookmark, BookmarkCheck, MoreHorizontal, MessageSquareText, Headphones, Highlighter, FolderPlus, Eraser, Compass, ScrollText, WholeWord, BookImage, Image as ImageIcon } from 'lucide-react';
+import { X, Languages, BookCopy, Heart, Link2, Share2, Copy, NotebookPen, Bookmark, BookmarkCheck, MoreHorizontal, MessageSquareText, Headphones, Highlighter, FolderPlus, Eraser, Compass, ScrollText, LetterText, BookImage, Image as ImageIcon } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { getVerse, ORIGINALS } from '../core/modules.js';
 import { listenFrom } from '../core/listen.js';
@@ -231,7 +231,7 @@ export default function SelectionBar({ index, module, selection, onDone }) {
         </button>
         {more && (
           <div className="menu" role="menu" ref={fitMenu}>
-            {moreItem(WholeWord, t('Подстрочник'), () => openSheet('interlinear', index, { ref: first, moduleId: module.id }))}
+            {moreItem(LetterText, t('Подстрочник'), () => openSheet('interlinear', index, { ref: first, moduleId: module.id }))}
             {codexUrl && (
               // Ссылкой, а не window.open: так она открывается во внешнем браузере и из приложения
               <a role="menuitem" className="menu-item" style={{ color: 'inherit', textDecoration: 'none' }} href={codexUrl} target="_blank" rel="noopener noreferrer" onClick={() => (setMore(false), requestAnimationFrame(() => onDone()))}>
