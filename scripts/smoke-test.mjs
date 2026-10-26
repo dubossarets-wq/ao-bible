@@ -257,9 +257,10 @@ async function run(label, viewport, isMobile) {
   const rstCard = page.locator('.mod-row').filter({ has: page.locator('.mod-name', { hasText: /^RST$/ }) });
   await page.screenshot({ path: `${shots}/${label}-7a-library.png` });
   const rowH = await rstCard.locator('.mod-line').evaluate((e) => e.getBoundingClientRect().height);
-  check(`${label}: компактная строка модуля`, rowH <= 64, `${Math.round(rowH)} px`);
+  // строка: название, полное название до двух строк и язык — не выше ~110 px
+  check(`${label}: компактная строка модуля`, rowH <= 110, `${Math.round(rowH)} px`);
   await rstCard.locator('button[aria-label^="Скачать"]').click();
-  await rstCard.locator('.row-act.ok').waitFor({ timeout: 60000 });
+  await rstCard.locator('.mod-state').waitFor({ timeout: 60000 });
   await page.keyboard.press('Escape');
   await page.waitForSelector('.sheet', { state: 'detached' });
   await page.waitForTimeout(400);
@@ -338,7 +339,7 @@ async function run(label, viewport, isMobile) {
   await dcCard.locator('.row-chev').click();
   const details = await dcCard.locator('.mod-more').textContent();
   await dcCard.locator('button[aria-label^="Скачать"]').click();
-  await dcCard.locator('.row-act.ok').waitFor({ timeout: 60000 });
+  await dcCard.locator('.mod-state').waitFor({ timeout: 60000 });
   check(`${label}: стрелка раскрывает подробности`, details.includes('Public Domain') && details.includes('Товит'), details.slice(0, 60));
   await page.keyboard.press('Escape');
   await page.waitForSelector('.sheet', { state: 'detached' });
