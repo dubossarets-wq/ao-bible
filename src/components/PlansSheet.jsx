@@ -7,7 +7,7 @@ import { useApp } from '../App.jsx';
 import { usePlans } from '../core/planStore.js';
 import { readStats } from '../core/readLog.js';
 import { bookMeta, BOOKS } from '../core/books.js';
-import { fetchPlanIndex, fetchPlan, makeCustomPlan, makeParallelPlan, chapterList, streamList, streamExcluded, firstDayText, SCOPES, STREAMS, parseReading, planToday, behindDays, readingDone, localDate } from '../core/plans.js';
+import { fetchPlanIndex, fetchPlan, makeCustomPlan, makeParallelPlan, chapterList, streamList, firstDayText, SCOPES, STREAMS, parseReading, planToday, behindDays, readingDone, localDate } from '../core/plans.js';
 import { ConfirmButton, Hint, Switch, Segmented, Reveal } from './ui.jsx';
 import { usePersistentState } from '../core/storage.js';
 import { REMINDERS, getReminder, setReminder } from '../core/reminders.js';
@@ -409,9 +409,11 @@ export default function PlansSheet({ pane, onClose }) {
       </div>
       {/* во что выльется выбор */}
       <LoadLine load={load} />
-      {/* сроки словами — четыре в один ряд, точное число — кнопками «− / +» выше */}
+      {/* сроки словами — два ряда по три, точное число — кнопками «− / +» выше */}
       <div className="cp-presets cp-terms">
         {[
+          [7, N_('Неделя')],
+          [14, N_('2 недели')],
           [30, N_('Месяц')],
           [90, N_('3 месяца')],
           [180, N_('Полгода')],
@@ -550,14 +552,7 @@ export default function PlansSheet({ pane, onClose }) {
                       <span className="cp-check" aria-hidden="true">
                         <Check size={14} />
                       </span>
-                      <span className="cp-stream-label">
-                        {t(v.label)}
-                        {/* у Заветов — что из них читается отдельно (без повторов) */}
-                        {(() => {
-                          const ex = on && (k === 'ot' || k === 'nt') ? streamExcluded(k, streams, ownOrdered) : [];
-                          return ex.length ? <small>{t('кроме: {list}', { list: ex.map((x) => t(x)).join(', ') })}</small> : null;
-                        })()}
-                      </span>
+                      <span className="cp-stream-label">{t(v.label)}</span>
                     </button>
                     <div className={`cp-per-wrap ${steps ? 'on' : ''}`} inert={steps ? undefined : ''}>
                       <div className="cp-per">
