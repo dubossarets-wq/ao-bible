@@ -234,7 +234,13 @@ export default function AudioBar() {
                 {/* под ней — «▶ Слушать отсюда»: читать с места, где человек сейчас в тексте */}
                 {panes?.[a.pane] && (
                   <button className="audio-here" onClick={() => listenFrom(a.pane, panes[a.pane].moduleId, panes[a.pane].ref)}>
-                    <Play size={11} /> {t('Слушать отсюда')} · {formatRef(panes[a.pane].ref)}
+                    {/* подпись — самая полная, какая помещается: «Слушать отсюда · Мф. 2:5» → «Слушать отсюда» → «Отсюда» */}
+                    <Play size={12} />
+                    <span className="here-long">
+                      {t('Слушать отсюда')}
+                      <span className="here-ref"> · {formatRef(panes[a.pane].ref)}</span>
+                    </span>
+                    <span className="here-short">{t('Отсюда')}</span>
                   </button>
                 )}
               </span>
