@@ -203,7 +203,7 @@ function PartInline({ index, module, refs, part, setPart, onDone }) {
 function SelectionInline({ index, module, refs, onDone, onPartStart }) {
   const { openSheet } = useApp();
   const first = refs[0];
-  // карточка с «язычком» к стиху: «Слушать» (акцентная таблетка) │ «В проповедь» │ «Часть стиха» │ «Подстрочник»
+  // карточка с «язычком» к стиху: «Слушать» (квадрат цвета акцента, без подписи) │ «В проповедь» │ «Часть стиха» │ «Подстрочник»
   return (
     <div className="sel-inline sel-cap">
       <button
@@ -219,7 +219,6 @@ function SelectionInline({ index, module, refs, onDone, onPartStart }) {
           <span className="sel-ic">
             <Headphones size={18} />
           </span>
-          <span className="sel-lb">{t('Слушать')}</span>
         </span>
       </button>
       <button

@@ -1284,20 +1284,19 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-ic svg { width: 16px; height: 16px; }
 .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-lb { min-width: 0; overflow: hidden; transform: translateY(-1px); }
 .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-pill { display: contents; }
-/* «Слушать»: подложка 30×28, слева поле как сверху и снизу — (44 − 28) / 2 = 8 */
-.sel-inline.sel-cap.sel-cap:not(.part-inline) .btn.sel-listen { flex-grow: 0; justify-content: flex-start; padding-left: 8px; font-weight: 600; }
-.sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-listen .sel-ic { width: 30px; height: 28px; border-radius: 9px; background: var(--accent); color: var(--on-accent); }
+/* «Слушать» — без подписи: квадратная ячейка во всю высоту, залита акцентом, поле 4 со всех сторон */
+.sel-inline.sel-cap.sel-cap:not(.part-inline) .btn.sel-listen { flex: none; width: 44px; padding: 4px; }
+.sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-listen .sel-ic { align-self: stretch; width: auto; height: auto; flex: 1; border-radius: 11px; background: var(--accent); color: var(--on-accent); }
+.sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-listen .sel-ic svg { width: 20px; height: 20px; }
 @container (max-width: 520px) {
   /* ячейка 54: подложка значка во всю ширину, поле 4 сверху и по бокам (от края карточки 8 со всех сторон) */
   .sel-inline.sel-cap.sel-cap:not(.part-inline) { border-radius: 16px; }
   .sel-inline.sel-cap.sel-cap:not(.part-inline) .btn, .sel-inline.sel-cap.sel-cap:not(.part-inline) .btn.primary, .sel-inline.sel-cap.sel-cap:not(.part-inline) .btn.sel-listen { flex: 1 1 0; height: 54px; padding: 4px 4px 0; flex-direction: column; justify-content: flex-start; gap: 3px; border-radius: 12px; }
   .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-ic, .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-listen .sel-ic { align-self: stretch; width: auto; height: 30px; border-radius: 9px; }
   .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-ic svg { width: 20px; height: 20px; }
-  /* «Слушать» — узкая ячейка по своей подписи (не уже 64), остальные делят место поровну */
-  .sel-inline.sel-cap.sel-cap:not(.part-inline) .btn.sel-listen { flex: 0 0 auto; min-width: 64px; padding: 4px 4px 0; }
-  .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-listen .sel-lb { padding: 0 4px; }
+  .sel-inline.sel-cap.sel-cap:not(.part-inline) .btn.sel-listen { flex: none; width: 54px; padding: 4px; }
+  .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-listen .sel-ic { height: auto; border-radius: 9px; }
   .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-lb { max-width: 100%; transform: none; font-size: .75rem; color: color-mix(in srgb, var(--text) 65%, var(--muted)); }
-  .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-listen .sel-lb { color: var(--text); font-weight: 600; }
 }
 @media (prefers-reduced-motion: reduce) { .sel-inline.sel-cap.sel-cap:not(.part-inline) { animation: none; } }
 .il-tr { font-size: .78rem; color: var(--muted); font-style: italic; }
