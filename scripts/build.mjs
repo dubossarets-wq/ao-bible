@@ -57,7 +57,16 @@ const FONTS =
 const approved = new Set(JSON.parse(await readFile(path.join(root, 'scripts/approved-modules.json'), 'utf8')).ids);
 const fullCatalog = JSON.parse(await readFile(path.join(root, 'public/modules/catalog.json'), 'utf8'));
 const catalogIds = new Set(fullCatalog.modules.map((m) => m.id).filter((id) => approved.has(id)));
-const publishedCatalog = (dropGz) => JSON.stringify({ ...fullCatalog, modules: fullCatalog.modules.filter((m) => catalogIds.has(m.id)).map((m) => {
+// Дата появления модуля в каталоге (scripts/module-added.json; новым одобренным — сегодняшняя): приложение по ней
+// отмечает недавно добавленные модули меткой «Новый»
+const addedPath = path.join(root, 'scripts/module-added.json');
+const added = JSON.parse(await readFile(addedPath, 'utf8').catch(() => '{}'));
+const today = new Date().toISOString().slice(0, 10);
+let addedChanged = false;
+for (const id of catalogIds) if (!added[id]) (added[id] = today), (addedChanged = true);
+if (addedChanged) await writeFile(addedPath, JSON.stringify(Object.fromEntries(Object.entries(added).sort()), null, 1) + '\n');
+const publishedCatalog = (dropGz) => JSON.stringify({ ...fullCatalog, modules: fullCatalog.modules.filter((m) => catalogIds.has(m.id)).map((m0) => {
+  const m = added[m0.id] ? { ...m0, added: added[m0.id] } : m0;
   if (!dropGz) return m;
   const { urlGz, sizeGz, ...rest } = m;
   return rest;

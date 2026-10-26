@@ -147,6 +147,9 @@ function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle })
     );
   // полное название — если оно не повторяет короткое; ниже мелко язык и размер для скачивания
   const title = m.title && m.title !== m.name ? m.title : null;
+  // «Новый» — модуль появился в каталоге за последние 14 дней (поле added каталога)
+  const addedAt = Date.parse((cat && cat.added) || m.added || '');
+  const isNew = addedAt > 0 && Date.now() - addedAt < 14 * 86400000;
   const meta = [m.language && langName(m.language), !installed && (m.sizeGz || m.size) && fmtSize(m.sizeGz || m.size)].filter(Boolean).join(' · ');
 
   return (
@@ -154,7 +157,10 @@ function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle })
       <div className="mod-line">
         <button className="mod-main" onClick={onToggle} aria-expanded={open}>
           <span className="mod-texts">
-            <span className="mod-name">{m.name}</span>
+            <span className="mod-name">
+              {m.name}
+              {isNew && <span className="mod-new">{t('Новый@@модуль')}</span>}
+            </span>
             {title && <span className="mod-full">{title}</span>}
             {meta && <span className="mod-sub">{meta}</span>}
           </span>
@@ -303,7 +309,8 @@ export const langName = (code) => {
 function LangFilter({ value, onChange, items }) {
   const counts = {};
   items.forEach((m) => (counts[m.language || ''] = (counts[m.language || ''] || 0) + 1));
-  const codes = Object.keys(counts).sort((a, b) => langRank(a) - langRank(b) || a.localeCompare(b));
+  // слева направо по числу модулей (больше — левее); при равенстве — прежний порядок
+  const codes = Object.keys(counts).sort((a, b) => counts[b] - counts[a] || langRank(a) - langRank(b) || a.localeCompare(b));
   if (codes.length < 2) return null;
   return (
     <div className="chips filter-chips lang-chips mod-chips" role="group" aria-label={t('Язык модулей')}>
@@ -323,7 +330,7 @@ const matches = (m, q) => !q || [m.name, m.title, m.description, m.author, langN
 function Filter({ value, onChange, counts }) {
   return (
     <div className="chips filter-chips mod-chips" role="group" aria-label={t('Вид модулей')}>
-      {[['all', N_('Все')], ...MODULE_SECTIONS].map(([k, l]) => (
+      {[['all', N_('Все')], ...[...MODULE_SECTIONS].sort((a, b) => (counts[b[0]] || 0) - (counts[a[0]] || 0))].map(([k, l]) => (
         <button key={k} className={`chip ${value === k ? 'on' : ''}`} aria-pressed={value === k} onClick={() => onChange(k)}>
           {t(l)}
           {k !== 'all' && counts[k] ? <span className="tab-n"> {counts[k]}</span> : null}
