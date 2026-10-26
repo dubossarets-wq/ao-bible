@@ -25,6 +25,7 @@ const SHORT = {
   statenvertaling: 'SVV',
   vamvas: 'Βάμβ',
   sblgnt: 'SBL',
+  wh1881: 'WH',
   vulgata: 'Vulg',
   peshitta: 'Pesh',
   'heb-modern': 'תנ״ך',

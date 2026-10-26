@@ -12,6 +12,9 @@
   ebible/eng-kjv2006/    — KJV с номерами Стронга, USFM (https://ebible.org/Scriptures/eng-kjv2006_usfm.zip)
   morphhb/repo/          — git clone https://github.com/openscriptures/morphhb (OSHB)
   byztxt/repo/           — git clone https://github.com/byztxt/byzantine-majority-text (RP2018)
+  whtxt/repo/            — git clone https://github.com/byztxt/greektext-westcott-hort (Весткотт — Хорт)
+  tagnt/                 — STEPBible TAGNT (github.com/STEPBible/STEPBible-Data, «Translators Amalgamated OT+NT»):
+                           mat-jhn.txt и act-rev.txt
   openbible/             — https://a.openbible.info/data/cross-references.zip
   lopukhin/github-swmail-lopukhin_commentary/ — https://github.com/swmail/lopukhin_commentary
   nikifor/ru-wikisource/ — статьи «БЭАН/…» Русской Викитеки (MediaWiki API)
@@ -122,6 +125,26 @@ def m_byz():
     }, col)
 
 
+def m_wh():
+    col = B.wh(kjv2syn)
+    return bible({
+        "id": "wh1881", "name": "WH", "title": "Новый Завет на греческом: Весткотт — Хорт (1881)",
+        "language": "grc",
+        "description": "Критический текст Нового Завета Б. Ф. Весткотта и Ф. Дж. А. Хорта (1881) — основа современных "
+                       "изданий (Нестле — Аланд, UBS). Состав слов, номера Стронга и морфологические коды — по "
+                       "электронному тексту М. Робинсона; ударения, придыхания и пунктуация добавлены по данным "
+                       "STEPBible TAGNT (написание — как у WH), где пары не нашлось — слово без ударения. Двойными "
+                       "квадратными скобками отмечены места, которые издатели считали поздними вставками. "
+                       "Нумерация переведена в синодальную.",
+        "version": "byztxt/greektext-westcott-hort (git) + STEPBible TAGNT (git)",
+        "author": "Brooke Foss Westcott, Fenton John Anthony Hort; электронный текст — Maurice A. Robinson",
+        "source": "https://github.com/byztxt/greektext-westcott-hort ; https://github.com/STEPBible/STEPBible-Data",
+        "license": "Public Domain (текст WH 1881 и разбор Робинсона); ударения и пунктуация — STEPBible.org, "
+                   "Tyndale House Cambridge, CC BY 4.0 (данные TAGNT использованы выборочно и переработаны)",
+        "features": {"strongs": True, "morphology": True},
+    }, col)
+
+
 def m_csl():
     col = B.sword_bible("CSlElizabeth", "synodal", None, strongs=False)
     h = col.headings.get("Ps", {})
@@ -207,6 +230,11 @@ def world_bible(d):
         src, heads = W.read_usfm(SRC / name)
         prefer = d.get("prefer") or "syn"
         version, source = d["version"], d["source"]
+    elif kind == "sblgnt":
+        src, heads = B.read_sblgnt()
+        prefer = d.get("prefer")
+        version = "LogosBible/SBLGNT v1.2 (git) + STEPBible TAGNT (git)"
+        source = "https://github.com/LogosBible/SBLGNT ; https://github.com/STEPBible/STEPBible-Data"
     elif kind == "wikisource":
         import extra_wiki as WK
         src, heads = WK.read(name)
@@ -236,7 +264,7 @@ def world_bible(d):
         log(f"  [{d['id']}] ОТКЛОНЁН: текст неполный или со сбитой разбивкой на стихи")
         return None
     nt_only = all(BOOK_BY_ID.get(b["id"], {}).get("t") == "NT" for b in books)
-    feats = {"rtl": True} if d.get("rtl") else {}
+    feats = dict(d.get("features", {}), **({"rtl": True} if d.get("rtl") else {}))
     desc = d["desc"] + (" Только Новый Завет." if nt_only and "Нов" not in d["desc"] else "") + \
         " Нумерация стихов приведена к синодальной."
     return bible({
@@ -753,14 +781,14 @@ def m_maps():
 # ---------------------------------------------------------------------------------------------
 
 # m_makarij (только Пятикнижие) заменён полным модулем rus-makarij из scripts/build_ru_old.py
-BUILDERS = [m_kjv, m_bsb, m_oshb, m_byz, m_csl, m_kulish,
+BUILDERS = [m_kjv, m_bsb, m_oshb, m_byz, m_wh, m_csl, m_kulish,
             m_lopukhin, m_desp_notes, m_otnt_notes, m_theophylact, m_chrysostom, m_augustine, m_mhcc, m_jfb, m_barnes,
             m_nikifor, m_dal, m_pbe, m_esbe_bible, m_eebe_bible,
             m_easton, m_smith, m_hitchcock, m_nave, m_isbe, m_amtract, m_torrey, m_webster1828,
             m_abbott_smith, m_bdb,
             m_openbible, m_tsk, m_maps]
 
-BUILDER_IDS = {"m_kjv": ["kjv"], "m_bsb": ["bsb"], "m_oshb": ["oshb"], "m_byz": ["byz-rp2018"],
+BUILDER_IDS = {"m_kjv": ["kjv"], "m_bsb": ["bsb"], "m_oshb": ["oshb"], "m_byz": ["byz-rp2018"], "m_wh": ["wh1881"],
                "m_csl": ["csl-elizabeth"], "m_makarij": ["rus-makarij"], "m_kulish": ["ukr-kulish"],
                "m_lopukhin": ["lopukhin"], "m_mhcc": ["mhcc"], "m_jfb": ["jfb"],
                "m_desp_notes": ["desp-notes"], "m_otnt_notes": ["otnt-notes"], "m_theophylact": ["theophylact"], "m_chrysostom": ["chrysostom"],

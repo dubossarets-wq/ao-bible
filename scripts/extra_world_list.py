@@ -195,9 +195,15 @@ BIBLES = [
     dict(id="alb", src="sword:Alb", lang="sq", name="Bibla", title="Bibla (албанский)",
          desc="Албанский перевод Библии.", license=PD, author="CrossWire"),
     # --- древние языки ---
-    dict(id="sblgnt", src="ebible:grcsbl", lang="grc", name="SBLGNT", title="SBL Greek New Testament",
-         desc="Критический греческий текст Нового Завета Общества библейской литературы (2010).",
-         license="CC BY 4.0 (Society of Biblical Literature, Logos Bible Software)", author="Michael W. Holmes (ред.)"),
+    # Текст — официальный репозиторий SBL (у eBible grcsbl в текст вписан аппарат и потеряны точки в концах книг)
+    dict(id="sblgnt", src="sblgnt:official", lang="grc", name="SBLGNT",
+         title="Новый Завет на греческом: SBLGNT (Общество библейской литературы, 2010)",
+         desc="Критический греческий текст Нового Завета Общества библейской литературы (2010, ред. М. Холмс). "
+              "Номера Стронга и морфологические коды добавлены по данным STEPBible TAGNT (Tyndale House, "
+              "CC BY 4.0); знаки-отсылки к критическому аппарату убраны.",
+         license="CC BY 4.0 (Society of Biblical Literature, Logos Bible Software); разметка Стронга и морфологии — "
+                 "STEPBible.org, Tyndale House Cambridge, CC BY 4.0",
+         author="Michael W. Holmes (ред.)", features={"strongs": True, "morphology": True}),
     dict(id="tr1894", src="ebible:grctr", lang="grc", name="TR", title="Textus Receptus (Скривенер, 1894)",
          desc="Греческий «Общепринятый текст» Нового Завета (изд. Ф. Скривенера 1894 г.).", license=PD,
          author="F. H. A. Scrivener"),

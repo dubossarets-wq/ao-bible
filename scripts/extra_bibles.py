@@ -370,6 +370,219 @@ def byz(mapper):
     return col
 
 
+# ---------------------------------------------------------------------------------------------
+# Весткотт — Хорт (1881): состав и порядок слов, Стронг и морфология — текст Робинсона (byztxt, латинская
+# транслитерация без ударений); ударения, придыхания, заглавные и пунктуация — из STEPBible TAGNT (слова с
+# пометкой WH, с написанием WH из «Spelling variants»). Слова сопоставляются по главе целиком (нумерация стихов
+# у TAGNT — NRSV, у Робинсона — своя); слово без пары в TAGNT остаётся без ударений.
+# ---------------------------------------------------------------------------------------------
+
+WH_FILES = {"Matt": "MT", "Mark": "MR", "Luke": "LU", "John": "JOH", "Acts": "AC", "Jas": "JAS", "1Pet": "1PE",
+            "2Pet": "2PE", "1John": "1JO", "2John": "2JO", "3John": "3JO", "Jude": "JUDE", "Rom": "RO",
+            "1Cor": "1CO", "2Cor": "2CO", "Gal": "GA", "Eph": "EPH", "Phil": "PHP", "Col": "COL",
+            "1Thess": "1TH", "2Thess": "2TH", "1Tim": "1TI", "2Tim": "2TI", "Titus": "TIT", "Phlm": "PHM",
+            "Heb": "HEB", "Rev": "RE"}
+TAGNT_BOOKS = {"Mat": "Matt", "Mrk": "Mark", "Luk": "Luke", "Jhn": "John", "Act": "Acts", "Rom": "Rom",
+               "1Co": "1Cor", "2Co": "2Cor", "Gal": "Gal", "Eph": "Eph", "Php": "Phil", "Col": "Col",
+               "1Th": "1Thess", "2Th": "2Thess", "1Ti": "1Tim", "2Ti": "2Tim", "Tit": "Titus", "Phm": "Phlm",
+               "Heb": "Heb", "Jas": "Jas", "1Pe": "1Pet", "2Pe": "2Pet", "1Jn": "1John", "2Jn": "2John",
+               "3Jn": "3John", "Jud": "Jude", "Rev": "Rev"}
+_GR2ROB = str.maketrans("αβγδεζηθικλμνξοπρστυφχψω", "abgdezhqiklmnxoprstufcyw")
+_ROB2GR = str.maketrans("abgdezhqiklmnxoprstufcyw", "αβγδεζηθικλμνξοπρστυφχψω")
+
+
+def _rob_key(w):
+    """Слово Робинсона (paulov, [kai]) -> ключ сравнения: латиница, конечная сигма как s."""
+    return re.sub(r"[^a-z]", "", w.lower()).replace("v", "s")
+
+
+def _rob_greek(w):
+    """Слово Робинсона без пары в TAGNT -> греческие буквы без ударений (конечная сигма — ς)."""
+    g = re.sub(r"[^a-z]", "", w.lower()).replace("v", "s").translate(_ROB2GR)
+    return re.sub(r"σ$", "ς", g)
+
+
+def _split_punct(w):
+    """«[[Ἀναστὰς» -> ("[[", "Ἀναστὰς", ""): буквы и диакритика (в т. ч. йота подписная U+0345) — слово."""
+    is_core = [unicodedata.category(ch)[0] in "LM" for ch in w]
+    if not any(is_core):
+        return w, "", ""
+    s = is_core.index(True)
+    e = len(w) - is_core[::-1].index(True)
+    return w[:s], w[s:e], w[e:]
+
+
+def _wh_robinson(path):
+    """parsed/*.UWH -> [((глава, стих), слово, стронг, морфология)]; из «| текст WH | вариант |» — первый."""
+    out, cv, alt, toks = [], None, -1, []
+    for t in open(path, encoding="utf-8").read().split():
+        if t == "|":
+            alt = 0 if alt < 0 else (1 if alt == 0 else -1)
+        elif alt != 1:
+            toks.append(t)  # номер и морфология после «| acav | acaz |» относятся к слову основного текста
+    i = 0
+    while i < len(toks):
+        t = toks[i]
+        i += 1
+        m = re.fullmatch(r"(\d+):(\d+)", t)
+        if m:
+            cv = (int(m.group(1)), int(m.group(2)))
+            continue
+        if t.isdigit() or t.startswith("{"):
+            continue
+        nums, morph = [], ""
+        while i < len(toks) and toks[i].isdigit():
+            nums.append(int(toks[i]))
+            i += 1
+        if i < len(toks) and toks[i].startswith("{"):
+            morph = toks[i].strip("{}")
+            i += 1
+        if cv and _rob_key(t):
+            out.append((cv, t, nums[0] if nums else None, morph))
+    return out
+
+
+def _tagnt_morph(g):
+    """Разбор TAGNT -> код Робинсона: без пометок STEPBible (-P имя, -L место, -T титул, -PG/-LG…, -HEB/-ARAM/-LI —
+    происхождение слова), «второй презенс» V-2P… как V-P…; у слитных слов (κἀγώ: «CONJ + G1473=P-1NS») —
+    первая часть."""
+    g = g.split(" + ")[0].strip()
+    g = re.sub(r"-(HEB|ARAM|LI)$", "", g)
+    g = re.sub(r"^V-2P", "V-P", g)
+    return re.sub(r"-(P|L|T|PG|LG|TG|G)$", "", g)
+
+
+def _tagnt_edition(edition):
+    """TAGNT -> {книга: {глава: [(слово с пунктуацией, стронг, морфология)]}} — слова издания edition в его
+    порядке (с написанием и перестановками этого издания)."""
+    base = SRC / "tagnt"
+    rows = defaultdict(lambda: defaultdict(list))
+    for fn in ("mat-jhn.txt", "act-rev.txt"):
+        with open(base / fn, encoding="utf-8-sig") as fh:
+            for line in fh:
+                m = re.match(r"^([1-3][A-Z][a-z]|[A-Z][a-z]{2})\.(\d+)\.\d+\S*#(\d+)=\S+\t", line)
+                if not m or m.group(1) not in TAGNT_BOOKS:
+                    continue
+                c = line.rstrip("\n").split("\t")
+                eds = {}
+                for e in c[5].split("+"):
+                    em = re.fullmatch(r"([A-Za-z0-9]+)([»«]\d+)?", e.strip())
+                    if em:
+                        eds[em.group(1)] = em.group(2) or ""
+                if edition not in eds:
+                    continue
+                word = re.sub(r"\s*\([^)]*\)\s*$", "", c[1]).strip()
+                for part in (c[7] if len(c) > 7 else "").split(";"):
+                    if ":" not in part:
+                        continue
+                    who, form = part.split(":", 1)
+                    if edition in who.strip().lstrip("+").split("+") and form.strip():
+                        pre, _, post = _split_punct(word)
+                        word = pre + form.strip() + post
+                        break
+                sm = re.match(r"G(\d+)", c[3])
+                strong = int(sm.group(1)) if sm else None
+                morph = _tagnt_morph(c[3].split("=", 1)[1]) if "=" in c[3] else ""
+                shift = eds[edition]
+                k = int(shift[1:]) if shift else 0
+                pos = len(rows[TAGNT_BOOKS[m.group(1)]][int(m.group(2))])
+                key = pos + (k + 0.5 if shift.startswith("»") else -k - 0.5 if shift else 0)
+                rows[TAGNT_BOOKS[m.group(1)]][int(m.group(2))].append((key, (word, strong, morph)))
+    return {b: {ch: [w for _, w in sorted(ws, key=lambda x: x[0])] for ch, ws in chs.items()}
+            for b, chs in rows.items()}
+
+
+def _greek_key(w):
+    """Греческое слово -> ключ сравнения в латинице Робинсона (без ударений, апострофов и знаков)."""
+    return re.sub(r"[^a-z]", "", _bare(w).translate(_GR2ROB))
+
+
+def _align(a, b):
+    """Пары индексов a -> b по совпадению ключей; в заменах одинаковой длины — и похожие слова (другое
+    написание того же слова)."""
+    import difflib
+    pair = {}
+    for op, a1, a2, b1, b2 in difflib.SequenceMatcher(None, a, b, autojunk=False).get_opcodes():
+        if op == "equal":
+            pair.update({a1 + j: b1 + j for j in range(a2 - a1)})
+        elif op == "replace" and a2 - a1 == b2 - b1:
+            pair.update({a1 + j: b1 + j for j in range(a2 - a1)
+                         if difflib.SequenceMatcher(None, a[a1 + j], b[b1 + j]).ratio() >= 0.6})
+    return pair
+
+
+def read_sblgnt():
+    """Официальный текст SBLGNT (LogosBible/SBLGNT, data/sblgnt/text) с номерами Стронга и морфологией из
+    TAGNT (слова с пометкой SBL) -> ({книга: {(глава, стих): текст aob}}, {}) — как W.read_usfm.
+    Знаки ⸀ ⸂ ⸃ (отсылки к аппарату) убираются; ⟦ ⟧ остаются."""
+    tag = _tagnt_edition("SBL")
+    src = {}
+    stats = {"words": 0, "tagged": 0}
+    for path in sorted((SRC / "sblgnt" / "repo" / "data" / "sblgnt" / "text").glob("*.txt")):
+        bid = path.stem
+        by_ch = defaultdict(list)  # глава -> [(стих, слово)]
+        for line in open(path, encoding="utf-8-sig"):
+            m = re.match(r"^\S+ (\d+):(\d+)\t(.*)$", line.rstrip("\n"))
+            if not m:
+                continue
+            c, v = int(m.group(1)), int(m.group(2))
+            for w in re.sub("[⸀-⸅]", "", m.group(3)).split():
+                by_ch[c].append((v, w))
+        verses = defaultdict(list)
+        for ch, words in by_ch.items():
+            tw = tag.get(bid, {}).get(ch, [])
+            pair = _align([_greek_key(w) for _, w in words], [_greek_key(t[0]) for t in tw])
+            for i, (v, w) in enumerate(words):
+                pre, core, post = _split_punct(w)
+                if not core:
+                    verses[(ch, v)].append(w)
+                    continue
+                stats["words"] += 1
+                t = tw[pair[i]] if i in pair else None
+                if t and t[1]:
+                    stats["tagged"] += 1
+                    verses[(ch, v)].append(f"{pre}{{{core}|G{t[1]}|{t[2]}}}{post}" if t[2] else f"{pre}{{{core}|G{t[1]}}}{post}")
+                else:
+                    verses[(ch, v)].append(w)
+        src[bid] = {cv: clean_verse(" ".join(ws)) for cv, ws in verses.items()}
+    log(f"  sblgnt: слов {stats['words']}, со Стронгом и морфологией из TAGNT {stats['tagged']}")
+    return src, {}
+
+
+def wh(mapper):
+    tag = _tagnt_edition("WH")
+    col = Collector()
+    stats = {"words": 0, "accented": 0}
+    for bid, fn in WH_FILES.items():
+        rob = _wh_robinson(SRC / "whtxt" / "repo" / "parsed" / f"{fn}.UWH")
+        by_ch = defaultdict(list)
+        for r in rob:
+            by_ch[r[0][0]].append(r)
+        verses = defaultdict(list)
+        for ch, words in by_ch.items():
+            tw = [t[0] for t in tag.get(bid, {}).get(ch, [])]
+            # то же слово в другом написании (Ὀζίας / Ὀζείας) тоже в паре — берём написание WH из TAGNT
+            pair = _align([_rob_key(w[1]) for w in words], [_greek_key(w) for w in tw])
+            for i, (cv, rw, num, morph) in enumerate(words):
+                stats["words"] += 1
+                if i in pair:
+                    stats["accented"] += 1
+                    pre, core, post = _split_punct(tw[pair[i]])
+                else:
+                    pre, core, post = "", _rob_greek(rw), ""
+                pre, post = pre.replace("[", ""), post.replace("]", "")
+                if rw.startswith("["):
+                    pre = "[" * (len(rw) - len(rw.lstrip("["))) + pre
+                if rw.endswith("]"):
+                    post += "]" * (len(rw) - len(rw.rstrip("]")))
+                verses[cv].append(f"{pre}{{{core}|G{num}|{morph}}}{post}" if num else f"{pre}{core}{post}")
+        for (c, v), ws in verses.items():
+            sb, sc, sv = mapper(bid, c, v)
+            col.add(sb, sc, sv, clean_verse(" ".join(ws)))
+    log(f"  wh: слов {stats['words']}, с ударениями из TAGNT {stats['accented']}")
+    return col
+
+
 def ident(book, c, v):
     return book, c, v
 
