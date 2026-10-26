@@ -81,7 +81,7 @@ export default function SermonAddSheet({ pane, payload, onClose }) {
       {sermons.length > 0 && (
         <section className="nav-group">
           <h4>{t('Или выберите проповедь')}</h4>
-          <div className="sermon-pick">
+          <div className="sermon-pick sermon-list">
             {sermons.map((s) => (
               <button key={s.id} className="sermon-pick-row" disabled={!texts} onClick={() => add(s.id, s.title)}>
                 <ScrollText size={18} />

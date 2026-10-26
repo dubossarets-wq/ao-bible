@@ -713,7 +713,7 @@ export default function SermonsSheet({ pane, payload, onClose }) {
               {t('Создайте проповедь и добавляйте стихи прямо при чтении: зажмите стих → «В проповедь».')}
             </Empty>
           ) : (
-            <div className="sermon-pick">
+            <div className="sermon-pick sermon-list">
               {sermons.map((s) => (
                 <SwipeRow key={s.id} as="div" onDelete={() => removeSermon(s)} label={t('Удалить проповедь «{title}»', { title: s.title })}>
                   <button className="sermon-pick-row" onClick={() => setOpenId(s.id)}>
