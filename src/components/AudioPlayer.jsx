@@ -374,13 +374,13 @@ export default function AudioPlayer({ a, onClosed, dl, note, setNote, vol, setVo
 
           <div className="ap-transport">
             <button className="ap-btn" onClick={() => stepVerse(-1)} aria-label={t('Предыдущий стих')}>
-              <SkipBack size={30} />
+              <SkipBack size={28} fill="currentColor" />
             </button>
             <button className="ap-btn ap-play" onClick={() => (a.playing ? pauseAudio() : resumeAudio())} aria-label={a.playing ? t('Пауза') : t('Слушать')}>
-              {a.loading ? <Loader2 size={34} className="spin" /> : a.playing ? <Pause size={34} /> : <Play size={34} />}
+              {a.loading ? <Loader2 size={34} className="spin" /> : a.playing ? <Pause size={34} fill="currentColor" /> : <Play size={34} fill="currentColor" />}
             </button>
             <button className="ap-btn" onClick={() => stepVerse(1)} aria-label={t('Следующий стих')}>
-              <SkipForward size={30} />
+              <SkipForward size={28} fill="currentColor" />
             </button>
           </div>
 

@@ -1,7 +1,7 @@
 // Нижняя панель «аудиокниги»: ▶/⏸, предыдущий/следующий стих, текущее место, скорость, таймер сна,
 // кнопка «скачать книгу» для прослушивания без интернета. Нет записи — сообщение об этом.
 // Нажатие на свободную часть панели (или на место чтения) раскрывает проигрыватель на весь экран (AudioPlayer.jsx).
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Play, Pause, SkipBack, SkipForward, X, SlidersHorizontal, Loader2, CornerUpLeft, Download, CheckCircle2, Sparkles } from 'lucide-react';
 import { listenFrom } from '../core/listen.js';
 import { useAudio, pauseAudio, resumeAudio, stopAudio, stepVerse, setRate, setSleep, resumeFollow, startAudio, setVolume } from '../core/audio.js';
@@ -86,14 +86,27 @@ export default function AudioBar() {
   const a = useAudio();
   const { navigate, setSettings, panes } = useApp();
   const [opts, setOpts] = useState(false);
-  // панель настроек остаётся на экране, пока гаснет (160 мс), — потом убирается
+  // панель настроек остаётся на экране, пока уезжает (240 мс), — потом убирается
   const [optsShown, setOptsShown] = useState(false);
   useEffect(() => {
     if (opts) return setOptsShown(true);
-    const id = setTimeout(() => setOptsShown(false), 160);
+    const id = setTimeout(() => setOptsShown(false), 240);
     return () => clearTimeout(id);
   }, [opts]);
   const optsOn = opts || optsShown;
+  // Высота панели — в --opts-h: фон проигрывателя плавно поднимается на неё и опускается обратно. Сама высота
+  // проигрывателя меняется один раз, едут только фон и обрезка — глава не пересчитывается на каждом кадре
+  const optsRef = useRef(null);
+  useLayoutEffect(() => {
+    if (optsOn && optsRef.current && bar.current) bar.current.style.setProperty('--opts-h', `${optsRef.current.offsetHeight}px`);
+  }, [optsOn]);
+  // Настройки прячутся — стрелки глав сразу плавно опускаются вместе с фоном (не ждут, пока панель уберётся)
+  useLayoutEffect(() => {
+    if (!opts && optsShown && optsRef.current && bar.current) {
+      const h = bar.current.getBoundingClientRect().height - optsRef.current.offsetHeight;
+      document.documentElement.style.setProperty('--audio-h', `${Math.round(h)}px`);
+    }
+  }, [opts]);
   const [note, setNote] = useState(null); // подпись о скачивании книги
   const [full, setFull] = useState(false); // раскрытый проигрыватель
   const [vol, setVol] = usePersistentState('audioVolume', 1);
@@ -150,7 +163,7 @@ export default function AudioBar() {
 
   return (
     <>
-      <div ref={bar} className={`audio-bar${optsOn ? ' opts-open' : ''}`} role="region" aria-label={t('Аудиокнига')}>
+      <div ref={bar} className={`audio-bar${optsOn ? ' opts-open' : ''}${optsOn && !opts ? ' opts-closing' : ''}`} role="region" aria-label={t('Аудиокнига')}>
         {/* Записи нет — предлагаем ИИ-диктора */}
         {a.offerTts && !a.playing && (
           <div className="audio-offer">
@@ -175,10 +188,8 @@ export default function AudioBar() {
           </div>
         )}
         {!full && <DownloadNote note={note} setNote={setNote} />}
-        {/* настройки появляются плавно: высота меняется один раз, а панель проявляется и чуть выезжает снизу
-            (прозрачность и сдвиг не пересчитывают раскладку главы на каждом кадре) */}
         {optsOn && (
-          <div className={`audio-opts${opts ? '' : ' closing'}`}>
+          <div ref={optsRef} className="audio-opts">
             <Segmented id="audio-rate" label={t('Скорость')} value={a.rate} onChange={setRate} options={RATES.map((r) => [r, `${r}×`])} />
             <Segmented
               id="audio-sleep"
@@ -197,13 +208,13 @@ export default function AudioBar() {
         )}
         <div className={`audio-main ${canExpand ? 'can-expand' : ''}`} onClick={onMainClick} onPointerDown={onDown} onPointerUp={onUp} onPointerCancel={() => (swipe.current = null)}>
           <button className="audio-btn" onClick={() => stepVerse(-1)} aria-label={t('Предыдущий стих')}>
-            <SkipBack size={20} />
+            <SkipBack size={18} fill="currentColor" />
           </button>
           <button className="audio-btn play" onClick={() => (a.playing ? pauseAudio() : resumeAudio())} aria-label={a.playing ? t('Пауза') : t('Слушать')}>
-            {a.loading ? <Loader2 size={22} className="spin" /> : a.playing ? <Pause size={22} /> : <Play size={22} />}
+            {a.loading ? <Loader2 size={22} className="spin" /> : a.playing ? <Pause size={22} fill="currentColor" /> : <Play size={22} fill="currentColor" />}
           </button>
           <button className="audio-btn" onClick={() => stepVerse(1)} aria-label={t('Следующий стих')}>
-            <SkipForward size={20} />
+            <SkipForward size={18} fill="currentColor" />
           </button>
           <div className="audio-info">
             {/* Человек ушёл в другое место — место чтения становится кнопкой «вернуться» */}

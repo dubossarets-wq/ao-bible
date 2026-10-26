@@ -572,8 +572,7 @@ button.wp-item:active { background: color-mix(in srgb, var(--accent) 12%, transp
 
 /* ---------- Чтение вслух ---------- */
 .verse.speaking { background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: -10px 0 0 color-mix(in srgb, var(--accent) 14%, transparent), 10px 0 0 color-mix(in srgb, var(--accent) 14%, transparent); border-radius: 4px; transition: background .25s; }
-.audio-bar.opts-open { border-radius: 16px; } /* раскрыты настройки — скругление 16 по всему периметру */
-.audio-bar { position: fixed; left: calc(env(safe-area-inset-left, 0px) + 8px); right: calc(env(safe-area-inset-right, 0px) + 8px); bottom: calc(env(safe-area-inset-bottom, 0px) + 8px); z-index: 35; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 32px; /* капсула, как панель вкладок */ box-shadow: 0 10px 34px rgba(0,0,0,.2); max-width: 640px; margin: 0 auto; animation: up .25s ease-out; }
+.audio-bar { position: fixed; left: calc(env(safe-area-inset-left, 0px) + 8px); right: calc(env(safe-area-inset-right, 0px) + 8px); bottom: calc(env(safe-area-inset-bottom, 0px) + 8px); z-index: 35; color: var(--text); max-width: 640px; margin: 0 auto; animation: up .25s ease-out; }
 .audio-main { display: flex; align-items: center; gap: 2px; padding: 6px; }
 .audio-btn { flex: none; width: 40px; height: 40px; display: grid; place-items: center; border: 0; background: none; border-radius: 50%; color: var(--text); }
 @media (hover: hover) { .audio-btn:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); } }
@@ -583,9 +582,18 @@ button.wp-item:active { background: color-mix(in srgb, var(--accent) 12%, transp
 .audio-info { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 0 6px; }
 .audio-ref { font-weight: 700; font-size: .95rem; }
 .audio-src { font-size: .78rem; color: var(--muted); overflow: hidden; text-overflow: clip; white-space: nowrap; }
-.audio-opts { animation: opts-in .18s cubic-bezier(.2,.8,.3,1); }
-.audio-opts.closing { opacity: 0; transform: translateY(6px); transition: opacity .16s ease-in, transform .16s ease-in; pointer-events: none; }
-@keyframes opts-in { from { opacity: 0; transform: translateY(6px); } }
+/* Фон проигрывателя — отдельным слоем (::before): капсула 32, с настройками — 16. При раскрытии настроек
+   высота проигрывателя меняется сразу, а фон плавно поднимается на высоту панели (--opts-h) и обратно; панель
+   обрезается по нему же. Это лишь перерисовка — глава под проигрывателем не пересчитывается на каждом кадре */
+.audio-bar::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--panel); border: 1px solid var(--line); border-radius: 32px; /* капсула, как панель вкладок */ box-shadow: 0 10px 34px rgba(0,0,0,.2); pointer-events: none; }
+.audio-bar.opts-open::before { border-radius: 16px; animation: bar-bg-open .24s cubic-bezier(.22,.8,.3,1); }
+.audio-bar.opts-closing::before { animation: bar-bg-close .24s cubic-bezier(.6,0,.8,.4) forwards; }
+.audio-bar.opts-open .audio-opts { animation: opts-open .24s cubic-bezier(.22,.8,.3,1); }
+.audio-bar.opts-closing .audio-opts { animation: opts-close .24s cubic-bezier(.6,0,.8,.4) forwards; pointer-events: none; }
+@keyframes bar-bg-open { from { top: var(--opts-h, 0px); border-radius: 32px; } }
+@keyframes bar-bg-close { to { top: var(--opts-h, 0px); border-radius: 32px; } }
+@keyframes opts-open { from { clip-path: inset(100% 0 0 0); opacity: 0; } }
+@keyframes opts-close { to { clip-path: inset(100% 0 0 0); opacity: 0; } }
 .audio-opts { display: flex; flex-direction: column; gap: 10px; padding: 12px 12px 4px; border-bottom: 1px solid var(--line); }
 .audio-opt-row { display: flex; flex-direction: column; gap: 6px; }
 
@@ -1376,7 +1384,7 @@ html.has-tabbar .place-card { bottom: calc(10px + var(--sab)); }
 /* Соседняя глава: круглые стрелки внизу слева и справа; «Слушать» — над правой стрелкой.
    Над кнопкой «Вернуться к плану» и над проигрывателем стрелки поднимаются; в режиме чтения уходят с панелями. */
 .reader { --chap-bottom: calc(var(--sab) + 16px); }
-.chap-nav { position: absolute; bottom: var(--chap-bottom); z-index: 5; width: 46px; height: 46px; padding: 0; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 94%, transparent); color: var(--text); box-shadow: 0 4px 14px rgba(0,0,0,.16); cursor: pointer; transition: opacity .22s, transform .22s, bottom .22s; animation: pop .18s ease-out; }
+.chap-nav { position: absolute; bottom: var(--chap-bottom); z-index: 5; width: 46px; height: 46px; padding: 0; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 94%, transparent); color: var(--text); box-shadow: 0 4px 14px rgba(0,0,0,.16); cursor: pointer; transition: opacity .22s, transform .22s, bottom .24s cubic-bezier(.22,.8,.3,1); /* как фон проигрывателя */ animation: pop .18s ease-out; }
 .chap-nav.prev { left: calc(env(safe-area-inset-left, 0px) + 14px); }
 .chap-nav.next { right: calc(env(safe-area-inset-right, 0px) + 14px); }
 .chap-nav:active { transform: scale(.92); }
