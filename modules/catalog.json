@@ -2038,8 +2038,51 @@
    "versification": "synodal",
    "url": "sblgnt.json",
    "urlGz": "sblgnt.json.gz",
-   "size": 3629084,
-   "sizeGz": 717150
+   "size": 3628999,
+   "sizeGz": 716455
+  },
+  {
+   "id": "lxx-brenton",
+   "type": "bible",
+   "name": "LXX Brenton",
+   "title": "Септуагинта (греческий Ветхий Завет), издание Брентона",
+   "description": "Греческий Ветхий Завет (перевод семидесяти толковников) по изданию Л. Брентона «The Septuagint Version of the Old Testament» (Лондон, 1844–1851): текст Ватиканского кодекса по Сикстинскому изданию 1587 г., со второканоническими книгами и Молитвой Манассии. Номера Стронга — по тем же словам издания Свита; у слов, которых нет в Новом Завете, номера нет. Нумерация переведена в синодальную (сверка с текстом Свита по общим словам): Иеремия — в синодальном порядке глав, 2 Ездры — в книгах Ездры и Неемии, Сусанна — Дан 13, Вил и дракон — Дан 14; добавления Септуагинты с буквенными стихами — в своём основном стихе. 4 Маккавейской нет (её нет в синодальной нумерации).",
+   "language": "grc",
+   "version": "Brenton 1844–1851; eBible.org grcbrent / eng-Brenton (2026-04-08)",
+   "author": "Sir Lancelot C. L. Brenton (1807–1862); электронный текст — eBible.org",
+   "source": "https://ebible.org/find/details.php?id=grcbrent",
+   "license": "Public Domain",
+   "features": {
+    "strongs": true,
+    "morphology": false,
+    "headings": false
+   },
+   "versification": "synodal",
+   "url": "lxx-brenton.json",
+   "urlGz": "lxx-brenton.json.gz",
+   "size": 10895228,
+   "sizeGz": 2094394
+  },
+  {
+   "id": "brenton",
+   "type": "bible",
+   "name": "Brenton",
+   "title": "The Septuagint in English (Brenton, 1851)",
+   "description": "Английский перевод Септуагинты Л. Брентона (1851) — первый полный перевод греческого Ветхого Завета на английский, со второканоническими книгами и Молитвой Манассии. Перевод сделан с Ватиканского кодекса; места, которых в нём нет, — по Александрийскому. Нумерация переведена в синодальную (сверка с текстом Свита по общим словам): Иеремия — в синодальном порядке глав, 2 Ездры — в книгах Ездры и Неемии, Сусанна — Дан 13, Вил и дракон — Дан 14; добавления Септуагинты с буквенными стихами — в своём основном стихе. 4 Маккавейской нет (её нет в синодальной нумерации).",
+   "language": "en",
+   "version": "Brenton 1844–1851; eBible.org grcbrent / eng-Brenton (2026-04-08)",
+   "author": "Sir Lancelot C. L. Brenton (1807–1862); электронный текст — eBible.org",
+   "source": "https://ebible.org/find/details.php?id=eng-Brenton",
+   "license": "Public Domain",
+   "features": {
+    "strongs": false,
+    "headings": false
+   },
+   "versification": "synodal",
+   "url": "brenton.json",
+   "urlGz": "brenton.json.gz",
+   "size": 3970600,
+   "sizeGz": 1163073
   },
   {
    "id": "bible-places",
