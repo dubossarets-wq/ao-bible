@@ -20,7 +20,7 @@ export async function commentaryIndex() {
       if (!r) continue;
       const vk = `${r.book}.${r.chapter}.${r.verse}`;
       const list = map.get(vk) || [];
-      if (!list.some((x) => x.id === m.id)) list.push({ id: m.id, name: m.name });
+      if (!list.some((x) => x.id === m.id)) list.push({ id: m.id, name: m.name, lang: m.language || 'ru' });
       map.set(vk, list);
     }
   }

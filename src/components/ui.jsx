@@ -166,7 +166,7 @@ export function useSwipeToggle(checked, onChange) {
   };
 }
 
-export function Switch({ id, checked, onChange, label, hint }) {
+export function Switch({ id, checked, onChange, label, hint, sub }) {
   const swipe = useSwipeToggle(checked, onChange);
   return (
     <label className="field switch-field" htmlFor={id} {...swipe}>
@@ -175,6 +175,8 @@ export function Switch({ id, checked, onChange, label, hint }) {
           {label}
           {hint && <Hint>{hint}</Hint>}
         </span>
+        {/* sub — пояснение мелко под названием (видно сразу, без «ⓘ») */}
+        {sub && <small className="field-sub">{sub}</small>}
       </span>
       <input id={id} type="checkbox" role="switch" checked={!!checked} onChange={(e) => onChange(e.target.checked)} />
       <span className="switch" aria-hidden="true" />

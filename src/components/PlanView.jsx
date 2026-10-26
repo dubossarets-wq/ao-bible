@@ -375,6 +375,7 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
       showHeadings: settings.showHeadings,
       showXref: settings.showXrefButtons && !settings.focusMode && !settings.bookMode,
       inlineComments: settings.bookMode ? [] : settings.inlineCommentaries,
+      lang: module?.language || 'ru', // комментарии у стихов — на языке перевода
       continuous: settings.continuousVerses || settings.bookMode,
       showIllus: settings.showIllustrations !== false && !settings.bookMode,
     }),

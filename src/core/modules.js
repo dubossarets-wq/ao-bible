@@ -33,6 +33,8 @@ function emit() {
 // Список читается из базы один раз: одновременные первые вызовы ждут одно и то же чтение.
 // Иначе позднее завершившееся чтение могло затереть уже обновлённый список (модуль «пропадал» до перезапуска).
 let modulesLoading = null;
+export const SHORT_NAMES = { 'desp-notes': 'Десницкий', 'otnt-notes': 'Откр. НЗ' };
+
 export async function listModules() {
   if (modulesCache) return modulesCache;
   if (!modulesLoading) {
@@ -40,7 +42,8 @@ export async function listModules() {
       .getAll(db.STORES.modules)
       .catch(() => [])
       .then((list) => {
-        if (!modulesCache) modulesCache = [...list].sort((a, b) => (a.installedAt || 0) - (b.installedAt || 0));
+        // короткие названия (не длиннее «Лопухин») — и у уже скачанных модулей; полное остаётся в title
+        if (!modulesCache) modulesCache = [...list].map((m) => (SHORT_NAMES[m.id] ? { ...m, name: SHORT_NAMES[m.id] } : m)).sort((a, b) => (a.installedAt || 0) - (b.installedAt || 0));
         return modulesCache;
       });
   }

@@ -174,6 +174,14 @@ input:focus, select:focus { border-color: var(--accent); outline: none; box-shad
 .field-hint { font-size: .82rem; color: var(--muted); line-height: 1.4; margin: 0; }
 .field-row { display: flex; justify-content: space-between; gap: 12px; }
 .field-value { color: var(--muted); font-variant-numeric: tabular-nums; }
+.field-sub { display: block; margin-top: 2px; font-size: .8rem; line-height: 1.35; font-weight: 400; color: var(--muted); }
+.cm-preview { padding-left: 12px; border-left: 3px solid var(--accent); }
+.cm-preview b { display: block; margin-bottom: 2px; font-size: .8rem; color: var(--accent); }
+.cm-preview .cm-sample { margin: 0; transition: font-size .16s; }
+.cm-list { display: flex; flex-direction: column; margin: 0 -16px; border-top: 1px solid var(--line); }
+.cm-list .switch-field { padding: 11px 16px 11px 20px; border-bottom: 1px solid var(--line); }
+.cm-list .field-label { font-weight: 600; }
+@media (hover: hover) { .cm-list .switch-field:hover { background: color-mix(in srgb, var(--accent) 5%, transparent); } }
 .switch-field { flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; padding: 2px 0; }
 .field-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .switch-field input { position: absolute; opacity: 0; pointer-events: none; }
@@ -425,6 +433,16 @@ button.wp-item:active { background: color-mix(in srgb, var(--accent) 12%, transp
 .map-desc { color: var(--muted); font-size: .85rem; overflow: hidden; text-overflow: clip; white-space: nowrap; }
 .map-view { overflow: auto; max-height: 70vh; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); -webkit-overflow-scrolling: touch; }
 .map-view img { display: block; max-width: none; transition: width .2s; }
+/* в окне — карта целиком, без увеличения; нажатие — на весь экран */
+.map-open { position: relative; display: block; width: 100%; padding: 0; overflow: hidden; cursor: zoom-in; }
+.map-open img { width: 100%; height: auto; max-width: 100%; }
+.map-open-badge { position: absolute; right: 8px; bottom: 8px; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: color-mix(in srgb, var(--panel) 90%, transparent); border: 1px solid var(--line); color: var(--text); }
+.map-full { position: fixed; inset: 0; z-index: 80; background: rgba(0, 0, 0, .92); animation: fade-in .22s cubic-bezier(.4,0,.2,1); }
+.map-full-scroll { position: absolute; inset: 0; overflow: auto; display: grid; place-items: center; -webkit-overflow-scrolling: touch; }
+.map-full-scroll img { display: block; max-width: none; transition: width .2s; }
+.map-full-btns { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 8px); right: 8px; display: flex; gap: 6px; }
+/* тёмный круг с белым значком — виден и на светлой, и на тёмной карте */
+.map-full-btn { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border-radius: 50%; border: 0; background: rgba(27, 26, 24, .8); color: #fff; cursor: pointer; }
 
 /* ---------- Библиотека: компактные строки модулей ---------- */
 .filter-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px 2px; flex: none; }
@@ -1326,7 +1344,7 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .plan-tile-days { position: absolute; z-index: 1; top: 10px; left: 10px; display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: rgba(0,0,0,.45); font-size: .74rem; font-weight: 600; }
 .plan-tile-name { position: absolute; z-index: 1; left: 12px; right: 12px; bottom: 12px; font-weight: 800; font-size: 1.02rem; line-height: 1.2; text-shadow: 0 1px 4px rgba(0,0,0,.4); }
 .plan-detail { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding: 14px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--bg); }
-.reminder-card { display: flex; flex-direction: column; gap: 8px; padding: 4px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+.reminder-card { display: flex; flex-direction: column; gap: 8px; padding: 4px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: color-mix(in srgb, var(--text) 5.5%, var(--panel)); }
 .reminder-time { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0 10px; color: var(--muted); }
 .reminder-time input { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; min-height: 40px; }
 .plan-detail .plan-desc { margin: 2px 0 6px; }
@@ -1642,14 +1660,16 @@ html.kb-open .ap-live { position: relative; }
 .theme-dot { position: relative; display: grid; place-items: center; width: 54px; height: 54px; border-radius: 50%; border: 1px solid; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.12); font-family: var(--font-text); font-size: 1.1rem; font-weight: 600; transition: transform .15s; }
 .td-bar { position: absolute; left: 0; right: 0; top: 0; height: 26%; }
 .td-aa { position: relative; margin: 8px 6px 0 0; font-size: 1rem; letter-spacing: .01em; }
+.td-half { position: absolute; inset: 0; width: 100%; height: 100%; }
 .td-aa.split { position: absolute; inset: 0; margin: 0; }
 .td-aa.split > span { position: absolute; top: 50%; transform: translateY(-36%); line-height: 1; }
-.td-aa.split > span { width: 50%; text-align: center; } /* «А» — по центру светлой половины, «а» — по центру тёмной */
-.td-aa.split > span:first-child { left: 0; }
-.td-aa.split > span:last-child { right: 0; }
+.td-aa.split > span:first-child { right: calc(50% + .5px); } /* «А» и «а» вплотную у середины, как одно слово */
+.td-aa.split > span:last-child { left: calc(50% + .5px); }
 .td-accent { position: absolute; right: 7px; bottom: 10px; width: 9px; height: 9px; border-radius: 50%; }
 .theme-tile.on .theme-dot { outline: 3px solid var(--accent); outline-offset: 2px; }
 .theme-tile.on .theme-name { font-weight: 700; }
+.theme-name { max-width: 100%; white-space: nowrap; letter-spacing: -.01em; } /* название целиком, без переноса и обрезки */
+.theme-tile[data-theme-id='auto'] { width: 72px; }
 .theme-tile:active .theme-dot { transform: scale(.94); }
 .theme-tile:focus-visible { outline: none; }
 .theme-tile:focus-visible .theme-dot { outline: 3px solid var(--accent); outline-offset: 2px; }
@@ -1689,7 +1709,7 @@ html.kb-open .ap-live { position: relative; }
 }
 .ap-wide { align-self: flex-start; }
 /* Карточки подразделов и маленькие образцы в них */
-.ap-card { display: flex; flex-direction: column; gap: 14px; padding: 12px 14px 14px; border: 1px solid var(--line); border-radius: var(--radius); }
+.ap-card { display: flex; flex-direction: column; gap: 14px; padding: 12px 14px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: color-mix(in srgb, var(--text) 5.5%, var(--panel)); } /* подложка карточек — как «Свой план» */
 .ap-card-title { margin: 0; font-size: 1.02rem; font-weight: 700; }
 .ap-card.lead > .switch-field:first-child .field-label { font-size: 1.02rem; font-weight: 700; }
 .ap-mini { margin: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: calc(var(--radius) * .75); background: var(--bg); color: var(--text); font-family: var(--font-text); font-size: min(var(--fs), 20px); font-weight: var(--fw); line-height: 1.5; text-align: var(--align); }

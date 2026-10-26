@@ -13,7 +13,7 @@ import { FONTS, ensureFont, COLOR_KEYS, themeColors, THEMES, DEFAULT_SETTINGS } 
 import { Segmented, Switch, Hint, Fold, ConfirmButton, Reveal } from './ui.jsx';
 import { HL_COLORS } from '../core/highlights.js';
 import { saveBg, clearBg } from '../core/userBg.js';
-import { t, N_ } from '../core/i18n.js';
+import { t, N_, getLang, locale } from '../core/i18n.js';
 import { formatRef } from '../core/books.js';
 
 // Готовые цвета для быстрого выбора акцента, верхней панели, номеров Стронга и заголовков
@@ -259,19 +259,29 @@ function ThemeTile({ id, on, onPick }) {
   const aa = t('Аа');
   return (
     <button type="button" className={`theme-tile ${on ? 'on' : ''}`} onClick={onPick} aria-pressed={on} data-theme-id={id}>
-      <span className="theme-dot" aria-hidden="true" style={{ background: auto ? `linear-gradient(90deg, ${L.bg} 50%, ${D.bg} 50%)` : th.bg, borderColor: auto ? L.line : th.line }}>
-        <span className="td-bar" style={{ background: auto ? `linear-gradient(90deg, ${L.bar} 50%, ${D.bar} 50%)` : th.bar }} />
+      <span className="theme-dot" aria-hidden="true" style={{ background: auto ? L.bg : th.bg, borderColor: auto ? L.line : th.line }}>
         {auto ? (
-          <span className="td-aa split">
-            <span style={{ color: L.text }}>{aa.slice(0, 1)}</span>
-            <span style={{ color: D.text }}>{aa.slice(1)}</span>
-          </span>
+          <>
+            {/* «Системная» — как соседние плитки: левая половина светлой темы, правая — тёмной; «А» и «а» вплотную у середины */}
+            <svg className="td-half" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <rect x="50" y="0" width="50" height="100" fill={D.bg} />
+              <rect x="0" y="0" width="50" height="26" fill={L.bar} />
+              <rect x="50" y="0" width="50" height="26" fill={D.bar} />
+            </svg>
+            <span className="td-aa split">
+              <span style={{ color: L.text }}>{aa.slice(0, 1)}</span>
+              <span style={{ color: D.text }}>{aa.slice(1)}</span>
+            </span>
+          </>
         ) : (
-          <span className="td-aa" style={{ color: th.text }}>
-            {aa}
-          </span>
+          <>
+            <span className="td-bar" style={{ background: th.bar }} />
+            <span className="td-aa" style={{ color: th.text }}>
+              {aa}
+            </span>
+            <span className="td-accent" style={{ background: th.accent }} />
+          </>
         )}
-        <span className="td-accent" style={{ background: auto ? D.accent : th.accent }} />
       </span>
       <span className="theme-name">{t(THEME_NAMES[id])}</span>
     </button>
@@ -663,34 +673,49 @@ export default function AppearanceSettings({ onClose, payload }) {
           </>
         )}
 
-        {block === 'comments' && (
+        {block === 'comments' && (() => {
+          const isOn = (m) => !s.inlineCommentaries || s.inlineCommentaries.includes(m.id);
+          // сначала — на языке приложения, затем остальные (внутри — в прежнем порядке)
+          const sorted = [...commentaries.filter((m) => (m.language || 'ru') === getLang()), ...commentaries.filter((m) => (m.language || 'ru') !== getLang())];
+          const sample = sorted.find(isOn) || sorted[0];
+          let names = null;
+          try {
+            names = new Intl.DisplayNames([locale()], { type: 'language' });
+          } catch {}
+          const langName = (code) => (names && code ? names.of(code) : code) || '';
+          return (
           <>
-            {/* Размер текста в окне комментариев — с образцом */}
+            {/* Образец — как комментарий в читалке: линия акцента слева и название источника; размер текста */}
             <section className="ap-card">
-              <p className="commentary-text cm-sample" style={{ fontSize: `${s.commentaryFontSize}px` }}>
-                {t('Так выглядит текст комментария.')}
-              </p>
+              <div className="cm-preview">
+                {sample && <b>{sample.name}</b>}
+                <p className="commentary-text cm-sample" style={{ fontSize: `${s.commentaryFontSize}px` }}>
+                  {t('Так выглядит текст комментария.')}
+                </p>
+              </div>
               <Range id="set-cm-size" label={t('Размер текста')} big value={s.commentaryFontSize} min={14} max={32} step={1} onChange={(commentaryFontSize) => set({ commentaryFontSize })} word={(v) => `${v} px`} />
             </section>
             <h4 className="ap-sub">{t('Комментарии в тексте')}</h4>
             <p className="field-hint">{t('Отмеченные видны после стиха. Остальные — зажмите стих → «Комментарии».')}</p>
-            <section className="ap-card">
-              {commentaries.map((m) => (
+            {/* источники — строками от края до края, как списки в настройках: название, ниже описание и язык */}
+            <div className="cm-list">
+              {sorted.map((m) => (
                 <Switch
                   key={m.id}
                   id={`cm-${m.id}`}
-                  checked={!s.inlineCommentaries || s.inlineCommentaries.includes(m.id)}
+                  checked={isOn(m)}
                   onChange={(on) => {
                     const cur = s.inlineCommentaries || commentaries.map((x) => x.id);
                     set({ inlineCommentaries: on ? [...new Set([...cur, m.id])] : cur.filter((x) => x !== m.id) });
                   }}
                   label={m.name}
-                  hint={m.title}
+                  sub={[m.title && m.title !== m.name ? m.title : null, langName(m.language || 'ru')].filter(Boolean).join(' · ')}
                 />
               ))}
-            </section>
+            </div>
           </>
-        )}
+          );
+        })()}
       </div>
     </BottomSheet>
   );

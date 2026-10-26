@@ -120,7 +120,8 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
                 )}
                 {comments
                   ?.get(`${bookId}.${c}.${v}`)
-                  ?.filter((cm) => !opts.inlineComments || opts.inlineComments.includes(cm.id))
+                  // только комментарии на языке этого перевода (у синодального — русские, у KJV — английские)
+                  ?.filter((cm) => (!opts.inlineComments || opts.inlineComments.includes(cm.id)) && (!opts.lang || cm.lang === opts.lang))
                   .map((cm) => (
                     <button key={cm.id} className="cm" data-act="comment" data-m={cm.id} aria-label={t('Комментарий: {name}', { name: cm.name })}>
                       {cm.name}
@@ -834,6 +835,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       showHeadings: settings.showHeadings,
       showXref: settings.showXrefButtons && !settings.focusMode && !settings.bookMode,
       inlineComments: settings.bookMode ? [] : settings.inlineCommentaries, // null — все включённые комментарии
+      lang: module.language || 'ru', // комментарии у стихов — на языке перевода
       continuous: settings.continuousVerses || settings.bookMode,
       showIllus: settings.showIllustrations !== false && !settings.bookMode,
     }),
