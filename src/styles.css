@@ -971,6 +971,19 @@ html, body, .app { touch-action: manipulation; }
 .sermon-block-tools .icon-btn { margin-right: -6px; }
 .sermon-add { margin-top: 8px; gap: 8px; }
 .sermon-foot { margin: 8px 0 0; }
+/* «Часть стиха» в блоке проповеди: слова нажимаются, выбранное — плашкой акцента; «Удалить проповедь» — красная кнопка внизу */
+.sermon-pick .sermon-verse-text { display: block; margin: 0; padding: 1px 0; font-family: var(--font-text); font-size: 1.05rem; line-height: 1.5; user-select: none; -webkit-user-select: none; }
+.sermon-pick .part-hint { margin-top: 6px; }
+.sermon-pw { cursor: pointer; }
+.sermon-pick .sermon-verse-text { position: relative; }
+.sermon-pick .sermon-verse-text > span { position: relative; z-index: 1; }
+.sermon-pick .part-svg { z-index: 0; }
+.sermon-block-tools .btn + .btn { margin-left: 8px; }
+.sermon-foot { justify-content: center; }
+.sermon-del { margin-top: 12px; }
+.sermon-del > .btn { width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.sermon-del .confirm-group { display: flex; width: 100%; margin: 0; gap: 8px; }
+.sermon-del .confirm-group .btn { flex: 1; justify-content: center; }
 .sermon-head { margin-bottom: 8px; }
 .sermon-hint { margin-bottom: 8px; }
 
@@ -1001,12 +1014,11 @@ html.kb-open .tour-ctrl.top { top: auto; bottom: calc(var(--kb, 0px) + 8px); }
 /* Часть стиха: выбранные слова и любимые части */
 /* Выбранная часть стиха — цельная плашка под текстом (рисует partShape.js) */
 .part-shape { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
-.part-shape i { position: absolute; background: color-mix(in srgb, var(--accent) 24%, transparent); }
+.part-svg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.part-svg path { fill: color-mix(in srgb, var(--accent) 24%, transparent); }
 .verse.selected .vt, .verse.selected .vn, .verse.selected .vmark, .verse.selected .xr, .verse.selected .cm, .verse.selected .note-tag { position: relative; z-index: 1; }
 /* Любимая часть стиха — цельная плашка цвета сердечка (partShape.js), текст поверх неё */
-.part-shape.fav i { background: color-mix(in srgb, var(--love) 20%, transparent); }
-.part-shape i.part-fillet { background: color-mix(in srgb, var(--accent) 24%, transparent); -webkit-mask: radial-gradient(circle at var(--at), transparent 5.5px, #000 6px); mask: radial-gradient(circle at var(--at), transparent 5.5px, #000 6px); }
-.part-shape.fav i.part-fillet { background: color-mix(in srgb, var(--love) 20%, transparent); }
+.part-shape.fav path { fill: color-mix(in srgb, var(--love) 20%, transparent); }
 .verse:has(.fav-part) .vt, .verse:has(.fav-part) .vn { position: relative; z-index: 1; }
 .fav-heart.part { opacity: .75; }
 .part-inline { flex-direction: column; align-items: stretch; }

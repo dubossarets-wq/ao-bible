@@ -48,6 +48,8 @@ export function restoreSermon(sermon, index) {
     return next;
   });
 }
+// «Отменить»/«Повторить» в редакторе: проповедь целиком — как была; сохраняется как обычная правка
+export const replaceSermon = (s) => touch(s.id, () => s);
 export const renameSermon = (id, title) => touch(id, (s) => ({ ...s, title }));
 export const setSermonDate = (id, date) => touch(id, (s) => ({ ...s, date }));
 
@@ -138,6 +140,16 @@ export function addTextBlock(id, afterIndex = null) {
   return b.id;
 }
 export const updateBlock = (id, blockId, patch) => touch(id, (s) => ({ ...s, blocks: s.blocks.map((b) => (b.id === blockId ? { ...b, ...patch } : b)) }));
+// Часть стиха: text — выбранный фрагмент (part = true) или полный текст (part = false — пометка убирается)
+export const setBlockPart = (id, blockId, text, part) =>
+  touch(id, (s) => ({
+    ...s,
+    blocks: s.blocks.map((b) => {
+      if (b.id !== blockId) return b;
+      const { part: _p, ...rest } = b;
+      return { ...rest, text, ...(part ? { part: true } : {}) };
+    }),
+  }));
 export const removeBlock = (id, blockId) => touch(id, (s) => ({ ...s, blocks: s.blocks.filter((b) => b.id !== blockId) }));
 export function moveBlock(id, index, dir) {
   touch(id, (s) => {

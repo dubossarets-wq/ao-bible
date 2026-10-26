@@ -3,10 +3,11 @@
 // Стихи добавляются тем же поиском, что и в приложении (SearchPanel в режиме выбора).
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2, Plus, Presentation, Share2, ScrollText, X, Minus, Type, Copy, GripVertical, Search } from 'lucide-react';
+import { Trash2, Plus, Presentation, Share2, ScrollText, X, Minus, Type, Copy, GripVertical, Search, TextSelect, TextQuote, Undo2, Redo2 } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import SearchPanel from './SearchPanel.jsx';
 import SwipeRow from './SwipeRow.jsx';
+import { plateSvg } from './partShape.js';
 import { useApp } from '../App.jsx';
 import { ConfirmButton, Empty } from './ui.jsx';
 import { formatRef } from '../core/books.js';
@@ -18,10 +19,12 @@ import {
   deleteSermon,
   restoreSermon,
   renameSermon,
+  replaceSermon,
   addVerses,
   addTextBlock,
   updateBlock,
   removeBlock,
+  setBlockPart,
   removeVerse,
   restoreBlocks,
   moveBlock,
@@ -197,6 +200,14 @@ function Inserter({ onText, onVerse }) {
 function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) {
   const { navigate, closeSheet, toast, undoToast } = useApp();
   const [pulpit, setPulpit] = useState(false);
+  // «Часть стиха» в блоке: { id, full, from, to } — слова полного текста нажимаются: первое — начало, второе — конец
+  const [pe, setPe] = useState(null);
+  const fullOf = async (b) => plainText((await getVerse(b.moduleId, { book: b.book, chapter: b.chapter, verse: b.verse })) || '').trim();
+  const startPart = async (b) => {
+    const full = await fullOf(b);
+    if (full) setPe({ id: b.id, full, from: null, to: null });
+  };
+  const pickWord = (i) => setPe((p) => (p.from == null || p.to != null ? { ...p, from: i, to: null } : { ...p, to: i }));
   const [fresh, setFresh] = useState(null); // только что добавленный текстовый блок — сразу в него курсор
 
   // Старые проповеди: диапазон стихов — одной строкой; разбиваем по стихам (текст не меняется)
@@ -247,7 +258,7 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
   const scrollBox = () => list.current?.closest('.sheet-body');
   const justDragged = useRef(0);
   const dragDown = (e) => {
-    if (e.button > 0 || e.target.closest('textarea, input, .sermon-block-tools button, .sv-del, .sermon-insert, .confirm-group')) return;
+    if (e.button > 0 || e.target.closest('textarea, input, .sermon-block-tools button, .sermon-pw, .sv-del, .sermon-insert, .confirm-group')) return;
     const li = e.target.closest('li[data-id]');
     if (!li) return;
     const d = { id: li.dataset.id, li, x: e.clientX, y: e.clientY, pid: e.pointerId, on: false };
@@ -385,6 +396,9 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
                   <button className="sermon-ref" onClick={() => goVerse(b, b.verse)} title={t('Открыть в Библии')}>
                     {blockRef(b)}
                   </button>
+                  {pe?.id === b.id ? (
+                    <PartPicker pe={pe} onPick={pickWord} />
+                  ) : (
                   <div className="sermon-verses">
                     {lines.map(({ v, text }) => {
                       const one = blockRef(group ? { ...b, verse: v, to: null } : b);
@@ -405,6 +419,7 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
                       );
                     })}
                   </div>
+                  )}
                 </>
               ) : (
                 <TextBlock sermonId={sermon.id} block={b} fresh={fresh === b.id} onDone={() => fresh === b.id && setFresh(null)} />
@@ -413,10 +428,49 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
                 <span className="sermon-grip" title={t('Зажмите, чтобы перетащить')} aria-hidden="true">
                   <GripVertical size={17} />
                 </span>
+                {b.type === 'verse' && !b.to && b.moduleId && pe?.id !== b.id && (
+                  <>
+                    <button className="icon-btn subtle" onClick={() => startPart(b)} aria-label={t('Часть стиха')} title={t('Часть стиха')}>
+                      <TextSelect size={16} />
+                    </button>
+                    {b.part && (
+                      <button
+                        className="icon-btn subtle"
+                        onClick={async () => {
+                          const full = await fullOf(b);
+                          if (full) setBlockPart(sermon.id, b.id, full, false);
+                        }}
+                        aria-label={t('Весь стих')}
+                        title={t('Весь стих')}
+                      >
+                        <TextQuote size={16} />
+                      </button>
+                    )}
+                  </>
+                )}
                 <span className="sermon-tools-gap" />
-                <ConfirmButton className="icon-btn subtle" end small confirmText={t('Удалить')} onConfirm={() => removeBlock(sermon.id, b.id)} aria-label={b.type === 'verse' ? t('Удалить стих из проповеди') : t('Удалить текст')}>
-                  <Trash2 size={16} />
-                </ConfirmButton>
+                {pe?.id === b.id ? (
+                  <>
+                    <button className="btn small" onClick={() => setPe(null)}>
+                      {t('Отмена')}
+                    </button>
+                    <button
+                      className="btn primary small"
+                      disabled={pe.from == null}
+                      onClick={() => {
+                        const r = partRange(pe);
+                        if (r) setBlockPart(sermon.id, b.id, partOf(pe.full, r), true);
+                        setPe(null);
+                      }}
+                    >
+                      {t('Готово')}
+                    </button>
+                  </>
+                ) : (
+                  <ConfirmButton className="icon-btn subtle" end small confirmText={t('Удалить')} onConfirm={() => removeBlock(sermon.id, b.id)} aria-label={b.type === 'verse' ? t('Удалить стих из проповеди') : t('Удалить текст')}>
+                    <Trash2 size={16} />
+                  </ConfirmButton>
+                )}
               </div>
             </div>
             <Inserter onText={() => setFresh(addTextBlock(sermon.id, i))} onVerse={() => onAddVerse(i + 1)} />
@@ -433,21 +487,82 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
           <Search size={17} /> {t('Стих')}
         </button>
       </div>}
-      <p className="sermon-foot">
-        {t('{n} место Писания|{n} места Писания|{n} мест Писания', { n: verses })} · {t('сохраняется само')}
+      <p className="sermon-foot">{t('{n} место Писания|{n} места Писания|{n} мест Писания', { n: verses })} · {t('сохраняется само')}</p>
+      <div className="sermon-del">
         <ConfirmButton
-          className="link-btn danger"
+          className="btn danger"
           confirmText={t('Удалить проповедь?')}
           onConfirm={() => {
             deleteSermon(sermon.id);
             onBackToList();
           }}
         >
-          {t('удалить проповедь')}
+          <Trash2 size={17} /> {t('Удалить проповедь')}
         </ConfirmButton>
-      </p>
+      </div>
       {pulpit && <Pulpit sermon={sermon} onClose={() => setPulpit(false)} />}
     </>
+  );
+}
+
+// Слова стиха (как в читалке: слово с дефисом или апострофом — целиком)
+const WORD_RE = /[\p{L}\p{M}]+(?:[-’'][\p{L}\p{M}]+)*/gu;
+const wordsOf = (full) => [...full.matchAll(WORD_RE)].map((m) => [m.index, m.index + m[0].length]);
+const partRange = (pe) => (pe.from == null ? null : [Math.min(pe.from, pe.to ?? pe.from), Math.max(pe.from, pe.to ?? pe.from)]);
+const partOf = (full, [a, z]) => {
+  const w = wordsOf(full);
+  return full.slice(w[a][0], w[z][1]).replace(/\s+/g, ' ').trim();
+};
+
+// Полный текст стиха со словами, на которые можно нажать; выбранное — цельной скруглённой плашкой акцента
+// (тот же рисовальщик, что у выбора части стиха в читалке)
+function PartPicker({ pe, onPick }) {
+  const box = useRef(null);
+  const w = wordsOf(pe.full);
+  const r = partRange(pe);
+  useLayoutEffect(() => {
+    const host = box.current;
+    host.querySelector('.part-svg')?.remove();
+    if (!r) return;
+    const a = host.querySelector(`[data-i="${r[0]}"]`);
+    const z = host.querySelector(`[data-i="${r[1]}"]`);
+    if (!a || !z) return;
+    const range = document.createRange();
+    range.setStartBefore(a);
+    range.setEndAfter(z);
+    const base = host.getBoundingClientRect();
+    const lines = [];
+    for (const q of range.getClientRects()) {
+      if (q.width < 1 || q.height < 1) continue;
+      const line = lines.find((l) => Math.abs((l.t + l.b) / 2 - (q.top + q.bottom) / 2) < q.height / 2);
+      if (line) {
+        line.l = Math.min(line.l, q.left - base.left);
+        line.r = Math.max(line.r, q.right - base.left);
+        line.t = Math.min(line.t, q.top - base.top);
+        line.b = Math.max(line.b, q.bottom - base.top);
+      } else lines.push({ l: q.left - base.left, r: q.right - base.left, t: q.top - base.top, b: q.bottom - base.top });
+    }
+    if (lines.length) host.prepend(plateSvg(lines));
+  });
+  const out = [];
+  let pos = 0;
+  w.forEach(([s, e], i) => {
+    if (s > pos) out.push(<span key={'g' + i}>{pe.full.slice(pos, s)}</span>);
+    out.push(
+      <span key={i} data-i={i} className="sermon-pw" role="button" tabIndex={0} onClick={() => onPick(i)} onKeyDown={(ev) => (ev.key === 'Enter' || ev.key === ' ') && (ev.preventDefault(), onPick(i))}>
+        {pe.full.slice(s, e)}
+      </span>
+    );
+    pos = e;
+  });
+  if (pos < pe.full.length) out.push(<span key="tail">{pe.full.slice(pos)}</span>);
+  return (
+    <div className="sermon-pick">
+      <div className="sermon-verse-text" ref={box}>
+        {out}
+      </div>
+      {!r && <p className="part-hint">{t('Нажмите на первое и последнее слово.')}</p>}
+    </div>
   );
 }
 
@@ -461,6 +576,49 @@ export default function SermonsSheet({ pane, payload, onClose }) {
   const sermon = sermons.find((s) => s.id === openId);
   const moduleId = (panes[pane]?.moduleId && bibles.find((b) => b.id === panes[pane].moduleId)?.id) || bibles[0]?.id;
   const bodyScroll = useRef(0);
+
+  // История правок открытой проповеди (на время открытого окна, до 50 шагов): снимки проповеди целиком.
+  // Набор текста в одном блоке или в названии склеивается в один шаг (пауза ~800 мс).
+  const hist = useRef({ id: null, cur: null, key: null, at: 0, undo: [], redo: [] });
+  const [, bump] = useState(0);
+  useEffect(() => {
+    if (!sermon) return;
+    const h = hist.current;
+    const sn = JSON.stringify({ ...sermon, updatedAt: undefined });
+    if (h.id !== sermon.id) {
+      Object.assign(h, { id: sermon.id, cur: sn, key: null, undo: [], redo: [] });
+      bump((x) => x + 1);
+      return;
+    }
+    if (sn === h.cur) return;
+    const a = JSON.parse(h.cur), b = JSON.parse(sn);
+    const diff = (x, y) => [...new Set([...Object.keys(x), ...Object.keys(y)])].filter((k) => JSON.stringify(x[k]) !== JSON.stringify(y[k]));
+    let key = null;
+    const ks = diff(a, b);
+    if (ks.length === 1 && ks[0] === 'title') key = 'title';
+    else if (ks.length === 1 && ks[0] === 'blocks' && a.blocks.length === b.blocks.length) {
+      const ch = b.blocks.map((q, i) => [q, a.blocks[i]]).filter(([q, p]) => JSON.stringify(q) !== JSON.stringify(p));
+      if (ch.length === 1 && ch[0][0].type === 'text' && diff(ch[0][0], ch[0][1]).join() === 'text') key = 'b:' + ch[0][0].id;
+    }
+    const now = Date.now();
+    if (!(key && key === h.key && now - h.at < 800)) {
+      h.undo.push(h.cur);
+      if (h.undo.length > 50) h.undo.shift();
+      h.redo = [];
+    }
+    Object.assign(h, { key, at: now, cur: sn });
+    bump((x) => x + 1);
+  }, [sermon]);
+  const histStep = (back) => {
+    const h = hist.current;
+    const from = back ? h.undo : h.redo, to = back ? h.redo : h.undo;
+    if (!from.length) return;
+    to.push(h.cur);
+    h.cur = from.pop();
+    h.key = null;
+    replaceSermon(JSON.parse(h.cur));
+    bump((x) => x + 1);
+  };
 
   const create = (e) => {
     e.preventDefault();
@@ -518,7 +676,24 @@ export default function SermonsSheet({ pane, payload, onClose }) {
     );
 
   return (
-    <BottomSheet title={sermon ? t('Проповедь') : t('Проповеди')} onClose={onClose} onBack={sermon && !(payload.open && openId === payload.open) ? () => setOpenId(null) : null} variant="page">
+    <BottomSheet
+      title={sermon ? t('Проповедь') : t('Проповеди')}
+      onClose={onClose}
+      onBack={sermon && !(payload.open && openId === payload.open) ? () => setOpenId(null) : null}
+      variant="page"
+      headerExtra={
+        sermon && (
+          <>
+            <button className="icon-btn" onClick={() => histStep(true)} disabled={!hist.current.undo.length} aria-label={t('Отменить')} title={t('Отменить')}>
+              <Undo2 size={20} />
+            </button>
+            <button className="icon-btn" onClick={() => histStep(false)} disabled={!hist.current.redo.length} aria-label={t('Повторить')} title={t('Повторить')}>
+              <Redo2 size={20} />
+            </button>
+          </>
+        )
+      }
+    >
       {sermon ? (
         <Editor sermon={sermon} pane={pane} moduleId={moduleId} onBackToList={() => setOpenId(null)} onAddVerse={openSearch} scrollTo={scrollTo} />
       ) : (

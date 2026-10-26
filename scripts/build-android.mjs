@@ -1,13 +1,13 @@
 // Сборка приложения для Google Play (Capacitor): node scripts/build-android.mjs [versionName]
 // 1) основная сборка + версия для приложения (dist/app); 2) cap sync; 3) Gradle: .aab (в Play) и .apk (на телефон).
-// Инструменты и ключ — в E:\android-build (Java 21, Android SDK, keys/); результат — E:\android-build\out\.
+// Инструменты и ключ — в G:\android-build (Java 21, Android SDK, keys/); результат — G:\android-build\out\.
 import { execFileSync } from 'node:child_process';
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const TOOLS = process.env.AOB_ANDROID_TOOLS || 'E:/android-build';
+const TOOLS = process.env.AOB_ANDROID_TOOLS || 'G:/android-build';
 const JDK = `${TOOLS}/jdk21/jdk-21.0.12.1+1`;
 const SDK = `${TOOLS}/sdk`;
 const KEY = `${TOOLS}/keys/aobible-upload.jks`;
