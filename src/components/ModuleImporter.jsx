@@ -179,7 +179,7 @@ export default function ModuleImporter({ onDone }) {
           })}
         </p>
         <pre className="code">{SAMPLE}</pre>
-        <button className="btn small" onClick={copySample}>
+        <button className="btn small btn-block" onClick={copySample}>
           <Copy size={14} /> {t('Скопировать пример')}
         </button>
       </Fold>

@@ -1630,6 +1630,13 @@ html.kb-open .ap-live { position: relative; }
 .ap-list .pref-row { min-height: 60px; }
 .ap-reset { display: flex; justify-content: center; padding: 2px 0 6px; }
 .ap-reset .btn, .ap-wide { min-height: 44px; padding: 10px 18px; }
+/* Одиночные кнопки отдельной строкой («Сбросить оформление», «Очистить историю»…): на телефоне — на всю ширину */
+@media (max-width: 599px) {
+  .btn-block { width: 100%; justify-content: center; align-self: stretch; }
+  .ap-reset { display: block; }
+  .ap-reset .confirm-group { display: flex; gap: 8px; } /* «Да, сбросить» и «Отмена» — поровну на всю ширину */
+  .ap-reset .confirm-group .btn { flex: 1; justify-content: center; }
+}
 .ap-wide { align-self: flex-start; }
 /* Карточки подразделов и маленькие образцы в них */
 .ap-card { display: flex; flex-direction: column; gap: 14px; padding: 12px 14px 14px; border: 1px solid var(--line); border-radius: var(--radius); }

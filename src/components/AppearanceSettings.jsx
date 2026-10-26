@@ -436,7 +436,7 @@ export default function AppearanceSettings({ onClose, payload }) {
             </div>
 
             <div className="ap-reset">
-              <ConfirmButton className="btn" confirmText={t('Да, сбросить')} onConfirm={resetLook}>
+              <ConfirmButton className="btn btn-block" confirmText={t('Да, сбросить')} onConfirm={resetLook}>
                 <RotateCcw size={16} /> {t('Сбросить оформление')}
               </ConfirmButton>
             </div>
@@ -621,7 +621,7 @@ export default function AppearanceSettings({ onClose, payload }) {
               </div>
             </Fold>
             {Object.keys(over).length > 0 && (
-              <button className="btn ap-wide" onClick={() => set({ colorOverrides: {} })}>
+              <button className="btn ap-wide btn-block" onClick={() => set({ colorOverrides: {} })}>
                 <RotateCcw size={15} /> {t('Все цвета — как в теме')}
               </button>
             )}

@@ -454,7 +454,7 @@ export default function SearchPanel({ pane, payload = {}, onClose, pick = null }
               </SwipeRow>
             ))}
           </ul>
-          <button className="btn small" onClick={() => setHistory([])}>
+          <button className="btn small btn-block" onClick={() => setHistory([])}>
             {t('Очистить историю')}
           </button>
         </section>
