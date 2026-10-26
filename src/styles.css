@@ -1284,9 +1284,9 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-ic svg { width: 16px; height: 16px; }
 .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-lb { min-width: 0; overflow: hidden; transform: translateY(-1px); }
 .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-pill { display: contents; }
-/* «Слушать» — без подписи: квадратная ячейка во всю высоту, залита акцентом, поле 4 со всех сторон */
-.sel-inline.sel-cap.sel-cap:not(.part-inline) .btn.sel-listen { flex: none; width: 44px; padding: 4px; }
-.sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-listen .sel-ic { align-self: stretch; width: auto; height: auto; flex: 1; border-radius: 11px; background: var(--accent); color: var(--on-accent); }
+/* «Слушать» — без подписи: квадратная ячейка, залита акцентом; поля и скругление — как у остальных ячеек */
+.sel-inline.sel-cap.sel-cap:not(.part-inline) .btn.sel-listen { flex: none; width: 44px; padding: 0; }
+.sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-listen .sel-ic { align-self: stretch; width: auto; height: auto; flex: 1; border-radius: inherit; background: var(--accent); color: var(--on-accent); }
 .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-listen .sel-ic svg { width: 20px; height: 20px; }
 @container (max-width: 520px) {
   /* ячейка 54: подложка значка во всю ширину, поле 4 сверху и по бокам (от края карточки 8 со всех сторон) */
@@ -1294,8 +1294,8 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
   .sel-inline.sel-cap.sel-cap:not(.part-inline) .btn, .sel-inline.sel-cap.sel-cap:not(.part-inline) .btn.primary, .sel-inline.sel-cap.sel-cap:not(.part-inline) .btn.sel-listen { flex: 1 1 0; height: 54px; padding: 4px 4px 0; flex-direction: column; justify-content: flex-start; gap: 3px; border-radius: 12px; }
   .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-ic, .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-listen .sel-ic { align-self: stretch; width: auto; height: 30px; border-radius: 9px; }
   .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-ic svg { width: 20px; height: 20px; }
-  .sel-inline.sel-cap.sel-cap:not(.part-inline) .btn.sel-listen { flex: none; width: 54px; padding: 4px; }
-  .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-listen .sel-ic { height: auto; border-radius: 9px; }
+  .sel-inline.sel-cap.sel-cap:not(.part-inline) .btn.sel-listen { flex: none; width: 54px; padding: 0; }
+  .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-listen .sel-ic { height: auto; border-radius: inherit; }
   .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-lb { max-width: 100%; transform: none; font-size: .75rem; color: color-mix(in srgb, var(--text) 65%, var(--muted)); }
 }
 @media (prefers-reduced-motion: reduce) { .sel-inline.sel-cap.sel-cap:not(.part-inline) { animation: none; } }
