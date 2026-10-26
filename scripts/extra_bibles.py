@@ -412,10 +412,21 @@ def _split_punct(w):
     return w[:s], w[s:e], w[e:]
 
 
-def _wh_robinson(path):
-    """parsed/*.UWH -> [((глава, стих), слово, стронг, морфология)]; из «| текст WH | вариант |» — первый."""
-    out, cv, alt, toks = [], None, -1, []
+_TEXTONLY = str.maketrans("qyQY", "yqYQ")  # в файлах textonly θ — y, ψ — q (в разобранных наоборот)
+
+
+def _wh_robinson(path, textonly=False):
+    """parsed/*.UWH (и другие тексты Робинсона) -> [((глава, стих), слово, стронг, морфология)]; из «| текст |
+    вариант |» — первый. textonly — файл без номеров (θ/ψ записаны иначе, заголовок книги — [ЗАГЛАВНЫМИ])."""
+    out, cv, alt, toks, title = [], None, -1, [], False
     for t in open(path, encoding="utf-8").read().split():
+        if textonly:
+            if t.startswith("[") and t[1:2].isupper():
+                title = True
+            if title:
+                title = not t.endswith("]")
+                continue
+            t = t.translate(_TEXTONLY)
         if t == "|":
             alt = 0 if alt < 0 else (1 if alt == 0 else -1)
         elif alt != 1:
@@ -587,38 +598,100 @@ def read_sblgnt():
     return src, {}
 
 
-def wh(mapper):
-    tag = _tagnt_edition("WH")
+def _byz_accents():
+    """Византийский текст Робинсона — Пирпонта с ударениями (csv-unicode/ccat) -> {книга: {глава: [(слово,)]}}:
+    источник ударений и пунктуации для близкого к нему Патриаршего текста."""
+    base = SRC / "byztxt" / "repo" / "csv-unicode" / "ccat" / "no-variants"
+    out = {}
+    for bid, fn in BYZ_FILES.items():
+        chs = defaultdict(list)
+        for (c, v), text in sorted(_read_csv(base / f"{fn}.csv").items()):
+            chs[c].extend((w, None, "") for w in text.split() if _split_punct(w)[1])
+        out[bid] = chs
+    return out
+
+
+_ACCENT_FORMS = None
+
+
+def _accent_form(key):
+    """Слово без пары в источнике ударений -> самое частое написание этого слова (без заглавной) во всех изданиях
+    TAGNT и в византийском тексте; None — такого слова нигде нет."""
+    global _ACCENT_FORMS
+    if _ACCENT_FORMS is None:
+        from collections import Counter
+        forms = defaultdict(Counter)
+        for fn in ("mat-jhn.txt", "act-rev.txt"):
+            with open(SRC / "tagnt" / fn, encoding="utf-8-sig") as fh:
+                for line in fh:
+                    if re.match(r"^([1-3][A-Z][a-z]|[A-Z][a-z]{2})\.\d", line):
+                        core = _split_punct(re.sub(r"\s*\([^)]*\)\s*$", "", line.split("\t")[1]))[1]
+                        if core:
+                            forms[_greek_key(core)][core.lower()] += 1
+        for chs in _byz_accents().values():
+            for words in chs.values():
+                for w, _, _ in words:
+                    core = _split_punct(w)[1]
+                    forms[_greek_key(core)][core.lower()] += 1
+        _ACCENT_FORMS = {k: c.most_common(1)[0][0] for k, c in forms.items()}
+    return _ACCENT_FORMS.get(key)
+
+
+def robinson_bible(folder, ext, accents, mapper, label, textonly=False, tags=None):
+    """Текст Робинсона (byztxt: латиница без ударений) -> Collector. Ударения, придыхания, заглавные и пунктуация —
+    из accents ({книга: {глава: [(слово с ударением, стронг, морфология)]}}: TAGNT нужного издания или
+    византийский текст). Если у Робинсона нет номеров (textonly), Стронг и морфология — из tags (близкий
+    разобранный текст Робинсона: (папка, расширение)), а для слов без пары там — из accents."""
     col = Collector()
-    stats = {"words": 0, "accented": 0}
+    stats = {"words": 0, "accented": 0, "dict": 0}
     for bid, fn in WH_FILES.items():
-        rob = _wh_robinson(SRC / "whtxt" / "repo" / "parsed" / f"{fn}.UWH")
+        rob = _wh_robinson(folder / f"{fn}.{ext}", textonly)
         by_ch = defaultdict(list)
         for r in rob:
             by_ch[r[0][0]].append(r)
+        tag_ch = defaultdict(list)
+        if tags:
+            for r in _wh_robinson(tags[0] / f"{fn}.{tags[1]}"):
+                tag_ch[r[0][0]].append(r)
         verses = defaultdict(list)
         for ch, words in by_ch.items():
-            tw = [t[0] for t in tag.get(bid, {}).get(ch, [])]
-            # то же слово в другом написании (Ὀζίας / Ὀζείας) тоже в паре — берём написание WH из TAGNT
-            pair = _align([_rob_key(w[1]) for w in words], [_greek_key(w) for w in tw])
+            if tag_ch.get(ch):
+                tp = _align([_rob_key(w[1]) for w in words], [_rob_key(t[1]) for t in tag_ch[ch]])
+                words = [(cv, rw, tag_ch[ch][tp[i]][2], tag_ch[ch][tp[i]][3]) if not num and i in tp else (cv, rw, num, morph)
+                         for i, (cv, rw, num, morph) in enumerate(words)]
+            tw = accents.get(bid, {}).get(ch, [])
+            # то же слово в другом написании (Ὀζίας / Ὀζείας) тоже в паре — берём написание из источника ударений
+            pair = _align([_rob_key(w[1]) for w in words], [_greek_key(t[0]) for t in tw])
             for i, (cv, rw, num, morph) in enumerate(words):
                 stats["words"] += 1
                 if i in pair:
                     stats["accented"] += 1
-                    pre, core, post = _split_punct(tw[pair[i]])
+                    t = tw[pair[i]]
+                    pre, core, post = _split_punct(t[0])
+                    if not num and t[1]:
+                        num, morph = tagnt_strong(t[1]), t[2]
                 else:
-                    pre, core, post = "", _rob_greek(rw), ""
+                    form = _accent_form(_rob_key(rw))
+                    stats["dict"] += bool(form)
+                    pre, core, post = "", form or _rob_greek(rw), ""
                 pre, post = pre.replace("[", ""), post.replace("]", "")
                 if rw.startswith("["):
                     pre = "[" * (len(rw) - len(rw.lstrip("["))) + pre
                 if rw.endswith("]"):
                     post += "]" * (len(rw) - len(rw.rstrip("]")))
-                verses[cv].append(f"{pre}{{{core}|G{num}|{morph}}}{post}" if num else f"{pre}{core}{post}")
+                if num and morph:
+                    verses[cv].append(f"{pre}{{{core}|G{num}|{morph}}}{post}")
+                else:
+                    verses[cv].append(f"{pre}{{{core}|G{num}}}{post}" if num else f"{pre}{core}{post}")
         for (c, v), ws in verses.items():
             sb, sc, sv = mapper(bid, c, v)
             col.add(sb, sc, sv, clean_verse(" ".join(ws)))
-    log(f"  wh: слов {stats['words']}, с ударениями из TAGNT {stats['accented']}")
+    log(f"  {label}: слов {stats['words']}, ударения по изданию {stats['accented']}, по словарю форм {stats['dict']}")
     return col
+
+
+def wh(mapper):
+    return robinson_bible(SRC / "whtxt" / "repo" / "parsed", "UWH", _tagnt_edition("WH"), mapper, "wh")
 
 
 def tagnt_bible(edition, mapper):

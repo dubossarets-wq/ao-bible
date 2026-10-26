@@ -204,12 +204,28 @@ BIBLES = [
          license="CC BY 4.0 (Society of Biblical Literature, Logos Bible Software); разметка Стронга и морфологии — "
                  "STEPBible.org, Tyndale House Cambridge, CC BY 4.0",
          author="Michael W. Holmes (ред.)", features={"strongs": True, "morphology": True}),
-    dict(id="tr1894", src="ebible:grctr", lang="grc", name="TR", title="Textus Receptus (Скривенер, 1894)",
-         desc="Греческий «Общепринятый текст» Нового Завета (изд. Ф. Скривенера 1894 г.).", license=PD,
-         author="F. H. A. Scrivener"),
-    dict(id="tischendorf", src="ebible:grc-tisch", lang="grc", name="Tisch", title="Тишендорф: Novum Testamentum Graece",
-         desc="Греческий Новый Завет Константина Тишендорфа (8-е издание, 1869–1872).", license=PD,
-         author="Constantin von Tischendorf (1815–1874)"),
+    # Textus Receptus (Скривенер 1894) — из byztxt с ударениями из TAGNT: build_extra.m_robinson (tr1894)
+    dict(id="tischendorf", src="ebible:grc-tisch", lang="grc", name="Tisch",
+         title="Новый Завет на греческом: Тишендорф (8-е издание, 1869–1872)",
+         desc="Критический текст Нового Завета Константина Тишендорфа (Editio octava critica maior, 1869–1872), "
+              "открывшего Синайский кодекс. Номера Стронга и морфологические коды — по электронному изданию "
+              "У. Сандборга-Петерсена (на основе текста К. Йейла и разбора М. Робинсона).",
+         license=PD + " (текст и разбор)", author="Constantin von Tischendorf (1815–1874)",
+         features={"strongs": True, "morphology": True}),
+    # CC BY-NC-ND: без продажи и без изменения слов и пунктуации — AO Bible некоммерческое, текст не меняем
+    # (меняется только нумерация стихов); английские заголовки разделов издания не берём (headings=False)
+    dict(id="f35", src="ebible:grcf35", lang="grc", name="F35",
+         title="Новый Завет на греческом: семейство 35 (У. Пикеринг, 2020)",
+         desc="Греческий Новый Завет по семейству 35 (f35) — группе византийских рукописей, которую У. Пикеринг "
+              "считает наиболее точно передающей оригинал. Номера Стронга — по изданию.",
+         license="© 2020 Wilbur N. Pickering; CC BY-NC-ND 4.0 (некоммерческое использование, без изменения текста)",
+         author="Wilbur N. Pickering", headings=False, features={"strongs": True}),
+    # Греческий церковный текст Ветхого Завета (Orthodox Media Network, Афон), со второканоническими книгами
+    dict(id="lxx-greek-church", src="ebible:grclxx", lang="grc", name="LXX Ελλ.",
+         title="Септуагинта: текст Греческой Церкви",
+         desc="Ветхий Завет в переводе Семидесяти — текст, принятый в Греческой Православной Церкви, со "
+              "второканоническими книгами. Издание Orthodox Media Network (Афон).",
+         license=PD + " (℗ Orthodox Media Network)", author="Orthodox Media Network"),
     dict(id="vulgata", src="ebible:latVUC", lang="la", name="Vulgata", title="Biblia Sacra Vulgatae Editionis (Климентина)",
          desc="Латинская Вульгата в Климентинском издании (1592/1598) со второканоническими книгами; греческие "
               "дополнения к Есфири не включены.",

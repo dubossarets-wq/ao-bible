@@ -145,6 +145,62 @@ def m_wh():
     }, col)
 
 
+_ROB_LIC = "Public Domain (текст и разбор М. Робинсона)"
+_ROB_TAGNT = ("ударения, придыхания и пунктуация — по данным STEPBible TAGNT (Tyndale House Cambridge, CC BY 4.0, "
+              "текст TR Скривенера 1894 г.)")
+
+
+def m_robinson():
+    """Издания Нового Завета из byztxt (Робинсон): латиница без ударений -> греческий с ударениями из ближайшего
+    издания с ударениями (см. extra_bibles.robinson_bible)."""
+    X = B.SRC
+    tr = B._tagnt_edition("TR")
+    eds = [
+        ("antoniades1904", "PT", "Новый Завет на греческом: Патриарший текст (Антониадис, 1904)",
+         "Текст Нового Завета, изданный Константинопольской Патриархией в 1904 г. (под ред. В. Антониадиса), — "
+         "официальный греческий текст Православной Церкви. Номера Стронга и морфологические коды — по "
+         "электронному тексту М. Робинсона; ударения, придыхания и пунктуация добавлены по византийскому тексту "
+         "Робинсона — Пирпонта (2018), с которым Патриарший текст почти совпадает.",
+         "Βασίλειος Αντωνιάδης (ред.), Вселенская Патриархия; электронный текст — Maurice A. Robinson",
+         "byztxt-antoniades", "parsed", "UAN", B._byz_accents(), False,
+         "https://github.com/byztxt/greektext-antoniades", _ROB_LIC),
+        ("tr1894", "TR", "Новый Завет на греческом: Textus Receptus (Скривенер, 1894)",
+         "«Общепринятый текст» в издании Ф. Скривенера (1894) — греческий текст, по которому сделан английский "
+         "перевод короля Якова (KJV). Электронный текст — М. Робинсона; " + _ROB_TAGNT +
+         "; номера Стронга и морфология — по разобранному тексту TR Робинсона.",
+         "F. H. A. Scrivener; электронный текст — Maurice A. Robinson",
+         "byztxt-scrivener", "textonly", "SCV", tr, True,
+         "https://github.com/byztxt/greektext-scrivener ; https://github.com/STEPBible/STEPBible-Data",
+         _ROB_LIC + "; " + "данные TAGNT — STEPBible.org, CC BY 4.0"),
+        ("stephanus1550", "Steph", "Новый Завет на греческом: Стефанус (1550)",
+         "Третье издание Роберта Этьенна (Стефануса, 1550) — классический Textus Receptus, в котором позже "
+         "появилась разбивка на стихи. Электронный текст — М. Робинсона; " + _ROB_TAGNT +
+         "; номера Стронга и морфология — по разобранному тексту TR Робинсона.",
+         "Robert Estienne (Stephanus); электронный текст — Maurice A. Robinson",
+         "byztxt-stephens", "textonly", "STV", tr, True,
+         "https://github.com/byztxt/greektext-stephens ; https://github.com/STEPBible/STEPBible-Data",
+         _ROB_LIC + "; " + "данные TAGNT — STEPBible.org, CC BY 4.0"),
+        ("elzevir1624", "Elz", "Новый Завет на греческом: Эльзевир (1624)",
+         "Издание братьев Эльзевир (Лейден, 1624; в предисловии 1633 г. впервые назван «textus receptus»). "
+         "Номера Стронга и морфологические коды — по электронному тексту М. Робинсона; " + _ROB_TAGNT + ".",
+         "Bonaventura & Abraham Elzevir; электронный текст — Maurice A. Robinson",
+         "byztxt-elzevir", "parsed", "UEL", tr, False,
+         "https://github.com/byztxt/greektext-elzevir ; https://github.com/STEPBible/STEPBible-Data",
+         _ROB_LIC + "; " + "данные TAGNT — STEPBible.org, CC BY 4.0"),
+    ]
+    out = []
+    utr = (X / "byztxt-textus-receptus" / "parsed", "UTR")  # разобранный TR Робинсона — номера для textonly
+    for mid, name, title, desc, author, repo, sub, ext, acc, textonly, source, lic in eds:
+        col = B.robinson_bible(X / repo / sub, ext, acc, kjv2syn, mid, textonly, utr if textonly else None)
+        out.append(bible({
+            "id": mid, "name": name, "title": title, "language": "grc",
+            "description": desc + " Нумерация переведена в синодальную.",
+            "version": f"byztxt/{repo.removeprefix('byztxt-')} (git)", "author": author, "source": source,
+            "license": lic, "features": {"strongs": True, "morphology": True},
+        }, col))
+    return out
+
+
 def m_treg():
     col = B.tagnt_bible("Treg", kjv2syn)
     return bible({
@@ -275,6 +331,8 @@ def world_bible(d):
             schemes[book].per_chapter.update(chmap)
     other = {b: repr(s) for b, s in schemes.items() if repr(s) != best}
     log(f"  [{d['id']}] нумерация источника: {best}" + (f"; отдельно: {other}" if other else ""))
+    if d.get("headings") is False:  # заголовки разделов на другом языке, чем текст (f35)
+        heads = {}
     col = W.collect(src, heads, schemes, d["id"])
     books = col.books()
     cov, short = W.quality(books, d["id"])
@@ -800,7 +858,7 @@ def m_maps():
 # ---------------------------------------------------------------------------------------------
 
 # m_makarij (только Пятикнижие) заменён полным модулем rus-makarij из scripts/build_ru_old.py
-BUILDERS = [m_kjv, m_bsb, m_oshb, m_byz, m_wh, m_treg, m_csl, m_kulish,
+BUILDERS = [m_kjv, m_bsb, m_oshb, m_byz, m_wh, m_treg, m_robinson, m_csl, m_kulish,
             m_lopukhin, m_desp_notes, m_otnt_notes, m_theophylact, m_chrysostom, m_augustine, m_mhcc, m_jfb, m_barnes,
             m_nikifor, m_dal, m_pbe, m_esbe_bible, m_eebe_bible,
             m_easton, m_smith, m_hitchcock, m_nave, m_isbe, m_amtract, m_torrey, m_webster1828,
@@ -808,6 +866,7 @@ BUILDERS = [m_kjv, m_bsb, m_oshb, m_byz, m_wh, m_treg, m_csl, m_kulish,
             m_openbible, m_tsk, m_maps]
 
 BUILDER_IDS = {"m_kjv": ["kjv"], "m_bsb": ["bsb"], "m_oshb": ["oshb"], "m_byz": ["byz-rp2018"], "m_wh": ["wh1881"], "m_treg": ["tregelles"],
+               "m_robinson": ["antoniades1904", "tr1894", "stephanus1550", "elzevir1624"],
                "m_csl": ["csl-elizabeth"], "m_makarij": ["rus-makarij"], "m_kulish": ["ukr-kulish"],
                "m_lopukhin": ["lopukhin"], "m_mhcc": ["mhcc"], "m_jfb": ["jfb"],
                "m_desp_notes": ["desp-notes"], "m_otnt_notes": ["otnt-notes"], "m_theophylact": ["theophylact"], "m_chrysostom": ["chrysostom"],

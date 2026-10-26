@@ -225,7 +225,11 @@ def _w_repl(m):
             if s not in nums and s not in ("H0", "G0"):
                 nums.append(s)
     if nums and word.strip():
-        return "{" + word + "|" + " ".join(nums) + "}"
+        # морфология Робинсона (x-morph, как у Тишендорфа на eBible) — третьим полем, если номер один
+        mm = re.search(r'x-morph="([A-Z0-9-]+)"', attrs)
+        morph = "|" + mm.group(1) if mm and len(nums) == 1 else ""
+        tail = " " if word != word.rstrip() else ""  # «\w Βίβλος |…» — пробел перед атрибутами
+        return "{" + word.strip() + "|" + " ".join(nums) + morph + "}" + tail
     return word
 
 
