@@ -86,11 +86,11 @@ export default function AudioBar() {
   const a = useAudio();
   const { navigate, setSettings, panes } = useApp();
   const [opts, setOpts] = useState(false);
-  // панель настроек остаётся на экране, пока уезжает (240 мс), — потом убирается
+  // панель настроек остаётся на экране, пока уезжает (280 мс), — потом убирается
   const [optsShown, setOptsShown] = useState(false);
   useEffect(() => {
     if (opts) return setOptsShown(true);
-    const id = setTimeout(() => setOptsShown(false), 240);
+    const id = setTimeout(() => setOptsShown(false), 280);
     return () => clearTimeout(id);
   }, [opts]);
   const optsOn = opts || optsShown;

@@ -588,10 +588,10 @@ button.wp-item:active { background: color-mix(in srgb, var(--accent) 12%, transp
 /* свой слой и своя раскладка: движение фона не трогает остальную страницу */
 .audio-bar { will-change: transform; contain: layout; }
 .audio-bar::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--panel); border: 1px solid var(--line); border-radius: 32px; /* капсула, как панель вкладок */ box-shadow: 0 10px 34px rgba(0,0,0,.2); pointer-events: none; }
-.audio-bar.opts-open::before { border-radius: 16px; animation: bar-bg-open .24s cubic-bezier(.22,.8,.3,1); }
-.audio-bar.opts-closing::before { animation: bar-bg-close .24s cubic-bezier(.6,0,.8,.4) forwards; }
-.audio-bar.opts-open .audio-opts { animation: opts-open .24s cubic-bezier(.22,.8,.3,1); }
-.audio-bar.opts-closing .audio-opts { animation: opts-close .24s cubic-bezier(.6,0,.8,.4) forwards; pointer-events: none; }
+.audio-bar.opts-open::before { border-radius: 16px; animation: bar-bg-open .28s cubic-bezier(.4,0,.2,1); }
+.audio-bar.opts-closing::before { animation: bar-bg-close .28s cubic-bezier(.4,0,.2,1) forwards; }
+.audio-bar.opts-open .audio-opts { animation: opts-open .28s cubic-bezier(.4,0,.2,1); }
+.audio-bar.opts-closing .audio-opts { animation: opts-close .28s cubic-bezier(.4,0,.2,1) forwards; pointer-events: none; }
 @keyframes bar-bg-open { from { top: var(--opts-h, 0px); border-radius: 32px; } }
 @keyframes bar-bg-close { to { top: var(--opts-h, 0px); border-radius: 32px; } }
 @keyframes opts-open { from { clip-path: inset(100% 0 0 0); opacity: 0; } }
@@ -1386,7 +1386,7 @@ html.has-tabbar .place-card { bottom: calc(10px + var(--sab)); }
 /* Соседняя глава: круглые стрелки внизу слева и справа; «Слушать» — над правой стрелкой.
    Над кнопкой «Вернуться к плану» и над проигрывателем стрелки поднимаются; в режиме чтения уходят с панелями. */
 .reader { --chap-bottom: calc(var(--sab) + 16px); }
-.chap-nav { position: absolute; bottom: var(--chap-bottom); z-index: 5; width: 46px; height: 46px; padding: 0; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 94%, transparent); color: var(--text); box-shadow: 0 4px 14px rgba(0,0,0,.16); cursor: pointer; transform: translateY(var(--chap-shift, 0px)); transition: opacity .22s, transform .24s cubic-bezier(.22,.8,.3,1) /* как фон проигрывателя */, bottom .22s; animation: pop .18s ease-out; }
+.chap-nav { position: absolute; bottom: var(--chap-bottom); z-index: 5; width: 46px; height: 46px; padding: 0; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 94%, transparent); color: var(--text); box-shadow: 0 4px 14px rgba(0,0,0,.16); cursor: pointer; transform: translateY(var(--chap-shift, 0px)); transition: opacity .22s, transform .28s cubic-bezier(.4,0,.2,1) /* как фон проигрывателя */, bottom .22s; animation: pop .18s ease-out; }
 .chap-nav.prev { left: calc(env(safe-area-inset-left, 0px) + 14px); }
 .chap-nav.next { right: calc(env(safe-area-inset-right, 0px) + 14px); }
 .chap-nav:active { transform: translateY(var(--chap-shift, 0px)) scale(.92); }
