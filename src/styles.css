@@ -1286,12 +1286,12 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-pill { display: contents; }
 /* «Слушать»: подложка 30×28, слева поле как сверху и снизу — (44 − 28) / 2 = 8 */
 .sel-inline.sel-cap.sel-cap:not(.part-inline) .btn.sel-listen { flex-grow: 0; justify-content: flex-start; padding-left: 8px; font-weight: 600; }
-.sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-listen .sel-ic { width: 30px; height: 28px; border-radius: 8px; background: var(--accent); color: var(--on-accent); }
+.sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-listen .sel-ic { width: 30px; height: 28px; border-radius: 10px; background: var(--accent); color: var(--on-accent); }
 @container (max-width: 520px) {
   /* ячейка 54: подложка значка во всю ширину, поле 4 сверху и по бокам (от края карточки 8 со всех сторон) */
   .sel-inline.sel-cap.sel-cap:not(.part-inline) { border-radius: 16px; }
   .sel-inline.sel-cap.sel-cap:not(.part-inline) .btn, .sel-inline.sel-cap.sel-cap:not(.part-inline) .btn.primary, .sel-inline.sel-cap.sel-cap:not(.part-inline) .btn.sel-listen { flex: 1 1 0; height: 54px; padding: 4px 4px 0; flex-direction: column; justify-content: flex-start; gap: 3px; border-radius: 12px; }
-  .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-ic, .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-listen .sel-ic { align-self: stretch; width: auto; height: 30px; border-radius: 8px; }
+  .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-ic, .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-listen .sel-ic { align-self: stretch; width: auto; height: 30px; border-radius: 10px; }
   .sel-inline.sel-cap.sel-cap:not(.part-inline) .sel-ic svg { width: 20px; height: 20px; }
   /* «Слушать» — узкая ячейка по своей подписи (не уже 64), остальные делят место поровну */
   .sel-inline.sel-cap.sel-cap:not(.part-inline) .btn.sel-listen { flex: 0 0 auto; min-width: 64px; padding: 4px 4px 0; }
