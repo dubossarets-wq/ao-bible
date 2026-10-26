@@ -453,14 +453,15 @@ def _tagnt_morph(g):
 
 
 def _tagnt_edition(edition):
-    """TAGNT -> {книга: {глава: [(слово с пунктуацией, стронг, морфология)]}} — слова издания edition в его
-    порядке (с написанием и перестановками этого издания)."""
+    """TAGNT -> {книга: {глава: [(слово с пунктуацией, стронг, морфология, (глава, стих) по KJV)]}} — слова
+    издания edition в его порядке (с написанием и перестановками этого издания). Ссылка TAGNT — по NRSV, рядом
+    в [квадратных скобках] — по KJV, если она другая."""
     base = SRC / "tagnt"
     rows = defaultdict(lambda: defaultdict(list))
     for fn in ("mat-jhn.txt", "act-rev.txt"):
         with open(base / fn, encoding="utf-8-sig") as fh:
             for line in fh:
-                m = re.match(r"^([1-3][A-Z][a-z]|[A-Z][a-z]{2})\.(\d+)\.\d+\S*#(\d+)=\S+\t", line)
+                m = re.match(r"^([1-3][A-Z][a-z]|[A-Z][a-z]{2})\.(\d+)\.(\d+)(\S*)#(\d+)=\S+\t", line)
                 if not m or m.group(1) not in TAGNT_BOOKS:
                     continue
                 c = line.rstrip("\n").split("\t")
@@ -482,14 +483,50 @@ def _tagnt_edition(edition):
                         break
                 sm = re.match(r"G(\d+)", c[3])
                 strong = int(sm.group(1)) if sm else None
+                am = re.search(r"G(\d+)", c[12]) if len(c) > 12 else None
+                if strong and strong > 5624 and am and int(am.group(1)) <= 5624:
+                    strong = int(am.group(1))  # расширенный номер STEPBible (G6063…) -> обычный Стронг
                 morph = _tagnt_morph(c[3].split("=", 1)[1]) if "=" in c[3] else ""
                 shift = eds[edition]
                 k = int(shift[1:]) if shift else 0
                 pos = len(rows[TAGNT_BOOKS[m.group(1)]][int(m.group(2))])
                 key = pos + (k + 0.5 if shift.startswith("»") else -k - 0.5 if shift else 0)
-                rows[TAGNT_BOOKS[m.group(1)]][int(m.group(2))].append((key, (word, strong, morph)))
+                km = re.search(r"\[(\d+)\.(\d+)\]", m.group(4))
+                kjv = (int(km.group(1)), int(km.group(2))) if km else (int(m.group(2)), int(m.group(3)))
+                rows[TAGNT_BOOKS[m.group(1)]][int(m.group(2))].append((key, (word, strong, morph, kjv)))
     return {b: {ch: [w for _, w in sorted(ws, key=lambda x: x[0])] for ch, ws in chs.items()}
             for b, chs in rows.items()}
+
+
+_STRONG_FIX = None
+
+
+def tagnt_strong(n):
+    """Номер Стронга из TAGNT -> номер, как у Робинсона (byz-rp2018, wh1881): STEPBible нумерует часть слов
+    по-своему (εἶπεν — G2036 вместо G3004, ἡμᾶς — G3165 вместо G1473, οἶδα — G6063 вместо G1492). Таблица
+    выводится из Весткотта — Хорта, где у каждого слова есть оба номера: берём номер Робинсона, если он стоит
+    в паре хотя бы в 70% случаев. Номер вне словаря Стронга (> 5624) без пары — без номера."""
+    global _STRONG_FIX
+    if _STRONG_FIX is None:
+        from collections import Counter
+        tag = _tagnt_edition("WH")
+        pairs = defaultdict(Counter)
+        for bid, fn in WH_FILES.items():
+            by_ch = defaultdict(list)
+            for r in _wh_robinson(SRC / "whtxt" / "repo" / "parsed" / f"{fn}.UWH"):
+                by_ch[r[0][0]].append(r)
+            for ch, words in by_ch.items():
+                tw = tag.get(bid, {}).get(ch, [])
+                for i, j in _align([_rob_key(w[1]) for w in words], [_greek_key(t[0]) for t in tw]).items():
+                    if words[i][2] and tw[j][1]:
+                        pairs[tw[j][1]][words[i][2]] += 1
+        _STRONG_FIX = {}
+        for t, cnt in pairs.items():
+            best, k = cnt.most_common(1)[0]
+            if best != t and k >= 0.7 * sum(cnt.values()):
+                _STRONG_FIX[t] = best
+    n = _STRONG_FIX.get(n, n) if n else n
+    return n if n and n <= 5624 else None
 
 
 def _greek_key(w):
@@ -539,9 +576,10 @@ def read_sblgnt():
                     continue
                 stats["words"] += 1
                 t = tw[pair[i]] if i in pair else None
-                if t and t[1]:
+                num = tagnt_strong(t[1]) if t else None
+                if num:
                     stats["tagged"] += 1
-                    verses[(ch, v)].append(f"{pre}{{{core}|G{t[1]}|{t[2]}}}{post}" if t[2] else f"{pre}{{{core}|G{t[1]}}}{post}")
+                    verses[(ch, v)].append(f"{pre}{{{core}|G{num}|{t[2]}}}{post}" if t[2] else f"{pre}{{{core}|G{num}}}{post}")
                 else:
                     verses[(ch, v)].append(w)
         src[bid] = {cv: clean_verse(" ".join(ws)) for cv, ws in verses.items()}
@@ -580,6 +618,27 @@ def wh(mapper):
             sb, sc, sv = mapper(bid, c, v)
             col.add(sb, sc, sv, clean_verse(" ".join(ws)))
     log(f"  wh: слов {stats['words']}, с ударениями из TAGNT {stats['accented']}")
+    return col
+
+
+def tagnt_bible(edition, mapper):
+    """Издание целиком из TAGNT (Трегеллес): слова с пометкой издания, его написание и порядок, Стронг и
+    морфология TAGNT; пунктуация и заглавные — как в TAGNT (по Тиндейл-хаусу), стихи — по KJV."""
+    col = Collector()
+    for bid, chs in _tagnt_edition(edition).items():
+        verses = defaultdict(list)
+        for words in chs.values():
+            for word, strong, morph, kjv in words:
+                strong = tagnt_strong(strong)
+                pre, core, post = _split_punct(word)
+                pre, post = pre.replace("[", ""), post.replace("]", "")
+                if core and strong:
+                    verses[kjv].append(f"{pre}{{{core}|G{strong}|{morph}}}{post}" if morph else f"{pre}{{{core}|G{strong}}}{post}")
+                elif core:
+                    verses[kjv].append(pre + core + post)
+        for (c, v), ws in verses.items():
+            sb, sc, sv = mapper(bid, c, v)
+            col.add(sb, sc, sv, clean_verse(" ".join(ws)))
     return col
 
 

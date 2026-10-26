@@ -145,6 +145,25 @@ def m_wh():
     }, col)
 
 
+def m_treg():
+    col = B.tagnt_bible("Treg", kjv2syn)
+    return bible({
+        "id": "tregelles", "name": "Treg", "title": "Новый Завет на греческом: Трегеллес (1857–1879)",
+        "language": "grc",
+        "description": "Критический текст Нового Завета С. П. Трегеллеса (1857–1879, с исправлениями издания "
+                       "Тиндейл-хауса 2009 г.) — одно из первых изданий по древнейшим рукописям, близкое к "
+                       "современным критическим текстам. Состав и порядок слов, написание, номера Стронга и "
+                       "морфология — по данным STEPBible TAGNT (номера приведены к нумерации Робинсона, как в "
+                       "византийском тексте); пунктуация — по изданию Тиндейл-хауса. Нумерация переведена в синодальную.",
+        "version": "STEPBible TAGNT (git)",
+        "author": "Samuel Prideaux Tregelles; электронное издание — Tyndale House, Cambridge (Dirk Jongkind и др.)",
+        "source": "https://github.com/STEPBible/STEPBible-Data",
+        "license": "Public Domain (текст Трегеллеса); данные — STEPBible.org, Tyndale House Cambridge, CC BY 4.0 "
+                   "(выборка слов издания из TAGNT, номера Стронга приведены к нумерации Робинсона)",
+        "features": {"strongs": True, "morphology": True},
+    }, col)
+
+
 def m_csl():
     col = B.sword_bible("CSlElizabeth", "synodal", None, strongs=False)
     h = col.headings.get("Ps", {})
@@ -781,14 +800,14 @@ def m_maps():
 # ---------------------------------------------------------------------------------------------
 
 # m_makarij (только Пятикнижие) заменён полным модулем rus-makarij из scripts/build_ru_old.py
-BUILDERS = [m_kjv, m_bsb, m_oshb, m_byz, m_wh, m_csl, m_kulish,
+BUILDERS = [m_kjv, m_bsb, m_oshb, m_byz, m_wh, m_treg, m_csl, m_kulish,
             m_lopukhin, m_desp_notes, m_otnt_notes, m_theophylact, m_chrysostom, m_augustine, m_mhcc, m_jfb, m_barnes,
             m_nikifor, m_dal, m_pbe, m_esbe_bible, m_eebe_bible,
             m_easton, m_smith, m_hitchcock, m_nave, m_isbe, m_amtract, m_torrey, m_webster1828,
             m_abbott_smith, m_bdb,
             m_openbible, m_tsk, m_maps]
 
-BUILDER_IDS = {"m_kjv": ["kjv"], "m_bsb": ["bsb"], "m_oshb": ["oshb"], "m_byz": ["byz-rp2018"], "m_wh": ["wh1881"],
+BUILDER_IDS = {"m_kjv": ["kjv"], "m_bsb": ["bsb"], "m_oshb": ["oshb"], "m_byz": ["byz-rp2018"], "m_wh": ["wh1881"], "m_treg": ["tregelles"],
                "m_csl": ["csl-elizabeth"], "m_makarij": ["rus-makarij"], "m_kulish": ["ukr-kulish"],
                "m_lopukhin": ["lopukhin"], "m_mhcc": ["mhcc"], "m_jfb": ["jfb"],
                "m_desp_notes": ["desp-notes"], "m_otnt_notes": ["otnt-notes"], "m_theophylact": ["theophylact"], "m_chrysostom": ["chrysostom"],
