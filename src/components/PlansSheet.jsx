@@ -255,14 +255,16 @@ export default function PlansSheet({ pane, onClose }) {
   const [busy, setBusy] = useState(null);
   const [scope, setScope] = useState('nt');
   const [days, setDays] = useState(90);
-  // Свой план: «Подряд» (раздел или свои книги за N дней) или «Параллельно» (из каждого раздела по N глав в день)
+  // Свой план: «Последовательно» (раздел или свои книги за N дней) или «Параллельно» (из каждого раздела по N глав в день)
   const [cpMode, setCpMode] = usePersistentState('customPlanMode', 'seq');
   const [own, setOwn] = usePersistentState('customPlanBooks', []);
   const [streams, setStreams] = usePersistentState('customPlanStreams', { ot: 1, nt: 1, ps: 1 });
+  const [parMode, setParMode] = usePersistentState('customPlanParMode', 'perday'); // «Глав в день» или «За срок»
+  const [periodDays, setPeriodDays] = usePersistentState('customPlanParDays', 90);
   const [parDays, setParDays] = useState(null); // сколько дней выйдет у параллельного плана
   const ownOrdered = useMemo(() => BOOKS.filter((b) => own.includes(b.id)).map((b) => b.id), [own]);
   useEffect(() => {
-    if (cpMode !== 'par') return;
+    if (cpMode !== 'par' || parMode !== 'perday') return;
     let live = true;
     Promise.all(streamList(streams, ownOrdered).map(async (x) => ({ per: x.perDay, n: (await chapterList(x.books)).length })))
       .then((r) => live && setParDays(r.filter((x) => x.n).reduce((m, x) => Math.max(m, Math.ceil(x.n / x.per)), 0)))
@@ -270,7 +272,7 @@ export default function PlansSheet({ pane, onClose }) {
     return () => {
       live = false;
     };
-  }, [cpMode, streams, ownOrdered]);
+  }, [cpMode, parMode, streams, ownOrdered]);
   const [pick, setPick] = useState(null); // выбранный в сетке план — под сеткой его описание и «Начать»
 
   useEffect(() => {
@@ -307,16 +309,42 @@ export default function PlansSheet({ pane, onClose }) {
     const names = ownOrdered.map((id) => bookMeta(id).name);
     return names.length > 2 ? t('{books} и ещё {n}', { books: names.slice(0, 2).join(', '), n: names.length - 2 }) : names.join(', ');
   };
+  // «За сколько дней»: число с «−»/«+» и быстрые значения (общий для «Последовательно» и «Параллельно → За срок»)
+  const daysBlock = (id, value, setValue) => (
+    <>
+      <label className="cp-label" htmlFor={id}>
+        {t('За сколько дней')}
+      </label>
+      <div className="cp-days">
+        <button type="button" className="cp-step" onClick={() => setValue(Math.max(7, (+value || 90) - 1))} aria-label={t('Уменьшить')}>
+          <Minus size={18} />
+        </button>
+        <input id={id} type="number" inputMode="numeric" min="7" max="730" value={value} onChange={(e) => setValue(e.target.value)} />
+        <button type="button" className="cp-step" onClick={() => setValue(Math.min(730, (+value || 90) + 1))} aria-label={t('Увеличить')}>
+          <Plus size={18} />
+        </button>
+      </div>
+      <div className="cp-presets">
+        {[7, 14, 30, 90, 180, 365].map((n) => (
+          <button key={n} type="button" className={`chip ${+value === n ? 'on' : ''}`} aria-pressed={+value === n} onClick={() => setValue(n)}>
+            {t('{n} дн.', { n })}
+          </button>
+        ))}
+      </div>
+    </>
+  );
+
   const startCustom = async () => {
     const n = Math.max(7, Math.min(730, +days || 90));
     setBusy('custom');
     try {
       if (cpMode === 'par') {
         const list = streamList(streams, ownOrdered);
-        const readings = await makeParallelPlan(list);
+        const period = parMode === 'period' ? Math.max(7, Math.min(730, +periodDays || 90)) : null;
+        const readings = await makeParallelPlan(list, period);
         if (!readings.length) throw new Error(t('Выберите книги'));
         const names = list.map((x) => (x.key === 'own' ? ownLabel() : t(STREAMS[x.key].short))).join(' + ');
-        add({ planId: 'custom', name: t('{list} параллельно', { list: names }), readings });
+        add({ planId: 'custom', name: period ? t('{scope} за {n} дн.', { scope: names, n: readings.length }) : t('{list} параллельно', { list: names }), readings });
         return;
       }
       const books = scope === 'own' ? ownOrdered : SCOPES[scope].books();
@@ -395,13 +423,22 @@ export default function PlansSheet({ pane, onClose }) {
           value={cpMode}
           onChange={setCpMode}
           options={[
-            ['seq', t('Подряд')],
+            ['seq', t('Последовательно')],
             ['par', t('Параллельно')],
           ]}
         />
         {cpMode === 'par' ? (
           <>
-            <div className="cp-label">{t('Разделы и глав в день')}</div>
+            <Segmented
+              id="plan-par-mode"
+              value={parMode}
+              onChange={setParMode}
+              options={[
+                ['perday', t('Глав в день')],
+                ['period', t('За срок')],
+              ]}
+            />
+            <div className="cp-label">{parMode === 'period' ? t('Разделы') : t('Разделы и глав в день')}</div>
             <div className="cp-streams">
               {Object.entries(STREAMS).map(([k, v]) => {
                 const on = streams[k] != null;
@@ -420,7 +457,7 @@ export default function PlansSheet({ pane, onClose }) {
                       </span>
                       {t(v.label)}
                     </button>
-                    {on && (
+                    {on && parMode === 'perday' && (
                       <div className="cp-per">
                         <button type="button" className="cp-step small" onClick={() => per(-1)} disabled={streams[k] <= 1} aria-label={t('Уменьшить')}>
                           <Minus size={16} />
@@ -436,7 +473,7 @@ export default function PlansSheet({ pane, onClose }) {
               })}
             </div>
             {streams.own != null && <BookPicker value={own} onChange={setOwn} />}
-            <p className="cp-note">{t('Короткие разделы начинаются заново, пока идут длинные.')}</p>
+            {parMode === 'period' ? daysBlock('plan-par-days', periodDays, setPeriodDays) : <p className="cp-note">{t('Короткие разделы начинаются заново, пока идут длинные.')}</p>}
           </>
         ) : (
           <>
@@ -451,34 +488,18 @@ export default function PlansSheet({ pane, onClose }) {
               ))}
             </div>
             {scope === 'own' && <BookPicker value={own} onChange={setOwn} />}
-        <label className="cp-label" htmlFor="plan-days">
-          {t('За сколько дней')}
-        </label>
-        <div className="cp-days">
-          <button type="button" className="cp-step" onClick={() => setDays(Math.max(7, (+days || 90) - 1))} aria-label={t('Уменьшить')}>
-            <Minus size={18} />
-          </button>
-          <input id="plan-days" type="number" inputMode="numeric" min="7" max="730" value={days} onChange={(e) => setDays(e.target.value)} />
-          <button type="button" className="cp-step" onClick={() => setDays(Math.min(730, (+days || 90) + 1))} aria-label={t('Увеличить')}>
-            <Plus size={18} />
-          </button>
-        </div>
-        <div className="cp-presets">
-          {[7, 14, 30, 90, 180, 365].map((n) => (
-            <button key={n} type="button" className={`chip ${+days === n ? 'on' : ''}`} aria-pressed={+days === n} onClick={() => setDays(n)}>
-              {t('{n} дн.', { n })}
-            </button>
-          ))}
-        </div>
+            {daysBlock('plan-days', days, setDays)}
           </>
         )}
         <button
           className="btn primary cp-start"
           onClick={startCustom}
-          disabled={!!busy || ((cpMode === 'par' ? streams.own != null : scope === 'own') && !own.length) || (cpMode === 'par' && !parDays)}
+          disabled={!!busy || ((cpMode === 'par' ? streams.own != null : scope === 'own') && !own.length) || (cpMode === 'par' && parMode === 'perday' && !parDays)}
         >
           {busy === 'custom' ? <Loader2 size={16} className="spin" /> : <Plus size={16} />}{' '}
-          {cpMode === 'par'
+          {cpMode === 'par' && parMode === 'period'
+            ? t('Начать на {n} дн.', { n: Math.max(7, Math.min(730, +periodDays || 90)) })
+            : cpMode === 'par'
             ? parDays
               ? t('Начать на {n} дн.', { n: parDays })
               : t('Выберите книги')

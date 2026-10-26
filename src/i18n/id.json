@@ -1306,5 +1306,9 @@
  "Каждый день — понемногу из каждого раздела.": "Setiap hari — sedikit dari setiap bagian.",
  "{list} параллельно": "{list} paralel",
  "{books} и ещё {n}": "{books} dan {n} lagi",
- "Выбрано книг: {n}": "Kitab dipilih: {n}"
+ "Выбрано книг: {n}": "Kitab dipilih: {n}",
+ "Последовательно": "Berurutan",
+ "Глав в день": "Pasal per hari",
+ "За срок": "Dalam jangka waktu",
+ "Разделы": "Bagian"
 }

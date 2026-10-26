@@ -1322,5 +1322,9 @@
  "Каждый день — понемногу из каждого раздела.": "În fiecare zi — puțin din fiecare secțiune.",
  "{list} параллельно": "{list} în paralel",
  "{books} и ещё {n}": "{books} și încă {n}",
- "Выбрано книг: {n}": "Cărți alese: {n}"
+ "Выбрано книг: {n}": "Cărți alese: {n}",
+ "Последовательно": "Secvențial",
+ "Глав в день": "Capitole pe zi",
+ "За срок": "Pe o perioadă",
+ "Разделы": "Secțiuni"
 }

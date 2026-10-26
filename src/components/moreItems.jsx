@@ -1,6 +1,6 @@
 // Пункты меню «Ещё»: одни и те же для выпадающего меню ⋮ (компьютер) и для листа «Ещё» (телефон).
 // Каждый пункт: { key, icon, label, sub?, extra?, cls?, keep?, run } — keep: лист не закрывается (переключатели).
-import { Bookmark, BookmarkCheck, Heart, Eye, EyeOff, Columns2, Rows2, ScrollText, Settings as SettingsIcon, BookOpenCheck, Palette } from 'lucide-react';
+import { Bookmark, BookmarkCheck, Heart, Eye, EyeOff, Columns2, Rows2, ScrollText, Settings as SettingsIcon, BookOpenCheck, Palette, Library } from 'lucide-react';
 import { RefreshCw, Map as MapIcon, PlayCircle, Link2, Headphones, BookOpenText, CalendarCheck, History, MessageSquareWarning } from 'lucide-react';
 import { bookMeta } from '../core/books.js';
 import { getVerse } from '../core/modules.js';
@@ -60,6 +60,7 @@ export function moreItems(app, { index, ref, module, sheet = false }) {
   if (IS_PWA_BUILD && updates.available) add({ key: 'update', cls: 'update-item', icon: RefreshCw, label: t('Обновить приложение'), extra: t('новая версия'), extraCls: 'badge-new', run: () => applyUpdate() });
   // Только на тестовом сайте: версии с заметками — что изменилось, обновиться или вернуться
   if (IS_STAGING) add({ key: 'versions', icon: History, label: t('Обновления'), run: () => open('versions', index) }); // о новой версии говорит бейдж у «Обновить приложение»
+  add({ key: 'library', icon: Library, label: t('Библиотека модулей'), run: () => open('library', index) }); // модули — сразу из «Ещё»
   add({ key: 'appearance', icon: Palette, label: t('Оформление'), run: () => open('settings', index) });
   add({ key: 'prefs', icon: SettingsIcon, label: t('Настройки'), run: () => open('prefs', index) });
   if (m.help) add({ key: 'help', icon: BookOpenCheck, label: t('Инструкция'), run: () => open('help', index) });

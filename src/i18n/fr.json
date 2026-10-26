@@ -1320,5 +1320,9 @@
  "Каждый день — понемногу из каждого раздела.": "Chaque jour, un peu de chaque section.",
  "{list} параллельно": "{list} en parallèle",
  "{books} и ещё {n}": "{books} et {n} de plus",
- "Выбрано книг: {n}": "Livres choisis : {n}"
+ "Выбрано книг: {n}": "Livres choisis : {n}",
+ "Последовательно": "Séquentiellement",
+ "Глав в день": "Chapitres par jour",
+ "За срок": "Sur une durée",
+ "Разделы": "Sections"
 }

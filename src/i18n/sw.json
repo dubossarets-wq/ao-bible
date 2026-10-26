@@ -1314,5 +1314,9 @@
  "Каждый день — понемногу из каждого раздела.": "Kila siku — kidogo kutoka kila sehemu.",
  "{list} параллельно": "{list} sambamba",
  "{books} и ещё {n}": "{books} na {n} zaidi",
- "Выбрано книг: {n}": "Vitabu vilivyochaguliwa: {n}"
+ "Выбрано книг: {n}": "Vitabu vilivyochaguliwa: {n}",
+ "Последовательно": "Kwa mfuatano",
+ "Глав в день": "Sura kwa siku",
+ "За срок": "Kwa muda",
+ "Разделы": "Sehemu"
 }

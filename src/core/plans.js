@@ -41,7 +41,11 @@ export async function chapterList(bookIds) {
 
 // Свой план: главы выбранных книг поровну по дням (по числу стихов — чтобы дни были ровными)
 export async function makeCustomPlan(bookIds, days) {
-  const chapters = await chapterList(bookIds);
+  return splitChapters(await chapterList(bookIds), days).filter((r) => r.length);
+}
+
+// Главы поровну по N дням (по числу стихов); дни без глав остаются пустыми — для параллельного плана «за срок»
+export function splitChapters(chapters, days) {
   const total = chapters.reduce((a, c) => a + c.n, 0);
   const per = total / days;
   const readings = Array.from({ length: days }, () => []);
@@ -51,7 +55,7 @@ export async function makeCustomPlan(bookIds, days) {
     readings[day].push(c.ref);
     acc += c.n;
   }
-  return readings.filter((r) => r.length);
+  return readings;
 }
 
 export const SCOPES = {
@@ -86,9 +90,14 @@ export function streamList(on, own) {
   }));
 }
 
-// Дни параллельного плана: [['Gen.1', 'Matt.1', 'Ps.1'], …]; длина — по самому длинному разделу
-export async function makeParallelPlan(streams) {
+// Дни параллельного плана: [['Gen.1', 'Matt.1', 'Ps.1'], …]; длина — по самому длинному разделу.
+// period — число дней: тогда каждый раздел делится на эти дни поровну по числу стихов (без повторов), все кончаются в последний день
+export async function makeParallelPlan(streams, period) {
   const lists = await Promise.all(streams.map((x) => chapterList(x.books)));
+  if (period) {
+    const parts = lists.filter((l) => l.length).map((l) => splitChapters(l, period));
+    return Array.from({ length: period }, (_, d) => [...new Set(parts.flatMap((p) => p[d]))]).filter((r) => r.length);
+  }
   const ok = streams.map((x, i) => ({ per: x.perDay, ch: lists[i] })).filter((x) => x.ch.length && x.per > 0);
   if (!ok.length) return [];
   const days = Math.min(3650, Math.max(...ok.map((x) => Math.ceil(x.ch.length / x.per))));
