@@ -28,4 +28,9 @@ export const EXTRA_ATTRIBUTION = {
   'lxx-swete': ['https://github.com/eliranwong/LXX-Swete-1930'],
   sblgnt: ['© 2010 Society of Biblical Literature and Logos Bible Software', 'Strong’s numbers and morphology: STEPBible.org (Tyndale House, Cambridge), https://github.com/STEPBible'],
   wh1881: ['Accents and punctuation: STEPBible.org (Tyndale House, Cambridge), https://github.com/STEPBible'],
+  tregelles: ['Text, Strong’s numbers and morphology: STEPBible.org (Tyndale House, Cambridge), https://github.com/STEPBible'],
+  tr1894: ['Accents and punctuation: STEPBible.org (Tyndale House, Cambridge), https://github.com/STEPBible'],
+  stephanus1550: ['Accents and punctuation: STEPBible.org (Tyndale House, Cambridge), https://github.com/STEPBible'],
+  elzevir1624: ['Accents and punctuation: STEPBible.org (Tyndale House, Cambridge), https://github.com/STEPBible'],
+  f35: ['© 2020 Wilbur N. Pickering'],
 };
