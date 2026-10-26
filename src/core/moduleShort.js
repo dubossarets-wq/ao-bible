@@ -11,6 +11,8 @@ const SHORT = {
   'rst-interlinear': 'Подст',
   'vin-interlinear': 'Винок',
   'lxx-swete': 'LXX',
+  'lxx-brenton': 'LXXБр',
+  brenton: 'Brent',
   goetze: 'Гёце',
   'ukr-ogienko': 'Огієн',
   'cornilescu-cyr': 'Корн',

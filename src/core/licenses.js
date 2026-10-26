@@ -26,4 +26,6 @@ export const EXTRA_ATTRIBUTION = {
   'bible-maps': [BIBLICA],
   'audio-grc-phemister': ['© 2001 Marilyn Phemister'],
   'lxx-swete': ['https://github.com/eliranwong/LXX-Swete-1930'],
+  sblgnt: ['© 2010 Society of Biblical Literature and Logos Bible Software', 'Strong’s numbers and morphology: STEPBible.org (Tyndale House, Cambridge), https://github.com/STEPBible'],
+  wh1881: ['Accents and punctuation: STEPBible.org (Tyndale House, Cambridge), https://github.com/STEPBible'],
 };
