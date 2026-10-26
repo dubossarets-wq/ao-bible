@@ -1491,13 +1491,17 @@ html.kb-open .chap-nav { display: none; }
 .toolbar.is-phone .tb-module:active, .toolbar.is-phone .tb-ref:active { background: color-mix(in srgb, var(--bar-text) 22%, var(--bar)); }
 /* Перевод и место — одна капсула «RST+ │ Второзаконие 34:1 ˅»: перевод мельче и приглушённо (как подпись),
    тонкий разделитель, место — крупно; подсветка нажатия — у своей части (как во Flutter) */
-.toolbar .tb-module, .toolbar .tb-ref { height: 40px; min-height: 40px; background: color-mix(in srgb, var(--bar-text) 12%, var(--bar)); color: var(--bar-text); }
+.toolbar .tb-module, .toolbar .tb-ref { height: 36px; min-height: 36px; background: color-mix(in srgb, var(--bar-text) 12%, var(--bar)); color: var(--bar-text); }
 .toolbar .tb-module { position: relative; border-radius: 999px 0 0 999px; padding: 0 11px 0 14px; font-size: .86rem; font-weight: 700; letter-spacing: .03em; color: color-mix(in srgb, var(--bar-text) 78%, transparent); }
 .toolbar .tb-module .tb-chev { display: none; }
 .toolbar .tb-module::after { content: ''; position: absolute; right: 0; top: 10px; bottom: 10px; width: 1px; background: color-mix(in srgb, var(--bar-text) 20%, transparent); }
 .toolbar .tb-module + .tb-ref { flex: 0 1 auto; margin-left: -4px; border-radius: 0 999px 999px 0; padding: 0 10px 0 11px; font-size: 1.08rem; font-weight: 700; } /* по ширине содержимого, слева */
 .toolbar:not(.is-phone) .tb-module + .tb-ref { margin-left: -2px; }
 .toolbar .tb-ref .tb-chev { opacity: .6; }
+/* на телефоне правило .is-phone скругляло «RST+» с обеих сторон — место наезжало на скругление прямым краем
+   (ступенька и двойной оттенок); здесь капсула снова цельная: скругления только снаружи, части встык */
+.toolbar.is-phone .tb-module { border-radius: 999px 0 0 999px; }
+.toolbar.is-phone .tb-module + .tb-ref { border-radius: 0 999px 999px 0; }
 /* Обрезанный текст — плавное затухание в конце строки вместо многоточия (класс ставит core/fadeEnd.js) */
 .fade-end { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2.2em), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 2.2em), transparent); }
 input.fade-end { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 3em), transparent 100%); mask-image: linear-gradient(to right, #000 calc(100% - 3em), transparent 100%); }
