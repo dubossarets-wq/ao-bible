@@ -2,7 +2,7 @@
 // ✓ · ссылка и число стихов · параллельно в другом переводе · любимые · заметка · закладка · копировать · ⋯
 // В «⋯»: сравнить переводы, параллельные места, поделиться.
 import React, { useEffect, useRef, useState } from 'react';
-import { X, Languages, BookCopy, Heart, Link2, Share2, Copy, NotebookPen, Bookmark, BookmarkCheck, MoreHorizontal, MessageSquareText, Headphones, Highlighter, FolderPlus, Eraser, Compass, ScrollText, WholeWord, Image as ImageIcon } from 'lucide-react';
+import { X, Languages, BookCopy, Heart, Link2, Share2, Copy, NotebookPen, Bookmark, BookmarkCheck, MoreHorizontal, MessageSquareText, Headphones, Highlighter, FolderPlus, Eraser, Compass, ScrollText, WholeWord, BookImage, Image as ImageIcon } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { getVerse, ORIGINALS } from '../core/modules.js';
 import { listenFrom } from '../core/listen.js';
@@ -10,6 +10,7 @@ import { swallowNextClick, fitMenu } from './ui.jsx';
 import { HL_COLORS, hlLabel } from '../core/highlights.js';
 import { plainText } from '../core/verseMarkup.js';
 import { bookMeta, formatRef, BOOKS } from '../core/books.js';
+import { sinaiticusUrl } from '../core/sinaiticus.js';
 import { t } from '../core/i18n.js';
 
 const ORDER = new Map(BOOKS.map((b, i) => [b.id, i]));
@@ -74,6 +75,8 @@ export default function SelectionBar({ index, module, selection, onDone }) {
   const others = bibles.filter((b) => b.id !== module.id && !ORIGINALS.includes(b.id));
   const first = refs[0];
   const hasNote = !!notes[`${first.book}.${first.chapter}.${first.verse}`];
+  // Этот стих на снимке Синайского кодекса (сайт codexsinaiticus.org) — если место сохранилось
+  const codexUrl = refs.length === 1 ? sinaiticusUrl(first) : null;
 
   useEffect(() => {
     if (!palette) return;
@@ -229,6 +232,13 @@ export default function SelectionBar({ index, module, selection, onDone }) {
         {more && (
           <div className="menu" role="menu" ref={fitMenu}>
             {moreItem(WholeWord, t('Подстрочник'), () => openSheet('interlinear', index, { ref: first, moduleId: module.id }))}
+            {codexUrl && (
+              // Ссылкой, а не window.open: так она открывается во внешнем браузере и из приложения
+              <a role="menuitem" className="menu-item" style={{ color: 'inherit', textDecoration: 'none' }} href={codexUrl} target="_blank" rel="noopener noreferrer" onClick={() => (setMore(false), requestAnimationFrame(() => onDone()))}>
+                <BookImage size={18} />
+                <span>{t('Синайский кодекс')}</span>
+              </a>
+            )}
             {moreItem(Compass, t('Всё о стихе'), () => openSheet('guide', index, { ref: first, moduleId: module.id }))}
             {moreItem(ScrollText, t('В проповедь'), () => openSheet('sermon-add', index, { refs, moduleId: module.id }))}
             {moreItem(FolderPlus, t('В подборку…'), () => openSheet('collect', index, { refs, moduleId: module.id }))}

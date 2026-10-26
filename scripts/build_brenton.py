@@ -251,6 +251,33 @@ def markup(text, own, near, book_table, forms):
     return " ".join(out)
 
 
+def load_swete_words():
+    """Слова Свита по синодальным стихам: {(книга, гл, ст): [(форма без ударений, Стронг, слово)]}."""
+    words = {}
+    for b in json.loads((MOD / "lxx-swete.json").read_text(encoding="utf-8"))["books"]:
+        for c, ch in enumerate(b["chapters"], 1):
+            for v, t in enumerate(ch, 1):
+                if t:
+                    words[(b["id"], c, v)] = swete_words(t)
+    return words
+
+
+def map_book(bk, src, syn, words):
+    """Стихи книги Брентона -> (стихи-цели, [(индекс цели, сходство)] по src, «тот же номер»); None — книги нет
+    в синодальной сетке. Используется и в build_sinaiticus.py (греческая нумерация -> синодальная)."""
+    targets = TARGETS.get(bk, [(bk, None)])
+    if any(app not in syn for app, _ in targets):
+        return None
+    tgt = [(app, c, v) for app, chs in targets for c, ch in enumerate(syn[app]["chapters"], 1)
+           if chs is None or c in chs for v in range(1, len(ch) + 1)]
+    same = SAME.get(bk, lambda c, v, _b=bk: (_b, c, v))
+    if bk == "PrMan":
+        res = proportional(src, tgt, lambda t: syn[t[0]]["chapters"][t[1] - 1][t[2] - 1])
+    else:
+        res = align(src, tgt, words, same)
+    return tgt, res, same
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--report", default=None)
@@ -264,13 +291,7 @@ def main():
 
     rst = json.loads((MOD / "rst-dc.json").read_text(encoding="utf-8"))
     syn = {b["id"]: b for b in rst["books"]}
-    swete = {b["id"]: b for b in json.loads((MOD / "lxx-swete.json").read_text(encoding="utf-8"))["books"]}
-    words = {}
-    for bid, b in swete.items():
-        for c, ch in enumerate(b["chapters"], 1):
-            for v, t in enumerate(ch, 1):
-                if t:
-                    words[(bid, c, v)] = swete_words(t)
+    words = load_swete_words()
 
     grc, eng = read(SRC / "grcbrent"), read(SRC / "eng-Brenton")
     log(f"Брентон: греческих книг {len(grc)}, английских {len(eng)}")
@@ -280,17 +301,11 @@ def main():
     rep("Нумерация (стихи Брентона → синодальные; показаны только нетождественные участки) и сходство со Свитом:")
     tot_low = tot = 0
     for bk, src in grc.items():
-        targets = TARGETS.get(bk, [(bk, None)])
-        if any(app not in syn for app, _ in targets):
+        m = map_book(bk, src, syn, words)
+        if not m:
             log(f"  {bk}: нет в синодальной сетке — пропуск")
             continue
-        tgt = [(app, c, v) for app, chs in targets for c, ch in enumerate(syn[app]["chapters"], 1)
-               if chs is None or c in chs for v in range(1, len(ch) + 1)]
-        same = SAME.get(bk, lambda c, v, _b=bk: (_b, c, v))
-        if bk == "PrMan":
-            res = proportional(src, tgt, lambda t: syn[t[0]]["chapters"][t[1] - 1][t[2] - 1])
-        else:
-            res = align(src, tgt, words, same)
+        tgt, res, same = m
         gmap = {}
         moved, low = [], 0
         book_table = collections.defaultdict(set)
