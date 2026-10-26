@@ -9,7 +9,7 @@ import SearchPanel from './SearchPanel.jsx';
 import SwipeRow from './SwipeRow.jsx';
 import { plateSvg } from './partShape.js';
 import { useApp } from '../App.jsx';
-import { ConfirmButton, Empty } from './ui.jsx';
+import { ConfirmButton, Empty, Reveal } from './ui.jsx';
 import { formatRef } from '../core/books.js';
 import { getVerse } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
@@ -202,6 +202,8 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
   const [pulpit, setPulpit] = useState(false);
   // «Часть стиха» в блоке: { id, full, from, to } — слова полного текста нажимаются: первое — начало, второе — конец
   const [pe, setPe] = useState(null);
+  const lastPe = useRef(null); // выбор части стиха, который сейчас сворачивается: показываем его до конца анимации
+  if (pe) lastPe.current = pe;
   const fullOf = async (b) => plainText((await getVerse(b.moduleId, { book: b.book, chapter: b.chapter, verse: b.verse })) || '').trim();
   const startPart = async (b) => {
     const full = await fullOf(b);
@@ -396,9 +398,9 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
                   <button className="sermon-ref" onClick={() => goVerse(b, b.verse)} title={t('Открыть в Библии')}>
                     {blockRef(b)}
                   </button>
-                  {pe?.id === b.id ? (
-                    <PartPicker pe={pe} onPick={pickWord} />
-                  ) : (
+                  {/* «Часть стиха»: полный текст для выбора слов и обычные строки сменяют друг друга плавно */}
+                  <Reveal open={pe?.id === b.id}>{lastPe.current?.id === b.id && <PartPicker pe={pe?.id === b.id ? pe : lastPe.current} onPick={pickWord} />}</Reveal>
+                  <Reveal open={pe?.id !== b.id}>
                   <div className="sermon-verses">
                     {lines.map(({ v, text }) => {
                       const one = blockRef(group ? { ...b, verse: v, to: null } : b);
@@ -419,7 +421,7 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
                       );
                     })}
                   </div>
-                  )}
+                  </Reveal>
                 </>
               ) : (
                 <TextBlock sermonId={sermon.id} block={b} fresh={fresh === b.id} onDone={() => fresh === b.id && setFresh(null)} />
@@ -561,7 +563,9 @@ function PartPicker({ pe, onPick }) {
       <div className="sermon-verse-text" ref={box}>
         {out}
       </div>
-      {!r && <p className="part-hint">{t('Нажмите на первое и последнее слово.')}</p>}
+      <Reveal open={!r}>
+        <p className="part-hint">{t('Нажмите на первое и последнее слово.')}</p>
+      </Reveal>
     </div>
   );
 }

@@ -74,7 +74,7 @@ function LangList({ onPicked }) {
               {l.name}
               {local && local.toLowerCase() !== l.name.toLowerCase() && <small lang={locale()}>{local}</small>}
             </span>
-            {l.code === cur && <Check size={20} className="lang-check" />}
+            <Check size={20} className={`lang-check ${l.code === cur ? 'on' : ''}`} aria-hidden="true" />
           </button>
         );
       })}

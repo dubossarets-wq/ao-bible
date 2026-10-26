@@ -176,6 +176,21 @@
   "many": "giorni di fila",
   "other": "giorni di fila"
  },
+ "день|дня|дней": {
+  "one": "giorno",
+  "other": "giorni"
+ },
+ "Системная": "Sistema",
+ "Месяц": "Mese",
+ "3 месяца": "3 mesi",
+ "Полгода": "Sei mesi",
+ "Год": "Anno",
+ "до {date}": "fino al {date}",
+ "Начать · до {date}": "Inizia · fino al {date}",
+ "Читаете книги по порядку, понемногу каждый день": "Leggi i libri in ordine, un po’ ogni giorno",
+ "Каждый день — немного из разных частей Библии": "Ogni giorno un po’ da diverse parti della Bibbia",
+ "кроме: {list}": "tranne: {list}",
+ "Первый день: {list}": "Primo giorno: {list}",
  "Кнопки в тексте, меню, верхняя панель": "Pulsanti nel testo, menu, barra superiore",
  "Кнопки и панели": "Pulsanti e barre",
  "Как в теме": "Come nel tema",

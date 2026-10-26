@@ -1286,7 +1286,7 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .ring-label { position: relative; display: flex; flex-direction: column; align-items: center; line-height: 1.05; font-size: .78rem; font-weight: 700; }
 .ring-label b { font-size: 1.15rem; }
 .ring-label small { font-weight: 500; color: var(--muted); font-size: .68rem; }
-.read-hero { display: flex; flex-direction: column; gap: 14px; padding: 16px; margin-bottom: 14px; border-radius: calc(var(--radius) + 6px); background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 16%, var(--bg)), color-mix(in srgb, var(--accent) 4%, var(--bg))); border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line)); }
+.read-hero { display: flex; flex-direction: column; gap: 14px; padding: 16px; margin-bottom: 14px; border-radius: calc(var(--radius) + 6px); background: color-mix(in srgb, var(--text) 4%, var(--panel)); border: 1px solid var(--line); } /* чистая нейтральная подложка */
 .hero-top { display: flex; align-items: center; gap: 16px; }
 .hero-nums { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .hero-streak { display: inline-flex; align-items: center; gap: 6px; font-size: 1rem; color: var(--muted); }
@@ -1503,7 +1503,7 @@ html.has-tabbar .toasts { bottom: calc(max(var(--kb, 0px), var(--sab)) + 16px); 
 html.has-tabbar .app:has(.plan-return) .toasts, html.has-tabbar .app:has(.sheet-foot) .toasts { bottom: calc(var(--sab) + 70px); }
 html.has-tabbar .staging-badge { bottom: calc(var(--sab) + 6px); }
 /* Нижнее меню: подсветка — одна плашка, переезжает к выбранному пункту (и идёт за пальцем при свайпе) */
-.tab-pill { position: absolute; z-index: 0; top: 6px; bottom: 6px; left: 6px; width: calc((100% - 12px) / var(--tab-n)); border-radius: 26px; background: color-mix(in srgb, var(--text) 9%, transparent); transform: translateX(calc(var(--tab-i) * 100%)); transition: transform .3s cubic-bezier(.2,.8,.2,1); pointer-events: none; }
+.tab-pill { position: absolute; z-index: 0; top: 6px; bottom: 6px; left: calc(6px + (100% - 12px) / var(--tab-n) * var(--tab-i) - var(--tab-x, 0px)); width: calc((100% - 12px) / var(--tab-n) + 2 * var(--tab-x, 0px)); /* у средних — чуть шире пункта */ border-radius: 26px; background: color-mix(in srgb, var(--text) 9%, transparent); transition: left .3s cubic-bezier(.2,.8,.2,1), width .3s cubic-bezier(.2,.8,.2,1); pointer-events: none; }
 .tabbar.swiping .tab-pill { transition-duration: .14s; }
 .tab { position: relative; z-index: 1; touch-action: pan-y; }
 .tab.on, .tab:active, .tab.on:hover { background: none; }
@@ -1583,7 +1583,8 @@ html.has-tabbar .ap-controls { padding-bottom: calc(var(--tabbar-h, 0px) + 6px);
 html.no-anim .ap { animation: none; transition: none; }
 html.no-anim .ap-verse { color: var(--text) !important; text-shadow: none !important; transition: none; transform: none; }
 html.no-anim .ap-verse .ap-vn { color: var(--accent) !important; text-shadow: none !important; }
-.tab-label { font-size: calc(.72rem - 1px); } /* подписи нижнего меню — на 1 px меньше */
+.tab-label { font-size: calc(.72rem - 1px); line-height: 1.15; } /* подписи нижнего меню — на 1 px меньше */
+.tabbar .tab { gap: 1px; padding-bottom: 5px; } /* подпись — чуть выше, ближе к значку */
 /* Свайп между вкладками окна: новая вкладка слегка въезжает с той стороны, куда вели */
 .sheet-body.tab-in-r { animation: tab-in-r .22s ease-out; }
 .sheet-body.tab-in-l { animation: tab-in-l .22s ease-out; }
@@ -1628,8 +1629,9 @@ html.kb-open .ap-live { position: relative; }
 .td-aa { position: relative; margin: 8px 6px 0 0; font-size: 1rem; letter-spacing: .01em; }
 .td-aa.split { position: absolute; inset: 0; margin: 0; }
 .td-aa.split > span { position: absolute; top: 50%; transform: translateY(-36%); line-height: 1; }
-.td-aa.split > span:first-child { right: calc(50% + 1px); }
-.td-aa.split > span:last-child { left: calc(50% + 2px); }
+.td-aa.split > span { width: 50%; text-align: center; } /* «А» — по центру светлой половины, «а» — по центру тёмной */
+.td-aa.split > span:first-child { left: 0; }
+.td-aa.split > span:last-child { right: 0; }
 .td-accent { position: absolute; right: 7px; bottom: 10px; width: 9px; height: 9px; border-radius: 50%; }
 .theme-tile.on .theme-dot { outline: 3px solid var(--accent); outline-offset: 2px; }
 .theme-tile.on .theme-name { font-weight: 700; }
@@ -1719,15 +1721,47 @@ html.kb-open .ap-live { position: relative; }
 /* «Свой план» — отдельная карточка под сеткой планов */
 /* Плавное раскрытие (Reveal в ui.jsx): высота 0fr → 1fr и прозрачность, как у настроек проигрывателя.
    Пока идёт анимация — содержимое обрезается, потом обрезки нет (фокус и тени не срезаются) */
-.reveal { display: grid; grid-template-rows: 1fr; opacity: 1; animation: reveal-open .28s cubic-bezier(.4,0,.2,1); }
+.reveal { --rv-gap: 0px; display: grid; grid-template-rows: 1fr; opacity: 1; animation: reveal-open .28s cubic-bezier(.4,0,.2,1); }
 .reveal.still { animation: none; }
-.reveal.closing { grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .28s cubic-bezier(.4,0,.2,1), opacity .28s cubic-bezier(.4,0,.2,1); pointer-events: none; }
+.reveal.closing { grid-template-rows: 0fr; opacity: 0; margin-top: calc(-1 * var(--rv-gap)); transition: grid-template-rows .28s cubic-bezier(.4,0,.2,1), opacity .28s cubic-bezier(.4,0,.2,1), margin-top .28s cubic-bezier(.4,0,.2,1); pointer-events: none; }
+/* Reveal в колонке с gap: зазор перед ним сворачивается вместе с ним — когда блок убирается, ничего не прыгает */
+.ap-card > .reveal, .ap-more > .reveal { --rv-gap: 14px; }
+.ap-screen > .reveal { --rv-gap: 18px; }
+.custom-plan > .reveal, .cp-body > .reveal { --rv-gap: 10px; }
+.reminder-card > .reveal { --rv-gap: 8px; }
+.sheet-body > .reveal, .search-pick > .reveal { --rv-gap: 12px; }
+/* Fold: содержимое — в Reveal; промежутки между его частями — как в .nav-group */
+.fold > .reveal { --rv-gap: 8px; }
+.fold > .reveal > .reveal-in { display: flex; flex-direction: column; gap: 8px; }
+.ap-more, .cp-body { display: flex; flex-direction: column; gap: 14px; }
+.cp-body { gap: 10px; }
+/* подробности о месте на карте: раскрываются, а длинные — прокручиваются внутри карточки */
+.place-card-reveal { min-height: 0; flex: 0 1 auto; }
+.place-card-reveal > .reveal-in { display: flex; flex-direction: column; }
+.place-card-reveal .place-card-body { min-height: 0; }
 .reveal-in { min-height: 0; }
 .reveal.open:not(.still) .reveal-in { animation: reveal-clip .28s; }
 .reveal.closing .reveal-in { overflow: hidden; }
-@keyframes reveal-open { from { grid-template-rows: 0fr; opacity: 0; } }
+@keyframes reveal-open { from { grid-template-rows: 0fr; opacity: 0; margin-top: calc(-1 * var(--rv-gap)); } }
+/* Смены состояния по нажатию — плавно (240 мс, как во Flutter): рамка, фон и цвет выбранного перетекают */
+.chip, .tabs button, .cp-scope, .cp-stream, .cp-check, .cp-book, .lang-row, .font-row, .swatch, .bg-tile, .theme-dot, .vw-pic, .result-add {
+  transition: border-color .24s cubic-bezier(.4,0,.2,1), background-color .24s cubic-bezier(.4,0,.2,1), color .24s cubic-bezier(.4,0,.2,1), box-shadow .24s cubic-bezier(.4,0,.2,1), outline-color .24s cubic-bezier(.4,0,.2,1);
+}
+/* кольцо выбранной плитки — прозрачное у невыбранных, чтобы проявлялось, а не появлялось */
+.bg-tile, .theme-dot { outline: 3px solid transparent; outline-offset: 2px; }
+.theme-dot { transition: outline-color .24s cubic-bezier(.4,0,.2,1), box-shadow .24s cubic-bezier(.4,0,.2,1), transform .15s; } /* нажатие кружка темы — как было */
+/* галочки выбора: проявляются — прозрачность и лёгкий масштаб */
+.cp-check svg, .font-check svg, .lang-check { opacity: 0; transform: scale(.6); transition: opacity .24s cubic-bezier(.4,0,.2,1), transform .24s cubic-bezier(.4,0,.2,1); }
+.cp-stream.on .cp-check svg, .font-row.on .font-check svg, .lang-check.on { opacity: 1; transform: none; }
+/* значок, сменивший другой (галочка вместо числа или плюса), — проявляется */
+.pop-in { animation: pop-in .24s cubic-bezier(.4,0,.2,1); }
+@keyframes pop-in { from { opacity: 0; transform: scale(.6); } }
+/* «− n гл. в день +» у раздела плана: выезжают по ширине с прозрачностью */
+.cp-per-wrap { flex: none; display: grid; grid-template-columns: 0fr; opacity: 0; transition: grid-template-columns .24s cubic-bezier(.4,0,.2,1), opacity .24s cubic-bezier(.4,0,.2,1); }
+.cp-per-wrap.on { grid-template-columns: 1fr; opacity: 1; }
+.cp-per-wrap > .cp-per { min-width: 0; overflow: hidden; }
 @keyframes reveal-clip { from, to { overflow: hidden; } }
-.custom-plan { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; padding: 16px; border: 1px solid var(--line); border-radius: 18px; background: color-mix(in srgb, var(--accent) 5%, var(--panel)); /* лёгкая подложка */ }
+.custom-plan { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; padding: 16px; border: 1px solid var(--line); border-radius: 18px; background: color-mix(in srgb, var(--text) 5.5%, var(--panel)); /* чистая нейтральная подложка — белые плитки на ней видны */ }
 .cp-head { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
 .cp-icon { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: color-mix(in srgb, var(--accent) 14%, var(--panel)); color: var(--accent); }
 .cp-titles { min-width: 0; }
@@ -1735,33 +1769,52 @@ html.kb-open .ap-live { position: relative; }
 .cp-titles p { margin: 2px 0 0; font-size: .84rem; line-height: 1.35; color: var(--muted); }
 .cp-label { font-size: .86rem; font-weight: 600; color: var(--muted); margin-top: 2px; }
 .cp-scopes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.cp-scope { min-height: 44px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--text); font: inherit; font-size: .92rem; font-weight: 600; text-align: center; cursor: pointer; }
-.cp-scope:first-child { grid-column: 1 / -1; }
-.cp-scope.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--bg)); color: color-mix(in srgb, var(--accent) 85%, var(--text)); box-shadow: inset 0 0 0 1px var(--accent); }
-.cp-days { display: flex; align-items: stretch; gap: 8px; }
-.cp-days input { flex: 1; min-width: 0; height: 44px; text-align: center; font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
+.cp-scope { min-height: 44px; padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--text) 9%, var(--panel)); /* очень лёгкая обводка */ border-radius: 12px; background: var(--panel); color: var(--text); font: inherit; font-size: .92rem; font-weight: 600; text-align: center; cursor: pointer; }
+.cp-scope:first-child, .cp-scope:last-child { grid-column: 1 / -1; } /* «Вся Библия» и «Свои книги» — на всю ширину */
+.cp-scope { display: inline-flex; align-items: center; justify-content: center; gap: 7px; } /* значок раздела и название */
+.cp-scope svg { flex: none; color: var(--muted); }
+.cp-scope.on svg { color: inherit; }
+.cp-scope.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--panel)); color: color-mix(in srgb, var(--accent) 85%, var(--text)); box-shadow: inset 0 0 0 1px var(--accent); }
+.cp-days { display: flex; align-items: center; height: 56px; border: 1px solid color-mix(in srgb, var(--text) 9%, var(--panel)); border-radius: 14px; background: var(--panel); overflow: hidden; transition: border-color .2s; }
+.cp-days:focus-within { border-color: var(--accent); }
+.cp-days-btn { flex: none; display: grid; place-items: center; width: 56px; height: 100%; padding: 0; border: 0; background: none; color: var(--accent); cursor: pointer; transition: background-color .2s, opacity .2s; }
+.cp-days-btn:disabled { opacity: .35; cursor: default; }
+@media (hover: hover) { .cp-days-btn:not(:disabled):hover { background: color-mix(in srgb, var(--accent) 8%, transparent); } }
+.cp-days-sep { flex: none; width: 1px; height: 28px; background: var(--line); }
+.cp-days-mid { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
+.cp-days input { width: 100%; height: auto; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; outline: none; text-align: center; font-size: 1.25rem; line-height: 1.1; font-weight: 700; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
+.cp-days-unit { font-size: .72rem; line-height: 1.1; font-weight: 600; color: var(--muted); }
 .cp-days input::-webkit-outer-spin-button, .cp-days input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.cp-step { flex: none; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--text); cursor: pointer; }
+.cp-step { flex: none; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--text); cursor: pointer; }
 .cp-presets { display: flex; flex-wrap: nowrap; gap: 8px; overflow-x: auto; scrollbar-width: none; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
 .cp-presets::-webkit-scrollbar { display: none; }
 .cp-presets .chip { flex: none; } /* в один ряд, по ширине текста */
 .cp-presets .chip { min-height: 36px; padding: 6px 14px; cursor: pointer; }
+.cp-presets .chip:not(.on) { border-color: color-mix(in srgb, var(--text) 9%, var(--panel)); background: var(--panel); } /* очень лёгкая обводка */
+.cp-terms { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; overflow: visible; -webkit-mask-image: none; mask-image: none; } /* сроки словами — в один ряд */
+.cp-terms .chip { justify-content: center; text-align: center; padding: 6px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cp-load { margin: 8px 0 0; font-size: .82rem; line-height: 1.35; font-weight: 600; color: var(--muted); text-align: center; }
+.cp-load.heavy { color: var(--danger, #c0392b); }
 .cp-start { width: 100%; min-height: 48px; justify-content: center; margin-top: 4px; font-size: 1rem; }
 /* Свой план: параллельные разделы (галочка, название, глав в день) и выбор своих книг */
 .cp-streams { display: flex; flex-direction: column; gap: 8px; }
-.cp-stream { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 4px 6px 4px 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
-.cp-stream.on { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); background: color-mix(in srgb, var(--accent) 7%, var(--bg)); }
+.cp-stream { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 4px 6px 4px 4px; border: 1px solid color-mix(in srgb, var(--text) 9%, var(--panel)); /* очень лёгкая обводка */ border-radius: 12px; background: var(--panel); }
+.cp-stream.on { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); background: color-mix(in srgb, var(--accent) 7%, var(--panel)); }
 .cp-stream-name { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 8px; border: 0; background: none; color: var(--text); font: inherit; font-size: .95rem; font-weight: 600; text-align: left; cursor: pointer; }
 .cp-check { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid color-mix(in srgb, var(--muted) 60%, transparent); color: var(--on-accent); }
 .cp-stream.on .cp-check { background: var(--accent); border-color: var(--accent); }
 .cp-per { flex: none; display: flex; align-items: center; gap: 6px; font-size: .86rem; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .cp-step.small { width: 34px; height: 34px; border-radius: 10px; }
 .cp-step:disabled { opacity: .4; }
+.cp-stream-label { display: flex; flex-direction: column; min-width: 0; text-align: left; }
+.cp-stream-label small { font-size: .78rem; font-weight: 400; line-height: 1.3; color: var(--muted); animation: cp-note-in .24s cubic-bezier(.4,0,.2,1); }
+@keyframes cp-note-in { from { opacity: 0; } }
+.cp-first { margin: 0 0 6px; font-size: .85rem; line-height: 1.4; font-weight: 600; color: var(--text); }
 .cp-note { margin: 0; font-size: .82rem; line-height: 1.4; color: var(--muted); }
 .cp-books { display: flex; flex-direction: column; gap: 10px; }
 .cp-books-h { font-size: .8rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
 .cp-books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 6px; }
-.cp-book { min-height: 38px; padding: 4px 2px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); font: inherit; font-size: .86rem; font-weight: 600; cursor: pointer; white-space: nowrap; overflow: hidden; }
+.cp-book { min-height: 38px; padding: 4px 2px; border: 1px solid color-mix(in srgb, var(--text) 9%, var(--panel)); /* очень лёгкая обводка */ border-radius: 10px; background: var(--panel); color: var(--text); font: inherit; font-size: .86rem; font-weight: 600; cursor: pointer; white-space: nowrap; overflow: hidden; }
 .cp-book.on { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
 .cp-books-sum { font-size: .82rem; color: var(--muted); }
 /* «Оформление» → «Комментарии»: образец текста и подзаголовок */
@@ -1928,7 +1981,7 @@ html.has-tabbar .sheet.page { top: 0; height: auto; max-height: none; }
 /* Android: нижнее меню — сплошная полоса во всю ширину, прижатая к низу, без скруглений (на iPhone и компьютере — капсула) */
 html.is-android { --tb-side: 0px; --tb-bottom: 0px; --tabbar-base: calc(64px + env(safe-area-inset-bottom, 0px)); }
 html.is-android .tabbar { left: 0; right: 0; bottom: 0; height: calc(64px + env(safe-area-inset-bottom, 0px)); padding: 6px calc(env(safe-area-inset-right, 0px) + 6px) calc(6px + env(safe-area-inset-bottom, 0px)) calc(env(safe-area-inset-left, 0px) + 6px); border: 0; border-top: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 0; box-shadow: none; background: var(--panel); -webkit-backdrop-filter: none; backdrop-filter: none; }
-html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px)); left: calc(env(safe-area-inset-left, 0px) + 6px); width: calc((100% - 12px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)) / var(--tab-n)); }
+html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px)); left: calc(env(safe-area-inset-left, 0px) + 6px + (100% - 12px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)) / var(--tab-n) * var(--tab-i) - var(--tab-x, 0px)); width: calc((100% - 12px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)) / var(--tab-n) + 2 * var(--tab-x, 0px)); }
 /* Высота окна при перетаскивании за ручку: переменная не наследуется — иначе каждое движение пальца пересчитывало
    стили всего содержимого окна (в каталоге модулей 26–95 мс на шаг вместо ~1 мс) */
 @property --sheet-h { syntax: '<number>'; inherits: false; initial-value: 50; }

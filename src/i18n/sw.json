@@ -175,6 +175,21 @@
   "one": "siku mfululizo",
   "other": "siku mfululizo"
  },
+ "день|дня|дней": {
+  "one": "siku",
+  "other": "siku"
+ },
+ "Системная": "Mfumo",
+ "Месяц": "Mwezi",
+ "3 месяца": "Miezi 3",
+ "Полгода": "Nusu mwaka",
+ "Год": "Mwaka",
+ "до {date}": "hadi {date}",
+ "Начать · до {date}": "Anza · hadi {date}",
+ "Читаете книги по порядку, понемногу каждый день": "Mnasoma vitabu kwa mpangilio, kidogo kila siku",
+ "Каждый день — немного из разных частей Библии": "Kila siku — kidogo kutoka sehemu tofauti za Biblia",
+ "кроме: {list}": "isipokuwa: {list}",
+ "Первый день: {list}": "Siku ya kwanza: {list}",
  "Кнопки в тексте, меню, верхняя панель": "Vitufe kwenye maandishi, menyu, upau wa juu",
  "Кнопки и панели": "Vitufe na pau",
  "Как в теме": "Kama kwenye mandhari",

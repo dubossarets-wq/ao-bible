@@ -340,7 +340,7 @@ export function Empty({ icon: Icon, title, children }) {
   );
 }
 
-// Раскрывающийся блок для редких настроек: строка-кнопка с шевроном, по умолчанию закрыт
+// Раскрывающийся блок для редких настроек: строка-кнопка с шевроном, по умолчанию закрыт; раскрывается плавно
 export function Fold({ title, children, defaultOpen = false, id }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
@@ -349,7 +349,7 @@ export function Fold({ title, children, defaultOpen = false, id }) {
         <span>{title}</span>
         <ChevronDown size={17} />
       </button>
-      {open && children}
+      <Reveal open={open}>{children}</Reveal>
     </section>
   );
 }

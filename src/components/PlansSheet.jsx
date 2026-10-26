@@ -1,13 +1,13 @@
 // Планы чтения: активные планы с прогрессом и кнопкой «Читать» (весь день одной страницей),
 // учёт прочитанного, начало нового плана, свой план
-import React, { useEffect, useMemo, useState } from 'react';
-import { BookOpen, Check, ChevronLeft, ChevronRight, Loader2, Plus, Trash2, Flame, Library, CalendarDays, Sunrise, Music, Feather, Sparkles, CalendarPlus, Minus } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { BookOpen, Scroll, ListChecks, Play, Check, ChevronLeft, ChevronRight, Loader2, Plus, Trash2, Flame, Library, CalendarDays, Sunrise, Music, Feather, Sparkles, CalendarPlus, Minus } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { usePlans } from '../core/planStore.js';
 import { readStats } from '../core/readLog.js';
 import { bookMeta, BOOKS } from '../core/books.js';
-import { fetchPlanIndex, fetchPlan, makeCustomPlan, makeParallelPlan, chapterList, streamList, SCOPES, STREAMS, parseReading, planToday, behindDays, readingDone, localDate } from '../core/plans.js';
+import { fetchPlanIndex, fetchPlan, makeCustomPlan, makeParallelPlan, chapterList, streamList, streamExcluded, firstDayText, SCOPES, STREAMS, parseReading, planToday, behindDays, readingDone, localDate } from '../core/plans.js';
 import { ConfirmButton, Hint, Switch, Segmented, Reveal } from './ui.jsx';
 import { usePersistentState } from '../core/storage.js';
 import { REMINDERS, getReminder, setReminder } from '../core/reminders.js';
@@ -39,6 +39,21 @@ const LOOK = {
   'ps-prov-31': [Music, 'c4', '07'],
   'gospels-30': [Feather, 'c5', '02'],
 };
+// Свои значки в манере lucide (сетка 24, линия 2). Новый Завет — книга с крестом (рядом со свитком Ветхого Завета);
+// Евангелия — латинский крест: жизнь, смерть и воскресение Христа
+const lineIcon = (paths) => {
+  const Icon = ({ size = 24, ...rest }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...rest}>
+      {paths.map((d) => (
+        <path key={d} d={d} />
+      ))}
+    </svg>
+  );
+  return Icon;
+};
+const BookCross = lineIcon(['M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20', 'M12 6v7', 'M9.5 8.5h5']);
+const LatinCross = lineIcon(['M10 2h4v5h5v4h-5v11h-4V11H5V7h5Z']); // контуром — с объёмом, как соседние значки
+const SCOPE_ICONS = { all: BookOpen, ot: Scroll, nt: BookCross, gospels: LatinCross, ps: Music, own: ListChecks };
 const look = (id) => LOOK[id] || [Sparkles, 'c6', '08'];
 const coverUrl = (id) => `images/verse-bg/${look(id)[2]}.jpg`;
 
@@ -196,6 +211,46 @@ function PlanTile({ m, on, onPick }) {
   );
 }
 
+// Дата окончания плана из N дней, начатого сегодня: «24 января» (другой год — с годом)
+function planEndText(days) {
+  const now = new Date();
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + Math.max(1, days) - 1, 12);
+  return fmtDate(end, { day: 'numeric', month: 'long', ...(end.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) });
+}
+
+// Нагрузка выбранного срока: глав и минут в день (~8 секунд на стих); глав меньше, чем дней, — дней столько, сколько глав
+function usePlanLoad(books, days) {
+  const [load, setLoad] = useState(null);
+  const key = books.join(',');
+  useEffect(() => {
+    let live = true;
+    chapterList(books)
+      .then((ch) => {
+        if (!live) return;
+        if (!ch.length || !(days > 0)) return setLoad(null);
+        const d = Math.min(days, ch.length);
+        const verses = ch.reduce((a, c) => a + (c.n || 0), 0);
+        setLoad({ d, per: Math.max(1, Math.round(ch.length / d)), minutes: Math.max(1, Math.round(((verses / d) * 8) / 60)) });
+      })
+      .catch(() => live && setLoad(null));
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, days]);
+  return load;
+}
+
+// «≈ 13 гл. в день · до 24 января»; больше часа чтения в день — цветом предупреждения
+function LoadLine({ load }) {
+  if (!load) return null;
+  return (
+    <p className={`cp-load ${load.minutes > 60 ? 'heavy' : ''}`}>
+      ≈ {t('{n} гл. в день', { n: load.per })} · {t('до {date}', { date: planEndText(load.d) })}
+    </p>
+  );
+}
+
 // Напоминание о чтении (приложение из Google Play): каждый день в выбранное время — что читать сегодня
 function ReminderCard() {
   const { toast } = useApp();
@@ -209,12 +264,12 @@ function ReminderCard() {
   return (
     <section className="reminder-card" aria-label={t('Напоминание о чтении')}>
       <Switch id="plan-reminder" checked={r.on} onChange={(on) => apply({ on })} label={t('Напоминать о чтении')} hint={t('Каждый день в это время — уведомление с отрывками на сегодня')} />
-      {r.on && (
+      <Reveal open={r.on}>
         <label className="reminder-time">
           <span>{t('Время')}</span>
           <input type="time" value={r.time} onChange={(e) => e.target.value && apply({ time: e.target.value })} />
         </label>
-      )}
+      </Reveal>
     </section>
   );
 }
@@ -259,16 +314,26 @@ export default function PlansSheet({ pane, onClose }) {
   const [cpMode, setCpMode] = usePersistentState('customPlanMode', 'seq');
   const [own, setOwn] = usePersistentState('customPlanBooks', []);
   const [streams, setStreams] = usePersistentState('customPlanStreams', { ot: 1, nt: 1, ps: 1 });
+  const lastPer = useRef({}); // число глав у выключаемого раздела — пока шаги уезжают, оно не меняется
   const [parMode, setParMode] = usePersistentState('customPlanParMode', 'perday'); // «Глав в день» или «За срок»
   const [periodDays, setPeriodDays] = usePersistentState('customPlanParDays', 90);
   const [parDays, setParDays] = useState(null); // сколько дней выйдет у параллельного плана
+  const [firstDay, setFirstDay] = useState(''); // «Быт. 1 · Пс. 1 · Мф. 1» — как выглядит обычный день
   const ownOrdered = useMemo(() => BOOKS.filter((b) => own.includes(b.id)).map((b) => b.id), [own]);
+  const seqLoad = usePlanLoad(scope === 'own' ? ownOrdered : SCOPES[scope]?.books() || [], Math.max(7, Math.min(730, +days || 90)));
+  const parLoad = usePlanLoad(
+    streamList(streams, ownOrdered).flatMap((x) => x.books),
+    Math.max(7, Math.min(730, +periodDays || 90)),
+  );
   useEffect(() => {
     if (cpMode !== 'par' || parMode !== 'perday') return;
     let live = true;
     Promise.all(streamList(streams, ownOrdered).map(async (x) => ({ per: x.perDay, n: (await chapterList(x.books)).length })))
       .then((r) => live && setParDays(r.filter((x) => x.n).reduce((m, x) => Math.max(m, Math.ceil(x.n / x.per)), 0)))
       .catch(() => live && setParDays(null));
+    firstDayText(streamList(streams, ownOrdered))
+      .then((s) => live && setFirstDay(s))
+      .catch(() => live && setFirstDay(''));
     return () => {
       live = false;
     };
@@ -291,7 +356,19 @@ export default function PlansSheet({ pane, onClose }) {
   };
   const add = (plan) => {
     setPlans((ps) => [{ ...plan, uid: Date.now().toString(36), start: localDate(), done: {}, ...(plan.calendar ? { year: new Date().getFullYear() } : {}) }, ...ps]);
-    toast(t('План «{name}» начат — нажмите «Читать»', { name: t(plan.name) }));
+    const started = t('План «{name}» начат — нажмите «Читать»', { name: t(plan.name) });
+    // без напоминания планы чаще бросают — сразу предлагаем включить (приложение из Google Play)
+    if (REMINDERS && !getReminder().on) {
+      toast(started, 'info', {
+        action: {
+          label: t('Напоминать о чтении'),
+          run: async () => {
+            const ok = await setReminder({ ...getReminder(), on: true });
+            toast(ok ? t('Напомню в {time}', { time: getReminder().time }) : t('Уведомления запрещены — разрешите их в настройках телефона'), ok ? 'info' : 'error');
+          },
+        },
+      });
+    } else toast(started);
   };
   const start = async (meta) => {
     setBusy(meta.id);
@@ -310,24 +387,38 @@ export default function PlansSheet({ pane, onClose }) {
     return names.length > 2 ? t('{books} и ещё {n}', { books: names.slice(0, 2).join(', '), n: names.length - 2 }) : names.join(', ');
   };
   // «За сколько дней»: число с «−»/«+» и быстрые значения (общий для «Последовательно» и «Параллельно → За срок»)
-  const daysBlock = (id, value, setValue) => (
+  const daysBlock = (id, value, setValue, load) => (
     <>
       <label className="cp-label" htmlFor={id}>
         {t('За сколько дней')}
       </label>
+      {/* одна капсула «− | 90 дней | +»: кнопки по краям, тонкие разделители, посередине число и подпись */}
       <div className="cp-days">
-        <button type="button" className="cp-step" onClick={() => setValue(Math.max(7, (+value || 90) - 1))} aria-label={t('Уменьшить')}>
-          <Minus size={18} />
+        <button type="button" className="cp-days-btn" onClick={() => setValue(Math.max(7, (+value || 90) - 1))} disabled={+value <= 7} aria-label={t('Уменьшить')}>
+          <Minus size={20} />
         </button>
-        <input id={id} type="number" inputMode="numeric" min="7" max="730" value={value} onChange={(e) => setValue(e.target.value)} />
-        <button type="button" className="cp-step" onClick={() => setValue(Math.min(730, (+value || 90) + 1))} aria-label={t('Увеличить')}>
-          <Plus size={18} />
+        <span className="cp-days-sep" />
+        <span className="cp-days-mid">
+          <input id={id} type="number" inputMode="numeric" min="7" max="730" value={value} onChange={(e) => setValue(e.target.value)} />
+          <span className="cp-days-unit">{t('день|дня|дней', { n: +value || 0 })}</span>
+        </span>
+        <span className="cp-days-sep" />
+        <button type="button" className="cp-days-btn" onClick={() => setValue(Math.min(730, (+value || 90) + 1))} disabled={+value >= 730} aria-label={t('Увеличить')}>
+          <Plus size={20} />
         </button>
       </div>
-      <div className="cp-presets">
-        {[7, 14, 30, 90, 180, 365].map((n) => (
+      {/* во что выльется выбор */}
+      <LoadLine load={load} />
+      {/* сроки словами — четыре в один ряд, точное число — кнопками «− / +» выше */}
+      <div className="cp-presets cp-terms">
+        {[
+          [30, N_('Месяц')],
+          [90, N_('3 месяца')],
+          [180, N_('Полгода')],
+          [365, N_('Год')],
+        ].map(([n, label]) => (
           <button key={n} type="button" className={`chip ${+value === n ? 'on' : ''}`} aria-pressed={+value === n} onClick={() => setValue(n)}>
-            {t('{n} дн.', { n })}
+            {t(label)}
           </button>
         ))}
       </div>
@@ -415,7 +506,7 @@ export default function PlansSheet({ pane, onClose }) {
           </span>
           <div className="cp-titles">
             <h3 id="custom-plan-h">{t('Свой план')}</h3>
-            <p>{cpMode === 'par' ? t('Каждый день — понемногу из каждого раздела.') : t('Главы делятся на дни поровну по числу стихов.')}</p>
+            <p>{cpMode === 'par' ? t('Каждый день — немного из разных частей Библии') : t('Читаете книги по порядку, понемногу каждый день')}</p>
           </div>
         </div>
         <Segmented
@@ -427,8 +518,9 @@ export default function PlansSheet({ pane, onClose }) {
             ['par', t('Параллельно')],
           ]}
         />
-        {cpMode === 'par' ? (
-          <>
+        {/* «Последовательно» ↔ «Параллельно»: одно сворачивается, другое раскрывается */}
+        <Reveal open={cpMode === 'par'}>
+          <div className="cp-body">
             <Segmented
               id="plan-par-mode"
               value={parMode}
@@ -442,6 +534,9 @@ export default function PlansSheet({ pane, onClose }) {
             <div className="cp-streams">
               {Object.entries(STREAMS).map(([k, v]) => {
                 const on = streams[k] != null;
+                if (on) lastPer.current[k] = streams[k];
+                const n = streams[k] ?? lastPer.current[k] ?? 1;
+                const steps = on && parMode === 'perday';
                 const per = (d) => setStreams((x) => ({ ...x, [k]: Math.max(1, Math.min(10, (x[k] || 1) + d)) }));
                 return (
                   <div key={k} className={`cp-stream ${on ? 'on' : ''}`}>
@@ -453,21 +548,28 @@ export default function PlansSheet({ pane, onClose }) {
                       onClick={() => setStreams((x) => (on ? Object.fromEntries(Object.entries(x).filter(([y]) => y !== k)) : { ...x, [k]: 1 }))}
                     >
                       <span className="cp-check" aria-hidden="true">
-                        {on && <Check size={14} />}
+                        <Check size={14} />
                       </span>
-                      {t(v.label)}
+                      <span className="cp-stream-label">
+                        {t(v.label)}
+                        {/* у Заветов — что из них читается отдельно (без повторов) */}
+                        {(() => {
+                          const ex = on && (k === 'ot' || k === 'nt') ? streamExcluded(k, streams, ownOrdered) : [];
+                          return ex.length ? <small>{t('кроме: {list}', { list: ex.map((x) => t(x)).join(', ') })}</small> : null;
+                        })()}
+                      </span>
                     </button>
-                    {on && parMode === 'perday' && (
+                    <div className={`cp-per-wrap ${steps ? 'on' : ''}`} inert={steps ? undefined : ''}>
                       <div className="cp-per">
-                        <button type="button" className="cp-step small" onClick={() => per(-1)} disabled={streams[k] <= 1} aria-label={t('Уменьшить')}>
+                        <button type="button" className="cp-step small" onClick={() => per(-1)} disabled={n <= 1} aria-label={t('Уменьшить')}>
                           <Minus size={16} />
                         </button>
-                        <span>{t('{n} гл. в день', { n: streams[k] })}</span>
-                        <button type="button" className="cp-step small" onClick={() => per(1)} disabled={streams[k] >= 10} aria-label={t('Увеличить')}>
+                        <span>{t('{n} гл. в день', { n })}</span>
+                        <button type="button" className="cp-step small" onClick={() => per(1)} disabled={n >= 10} aria-label={t('Увеличить')}>
                           <Plus size={16} />
                         </button>
                       </div>
-                    )}
+                    </div>
                   </div>
                 );
               })}
@@ -475,16 +577,29 @@ export default function PlansSheet({ pane, onClose }) {
             <Reveal open={streams.own != null}>
               <BookPicker value={own} onChange={setOwn} />
             </Reveal>
-            {parMode === 'period' ? daysBlock('plan-par-days', periodDays, setPeriodDays) : <p className="cp-note">{t('Короткие разделы начинаются заново, пока идут длинные.')}</p>}
-          </>
-        ) : (
-          <>
+            {/* «За срок» ↔ «Глав в день»: срок и пояснение сменяют друг друга плавно */}
+            <Reveal open={parMode === 'period'}>
+              <div className="cp-body">{daysBlock('plan-par-days', periodDays, setPeriodDays, parLoad)}</div>
+            </Reveal>
+            <Reveal open={parMode !== 'period'}>
+              {firstDay && Object.keys(streams).length > 0 && <p className="cp-first">{t('Первый день: {list}', { list: firstDay })}</p>}
+              <p className="cp-note">{t('Короткие разделы начинаются заново, пока идут длинные.')}</p>
+            </Reveal>
+          </div>
+        </Reveal>
+        <Reveal open={cpMode !== 'par'}>
+          <div className="cp-body">
             <div className="cp-label" id="plan-scope-l">
               {t('Что читать')}
             </div>
             <div className="cp-scopes" id="plan-scope" role="radiogroup" aria-labelledby="plan-scope-l">
               {[...Object.entries(SCOPES), ['own', { label: N_('Свои книги') }]].map(([k, v]) => (
                 <button key={k} type="button" role="radio" aria-checked={scope === k} className={`cp-scope ${scope === k ? 'on' : ''}`} onClick={() => setScope(k)}>
+                  {(() => {
+                    // у каждого раздела свой значок (как у готовых планов); свои книги — список с отметками
+                    const Icon = SCOPE_ICONS[k] || BookOpen;
+                    return <Icon size={17} aria-hidden="true" />;
+                  })()}
                   {t(v.label)}
                 </button>
               ))}
@@ -492,22 +607,17 @@ export default function PlansSheet({ pane, onClose }) {
             <Reveal open={scope === 'own'}>
               <BookPicker value={own} onChange={setOwn} />
             </Reveal>
-            {daysBlock('plan-days', days, setDays)}
-          </>
-        )}
+            {daysBlock('plan-days', days, setDays, seqLoad)}
+          </div>
+        </Reveal>
         <button
           className="btn primary cp-start"
           onClick={startCustom}
           disabled={!!busy || ((cpMode === 'par' ? streams.own != null : scope === 'own') && !own.length) || (cpMode === 'par' && parMode === 'perday' && !parDays)}
         >
-          {busy === 'custom' ? <Loader2 size={16} className="spin" /> : <Plus size={16} />}{' '}
-          {cpMode === 'par' && parMode === 'period'
-            ? t('Начать на {n} дн.', { n: Math.max(7, Math.min(730, +periodDays || 90)) })
-            : cpMode === 'par'
-            ? parDays
-              ? t('Начать на {n} дн.', { n: parDays })
-              : t('Выберите книги')
-            : t('Начать на {n} дн.', { n: Math.max(7, Math.min(730, +days || 90)) })}
+          {busy === 'custom' ? <Loader2 size={16} className="spin" /> : <Play size={16} fill="currentColor" />}{' '}
+          {/* срок и дата окончания — в строке нагрузки над кнопкой */}
+          {cpMode === 'par' && parMode === 'perday' && !parDays ? t('Выберите книги') : t('Начать')}
         </button>
       </section>
     </BottomSheet>

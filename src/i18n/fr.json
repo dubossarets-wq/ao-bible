@@ -176,6 +176,21 @@
   "many": "jours d’affilée",
   "other": "jours d’affilée"
  },
+ "день|дня|дней": {
+  "one": "jour",
+  "other": "jours"
+ },
+ "Системная": "Système",
+ "Месяц": "Mois",
+ "3 месяца": "3 mois",
+ "Полгода": "Six mois",
+ "Год": "An",
+ "до {date}": "jusqu’au {date}",
+ "Начать · до {date}": "Commencer · jusqu’au {date}",
+ "Читаете книги по порядку, понемногу каждый день": "Vous lisez les livres dans l’ordre, un peu chaque jour",
+ "Каждый день — немного из разных частей Библии": "Chaque jour, un peu de différentes parties de la Bible",
+ "кроме: {list}": "sauf : {list}",
+ "Первый день: {list}": "Premier jour : {list}",
  "Кнопки в тексте, меню, верхняя панель": "Boutons dans le texte, menus, barre du haut",
  "Кнопки и панели": "Boutons et barres",
  "Как в теме": "Comme dans le thème",

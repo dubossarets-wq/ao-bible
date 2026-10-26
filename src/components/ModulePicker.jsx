@@ -1,6 +1,6 @@
 // Быстрое переключение перевода в панели: книга, глава и стих сохраняются.
 import React from 'react';
-import { Check, Library, Star } from 'lucide-react';
+import { Library, Star } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { t } from '../core/i18n.js';
@@ -8,10 +8,12 @@ import { t } from '../core/i18n.js';
 export default function ModulePicker({ pane, onClose }) {
   const { bibles, panes, setPaneModule, openSheet, settings, setSettings } = useApp();
   const current = panes[pane]?.moduleId;
+  // основной (избранный ★) — первым, остальные в прежнем порядке; открытый сейчас — отмечен фоном (.pick-row.on)
+  const list = [...bibles.filter((b) => b.id === settings.primaryModule), ...bibles.filter((b) => b.id !== settings.primaryModule)];
   return (
     <BottomSheet title={t('Перевод')} subtitle={pane === 1 ? t('Вторая панель') : t('Основная панель')} onClose={onClose}>
       <ul className="pick-list">
-        {bibles.map((b) => (
+        {list.map((b) => (
           <li key={b.id}>
             <button
               className={`pick-row ${b.id === current ? 'on' : ''}`}
@@ -25,7 +27,6 @@ export default function ModulePicker({ pane, onClose }) {
                 {b.title}
                 {b.features?.strongs ? ` · ${t('номера Стронга')}` : ''}
               </span>
-              {b.id === current && <Check size={18} className="pick-check" />}
             </button>
             {settings.primaryModule !== b.id ? (
               <button className="icon-btn subtle" title={t('Сделать основным')} aria-label={t('Сделать {name} основным переводом', { name: b.name })} onClick={() => setSettings({ primaryModule: b.id })}>

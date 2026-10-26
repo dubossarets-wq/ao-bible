@@ -14,7 +14,7 @@ import { usePersistentState, save, load } from '../core/storage.js';
 import { shortName } from '../core/moduleShort.js';
 import { copyText } from '../core/clipboard.js';
 import { quoteVerse, quoteLabel } from './SelectionBar.jsx';
-import { Segmented, Switch, Progress } from './ui.jsx';
+import { Segmented, Switch, Progress, Reveal } from './ui.jsx';
 import SwipeRow from './SwipeRow.jsx';
 import { refRangeLabel, isWholeChapter } from '../core/sermons.js';
 import { StrongPlaces } from './ConcordanceSheet.jsx';
@@ -396,8 +396,11 @@ export default function SearchPanel({ pane, payload = {}, onClose, pick = null }
       {canAll && (
         <Switch id="search-all" checked={allMods} onChange={setAllMods} label={t('Во всех модулях')} hint={t('Искать во всех установленных переводах. У каждого места — метка перевода.')} />
       )}
-      {canAll && allMods && hasOrig && (
-        <Switch id="search-orig" checked={withOrig} onChange={setWithOrig} label={t('И в оригиналах')} hint={t('Еврейский и греческий текст — для поиска слов на иврите и греческом.')} />
+      {/* «И в оригиналах» — под включённым «Во всех модулях», раскрывается плавно */}
+      {canAll && hasOrig && (
+        <Reveal open={allMods}>
+          <Switch id="search-orig" checked={withOrig} onChange={setWithOrig} label={t('И в оригиналах')} hint={t('Еврейский и греческий текст — для поиска слов на иврите и греческом.')} />
+        </Reveal>
       )}
 
       {refHit && (
@@ -488,7 +491,7 @@ export default function SearchPanel({ pane, payload = {}, onClose, pick = null }
                   </button>
                   {pick ? (
                     <button type="button" className={`icon-btn subtle result-add${added ? ' on' : ''}`} aria-label={`${added ? t('Уже в проповеди — добавить ещё раз') : t('Добавить в проповедь')}: ${ref}`} title={added ? t('Уже в проповеди') : t('Добавить в проповедь')} onClick={() => open(r)}>
-                      {added ? <Check size={17} /> : <Plus size={17} />}
+                      {added ? <Check size={17} className="pop-in" /> : <Plus size={17} />}
                     </button>
                   ) : (
                   <button

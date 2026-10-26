@@ -177,6 +177,23 @@
   "many": "dni z rzędu",
   "other": "dnia z rzędu"
  },
+ "день|дня|дней": {
+  "one": "dzień",
+  "few": "dni",
+  "many": "dni",
+  "other": "dnia"
+ },
+ "Системная": "Systemowy",
+ "Месяц": "Miesiąc",
+ "3 месяца": "3 miesiące",
+ "Полгода": "Pół roku",
+ "Год": "Rok",
+ "до {date}": "do {date}",
+ "Начать · до {date}": "Rozpocznij · do {date}",
+ "Читаете книги по порядку, понемногу каждый день": "Czytasz księgi po kolei, każdego dnia trochę",
+ "Каждый день — немного из разных частей Библии": "Każdego dnia trochę z różnych części Biblii",
+ "кроме: {list}": "bez: {list}",
+ "Первый день: {list}": "Pierwszy dzień: {list}",
  "Кнопки в тексте, меню, верхняя панель": "Przyciski w tekście, menu, górny pasek",
  "Кнопки и панели": "Przyciski i paski",
  "Как в теме": "Jak w motywie",

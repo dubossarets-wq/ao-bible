@@ -10,7 +10,7 @@ import {
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { FONTS, ensureFont, COLOR_KEYS, themeColors, THEMES, DEFAULT_SETTINGS } from '../core/settings.js';
-import { Segmented, Switch, Hint, Fold, ConfirmButton } from './ui.jsx';
+import { Segmented, Switch, Hint, Fold, ConfirmButton, Reveal } from './ui.jsx';
 import { HL_COLORS } from '../core/highlights.js';
 import { saveBg, clearBg } from '../core/userBg.js';
 import { t, N_ } from '../core/i18n.js';
@@ -69,7 +69,7 @@ const LIVE = {
 function ColorPick({ id, label, value, base, changed, list, onPick, onReset, onLive }) {
   const v = String(value || '').toLowerCase();
   const custom = changed && !list.some(([c]) => c === v);
-  const mark = (c) => <Check size={18} strokeWidth={3} style={{ color: isLight(c) ? '#1d1c1a' : '#ffffff' }} aria-hidden="true" />;
+  const mark = (c) => <Check className="pop-in" size={18} strokeWidth={3} style={{ color: isLight(c) ? '#1d1c1a' : '#ffffff' }} aria-hidden="true" />;
   return (
     <div className="field">
       <span className="field-label" id={`${id}-l`}>
@@ -244,7 +244,11 @@ function ViewPic({ kind }) {
   );
 }
 
-const THEME_NAMES = { ...Object.fromEntries(Object.entries(THEMES).map(([k, v]) => [k, v.label])), auto: N_('Как в системе') };
+// порядок: Системная, Светлая, Тёмная, Тёплая, Сепия, затем остальные
+const THEME_FIRST = ['auto', 'light', 'dark', 'warm', 'sepia'];
+const THEME_NAMES = Object.fromEntries(
+  [...THEME_FIRST, ...Object.keys(THEMES).filter((k) => !THEME_FIRST.includes(k))].map((k) => [k, k === 'auto' ? N_('Системная') : THEMES[k].label]),
+);
 
 // Кружок темы: её страница, полоска верхней панели, буквы цветом текста и точка цвета акцента
 function ThemeTile({ id, on, onPick }) {
@@ -457,7 +461,7 @@ export default function AppearanceSettings({ onClose, payload }) {
                       </span>
                       <small>{t(f.label)}</small>
                     </span>
-                    <span className="font-check">{on && <Check size={20} strokeWidth={2.6} />}</span>
+                    <span className="font-check">{/* проявляется плавно (стили .font-row.on) */}<Check size={20} strokeWidth={2.6} /></span>
                   </button>
                 );
               })}
@@ -503,12 +507,12 @@ export default function AppearanceSettings({ onClose, payload }) {
                   {V2()}
                 </span>
               </p>
-              {s.showVerseNumbers && (
-                <>
+              <Reveal open={!!s.showVerseNumbers}>
+                <div className="ap-more">
                   <Range id="set-vn-size" label={t('Размер')} value={s.verseNumSize} min={0.4} max={1.2} step={0.05} onChange={(verseNumSize) => set({ verseNumSize })} word={SIZE_W(0.52, 0.8)} />
                   <Segmented id="set-vn-pos" label={t('Положение')} value={s.verseNumPos} onChange={(verseNumPos) => set({ verseNumPos })} options={['sup', 'inline'].map((k) => [k, t(POS[k])])} />
-                </>
-              )}
+                </div>
+              </Reveal>
             </section>
 
             <section className="ap-card lead">
@@ -516,13 +520,13 @@ export default function AppearanceSettings({ onClose, payload }) {
               <p className="ap-mini" aria-hidden="true">
                 {v1Parts(true, !s.showStrongs)}
               </p>
-              {s.showStrongs && (
-                <>
+              <Reveal open={!!s.showStrongs}>
+                <div className="ap-more">
                   <Range id="set-sn-size" label={t('Размер')} value={s.strongSize} min={0.35} max={1} step={0.05} onChange={(strongSize) => set({ strongSize })} word={SIZE_W(0.45, 0.7)} />
                   <Segmented id="set-sn-pos" label={t('Положение')} value={s.strongPos} onChange={(strongPos) => set({ strongPos })} options={['sup', 'inline', 'sub'].map((k) => [k, t(POS[k])])} />
                   <ColorPick id="sw-strong" label={t('Цвет')} value={eff.strong} base={eff.accent} changed={!!over.strong} list={ACCENTS} onPick={(v) => setColor('strong', v)} onReset={() => resetColor('strong')} onLive={liveFor('strong')} />
-                </>
-              )}
+                </div>
+              </Reveal>
             </section>
 
             <section className="ap-card lead">
@@ -531,12 +535,12 @@ export default function AppearanceSettings({ onClose, payload }) {
                 <span className={`pv-head ${s.showHeadings ? '' : 'off'}`}>{t('Сотворение неба и земли')}</span>
                 <span className="clamp1">{v1Plain()}</span>
               </p>
-              {s.showHeadings && (
-                <>
+              <Reveal open={!!s.showHeadings}>
+                <div className="ap-more">
                   <Range id="set-head-size" label={t('Размер')} value={s.headingSize} min={0.6} max={1.4} step={0.05} onChange={(headingSize) => set({ headingSize })} word={SIZE_W(0.72, 1)} />
                   <ColorPick id="sw-heading" label={t('Цвет')} value={eff.heading} base={eff.accent} changed={!!over.heading} list={ACCENTS} onPick={(v) => setColor('heading', v)} onReset={() => resetColor('heading')} onLive={liveFor('heading')} />
-                </>
-              )}
+                </div>
+              </Reveal>
             </section>
 
             <section className="ap-card">
@@ -576,12 +580,12 @@ export default function AppearanceSettings({ onClose, payload }) {
                 );
               })}
             </div>
-            {!!s.bgImage && (
+            <Reveal open={!!s.bgImage}>
               <section className="ap-card">
                 <Range id="set-bg-show" label={t('Картинку видно')} value={100 - (s.bgVeil ?? 72)} min={5} max={70} step={1} onChange={(v) => set({ bgVeil: 100 - v })} word={(v) => `${v}%`} />
                 <Range id="set-bg-blur" label={t('Размытие')} value={s.bgBlur || 0} min={0} max={20} step={1} onChange={(bgBlur) => set({ bgBlur })} word={BLUR_W} />
               </section>
-            )}
+            </Reveal>
             <p className="field-hint">{t('Картинка хранится только на этом устройстве.')}</p>
           </>
         )}
@@ -620,11 +624,11 @@ export default function AppearanceSettings({ onClose, payload }) {
                 ))}
               </div>
             </Fold>
-            {Object.keys(over).length > 0 && (
+            <Reveal open={Object.keys(over).length > 0}>
               <button className="btn ap-wide btn-block" onClick={() => set({ colorOverrides: {} })}>
                 <RotateCcw size={15} /> {t('Все цвета — как в теме')}
               </button>
-            )}
+            </Reveal>
           </>
         )}
 

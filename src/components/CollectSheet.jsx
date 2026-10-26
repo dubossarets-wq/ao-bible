@@ -48,7 +48,7 @@ export default function CollectSheet({ payload, onClose }) {
               <button className="list-main" onClick={() => add(c.id)} disabled={!items}>
                 <Folder size={16} className="accent" />
                 <span className="list-title">{c.name}</span>
-                <span className="list-meta">{has(c) ? <Check size={15} /> : t('{n} ст.', { n: c.items.length })}</span>
+                <span className="list-meta">{has(c) ? <Check size={15} className="pop-in" /> : t('{n} ст.', { n: c.items.length })}</span>
               </button>
             </li>
           ))}

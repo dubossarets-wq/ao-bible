@@ -175,6 +175,21 @@
   "one": "day in a row",
   "other": "days in a row"
  },
+ "день|дня|дней": {
+  "one": "day",
+  "other": "days"
+ },
+ "Системная": "System",
+ "Месяц": "Month",
+ "3 месяца": "3 months",
+ "Полгода": "Half a year",
+ "Год": "Year",
+ "до {date}": "until {date}",
+ "Начать · до {date}": "Start · until {date}",
+ "Читаете книги по порядку, понемногу каждый день": "Read the books in order, a little every day",
+ "Каждый день — немного из разных частей Библии": "Every day — a little from different parts of the Bible",
+ "кроме: {list}": "except: {list}",
+ "Первый день: {list}": "First day: {list}",
  "Кнопки в тексте, меню, верхняя панель": "Buttons in the text, menus, top bar",
  "Кнопки и панели": "Buttons and bars",
  "Как в теме": "As in the theme",

@@ -14,7 +14,7 @@ import { useApp } from '../App.jsx';
 import * as repo from '../core/modules.js';
 import { MODULE_TYPES, MODULE_SECTIONS } from '../core/schema.js';
 import { isPersistent } from '../core/db.js';
-import { ConfirmButton, Empty, Fold, fmtSize, useSwipeToggle } from './ui.jsx';
+import { ConfirmButton, Empty, Fold, Reveal, fmtSize, useSwipeToggle } from './ui.jsx';
 import { t, N_, getLang, locale, fmtNum } from '../core/i18n.js';
 
 export const TYPE_ICON = { bible: BookOpen, commentary: MessageSquareText, dictionary: BookText, maps: MapIcon, crossrefs: Link2, audio: Headphones };
@@ -158,7 +158,8 @@ function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle })
           <ChevronDown size={20} />
         </button>
       </div>
-      {open && (
+      {/* подробности раскрываются и сворачиваются плавно */}
+      <Reveal open={open}>
         <div className="mod-more">
           <Details m={installed ? { ...cat, ...installed } : m} />
           {busy && <div className="progress-label">{busy.label}</div>}
@@ -185,7 +186,7 @@ function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle })
             )}
           </div>
         </div>
-      )}
+      </Reveal>
     </li>
   );
 }

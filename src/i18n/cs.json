@@ -177,6 +177,23 @@
   "many": "dne v řadě",
   "other": "dní v řadě"
  },
+ "день|дня|дней": {
+  "one": "den",
+  "few": "dny",
+  "many": "dne",
+  "other": "dní"
+ },
+ "Системная": "Systémová",
+ "Месяц": "Měsíc",
+ "3 месяца": "3 měsíce",
+ "Полгода": "Půl roku",
+ "Год": "Rok",
+ "до {date}": "do {date}",
+ "Начать · до {date}": "Začít · do {date}",
+ "Читаете книги по порядку, понемногу каждый день": "Čtete knihy popořadě, každý den kousek",
+ "Каждый день — немного из разных частей Библии": "Každý den kousek z různých částí Bible",
+ "кроме: {list}": "kromě: {list}",
+ "Первый день: {list}": "První den: {list}",
  "Кнопки в тексте, меню, верхняя панель": "Tlačítka v textu, nabídky, horní panel",
  "Кнопки и панели": "Tlačítka a panely",
  "Как в теме": "Podle motivu",

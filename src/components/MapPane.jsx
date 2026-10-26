@@ -6,6 +6,7 @@ import { X, MapPin, Satellite, Map as MapIcon, Loader2, ChevronDown, ExternalLin
 import { useApp } from '../App.jsx';
 import { parseOsisRef, formatRef } from '../core/books.js';
 import { t } from '../core/i18n.js';
+import { Reveal } from './ui.jsx';
 
 const ML_VERSION = '4.7.1';
 const STYLE = 'https://tiles.openfreemap.org/styles/liberty';
@@ -183,7 +184,8 @@ export default function MapPane({ pane }) {
             </span>
             <ChevronDown size={18} className="place-chev" />
           </button>
-          {cardOpen && (
+          {/* подробности о месте раскрываются и сворачиваются плавно */}
+          <Reveal open={cardOpen} className="place-card-reveal">
             <div className="place-card-body">
               {place.modern && (
                 <p>
@@ -218,7 +220,7 @@ export default function MapPane({ pane }) {
                 {place.license || 'OpenBible.info, CC BY 4.0'}
               </p>
             </div>
-          )}
+          </Reveal>
         </div>
       </div>
     </section>
