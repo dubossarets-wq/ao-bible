@@ -1998,6 +1998,50 @@
    "sizeGz": 175480
   },
   {
+   "id": "wh1881",
+   "type": "bible",
+   "name": "WH",
+   "title": "Новый Завет на греческом: Весткотт — Хорт (1881)",
+   "description": "Критический текст Нового Завета Б. Ф. Весткотта и Ф. Дж. А. Хорта (1881) — основа современных изданий (Нестле — Аланд, UBS). Состав слов, номера Стронга и морфологические коды — по электронному тексту М. Робинсона; ударения, придыхания и пунктуация добавлены по данным STEPBible TAGNT (написание — как у WH), где пары не нашлось — слово без ударения. Двойными квадратными скобками отмечены места, которые издатели считали поздними вставками. Нумерация переведена в синодальную.",
+   "language": "grc",
+   "version": "byztxt/greektext-westcott-hort (git) + STEPBible TAGNT (git)",
+   "author": "Brooke Foss Westcott, Fenton John Anthony Hort; электронный текст — Maurice A. Robinson",
+   "source": "https://github.com/byztxt/greektext-westcott-hort ; https://github.com/STEPBible/STEPBible-Data",
+   "license": "Public Domain (текст WH 1881 и разбор Робинсона); ударения и пунктуация — STEPBible.org, Tyndale House Cambridge, CC BY 4.0 (данные TAGNT использованы выборочно и переработаны)",
+   "features": {
+    "strongs": true,
+    "morphology": true,
+    "headings": false
+   },
+   "versification": "synodal",
+   "url": "wh1881.json",
+   "urlGz": "wh1881.json.gz",
+   "size": 3681190,
+   "sizeGz": 719814
+  },
+  {
+   "id": "sblgnt",
+   "type": "bible",
+   "name": "SBLGNT",
+   "title": "Новый Завет на греческом: SBLGNT (Общество библейской литературы, 2010)",
+   "description": "Критический греческий текст Нового Завета Общества библейской литературы (2010, ред. М. Холмс). Номера Стронга и морфологические коды добавлены по данным STEPBible TAGNT (Tyndale House, CC BY 4.0); знаки-отсылки к критическому аппарату убраны. Нумерация стихов приведена к синодальной.",
+   "language": "grc",
+   "version": "LogosBible/SBLGNT v1.2 (git) + STEPBible TAGNT (git)",
+   "author": "Michael W. Holmes (ред.)",
+   "source": "https://github.com/LogosBible/SBLGNT ; https://github.com/STEPBible/STEPBible-Data",
+   "license": "CC BY 4.0 (Society of Biblical Literature, Logos Bible Software); разметка Стронга и морфологии — STEPBible.org, Tyndale House Cambridge, CC BY 4.0",
+   "features": {
+    "strongs": true,
+    "morphology": true,
+    "headings": false
+   },
+   "versification": "synodal",
+   "url": "sblgnt.json",
+   "urlGz": "sblgnt.json.gz",
+   "size": 3629084,
+   "sizeGz": 717150
+  },
+  {
    "id": "bible-places",
    "type": "maps",
    "name": "Места",
