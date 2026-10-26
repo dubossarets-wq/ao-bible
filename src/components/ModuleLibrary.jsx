@@ -1,9 +1,10 @@
 // Библиотека модулей: установленные, онлайн-каталог, импорт файлов.
 // Модули разложены по видам (переводы, комментарии, словари, карты, параллельные места) и показаны
-// компактными строками: справа — действие (скачать / установлен / обновить) и стрелка «подробнее».
+// строками от края до края окна: короткое и полное название, язык и размер; справа — действие
+// (капсула «Скачать» / тихое «Установлен» / прогресс загрузки) и стрелка «подробнее».
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import {
-  Download, RefreshCw, Trash2, Star, CheckCircle2, Ban, Globe, BookOpen, BookText, Link2, ChevronDown,
+  Download, RefreshCw, Trash2, Star, Check, Ban, Globe, BookOpen, BookText, Link2, ChevronDown,
   MessageSquareText, Map as MapIcon, Loader2,
   Search,
   Headphones,
@@ -83,7 +84,6 @@ function Details({ m }) {
 // Одна компактная строка модуля
 function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle }) {
   const { settings, setSettings, toast } = useApp();
-  const Icon = TYPE_ICON[m.type] || BookText;
   const isPrimary = installed && settings.primaryModule === installed.id;
   const updatable = installed && cat && !cat.unavailable && cat.version && installed.catalogVersion && cat.version !== installed.catalogVersion;
   const toggleable = installed && installed.type !== 'bible';
@@ -94,22 +94,23 @@ function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle })
 
   let action;
   if (busy)
+    // идёт загрузка: на месте кнопки — кольцо прогресса и проценты
     action = (
-      <span className="row-act busy" title={busy.label} aria-label={t('Загрузка {pct}%', { pct })}>
-        <Loader2 size={16} className="spin" />
-        <span className="row-pct">{pct}%</span>
+      <span className="mod-busy" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} title={busy.label} aria-label={t('Загрузка {pct}%', { pct })}>
+        <span className="mod-ring" style={{ '--p': pct }} aria-hidden="true" />
+        {pct}%
       </span>
     );
   else if (mode === 'catalog' && m.unavailable)
     action = (
       <span className="row-act muted" title={t('Нет свободной электронной версии')} aria-label={t('Недоступен')}>
-        <Ban size={20} />
+        <Ban size={18} />
       </span>
     );
   else if (updatable)
     action = (
-      <button className="row-act accent" onClick={() => onInstall(cat)} aria-label={t('Обновить {name}', { name: m.name })} title={t('Есть новая версия')}>
-        <RefreshCw size={20} />
+      <button className="mod-pill outline" onClick={() => onInstall(cat)} aria-label={t('Обновить {name}', { name: m.name })} title={t('Есть новая версия')}>
+        {t('Обновить')}
       </button>
     );
   else if (mode === 'installed' && installed?.type === 'bible' && !installed.features?.helper)
@@ -131,31 +132,36 @@ function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle })
       </label>
     );
   else if (installed)
+    // установлен — тихая подпись с галочкой, без яркого цвета
     action = (
-      <span className="row-act ok" title={t('Установлен')} aria-label={t('Установлен')}>
-        <CheckCircle2 size={20} />
+      <span className="mod-state">
+        <Check size={14} aria-hidden="true" />
+        {t('Установлен')}
       </span>
     );
   else
     action = (
-      <button className="row-act accent" onClick={() => onInstall(cat || m)} aria-label={`${t('Скачать {name}', { name: m.name })}${m.sizeGz || m.size ? `, ${fmtSize(m.sizeGz || m.size)}` : ''}`} title={`${t('Скачать')}${m.sizeGz || m.size ? ` · ${fmtSize(m.sizeGz || m.size)}` : ''}`}>
-        <Download size={20} />
+      <button className="mod-pill" onClick={() => onInstall(cat || m)} aria-label={`${t('Скачать {name}', { name: m.name })}${m.sizeGz || m.size ? `, ${fmtSize(m.sizeGz || m.size)}` : ''}`} title={`${t('Скачать')}${m.sizeGz || m.size ? ` · ${fmtSize(m.sizeGz || m.size)}` : ''}`}>
+        {t('Скачать')}
       </button>
     );
+  // полное название — если оно не повторяет короткое; ниже мелко язык и размер для скачивания
+  const title = m.title && m.title !== m.name ? m.title : null;
+  const meta = [m.language && langName(m.language), !installed && (m.sizeGz || m.size) && fmtSize(m.sizeGz || m.size)].filter(Boolean).join(' · ');
 
   return (
     <li className={`mod-row ${open ? 'open' : ''} ${toggleable && !on ? 'off' : ''} ${m.unavailable ? 'unavailable' : ''}`}>
       <div className="mod-line">
         <button className="mod-main" onClick={onToggle} aria-expanded={open}>
-          <Icon size={20} className="mod-icon" />
           <span className="mod-texts">
             <span className="mod-name">{m.name}</span>
-            <span className="mod-sub">{[m.language && langName(m.language), m.title || (MODULE_TYPES[m.type] && t(MODULE_TYPES[m.type]))].filter(Boolean).join(' · ')}</span>
+            {title && <span className="mod-full">{title}</span>}
+            {meta && <span className="mod-sub">{meta}</span>}
           </span>
         </button>
         {action}
         <button className="row-chev" onClick={onToggle} aria-label={open ? t('Свернуть') : t('Подробнее')} aria-expanded={open}>
-          <ChevronDown size={20} />
+          <ChevronDown size={16} />
         </button>
       </div>
       {/* подробности раскрываются и сворачиваются плавно */}
@@ -199,7 +205,7 @@ function Sections({ items, mode, catalog, busy, onInstall, filter }) {
   );
   if (!groups.length) return <Empty icon={BookOpen} title={t('Модулей нет')}>{mode === 'installed' ? t('Скачайте из каталога или импортируйте JSON-файл.') : t('В каталоге пока нет модулей.')}</Empty>;
   return groups.map(([type, label, list]) => (
-    <section key={type} className="nav-group">
+    <section key={type} className="nav-group mod-group">
       <h4>
         {t(label)} <span className="tab-n">{list.length}</span>
       </h4>
@@ -300,7 +306,7 @@ function LangFilter({ value, onChange, items }) {
   const codes = Object.keys(counts).sort((a, b) => langRank(a) - langRank(b) || a.localeCompare(b));
   if (codes.length < 2) return null;
   return (
-    <div className="chips filter-chips lang-chips" role="group" aria-label={t('Язык модулей')}>
+    <div className="chips filter-chips lang-chips mod-chips" role="group" aria-label={t('Язык модулей')}>
       {[['all', t('Все языки')], ...codes.map((c) => [c, langName(c)])].map(([k, l]) => (
         <button key={k} className={`chip ${value === k ? 'on' : ''}`} aria-pressed={value === k} onClick={() => onChange(k)}>
           {l}
@@ -316,7 +322,7 @@ const matches = (m, q) => !q || [m.name, m.title, m.description, m.author, langN
 
 function Filter({ value, onChange, counts }) {
   return (
-    <div className="chips filter-chips" role="group" aria-label={t('Вид модулей')}>
+    <div className="chips filter-chips mod-chips" role="group" aria-label={t('Вид модулей')}>
       {[['all', N_('Все')], ...MODULE_SECTIONS].map(([k, l]) => (
         <button key={k} className={`chip ${value === k ? 'on' : ''}`} aria-pressed={value === k} onClick={() => onChange(k)}>
           {t(l)}
@@ -380,7 +386,8 @@ export default function ModuleLibrary({ payload, onClose }) {
   return (
     <BottomSheet title={t('Библиотека модулей')} onClose={onClose} variant="wide">
       {!persist && <p className="warn small">{t('Браузер не даёт сохранять модули — после перезагрузки они пропадут.')}</p>}
-      <div className="tabs" role="tablist" aria-label={t('Разделы библиотеки')}>
+      {/* fit: вкладки тянутся по ширине окна, у каждой — ширина по тексту, подписи не обрезаются */}
+      <div className="tabs fit" role="tablist" aria-label={t('Разделы библиотеки')}>
         {[
           ['installed', t('Установленные')],
           ['catalog', t('Каталог')],

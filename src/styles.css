@@ -453,40 +453,61 @@ button.wp-item:active { background: color-mix(in srgb, var(--accent) 12%, transp
 /* тёмный круг с белым значком — виден и на светлой, и на тёмной карте */
 .map-full-btn { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border-radius: 50%; border: 0; background: rgba(27, 26, 24, .8); color: #fff; cursor: pointer; }
 
-/* ---------- Библиотека: компактные строки модулей ---------- */
+/* ---------- Библиотека: строки модулей от края до края окна ---------- */
 .filter-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px 2px; flex: none; }
 .filter-chips::-webkit-scrollbar { display: none; }
 .filter-chips .chip { flex: none; }
 .chip.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .chip.on .tab-n { color: inherit; opacity: .8; }
-.mod-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); overflow: hidden; }
+/* компактные ряды фильтров: высота 30, число мельче и серее; второй ряд ближе к первому */
+.mod-chips .chip { min-height: 30px; padding: 0 11px; font-size: .84rem; gap: 4px; }
+.mod-chips .chip .tab-n { font-size: .74rem; color: var(--muted); margin-left: 0; }
+.mod-chips .chip.on .tab-n { color: inherit; opacity: .8; }
+.mod-chips + .mod-chips { margin-top: -4px; }
+/* вкладки по ширине окна: доля каждой — по длине подписи, поля меньше — «Установленные» целиком и на 360 px */
+.tabs.fit button { flex: 1 1 auto; padding-left: 8px; padding-right: 8px; }
+/* подзаголовок группы — мелко, серо, 20 от края окна */
+.mod-group h4 { padding-left: 4px; font-size: .8rem; margin-bottom: -4px; }
+.mod-group h4 .tab-n { font-size: .72rem; font-weight: 400; }
+.mod-list { list-style: none; margin: 0 -16px; padding: 0; } /* от края до края окна (подсветка и линии), отступ 20 — у содержимого */
 .mod-row + .mod-row { border-top: 1px solid var(--line); }
-.mod-line { display: flex; align-items: center; min-height: 56px; }
-.mod-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 8px 4px 8px 14px; background: none; border: 0; text-align: left; }
-.mod-icon { flex: none; color: var(--accent); }
+.mod-line { display: flex; align-items: center; min-height: 56px; padding-right: 12px; transition: background-color .15s; }
+@media (hover: hover) { .mod-line:hover { background: color-mix(in srgb, var(--text) 4%, transparent); } }
+.mod-line:has(> .mod-main:active, > .row-chev:active) { background: color-mix(in srgb, var(--text) 7%, transparent); }
+.mod-main { flex: 1; min-width: 0; align-self: stretch; display: flex; align-items: center; padding: 10px 10px 10px 20px; background: none; border: 0; text-align: left; -webkit-tap-highlight-color: transparent; }
 .mod-texts { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.mod-row .mod-name { font-weight: 700; font-size: .98rem; white-space: nowrap; overflow: hidden; text-overflow: clip; }
-.mod-sub { color: var(--muted); font-size: .82rem; white-space: nowrap; overflow: hidden; text-overflow: clip; }
+.mod-row .mod-name { font-weight: 700; font-size: .97rem; line-height: 1.3; overflow-wrap: anywhere; }
+/* полное название — до двух строк, дальше многоточие */
+.mod-full { font-size: .86rem; line-height: 1.35; color: color-mix(in srgb, var(--text) 82%, transparent); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+.mod-sub { margin-top: 2px; color: var(--muted); font-size: .78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* «Скачать» — капсула цвета акцента высотой 30 (поле нажатия 44); «Обновить» — рамкой */
+.mod-pill { flex: none; position: relative; height: 30px; padding: 0 13px; border: 1px solid var(--accent); border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: .84rem; font-weight: 600; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
+.mod-pill::before { content: ""; position: absolute; inset: -7px -4px; }
+.mod-pill.outline { background: none; color: var(--accent); }
+.mod-pill:active { filter: brightness(.94); }
+@media (hover: hover) { .mod-pill:hover { filter: brightness(1.06); } .mod-pill.outline:hover { filter: none; background: color-mix(in srgb, var(--accent) 10%, transparent); } }
+/* установлен — тихая подпись с галочкой */
+.mod-state { flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 0 2px 0 4px; color: var(--muted); font-size: .8rem; white-space: nowrap; }
+/* идёт загрузка — кольцо прогресса и проценты */
+.mod-busy { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 44px; padding-right: 2px; color: var(--accent); font-size: .8rem; font-variant-numeric: tabular-nums; }
+.mod-ring { width: 18px; height: 18px; border-radius: 50%; background: conic-gradient(var(--accent) calc(var(--p, 0) * 1%), var(--line) 0); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2.6px), #000 calc(100% - 2.4px)); mask: radial-gradient(farthest-side, transparent calc(100% - 2.6px), #000 calc(100% - 2.4px)); }
 .row-act { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: none; border-radius: 50%; color: var(--text); }
 @media (hover: hover) { button.row-act:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); } }
 .row-act.accent { color: var(--accent); }
-.row-act.ok { color: var(--ok); }
 .row-act.muted { color: var(--muted); }
-.row-act.busy { width: auto; min-width: 44px; display: inline-flex; gap: 4px; padding: 0 6px; color: var(--accent); }
-.row-pct { font-size: .78rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .row-switch { flex: none; display: grid; place-items: center; width: 56px; height: 44px; cursor: pointer; position: relative; }
 .row-switch input { position: absolute; opacity: 0; pointer-events: none; }
 .row-switch input:focus-visible + .switch { outline: 2px solid var(--accent); outline-offset: 2px; }
-.row-chev { flex: none; width: 40px; height: 44px; display: grid; place-items: center; border: 0; background: none; color: var(--muted); margin-right: 4px; }
+/* стрелка подробностей — маленькая и тихая */
+.row-chev { flex: none; width: 32px; height: 44px; display: grid; place-items: center; border: 0; background: none; color: color-mix(in srgb, var(--muted) 75%, transparent); -webkit-tap-highlight-color: transparent; }
 .row-chev svg { transition: transform .2s; }
 .mod-row.open .row-chev svg { transform: rotate(180deg); }
 .mod-row.off .mod-texts, .mod-row.unavailable .mod-texts { opacity: .6; }
-.mod-more { padding: 0 14px 12px 46px; display: flex; flex-direction: column; gap: 10px; animation: fade .18s ease-out; }
+.mod-more { padding: 0 20px 14px; display: flex; flex-direction: column; gap: 10px; }
 .mod-details { display: flex; flex-direction: column; gap: 8px; }
 .mod-facts { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0; font-size: .82rem; }
 .mod-facts dt { color: var(--muted); }
 .mod-facts dd { margin: 0; overflow-wrap: anywhere; }
-@media (max-width: 420px) { .mod-more { padding-left: 14px; } }
 
 /* ---------- Карта места во второй панели ---------- */
 .wp-pin { flex: none; color: var(--accent); }
