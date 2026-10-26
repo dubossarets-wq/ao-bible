@@ -185,6 +185,25 @@ export function Switch({ id, checked, onChange, label, hint }) {
 // Выбор из нескольких вариантов: подложка плавно переезжает к выбранному;
 // можно провести пальцем по вариантам — подложка едет следом, выбор — там, где отпустили.
 // Вариант — [значение, подпись, (необязательно) название для чтения с экрана, если подпись — картинка].
+// Плавно раскрывает и сворачивает содержимое: высота и прозрачность, как у настроек проигрывателя (280 мс).
+// Свёрнутое убирается из страницы после анимации. Открытое с самого начала — без анимации
+export function Reveal({ open, children, className = '' }) {
+  const [shown, setShown] = useState(open);
+  const first = useRef(open);
+  useEffect(() => {
+    if (open) return setShown(true);
+    first.current = false;
+    const id = setTimeout(() => setShown(false), 280);
+    return () => clearTimeout(id);
+  }, [open]);
+  if (!open && !shown) return null;
+  return (
+    <div className={`reveal ${open ? 'open' : 'closing'}${first.current && open ? ' still' : ''} ${className}`} inert={open ? undefined : ''}>
+      <div className="reveal-in">{children}</div>
+    </div>
+  );
+}
+
 export function Segmented({ value, options, onChange, label, id }) {
   const box = useRef(null);
   const [preview, setPreview] = useState(null);

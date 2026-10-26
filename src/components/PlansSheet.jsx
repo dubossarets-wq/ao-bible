@@ -8,7 +8,7 @@ import { usePlans } from '../core/planStore.js';
 import { readStats } from '../core/readLog.js';
 import { bookMeta, BOOKS } from '../core/books.js';
 import { fetchPlanIndex, fetchPlan, makeCustomPlan, makeParallelPlan, chapterList, streamList, SCOPES, STREAMS, parseReading, planToday, behindDays, readingDone, localDate } from '../core/plans.js';
-import { ConfirmButton, Hint, Switch, Segmented } from './ui.jsx';
+import { ConfirmButton, Hint, Switch, Segmented, Reveal } from './ui.jsx';
 import { usePersistentState } from '../core/storage.js';
 import { REMINDERS, getReminder, setReminder } from '../core/reminders.js';
 import VerseOfDayCard from './VerseOfDayCard.jsx';
@@ -472,7 +472,9 @@ export default function PlansSheet({ pane, onClose }) {
                 );
               })}
             </div>
-            {streams.own != null && <BookPicker value={own} onChange={setOwn} />}
+            <Reveal open={streams.own != null}>
+              <BookPicker value={own} onChange={setOwn} />
+            </Reveal>
             {parMode === 'period' ? daysBlock('plan-par-days', periodDays, setPeriodDays) : <p className="cp-note">{t('Короткие разделы начинаются заново, пока идут длинные.')}</p>}
           </>
         ) : (
@@ -487,7 +489,9 @@ export default function PlansSheet({ pane, onClose }) {
                 </button>
               ))}
             </div>
-            {scope === 'own' && <BookPicker value={own} onChange={setOwn} />}
+            <Reveal open={scope === 'own'}>
+              <BookPicker value={own} onChange={setOwn} />
+            </Reveal>
             {daysBlock('plan-days', days, setDays)}
           </>
         )}

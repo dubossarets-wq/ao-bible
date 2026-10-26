@@ -1717,7 +1717,17 @@ html.kb-open .ap-live { position: relative; }
 .bg-own.on::before { content: ''; position: absolute; inset: 0; background: rgba(0, 0, 0, .55); }
 .bg-own > * { position: relative; }
 /* «Свой план» — отдельная карточка под сеткой планов */
-.custom-plan { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; padding: 16px; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); }
+/* Плавное раскрытие (Reveal в ui.jsx): высота 0fr → 1fr и прозрачность, как у настроек проигрывателя.
+   Пока идёт анимация — содержимое обрезается, потом обрезки нет (фокус и тени не срезаются) */
+.reveal { display: grid; grid-template-rows: 1fr; opacity: 1; animation: reveal-open .28s cubic-bezier(.4,0,.2,1); }
+.reveal.still { animation: none; }
+.reveal.closing { grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .28s cubic-bezier(.4,0,.2,1), opacity .28s cubic-bezier(.4,0,.2,1); pointer-events: none; }
+.reveal-in { min-height: 0; }
+.reveal.open:not(.still) .reveal-in { animation: reveal-clip .28s; }
+.reveal.closing .reveal-in { overflow: hidden; }
+@keyframes reveal-open { from { grid-template-rows: 0fr; opacity: 0; } }
+@keyframes reveal-clip { from, to { overflow: hidden; } }
+.custom-plan { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; padding: 16px; border: 1px solid var(--line); border-radius: 18px; background: color-mix(in srgb, var(--accent) 5%, var(--panel)); /* лёгкая подложка */ }
 .cp-head { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
 .cp-icon { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: color-mix(in srgb, var(--accent) 14%, var(--panel)); color: var(--accent); }
 .cp-titles { min-width: 0; }
