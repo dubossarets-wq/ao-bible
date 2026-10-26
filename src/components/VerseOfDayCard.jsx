@@ -4,14 +4,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { BookOpen, Image as ImageIcon, Share2 } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { selectionLabel, selectionText, quoteVerse, quoteLabel } from './SelectionBar.jsx';
-import { verseOfDay, dayOfYear, VERSES } from '../core/verseOfDay.js';
-import { t } from '../core/i18n.js';
-
-// Перевод для стиха дня: перевод основной панели, иначе основной перевод из настроек, иначе первый установленный
-function verseModules(bibles, panes, settings) {
-  const ids = [panes[0]?.moduleId, settings.primaryModule, ...bibles.map((b) => b.id)];
-  return [...new Set(ids)].map((id) => bibles.find((b) => b.id === id)).filter(Boolean);
-}
+import { verseOfDay, dayOfYear, VERSES, verseModules } from '../core/verseOfDay.js';
+import { t, useLang } from '../core/i18n.js';
 
 // Текст стиха дня. Если в установленных переводах его нет (например, есть только Новый Завет) — следующий стих списка
 async function loadVerse(mods) {
@@ -30,7 +24,8 @@ async function loadVerse(mods) {
 
 export default function VerseOfDayCard({ pane = 0, onClose }) {
   const { bibles, panes, settings } = useApp();
-  const mods = useMemo(() => verseModules(bibles, panes, settings), [bibles, panes, settings]);
+  const lang = useLang();
+  const mods = useMemo(() => verseModules(bibles, panes, settings, lang), [bibles, panes, settings, lang]);
   const { navigate, openSheet, toast } = useApp();
   const [v, setV] = useState(undefined); // undefined — загружается, null — не нашёлся
   const [photo, setPhoto] = useState(null);

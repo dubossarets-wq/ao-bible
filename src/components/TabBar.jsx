@@ -37,6 +37,7 @@ function slideClose(app) {
 export function openTab(app, id) {
   const tab = TABS.find((x) => x.id === id);
   if (!tab) return;
+  window.dispatchEvent(new CustomEvent('aob-player-close')); // раскрытый проигрыватель уезжает вниз
   // «Библия» или повторное нажатие на открытую вкладку — окно плавно уезжает вниз, как и открывалось
   if (!tab.sheet || (app.sheet && activeTab(app.sheet) === id)) return slideClose(app);
   if (!hasSheet(tab.sheet)) return;

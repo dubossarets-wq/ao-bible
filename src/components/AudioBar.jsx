@@ -98,14 +98,18 @@ export default function AudioBar() {
   // проигрывателя меняется один раз, едут только фон и обрезка — глава не пересчитывается на каждом кадре
   const optsRef = useRef(null);
   useLayoutEffect(() => {
-    if (optsOn && optsRef.current && bar.current) bar.current.style.setProperty('--opts-h', `${optsRef.current.offsetHeight}px`);
-  }, [optsOn]);
-  // Настройки прячутся — стрелки глав сразу плавно опускаются вместе с фоном (не ждут, пока панель уберётся)
-  useLayoutEffect(() => {
-    if (!opts && optsShown && optsRef.current && bar.current) {
-      const h = bar.current.getBoundingClientRect().height - optsRef.current.offsetHeight;
-      document.documentElement.style.setProperty('--audio-h', `${Math.round(h)}px`);
+    const root = document.documentElement;
+    if (optsOn && optsRef.current && bar.current) {
+      const h = `${optsRef.current.offsetHeight}px`;
+      bar.current.style.setProperty('--opts-h', h);
+      root.style.setProperty('--opts-h', h);
     }
+  }, [optsOn]);
+  // Стрелки глав едут вместе с фоном: сдвиг на высоту панели (transform — без пересчёта раскладки главы)
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle('audio-opts-open', opts);
+    return () => root.classList.remove('audio-opts-open');
   }, [opts]);
   const [note, setNote] = useState(null); // подпись о скачивании книги
   const [full, setFull] = useState(false); // раскрытый проигрыватель
@@ -123,7 +127,11 @@ export default function AudioBar() {
     const el = bar.current;
     const root = document.documentElement;
     if (!el) return;
-    const ro = new ResizeObserver(() => root.style.setProperty('--audio-h', `${Math.round(el.getBoundingClientRect().height)}px`));
+    // без панели настроек: пока она раскрыта, стрелки поднимаются сдвигом (--chap-shift), а не пересчётом раскладки
+    const ro = new ResizeObserver(() => {
+      const p = el.querySelector('.audio-opts');
+      root.style.setProperty('--audio-h', `${Math.round(el.getBoundingClientRect().height - (p ? p.offsetHeight : 0))}px`);
+    });
     ro.observe(el);
     return () => (ro.disconnect(), root.style.removeProperty('--audio-h'));
   }, [a.active]);

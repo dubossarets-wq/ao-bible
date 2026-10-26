@@ -585,6 +585,8 @@ button.wp-item:active { background: color-mix(in srgb, var(--accent) 12%, transp
 /* Фон проигрывателя — отдельным слоем (::before): капсула 32, с настройками — 16. При раскрытии настроек
    высота проигрывателя меняется сразу, а фон плавно поднимается на высоту панели (--opts-h) и обратно; панель
    обрезается по нему же. Это лишь перерисовка — глава под проигрывателем не пересчитывается на каждом кадре */
+/* свой слой и своя раскладка: движение фона не трогает остальную страницу */
+.audio-bar { will-change: transform; contain: layout; }
 .audio-bar::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--panel); border: 1px solid var(--line); border-radius: 32px; /* капсула, как панель вкладок */ box-shadow: 0 10px 34px rgba(0,0,0,.2); pointer-events: none; }
 .audio-bar.opts-open::before { border-radius: 16px; animation: bar-bg-open .24s cubic-bezier(.22,.8,.3,1); }
 .audio-bar.opts-closing::before { animation: bar-bg-close .24s cubic-bezier(.6,0,.8,.4) forwards; }
@@ -1384,10 +1386,13 @@ html.has-tabbar .place-card { bottom: calc(10px + var(--sab)); }
 /* Соседняя глава: круглые стрелки внизу слева и справа; «Слушать» — над правой стрелкой.
    Над кнопкой «Вернуться к плану» и над проигрывателем стрелки поднимаются; в режиме чтения уходят с панелями. */
 .reader { --chap-bottom: calc(var(--sab) + 16px); }
-.chap-nav { position: absolute; bottom: var(--chap-bottom); z-index: 5; width: 46px; height: 46px; padding: 0; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 94%, transparent); color: var(--text); box-shadow: 0 4px 14px rgba(0,0,0,.16); cursor: pointer; transition: opacity .22s, transform .22s, bottom .24s cubic-bezier(.22,.8,.3,1); /* как фон проигрывателя */ animation: pop .18s ease-out; }
+.chap-nav { position: absolute; bottom: var(--chap-bottom); z-index: 5; width: 46px; height: 46px; padding: 0; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 94%, transparent); color: var(--text); box-shadow: 0 4px 14px rgba(0,0,0,.16); cursor: pointer; transform: translateY(var(--chap-shift, 0px)); transition: opacity .22s, transform .24s cubic-bezier(.22,.8,.3,1) /* как фон проигрывателя */, bottom .22s; animation: pop .18s ease-out; }
 .chap-nav.prev { left: calc(env(safe-area-inset-left, 0px) + 14px); }
 .chap-nav.next { right: calc(env(safe-area-inset-right, 0px) + 14px); }
-.chap-nav:active { transform: scale(.92); }
+.chap-nav:active { transform: translateY(var(--chap-shift, 0px)) scale(.92); }
+/* раскрыты настройки проигрывателя — стрелки поднимаются сдвигом на их высоту (видеокарта, без пересчёта главы) */
+html.audio-opts-open .app:has(.audio-bar) .reader { --chap-shift: calc(-1 * var(--opts-h, 0px)); }
+html.audio-opts-open .app:has(.audio-bar) .split.rows .pane-slot.first .reader { --chap-shift: 0px; }
 @media (hover: hover) { .chap-nav:hover { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 50%, var(--line)); } }
 /* Кнопка «Слушать» — по центру, на одной линии со стрелками глав */
 .reader:has(.chap-nav.next) .listen-fab { right: auto; left: 50%; margin-left: -23px; width: 46px; height: 46px; bottom: var(--chap-bottom); }
@@ -1479,6 +1484,11 @@ html.has-tabbar:not(.reading-hidden):not(.kb-open) { --tabbar-h: var(--tabbar-ba
 .app.with-tabbar { position: relative; }
 .tabbar { position: absolute; left: calc(env(safe-area-inset-left, 0px) + var(--tb-side)); right: calc(env(safe-area-inset-right, 0px) + var(--tb-side)); bottom: var(--tb-bottom); margin: 0; height: 64px; padding: 6px; box-sizing: border-box; transition: transform .25s ease, opacity .25s ease; }
 html.reading-hidden .tabbar { margin: 0; transform: translateY(calc(100% + 16px)); opacity: 0; pointer-events: none; }
+/* Под вкладками всё (глава, окно, список) плавно гаснет от верха капсулы к её середине — цветом того, что под ней.
+   Слой между окнами (z 40–41) и вкладками (42; ::before идёт раньше вкладок, поэтому под ними) */
+html.has-tabbar .app.with-tabbar::before { content: ''; position: fixed; left: 0; right: 0; bottom: 0; height: calc(64px + var(--tb-bottom)); z-index: 42; pointer-events: none; background: linear-gradient(to bottom, color-mix(in srgb, var(--bg) 0%, transparent), var(--bg) 32px); transition: opacity .25s ease; }
+html.has-tabbar:has(.sheet-layer) .app.with-tabbar::before { background: linear-gradient(to bottom, color-mix(in srgb, var(--panel) 0%, transparent), var(--panel) 32px); }
+html.reading-hidden .app.with-tabbar::before, html.kb-open .app.with-tabbar::before { opacity: 0; }
 .tab { margin: 0; height: 100%; padding: 3px 2px; }
 html.has-tabbar .sheet { bottom: var(--kb, 0px); height: calc(var(--vvh, 100dvh) * var(--sheet-h) / 100); max-height: calc(var(--vvh, 100dvh) - env(safe-area-inset-top, 0px) - 6px); }
 html.has-tabbar .sheet.page { bottom: var(--kb, 0px); }
@@ -1501,7 +1511,10 @@ html.has-tabbar .staging-badge { bottom: calc(var(--sab) + 6px); }
    Пока человек листает сам (.manual) — размытие снято. Цвета — только переменные темы. ===== */
 .audio-main.can-expand { cursor: pointer; }
 .audio-ref.audio-open { align-self: flex-start; max-width: 100%; border: 0; background: none; padding: 0; color: inherit; font: inherit; font-weight: 700; font-size: .95rem; text-align: left; cursor: pointer; }
-html.player-open .tabbar { visibility: hidden; }
+/* Раскрытый проигрыватель — под нижними вкладками (его кнопки над ними; нажатие на вкладку закрывает его) */
+html.has-tabbar.player-open .tabbar, html.has-tabbar.player-open .app.with-tabbar::before { z-index: 59; }
+html.has-tabbar.player-open .app.with-tabbar::before { background: linear-gradient(to bottom, color-mix(in srgb, var(--bg) 0%, transparent), var(--bg) 32px); }
+html.has-tabbar .ap-controls { padding-bottom: calc(var(--tabbar-h, 0px) + 6px); }
 /* Высота — по видимой области: на iPhone «весь экран» у fixed бывает выше экрана, и низ с кнопками уезжал за край */
 .ap-layer { position: fixed; top: 0; left: 0; right: 0; height: var(--vvh, 100dvh); z-index: 58; pointer-events: none; }
 .ap { pointer-events: auto; position: absolute; inset: 0; display: flex; flex-direction: column; color: var(--text); background-color: var(--bg); background-image: linear-gradient(180deg, color-mix(in srgb, var(--accent) 22%, var(--bg)) 0%, color-mix(in srgb, var(--accent) 8%, var(--bg)) 42%, var(--bg) 100%); font-family: var(--font-ui); padding: max(var(--sat, 0px), env(safe-area-inset-top, 0px)) env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px); outline: none; box-shadow: 0 -10px 40px color-mix(in srgb, var(--text) 18%, transparent); animation: ap-up .36s cubic-bezier(.22, .8, .24, 1); transition: transform .3s cubic-bezier(.4, 0, .7, .4); will-change: transform; }

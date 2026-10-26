@@ -24,6 +24,7 @@ import { NATIVE } from './core/native.js';
 import { checkPlayUpdate, installPlayUpdate } from './core/playUpdate.js';
 import { Toasts } from './components/ui.jsx';
 import { t, useLang } from './core/i18n.js';
+import { verseModules } from './core/verseOfDay.js';
 
 const AppCtx = createContext(null);
 export const useApp = () => useContext(AppCtx);
@@ -105,8 +106,9 @@ export default function App() {
   // расписание пересобирается при запуске и при каждом изменении планов (отметили день — завтра другой текст)
   useEffect(() => startReminders(() => setSheet({ kind: 'plans', pane: 0, payload: {}, id: Date.now() })), []);
   const [readingPlans] = usePlans();
-  // Виджет «Стих дня» (Android): раз в день — стихи на месяц вперёд из перевода первой панели
-  const widgetModule = bibles.length ? (bibles.some((b) => b.id === panes[0]?.moduleId) ? panes[0].moduleId : bibles[0].id) : null;
+  // Виджет «Стих дня» (Android): раз в день — стихи на месяц вперёд из перевода на языке приложения
+  // (как у карточки «Стих дня»: перевод первой панели, если он на этом языке)
+  const widgetModule = verseModules(bibles, panes, settings, lang)[0]?.id || null;
   useEffect(() => {
     if (!widgetModule) return;
     const id = setTimeout(() => updateWidget(widgetModule), 4000);

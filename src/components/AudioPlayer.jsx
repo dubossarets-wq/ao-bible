@@ -137,6 +137,11 @@ export default function AudioPlayer({ a, onClosed, dl, note, setNote, vol, setVo
     root.classList.add('player-open');
     return () => root.classList.remove('player-open');
   }, []);
+  // нажали нижнюю вкладку — проигрыватель закрывается
+  useEffect(() => {
+    window.addEventListener('aob-player-close', close);
+    return () => window.removeEventListener('aob-player-close', close);
+  }, [close]);
 
   // Фокус внутрь окна, Escape закрывает, Tab не уходит за пределы окна; при закрытии фокус возвращается
   useEffect(() => {
