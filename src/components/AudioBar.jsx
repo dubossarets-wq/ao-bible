@@ -3,6 +3,7 @@
 // Нажатие на свободную часть панели (или на место чтения) раскрывает проигрыватель на весь экран (AudioPlayer.jsx).
 import React, { useEffect, useRef, useState } from 'react';
 import { Play, Pause, SkipBack, SkipForward, X, SlidersHorizontal, Loader2, CornerUpLeft, Download, CheckCircle2, Sparkles } from 'lucide-react';
+import { listenFrom } from '../core/listen.js';
 import { useAudio, pauseAudio, resumeAudio, stopAudio, stepVerse, setRate, setSleep, resumeFollow, startAudio, setVolume } from '../core/audio.js';
 import { downloadBook, isBookOffline, removeBook } from '../core/offlineAudio.js';
 import { useApp } from '../App.jsx';
@@ -83,7 +84,7 @@ export function DownloadNote({ note, setNote }) {
 
 export default function AudioBar() {
   const a = useAudio();
-  const { navigate, setSettings } = useApp();
+  const { navigate, setSettings, panes } = useApp();
   const [opts, setOpts] = useState(false);
   const [note, setNote] = useState(null); // подпись о скачивании книги
   const [full, setFull] = useState(false); // раскрытый проигрыватель
@@ -197,9 +198,17 @@ export default function AudioBar() {
           <div className="audio-info">
             {/* Человек ушёл в другое место — место чтения становится кнопкой «вернуться» */}
             {a.ref && !a.follow ? (
-              <button className="audio-ref audio-back" onClick={() => (resumeFollow(), navigate(a.pane, a.ref, { flash: false, audio: true }))} title={t('К звучащему месту')}>
-                <CornerUpLeft size={14} /> {formatRef(a.ref)}
-              </button>
+              <span className="audio-refs">
+                <button className="audio-ref audio-back" onClick={() => (resumeFollow(), navigate(a.pane, a.ref, { flash: false, audio: true }))} title={t('К звучащему месту')}>
+                  <CornerUpLeft size={14} /> {formatRef(a.ref)}
+                </button>
+                {/* под ней — «▶ Слушать отсюда»: читать с места, где человек сейчас в тексте */}
+                {panes?.[a.pane] && (
+                  <button className="audio-here" onClick={() => listenFrom(a.pane, panes[a.pane].moduleId, panes[a.pane].ref)}>
+                    <Play size={11} /> {t('Слушать отсюда')} · {formatRef(panes[a.pane].ref)}
+                  </button>
+                )}
+              </span>
             ) : canExpand ? (
               <button className="audio-ref audio-open" onClick={expand} aria-haspopup="dialog" aria-label={`${formatRef(a.ref)} — ${t('Открыть проигрыватель')}`}>
                 {formatRef(a.ref)}

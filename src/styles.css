@@ -572,7 +572,7 @@ button.wp-item:active { background: color-mix(in srgb, var(--accent) 12%, transp
 
 /* ---------- Чтение вслух ---------- */
 .verse.speaking { background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: -10px 0 0 color-mix(in srgb, var(--accent) 14%, transparent), 10px 0 0 color-mix(in srgb, var(--accent) 14%, transparent); border-radius: 4px; transition: background .25s; }
-.audio-bar { position: fixed; left: calc(env(safe-area-inset-left, 0px) + 8px); right: calc(env(safe-area-inset-right, 0px) + 8px); bottom: calc(env(safe-area-inset-bottom, 0px) + 8px); z-index: 35; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: calc(var(--radius) + 4px); box-shadow: 0 10px 34px rgba(0,0,0,.2); max-width: 640px; margin: 0 auto; animation: up .25s ease-out; }
+.audio-bar { position: fixed; left: calc(env(safe-area-inset-left, 0px) + 8px); right: calc(env(safe-area-inset-right, 0px) + 8px); bottom: calc(env(safe-area-inset-bottom, 0px) + 8px); z-index: 35; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 32px; /* капсула, как панель вкладок */ box-shadow: 0 10px 34px rgba(0,0,0,.2); max-width: 640px; margin: 0 auto; animation: up .25s ease-out; }
 .audio-main { display: flex; align-items: center; gap: 2px; padding: 6px; }
 .audio-btn { flex: none; width: 40px; height: 40px; display: grid; place-items: center; border: 0; background: none; border-radius: 50%; color: var(--text); }
 @media (hover: hover) { .audio-btn:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); } }
@@ -1026,6 +1026,10 @@ html.kb-open .tour-ctrl.top { top: auto; bottom: calc(var(--kb, 0px) + 8px); }
 .part-btns { display: flex; gap: 8px; }
 .part-btns .btn.primary { flex: 1; }
 .part-btns .btn:not(.primary) { background: var(--panel); }
+/* мини-проигрыватель: «↰ к звучащему месту» и «▶ Отсюда» рядом */
+.audio-refs { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-width: 0; max-width: 100%; }
+.audio-refs .audio-back { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.audio-here { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; padding: 2px 4px 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: .78rem; font-weight: 600; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* все кнопки строки — высотой 44; «♥ | копировать | ×» — одной кнопкой с вертикальными линиями */
 .part-btns .btn.primary { min-height: 44px; min-width: 0; justify-content: center; white-space: nowrap; overflow: hidden; }
 .part-group { flex: none; display: flex; align-items: center; height: 44px; border: 1px solid var(--line); border-radius: calc(var(--radius) * .75); background: var(--panel); overflow: hidden; }
