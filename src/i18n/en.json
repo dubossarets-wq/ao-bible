@@ -179,6 +179,7 @@
   "one": "day",
   "other": "days"
  },
+ "Показывать:": "Show:",
  "Новый@@модуль": "New",
  "Озвучка — на языке перевода": "Audio follows the translation language",
  "Сменили перевод во время чтения вслух — запись переключится на его язык (если такая запись есть)": "Change the translation while listening and the recording switches to its language (if there is one)",
