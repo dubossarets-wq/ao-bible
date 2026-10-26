@@ -147,9 +147,9 @@ function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle })
     );
   // полное название — если оно не повторяет короткое; ниже мелко язык и размер для скачивания
   const title = m.title && m.title !== m.name ? m.title : null;
-  // «Новый» — модуль появился в каталоге за последние 14 дней (поле added каталога)
+  // «Новый» — модуль появился в каталоге за последние 7 дней (поле added каталога)
   const addedAt = Date.parse((cat && cat.added) || m.added || '');
-  const isNew = addedAt > 0 && Date.now() - addedAt < 14 * 86400000;
+  const isNew = addedAt > 0 && Date.now() - addedAt < 7 * 86400000;
   const meta = [m.language && langName(m.language), !installed && (m.sizeGz || m.size) && fmtSize(m.sizeGz || m.size)].filter(Boolean).join(' · ');
 
   return (
@@ -157,8 +157,9 @@ function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle })
       <div className="mod-line">
         <button className="mod-main" onClick={onToggle} aria-expanded={open}>
           <span className="mod-texts">
-            <span className="mod-name">
-              {m.name}
+            {/* метка — рядом с названием, но не внутри .mod-name (по точному названию модуль ищут проверки) */}
+            <span className="mod-head">
+              <span className="mod-name">{m.name}</span>
               {isNew && <span className="mod-new">{t('Новый@@модуль')}</span>}
             </span>
             {title && <span className="mod-full">{title}</span>}
