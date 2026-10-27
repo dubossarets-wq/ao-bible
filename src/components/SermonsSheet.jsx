@@ -3,7 +3,7 @@
 // Стихи добавляются тем же поиском, что и в приложении (SearchPanel в режиме выбора).
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2, Plus, Presentation, Share2, ScrollText, X, Minus, Type, Copy, GripVertical, Search, ScanText, TextQuote, Undo2, Redo2 } from 'lucide-react';
+import { Trash2, Plus, Presentation, Share2, ScrollText, X, Minus, Type, Copy, GripVertical, Search, ScanText, TextQuote, Undo2, Redo2, ChevronUp, ChevronDown } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import SearchPanel from './SearchPanel.jsx';
 import SwipeRow from './SwipeRow.jsx';
@@ -19,6 +19,7 @@ import {
   deleteSermon,
   restoreSermon,
   renameSermon,
+  setSermonSubtitle,
   replaceSermon,
   addVerses,
   addTextBlock,
@@ -44,7 +45,7 @@ export const places = (n) => t('{n} место|{n} места|{n} мест', { n
 const fmtDate = (d) => (d ? fmtD(d, { day: 'numeric', month: 'long', year: 'numeric' }) : '');
 
 // Поле текста, которое растёт по мере набора
-function AutoText({ value, onChange, placeholder, autoFocus, onBlur }) {
+function AutoText({ value, onChange, placeholder, autoFocus, onBlur, className = 'sermon-text-input', ariaLabel }) {
   const ref = useRef(null);
   useLayoutEffect(() => {
     const el = ref.current;
@@ -57,7 +58,7 @@ function AutoText({ value, onChange, placeholder, autoFocus, onBlur }) {
     const el = ref.current;
     if (autoFocus && el) el.setSelectionRange?.(el.value.length, el.value.length);
   }, []);
-  return <textarea ref={ref} className="sermon-text-input" rows={1} value={value} onChange={(e) => onChange(e.target.value)} onBlur={onBlur} placeholder={placeholder} autoFocus={autoFocus} />;
+  return <textarea ref={ref} className={className} rows={1} value={value} onChange={(e) => onChange(e.target.value)} onBlur={onBlur} placeholder={placeholder} autoFocus={autoFocus} aria-label={ariaLabel} />;
 }
 
 // Свой текст в проповеди: готовый абзац — просто текст (его можно зажать и перетащить, как стих),
@@ -157,6 +158,7 @@ function Pulpit({ sermon, onClose }) {
       </div>
       <div className="pulpit-body" ref={body} lang="ru" style={{ fontSize: `${size}px` }}>
         <h1>{sermon.title}</h1>
+        {sermon.subtitle?.trim() && <div className="pulpit-subtitle">{sermon.subtitle}</div>}
         {sermon.date && <div className="pulpit-date">{fmtDate(sermon.date)}</div>}
         {sermon.blocks.map((b) =>
           b.type === 'verse' ? (
@@ -184,9 +186,20 @@ function Pulpit({ sermon, onClose }) {
 }
 
 // Компактная строка между блоками: добавить текст или стих именно сюда
-function Inserter({ onText, onVerse }) {
+// onDown — блок над строкой ниже (ушко свисает с его нижнего края), onUp — блок под строкой выше
+function Inserter({ onText, onVerse, onDown, onUp }) {
   return (
     <div className="sermon-insert">
+      {onDown && (
+        <button type="button" className="sermon-move down" onClick={onDown} aria-label={t('Переместить ниже')} title={t('Переместить ниже')}>
+          <ChevronDown size={15} />
+        </button>
+      )}
+      {onUp && (
+        <button type="button" className="sermon-move up" onClick={onUp} aria-label={t('Переместить выше')} title={t('Переместить выше')}>
+          <ChevronUp size={15} />
+        </button>
+      )}
       <button type="button" className="sermon-insert-btn" onClick={onText} aria-label={t('Добавить текст')}>
         <Plus size={14} /> {t('Текст')}
       </button>
@@ -260,7 +273,7 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
   const scrollBox = () => list.current?.closest('.sheet-body');
   const justDragged = useRef(0);
   const dragDown = (e) => {
-    if (e.button > 0 || e.target.closest('textarea, input, .sermon-block-tools button, .sermon-pw, .sv-del, .sermon-insert, .confirm-group')) return;
+    if (e.button > 0 || e.target.closest('textarea, input, .sermon-block-tools button, .sermon-pw, .sv-del, .sermon-insert, .sermon-move, .confirm-group')) return;
     const li = e.target.closest('li[data-id]');
     if (!li) return;
     const d = { id: li.dataset.id, li, x: e.clientX, y: e.clientY, pid: e.pointerId, on: false };
@@ -347,6 +360,8 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
     <>
       <div className="sermon-head">
         <input className="sermon-title-input" value={sermon.title} onChange={(e) => renameSermon(sermon.id, e.target.value)} aria-label={t('Название проповеди')} placeholder={t('Название проповеди')} />
+        {/* подзаголовок (описание) — необязательный, растёт по тексту */}
+        <AutoText value={sermon.subtitle || ''} onChange={(v) => setSermonSubtitle(sermon.id, v)} placeholder={t('Подзаголовок или описание')} className="sermon-subtitle-input" ariaLabel={t('Подзаголовок или описание')} />
         <div className="sermon-actions">
           <button className="btn primary" onClick={() => setPulpit(true)} disabled={!sermon.blocks.length}>
             <Presentation size={17} /> {t('Кафедра')}
@@ -392,7 +407,7 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
           const lines = texts ? texts.map((x, k) => ({ v: b.verse + k, text: x })) : b.type === 'verse' ? [{ v: b.verse, text: b.text }] : [];
           return (
           <li key={b.id} data-id={b.id} className="sermon-item">
-            <div className={`sermon-block ${b.type}${group ? ' group' : ''}`}>
+            <div className={`sermon-block ${b.type}${group ? ' group' : ''}${i > 0 ? ' gap-top' : ''}${i < sermon.blocks.length - 1 ? ' gap-bottom' : ''}`}>
               {b.type === 'verse' ? (
                 <>
                   <button className="sermon-ref" onClick={() => goVerse(b, b.verse)} title={t('Открыть в Библии')}>
@@ -475,7 +490,12 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
                 )}
               </div>
             </div>
-            <Inserter onText={() => setFresh(addTextBlock(sermon.id, i))} onVerse={() => onAddVerse(i + 1)} />
+            <Inserter
+              onText={() => setFresh(addTextBlock(sermon.id, i))}
+              onVerse={() => onAddVerse(i + 1)}
+              onDown={i < sermon.blocks.length - 1 ? () => moveBlock(sermon.id, i, 1) : null}
+              onUp={i < sermon.blocks.length - 1 ? () => moveBlock(sermon.id, i + 1, -1) : null}
+            />
           </li>
           );
         })}

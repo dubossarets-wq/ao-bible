@@ -51,6 +51,8 @@ export function restoreSermon(sermon, index) {
 // «Отменить»/«Повторить» в редакторе: проповедь целиком — как была; сохраняется как обычная правка
 export const replaceSermon = (s) => touch(s.id, () => s);
 export const renameSermon = (id, title) => touch(id, (s) => ({ ...s, title }));
+// Подзаголовок (описание) под названием — необязательный
+export const setSermonSubtitle = (id, subtitle) => touch(id, (s) => ({ ...s, subtitle }));
 export const setSermonDate = (id, date) => touch(id, (s) => ({ ...s, date }));
 
 // Выделенные стихи → блоки: стихи подряд одной главы складываются в один блок «Ин 3:16–18»
@@ -173,7 +175,7 @@ export const blockRefFull = (b) => `${bookMeta(b.book).name} ${b.chapter}:${b.ve
 
 // Проповедь обычным текстом — чтобы отправить или распечатать
 export function sermonText(s) {
-  const parts = [s.title, s.date ? new Date(s.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : ''].filter(Boolean);
+  const parts = [s.title, s.subtitle?.trim(), s.date ? new Date(s.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : ''].filter(Boolean);
   for (const b of s.blocks) {
     if (b.type === 'verse') {
       // Диапазон — каждый стих с новой строки, с номером
