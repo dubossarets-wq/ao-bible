@@ -85,13 +85,14 @@ async function run(label, viewport, isMobile) {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   check(`${label}: нет горизонтальной прокрутки`, overflow <= 0, `${overflow}px`);
 
-  // Навигация: телефон — вкладки внизу, верхняя панель без поиска и ⋮; компьютер — как раньше, без вкладок
+  // Навигация: телефон — вкладки внизу, верхняя панель без поиска и ⋮; компьютер — те же вкладки (капсула по центру),
+  // и наверху поиск и ⋮
   const nav = await page.evaluate(() => ({
     tabs: [...document.querySelectorAll('.tabbar .tab-label')].map((e) => e.textContent).join('|'),
     top: [...document.querySelectorAll('.pane-slot.first .toolbar > *')].map((e) => e.className).join(' '),
   }));
   if (isMobile) check(`${label}: панель вкладок и простая верхняя панель`, nav.tabs === 'Планы|Поиск|Библия|Закладки|Ещё' && !/tb-more|tb-search/.test(nav.top), `${nav.tabs}; ${nav.top}`);
-  else check(`${label}: на широком экране без вкладок, поиск и ⋮ наверху`, !nav.tabs && /tb-search/.test(nav.top) && /tb-menu-wrap/.test(nav.top), nav.top);
+  else check(`${label}: на широком экране вкладки внизу, поиск и ⋮ наверху`, nav.tabs === 'Планы|Поиск|Библия|Закладки|Ещё' && /tb-search/.test(nav.top) && /tb-menu-wrap/.test(nav.top), `${nav.tabs}; ${nav.top}`);
   // Круглые стрелки соседней главы; «Слушать» — по центру между ними, всё — над вкладками
   const geo = await page.evaluate(() => {
     const r = (s) => document.querySelector(s)?.getBoundingClientRect();
@@ -172,7 +173,8 @@ async function run(label, viewport, isMobile) {
   await page.waitForTimeout(350);
   const title = await page.textContent('.sheet-title');
   check(`${label}: словарная панель`, title.includes('Господь'), title);
-  const sheetH = await page.evaluate(() => document.querySelector('.sheet').getBoundingClientRect().height / window.innerHeight);
+  // доля высоты, свободной над нижними вкладками (окно не заходит под них)
+  const sheetH = await page.evaluate(() => document.querySelector('.sheet').getBoundingClientRect().height / (document.querySelector('.tabbar')?.getBoundingClientRect().top || window.innerHeight));
   check(`${label}: статья Стронга на всю высоту`, sheetH > 0.9, sheetH.toFixed(2));
   const lemma = await page.textContent('.orig.hebrew');
   check(`${label}: статья с ивритом`, /[\u0590-\u05FF]/.test(lemma), lemma);
