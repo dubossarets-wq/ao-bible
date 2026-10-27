@@ -3,7 +3,7 @@
 // Стихи добавляются тем же поиском, что и в приложении (SearchPanel в режиме выбора).
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2, Plus, Presentation, Share2, ScrollText, X, Minus, Type, Copy, GripVertical, Search, ScanText, TextQuote, Undo2, Redo2, ChevronUp, ChevronDown } from 'lucide-react';
+import { Trash2, Plus, Presentation, Share2, ScrollText, X, Minus, Type, Copy, GripVertical, Search, ScanText, TextQuote, Undo2, Redo2, ArrowUp, ArrowDown } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import SearchPanel from './SearchPanel.jsx';
 import SwipeRow from './SwipeRow.jsx';
@@ -186,20 +186,9 @@ function Pulpit({ sermon, onClose }) {
 }
 
 // Компактная строка между блоками: добавить текст или стих именно сюда
-// onDown — блок над строкой ниже (ушко свисает с его нижнего края), onUp — блок под строкой выше
-function Inserter({ onText, onVerse, onDown, onUp }) {
+function Inserter({ onText, onVerse }) {
   return (
     <div className="sermon-insert">
-      {onDown && (
-        <button type="button" className="sermon-move down" onClick={onDown} aria-label={t('Переместить ниже')} title={t('Переместить ниже')}>
-          <ChevronDown size={15} />
-        </button>
-      )}
-      {onUp && (
-        <button type="button" className="sermon-move up" onClick={onUp} aria-label={t('Переместить выше')} title={t('Переместить выше')}>
-          <ChevronUp size={15} />
-        </button>
-      )}
       <button type="button" className="sermon-insert-btn" onClick={onText} aria-label={t('Добавить текст')}>
         <Plus size={14} /> {t('Текст')}
       </button>
@@ -273,7 +262,7 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
   const scrollBox = () => list.current?.closest('.sheet-body');
   const justDragged = useRef(0);
   const dragDown = (e) => {
-    if (e.button > 0 || e.target.closest('textarea, input, .sermon-block-tools button, .sermon-pw, .sv-del, .sermon-insert, .sermon-move, .confirm-group')) return;
+    if (e.button > 0 || e.target.closest('textarea, input, .sermon-block-tools button, .sermon-pw, .sv-del, .sermon-insert, .sermon-reorder button, .confirm-group')) return;
     const li = e.target.closest('li[data-id]');
     if (!li) return;
     const d = { id: li.dataset.id, li, x: e.clientX, y: e.clientY, pid: e.pointerId, on: false };
@@ -407,7 +396,7 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
           const lines = texts ? texts.map((x, k) => ({ v: b.verse + k, text: x })) : b.type === 'verse' ? [{ v: b.verse, text: b.text }] : [];
           return (
           <li key={b.id} data-id={b.id} className="sermon-item">
-            <div className={`sermon-block ${b.type}${group ? ' group' : ''}${i > 0 ? ' gap-top' : ''}${i < sermon.blocks.length - 1 ? ' gap-bottom' : ''}`}>
+            <div className={`sermon-block ${b.type}${group ? ' group' : ''}`}>
               {b.type === 'verse' ? (
                 <>
                   <button className="sermon-ref" onClick={() => goVerse(b, b.verse)} title={t('Открыть в Библии')}>
@@ -442,8 +431,17 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
                 <TextBlock sermonId={sermon.id} block={b} fresh={fresh === b.id} onDone={() => fresh === b.id && setFresh(null)} />
               )}
               <div className="sermon-block-tools">
-                <span className="sermon-grip" title={t('Зажмите, чтобы перетащить')} aria-hidden="true">
-                  <GripVertical size={17} />
+                {/* перестановка: «ручка» ⠿ (зажать и тянуть) и стрелки ↑ ↓ одной капсулой */}
+                <span className="sermon-reorder">
+                  <span className="sermon-grip" title={t('Зажмите, чтобы перетащить')} aria-hidden="true">
+                    <GripVertical size={16} />
+                  </span>
+                  <button type="button" onClick={() => moveBlock(sermon.id, i, -1)} disabled={i === 0} aria-label={t('Переместить выше')} title={t('Переместить выше')}>
+                    <ArrowUp size={16} />
+                  </button>
+                  <button type="button" onClick={() => moveBlock(sermon.id, i, 1)} disabled={i === sermon.blocks.length - 1} aria-label={t('Переместить ниже')} title={t('Переместить ниже')}>
+                    <ArrowDown size={16} />
+                  </button>
                 </span>
                 {b.type === 'verse' && !b.to && b.moduleId && pe?.id !== b.id && (
                   <>
@@ -490,12 +488,7 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
                 )}
               </div>
             </div>
-            <Inserter
-              onText={() => setFresh(addTextBlock(sermon.id, i))}
-              onVerse={() => onAddVerse(i + 1)}
-              onDown={i < sermon.blocks.length - 1 ? () => moveBlock(sermon.id, i, 1) : null}
-              onUp={i < sermon.blocks.length - 1 ? () => moveBlock(sermon.id, i + 1, -1) : null}
-            />
+            <Inserter onText={() => setFresh(addTextBlock(sermon.id, i))} onVerse={() => onAddVerse(i + 1)} />
           </li>
           );
         })}
