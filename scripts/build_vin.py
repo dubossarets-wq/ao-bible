@@ -15,9 +15,11 @@
 Номера Стронга на сайте у омографов местами перепутаны (ἡ -> 1510, οὐ -> 3739, ὃ -> 3588 и т. п.) —
 такие слова исправляются таблицей STRONG_FIX по написанию слова.
 Запуск: python -I scripts/build_vin.py [--fetch] [--ubs]
-По умолчанию греческий текст — свободный византийский (byz-rp2018), русские слова Винокурова сопоставляются ему по номерам
-Стронга и по написанию слова (align()); слова Винокурова, которых нет в византийском тексте, не выводятся. Режим --ubs —
-прежний подстрочник в порядке UBS3 (греческий текст защищён, публиковать нельзя).
+По умолчанию греческий текст — свободный, ближайший к UBS, с которого переводил Винокуров: SBLGNT (CC BY 4.0); в стихах,
+где лучше совпадает другой свободный текст (концовка Марка, Ин 7:53–8:11, слова в квадратных скобках UBS), — Вескотт —
+Хорт 1881 или византийский RP2018 (общественное достояние). Для каждого стиха берётся текст, где меньше всего слов
+Винокурова остаётся без места (BASES, по порядку предпочтения). Русские слова сопоставляются греческим по написанию и
+номерам Стронга (align()). Режим --ubs — прежний подстрочник в порядке UBS3 (греческий текст защищён, публиковать нельзя).
 """
 import difflib
 import html
@@ -226,6 +228,27 @@ def align(byz_words, vin_words):
     return res, used
 
 
+# Свободные греческие тексты по порядку предпочтения: SBLGNT ближе всего к UBS (Βόες, как у Винокурова)
+BASES = ["sblgnt", "wh1881", "byz-rp2018"]
+
+
+def best_base(bases, bid, ci, v, vin_words):
+    """Текст стиха, с которым у Винокурова меньше всего слов без места (при равенстве — меньше греческих слов без
+    перевода, затем по порядку BASES). Возвращает (имя текста, разметка стиха)"""
+    best = None
+    for k, n in enumerate(BASES):
+        chs = bases[n].get(bid, {}).get("chapters", [])
+        bt = chs[ci][v - 1] if ci < len(chs) and v <= len(chs[ci]) else ""
+        if not bt:
+            continue
+        bw = parse_byz(bt)
+        res, used = align(bw, vin_words)
+        score = (used.count(False), sum(1 for r in res if r is None), k)
+        if best is None or score < best[0]:
+            best = (score, n, bt)
+    return (best[1], best[2]) if best else (BASES[-1], "")
+
+
 def byz_verse_text(bt, vin_words, stats):
     bw = parse_byz(bt)
     res, used = align(bw, vin_words)
@@ -250,7 +273,9 @@ def byz_verse_text(bt, vin_words, stats):
 
 
 def main():
-    byz = {b["id"]: b for b in json.loads((MOD / "byz-rp2018.json").read_text(encoding="utf-8"))["books"]}
+    bases = {n: {b["id"]: b for b in json.loads((MOD / f"{n}.json").read_text(encoding="utf-8"))["books"]} for n in BASES}
+    byz = bases["byz-rp2018"]  # полный НЗ в синодальной нумерации — число глав и стихов
+    used_base = {n: 0 for n in BASES}
     rst = {b["id"]: b for b in json.loads((MOD / "rst.json").read_text(encoding="utf-8"))["books"]}
     if "--fetch" in sys.argv:
         for bid, code in CODES.items():
@@ -288,9 +313,11 @@ def main():
                 if ubs:
                     row.append(verse_text(w))
                 else:
-                    bt = byz[bid]["chapters"][ci][v - 1] if v <= len(byz[bid]["chapters"][ci]) else ""
+                    vw = [x for x in w if x[2]]
+                    name, bt = best_base(bases, bid, ci, v, vw)
+                    used_base[name] += 1
                     b0 = (st["words"], st["ru"], st["vin"], st["lost"])
-                    row.append(byz_verse_text(bt, [x for x in w if x[2]], st))
+                    row.append(byz_verse_text(bt, vw, st))
                     pb = per_book.setdefault(bid, [0, 0, 0, 0])
                     for q in range(4):
                         pb[q] += (st["words"], st["ru"], st["vin"], st["lost"])[q] - b0[q]
@@ -309,16 +336,20 @@ def main():
                         "греческого текста: под каждым греческим словом — русское соответствие и номер Стронга. Квадратные "
                         "скобки — слова, добавленные для связности русской фразы; точка «·» — слово без русского перевода "
                         "(например, артикль).") if ubs else
-                       ("Греческий текст — византийский (Робинсон — Пирпонт, 2018, общественное достояние); русские слова — "
-                        "подстрочный перевод А. Винокурова (с разрешения автора), сопоставлены по номерам Стронга. Слова идут "
-                        "в порядке греческого текста; квадратные скобки — слова, добавленные для связности русской фразы; "
-                        "точка «·» — слово без русского перевода (например, артикль)."),
-        "version": "2015" if ubs else "2015 / RP2018",
+                       ("Русские слова — подстрочный перевод А. Винокурова (с разрешения автора). Греческий текст — SBLGNT "
+                        "(ближайший свободный к тексту UBS, с которого сделан перевод); в немногих стихах, где лучше совпадает, — "
+                        "Вескотт — Хорт (1881) или византийский (Робинсон — Пирпонт, 2018). Слова идут в порядке греческого "
+                        "текста; квадратные скобки — слова, добавленные для связности русской фразы; точка «·» — слово без "
+                        "русского перевода (например, артикль)."),
+        "version": "2015" if ubs else "2015 / SBLGNT",
         "author": ("Алексей Винокуров (подстрочный перевод, 2015); греческий текст — UBS3/NA26" if ubs else
-                   "Алексей Винокуров (русские слова подстрочника, 2015); Maurice A. Robinson, William G. Pierpont (греческий текст, 2018)"),
+                   "Алексей Винокуров (русские слова подстрочника, 2015); греческий текст — SBLGNT (Society of Biblical Literature, "
+                   "Logos Bible Software), Westcott — Hort 1881, Robinson — Pierpont 2018"),
         "source": "https://azbyka.ru/biblia/podstrochnik",
         "license": ("Используется с разрешения автора для бесплатного некоммерческого приложения" if ubs else
-                    "Греческий текст — Public Domain; русские слова А. Винокурова — с разрешения автора, для бесплатного некоммерческого приложения"),
+                    "Русские слова А. Винокурова — с разрешения автора, для бесплатного некоммерческого приложения; греческий текст — "
+                    "SBLGNT, CC BY 4.0 (Society of Biblical Literature, Logos Bible Software; разметка Стронга — STEPBible.org, "
+                    "Tyndale House Cambridge, CC BY 4.0), Westcott — Hort 1881 и Robinson — Pierpont 2018 — Public Domain"),
         "features": {"strongs": True, "interlinear": True},
         "books": books,
     }
@@ -337,6 +368,7 @@ def main():
         from collections import Counter
         c = Counter((x[2], x[0]) for x in st["lost_list"])
         print("частые потерянные:", c.most_common(25))
+        print("греческий текст по стихам:", used_base)
     print(f"стихов: {nverses}, слов: {words}, с номером Стронга: {numbered} ({numbered / max(1, words):.1%})")
     print("расхождения с синодальной нумерацией (rst.json):", *diffs, sep="\n  ")
 
