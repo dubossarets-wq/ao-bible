@@ -345,12 +345,35 @@ mark { background: var(--hl); color: inherit; border-radius: 2px; padding: 0 1px
 .prose p { margin: 0; }
 
 /* Первый запуск */
+/* Первая загрузка: значок, название, этапы с отметками и общий прогресс — всё по центру */
 .bootstrap { height: 100%; display: grid; place-items: center; padding: 24px 16px; background: var(--bg); }
-.bootstrap-card { width: min(440px, 100%); display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
-.bootstrap-card h1 { margin: 0; font-size: 2rem; letter-spacing: -.01em; }
-.bootstrap-card p { margin: 0; color: var(--muted); line-height: 1.5; }
-.bootstrap-card .progress { width: 100%; }
-.bootstrap-icon { color: var(--accent); }
+.bootstrap-card { width: min(400px, 100%); display: flex; flex-direction: column; align-items: center; text-align: center; animation: boot-in .45s cubic-bezier(.22,1,.36,1) both; }
+.bootstrap-card h1 { margin: 18px 0 6px; font-size: 1.75rem; font-weight: 700; letter-spacing: -.015em; }
+.bootstrap-card > p { margin: 0; max-width: 34ch; color: var(--muted); line-height: 1.5; font-size: .95rem; }
+.boot-logo { width: 76px; height: 76px; border-radius: 17px; box-shadow: 0 10px 28px rgba(0,0,0,.16), 0 2px 6px rgba(0,0,0,.08); animation: boot-float 3.2s ease-in-out infinite; }
+@keyframes boot-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes boot-float { 50% { transform: translateY(-3px); } }
+.boot-steps { width: 100%; margin-top: 22px; padding: 6px 16px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); box-shadow: 0 2px 10px rgba(0,0,0,.05); text-align: left; }
+.boot-steps ol { margin: 0; padding: 0; list-style: none; }
+.boot-step { display: flex; align-items: center; gap: 12px; height: 40px; color: var(--muted); font-size: .92rem; transition: color .25s; }
+.boot-step + .boot-step { border-top: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+.boot-step.now { color: var(--text); font-weight: 600; }
+.boot-step.done { color: var(--text); }
+.boot-mark { display: grid; place-items: center; flex: none; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid color-mix(in srgb, var(--muted) 45%, transparent); transition: background-color .25s, border-color .25s; }
+.boot-step.done .boot-mark { border-color: var(--accent); background: var(--accent); color: var(--on-accent); animation: boot-pop .3s cubic-bezier(.34,1.56,.64,1); }
+.boot-step.now .boot-mark { border-color: transparent; }
+.boot-spin { width: 18px; height: 18px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--accent) 22%, transparent); border-top-color: var(--accent); animation: spin .8s linear infinite; }
+@keyframes boot-pop { from { transform: scale(.6); } to { transform: none; } }
+.boot-label { transform: translateY(-1px); }
+.boot-bar { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+.boot-track { flex: 1; height: 6px; border-radius: 3px; overflow: hidden; background: color-mix(in srgb, var(--muted) 18%, transparent); }
+.boot-fill { height: 100%; border-radius: 3px; background: var(--accent); transform-origin: left; transition: transform .3s ease-out; }
+.boot-pct { min-width: 3ch; text-align: right; font-size: .82rem; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bootstrap-card > p.boot-note { margin-top: 14px; font-size: .8rem; }
+.boot-error { display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 22px; padding: 14px 16px; border-radius: 14px; background: color-mix(in srgb, var(--danger) 10%, var(--panel)); color: var(--danger); text-align: left; line-height: 1.4; }
+.boot-error svg { flex: none; }
+.bootstrap-card .row-actions { justify-content: center; margin-top: 16px; }
+@media (prefers-reduced-motion: reduce) { .boot-logo, .bootstrap-card { animation: none; } }
 
 /* Уведомления */
 .toasts { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(max(var(--kb, 0px), env(safe-area-inset-bottom, 0px)) + 20px); z-index: 60; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; width: min(420px, calc(100% - 32px)); }

@@ -1,18 +1,58 @@
 // Первый запуск: устанавливает базовый набор модулей из каталога, опубликованного вместе с приложением.
 import React, { useEffect, useRef, useState } from 'react';
-import { BookOpen, Library, RotateCw } from 'lucide-react';
+import { Check, Library, RotateCw, WifiOff } from 'lucide-react';
 import * as repo from '../core/modules.js';
 import { load, save } from '../core/storage.js';
 import { useApp } from '../App.jsx';
-import { Progress } from './ui.jsx';
 import { t } from '../core/i18n.js';
+
+// Значок приложения (public/icons/icon.svg) — прямо в разметке: виден сразу, без загрузки файла
+function AppLogo() {
+  return (
+    <svg className="boot-logo" viewBox="0 0 512 512" aria-hidden="true">
+      <rect width="512" height="512" rx="112" fill="#38363a" />
+      <path d="M256 150c-38-26-92-34-150-26v236c58-8 112 0 150 26z" fill="#f6f5f2" />
+      <path d="M256 150c38-26 92-34 150-26v236c-58-8-112 0-150 26z" fill="#e9e4d8" />
+      <path d="M300 128v120l26-18 26 18V122c-18 0-36 2-52 6z" fill="#c9893f" />
+      <path d="M146 200h76M146 236h76M146 272h76M290 284h76M290 320h60" stroke="#b9b2a3" strokeWidth="10" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// Этапы установки по доле прогресса: каталог (ещё 0) → загрузка (до 60 %) → распаковка и запись
+function Steps({ p, started }) {
+  const stage = !started ? 0 : p < 0.6 ? 1 : p < 1 ? 2 : 3;
+  const items = [t('Каталог модулей'), t('Загрузка перевода'), t('Установка')];
+  const pct = Math.round((p || 0) * 100);
+  return (
+    <div className="boot-steps">
+      <ol>
+        {items.map((label, i) => {
+          const st = i < stage ? 'done' : i === stage ? 'now' : 'wait';
+          return (
+            <li key={i} className={`boot-step ${st}`} aria-current={st === 'now' ? 'step' : undefined}>
+              <span className="boot-mark">{st === 'done' ? <Check size={12} strokeWidth={3} /> : st === 'now' ? <span className="boot-spin" /> : null}</span>
+              <span className="boot-label">{label}</span>
+            </li>
+          );
+        })}
+      </ol>
+      <div className="boot-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
+        <div className="boot-track">
+          <div className="boot-fill" style={{ transform: `scaleX(${Math.max(0.02, p || 0)})` }} />
+        </div>
+        <span className="boot-pct">{pct}%</span>
+      </div>
+    </div>
+  );
+}
 
 export default function Bootstrap() {
   const { openSheet, modules, setSettings } = useApp();
   // Первый запуск — или данные восстановлены из резервной копии Android на новом телефоне (настройки и закладки
   // вернулись, а модулей нет совсем): ставим стартовый набор сами
   const firstRun = !load('bootstrapped', false) || modules?.length === 0;
-  const [state, setState] = useState(firstRun ? { phase: 'run', label: t('Подключаю каталог…'), p: 0 } : { phase: 'idle' });
+  const [state, setState] = useState(firstRun ? { phase: 'run', label: t('Подключаю каталог…'), p: 0, started: false } : { phase: 'idle' });
   const started = useRef(false);
 
   const run = async () => {
@@ -22,13 +62,13 @@ export default function Bootstrap() {
       save('welcomePending', true); // приветствие — только новому человеку, не после восстановления
       setSettings({ primaryModule: repo.homeBible() }); // основной перевод — на языке интерфейса
     }
-    setState({ phase: 'run', label: t('Подключаю каталог…'), p: 0 });
+    setState({ phase: 'run', label: t('Подключаю каталог…'), p: 0, started: false });
     try {
       const catalog = await repo.fetchCatalog();
       const list = repo.starter().map((id) => catalog.find((c) => c.id === id)).filter(Boolean);
       // Перевод ставим первым: как только он готов, можно читать; остальное доустановится следом.
       const [bible, ...rest] = list;
-      await repo.installFromCatalog(bible, (p, label) => setState({ phase: 'run', label: `${bible.name}: ${label}`, p }));
+      await repo.installFromCatalog(bible, (p, label) => setState({ phase: 'run', label: `${bible.name}: ${label}`, p, started: true }));
       save('bootstrapped', true);
       // Следующий модуль качается, пока текущий распаковывается и записывается (по одному наперёд — память не растёт)
       let next = rest[0] ? repo.downloadModule(rest[0]).catch(() => null) : null;
@@ -59,17 +99,21 @@ export default function Bootstrap() {
   return (
     <div className="bootstrap">
       <div className="bootstrap-card">
-        <BookOpen size={36} strokeWidth={1.5} className="bootstrap-icon" />
+        <AppLogo />
         <h1>AO Bible</h1>
         {state.phase === 'run' && (
           <>
             <p>{t('Готовлю Синодальный перевод, словари и параллельные места…')}</p>
-            <Progress value={state.p} label={state.label} />
+            <Steps p={state.p} started={state.started} />
+            <p className="boot-note">{t('Это нужно только один раз — дальше Библия работает без интернета.')}</p>
           </>
         )}
         {state.phase === 'error' && (
           <>
-            <p className="error-text">{state.message}</p>
+            <div className="boot-error">
+              <WifiOff size={20} />
+              <span>{state.message}</span>
+            </div>
             <div className="row-actions">
               <button className="btn primary" onClick={run}>
                 <RotateCw size={16} /> {t('Повторить')}
