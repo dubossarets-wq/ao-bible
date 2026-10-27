@@ -3,13 +3,13 @@
 // Стихи добавляются тем же поиском, что и в приложении (SearchPanel в режиме выбора).
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2, Plus, Presentation, Share2, ScrollText, X, Minus, Type, Copy, GripVertical, Search, ScanText, TextQuote, Undo2, Redo2, ArrowUp, ArrowDown, Languages } from 'lucide-react';
+import { Trash2, Plus, Presentation, Share2, ScrollText, X, Minus, Type, Copy, GripVertical, Search, ScanText, TextQuote, Undo2, Redo2, ArrowUp, ArrowDown, Languages, StickyNote, Bold, Italic, Printer, CopyPlus, Layers } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import SearchPanel from './SearchPanel.jsx';
 import SwipeRow from './SwipeRow.jsx';
 import { plateSvg } from './partShape.js';
 import { useApp } from '../App.jsx';
-import { ConfirmButton, Empty, Reveal, Switch } from './ui.jsx';
+import { ConfirmButton, Empty, Reveal, Switch, Segmented } from './ui.jsx';
 import { formatRef } from '../core/books.js';
 import { getVerse } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
@@ -35,6 +35,10 @@ import {
   verseTexts,
   fillVerseTexts,
   fillAltTexts,
+  duplicateSermon,
+  setSermonSeries,
+  fmtParts,
+  plainFmt,
   setSermonReturn,
   setBlockAlts,
   setSermonAltDefault,
@@ -42,6 +46,7 @@ import {
   refRangeLabel,
 } from '../core/sermons.js';
 import { load, save } from '../core/storage.js';
+import { NATIVE, saveBlob } from '../core/native.js';
 import { t, fmtDate as fmtD } from '../core/i18n.js';
 
 // «1 место», «2 места», «5 мест»
@@ -65,13 +70,42 @@ function AutoText({ value, onChange, placeholder, autoFocus, onBlur, className =
   return <textarea ref={ref} className={className} rows={1} value={value} onChange={(e) => onChange(e.target.value)} onBlur={onBlur} placeholder={placeholder} autoFocus={autoFocus} aria-label={ariaLabel} />;
 }
 
+// Свой текст с **жирным** и *курсивом*
+function Fmt({ text }) {
+  return fmtParts(text).map((p, i) => (p.b ? <strong key={i}>{p.t}</strong> : p.i ? <em key={i}>{p.t}</em> : <React.Fragment key={i}>{p.t}</React.Fragment>));
+}
+
+// «Жирный» / «Курсив» над полем: оборачивают выделенное (или ставят пару отметок под курсор); фокус не теряется
+function FmtBar({ value, onChange }) {
+  const wrap = (mark) => (e) => {
+    e.preventDefault();
+    const el = document.activeElement;
+    if (!(el instanceof HTMLTextAreaElement)) return;
+    const a = el.selectionStart, z = el.selectionEnd;
+    onChange(value.slice(0, a) + mark + value.slice(a, z) + mark + value.slice(z));
+    requestAnimationFrame(() => el.setSelectionRange(a + mark.length, z + mark.length));
+  };
+  return (
+    <div className="sermon-fmt">
+      <button type="button" onMouseDown={wrap('**')} aria-label={t('Жирный')} title={t('Жирный')}>
+        <Bold size={15} />
+      </button>
+      <button type="button" onMouseDown={wrap('*')} aria-label={t('Курсив')} title={t('Курсив')}>
+        <Italic size={15} />
+      </button>
+    </div>
+  );
+}
+
 // Свой текст в проповеди: готовый абзац — просто текст (его можно зажать и перетащить, как стих),
-// нажатие — правка. Пустой (только что добавленный) — сразу поле ввода.
-function TextBlock({ sermonId, block, fresh, onDone }) {
+// нажатие — правка. Пустой (только что добавленный) — сразу поле ввода. note — заметка для себя
+function TextBlock({ sermonId, block, fresh, onDone, note = false }) {
   const [edit, setEdit] = useState(false);
   const editing = edit || fresh || !block.text.trim();
   if (editing)
     return (
+      <>
+      <FmtBar value={block.text} onChange={(text) => updateBlock(sermonId, block.id, { text })} />
       <AutoText
         value={block.text}
         onChange={(text) => updateBlock(sermonId, block.id, { text })}
@@ -81,13 +115,14 @@ function TextBlock({ sermonId, block, fresh, onDone }) {
           // пустой свой текст исчезает сам, когда из него ушли
           if (!block.text.trim()) removeBlock(sermonId, block.id);
         }}
-        placeholder={t('Мысль, пояснение, пример…')}
+        placeholder={note ? t('Подсказка себе: пауза, вопрос залу…') : t('Мысль, пояснение, пример…')}
         autoFocus={fresh || edit}
       />
+      </>
     );
   return (
     <div className="sermon-text-view" role="button" tabIndex={0} aria-label={t('Изменить текст')} onClick={() => setEdit(true)} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setEdit(true))}>
-      {block.text}
+      <Fmt text={block.text} />
     </div>
   );
 }
@@ -200,8 +235,8 @@ function Pulpit({ sermon, onClose }) {
               ))}
             </blockquote>
           ) : b.text.trim() ? (
-            <div key={b.id} className="pulpit-text">
-              {b.text}
+            <div key={b.id} className={b.type === 'note' ? 'pulpit-note' : 'pulpit-text'}>
+              <Fmt text={b.text} />
             </div>
           ) : null
         )}
@@ -213,7 +248,7 @@ function Pulpit({ sermon, onClose }) {
 }
 
 // Компактная строка между блоками: добавить текст или стих именно сюда
-function Inserter({ onText, onVerse }) {
+function Inserter({ onText, onVerse, onNote }) {
   return (
     <div className="sermon-insert">
       <button type="button" className="sermon-insert-btn" onClick={onText} aria-label={t('Добавить текст')}>
@@ -221,6 +256,9 @@ function Inserter({ onText, onVerse }) {
       </button>
       <button type="button" className="sermon-insert-btn" onClick={onVerse} aria-label={t('Добавить стих')}>
         <Plus size={14} /> {t('Стих')}
+      </button>
+      <button type="button" className="sermon-insert-btn" onClick={onNote} aria-label={t('Заметка для себя')} title={t('Заметка для себя')}>
+        <Plus size={14} /> {t('Заметка')}
       </button>
     </div>
   );
@@ -245,6 +283,57 @@ function IlWords({ texts }) {
   );
 }
 
+// «Печать и PDF»: аккуратная страница проповеди (название, подзаголовок, серия, дата; стихи с переводами; свой текст
+// с оформлением; заметки для себя — мелко и приглушённо) — печать браузера, там же «Сохранить как PDF».
+// В приложении на телефоне печати нет — страница сохраняется файлом (её можно открыть и распечатать)
+function printSermon(sermon, bibles) {
+  const esc = (x) => String(x ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const fmt = (x) => fmtParts(x).map((p) => (p.b ? `<b>${esc(p.t)}</b>` : p.i ? `<i>${esc(p.t)}</i>` : esc(p.t))).join('').replace(/\n/g, '<br>');
+  const nameOf = (mid) => bibles.find((m) => m.id === mid)?.name || '';
+  const body = sermon.blocks
+    .map((b) => {
+      if (b.type === 'verse') {
+        const tx = verseTexts(b) || [b.text];
+        const lines = tx.length > 1 ? tx.map((x, i) => `<sup>${b.verse + i}</sup> ${esc(x)}`).join(' ') : esc(tx[0]);
+        const alts = (b.alt || [])
+          .filter((a) => a.t?.some(Boolean))
+          .map((a) => `<p class="alt"><span>${esc(a.n)}</span> ${esc(a.t.map((x) => (a.il ? plainText(x) : x)).join(' '))}</p>`)
+          .join('');
+        return `<blockquote><cite>${esc(blockRefFull(b))}${b.moduleId ? ` · ${esc(nameOf(b.moduleId))}` : ''}</cite><p>${lines}</p>${alts}</blockquote>`;
+      }
+      if (!b.text.trim()) return '';
+      return b.type === 'note' ? `<p class="note">${fmt(b.text)}</p>` : `<p>${fmt(b.text)}</p>`;
+    })
+    .join('');
+  const head = [sermon.series?.trim() && `<div class="series">${esc(sermon.series)}</div>`, `<h1>${esc(sermon.title)}</h1>`, sermon.subtitle?.trim() && `<div class="sub">${esc(sermon.subtitle)}</div>`, sermon.date && `<div class="date">${esc(fmtDate(sermon.date))}</div>`]
+    .filter(Boolean)
+    .join('');
+  const html = `<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>${esc(sermon.title)}</title><style>
+@page { margin: 18mm 16mm; }
+body { font: 12.5pt/1.55 Georgia, 'PT Serif', 'Noto Serif', serif; color: #111; max-width: 720px; margin: 0 auto; }
+h1 { font: 700 22pt/1.2 system-ui, sans-serif; margin: 0 0 4pt; }
+.series { font: 600 9.5pt system-ui, sans-serif; text-transform: uppercase; letter-spacing: .06em; color: #8a6b3f; margin-bottom: 6pt; }
+.sub { font-size: 13pt; color: #444; margin-bottom: 4pt; } .date { font: 10pt system-ui, sans-serif; color: #777; margin-bottom: 14pt; }
+blockquote { margin: 12pt 0; padding: 4pt 0 4pt 12pt; border-left: 3px solid #8a6b3f; break-inside: avoid; }
+cite { display: block; font: 700 10pt system-ui, sans-serif; font-style: normal; color: #8a6b3f; margin-bottom: 2pt; }
+blockquote p { margin: 0; } sup { font-size: 7pt; color: #8a6b3f; font-weight: 700; }
+.alt { margin-top: 6pt !important; color: #333; font-size: 11.5pt; } .alt span { display: block; font: 700 8.5pt system-ui, sans-serif; color: #777; }
+p { margin: 8pt 0; } .note { font: italic 10.5pt/1.45 system-ui, sans-serif; color: #777; border-left: 2px dashed #bbb; padding-left: 10pt; }
+</style></head><body>${head}${body}</body></html>`;
+  if (NATIVE) return saveBlob(new Blob([html], { type: 'text/html' }), `${sermon.title.replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'sermon'}.html`).catch(() => {});
+  const frame = document.createElement('iframe');
+  frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+  document.body.appendChild(frame);
+  frame.contentDocument.open();
+  frame.contentDocument.write(html);
+  frame.contentDocument.close();
+  setTimeout(() => {
+    frame.contentWindow.focus();
+    frame.contentWindow.print();
+    setTimeout(() => frame.remove(), 1000);
+  }, 250);
+}
+
 // «Поделиться»: на телефоне — системное окно, на компьютере — текст проповеди в буфер обмена
 async function shareSermon(sermon, toast) {
   const text = sermonText(sermon);
@@ -259,8 +348,9 @@ async function shareSermon(sermon, toast) {
   }
 }
 
-function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) {
+function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo, onOpen }) {
   const { navigate, closeSheet, toast, undoToast, bibles } = useApp();
+  const allSermons = useSermons();
   const [altOpen, setAltOpen] = useState(null); // стих, у которого раскрыт выбор переводов
   const nameOf = (mid) => bibles.find((m) => m.id === mid)?.name || mid;
   // тексты подключённых переводов дописываются, когда их ещё нет
@@ -405,6 +495,16 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
         <input className="sermon-title-input" value={sermon.title} onChange={(e) => renameSermon(sermon.id, e.target.value)} aria-label={t('Название проповеди')} placeholder={t('Название проповеди')} />
         {/* подзаголовок (описание) — необязательный, растёт по тексту */}
         <AutoText value={sermon.subtitle || ''} onChange={(v) => setSermonSubtitle(sermon.id, v)} placeholder={t('Подзаголовок или описание')} className="sermon-subtitle-input" ariaLabel={t('Подзаголовок или описание')} />
+        {/* серия — несколько проповедей вместе; варианты — уже заданные серии */}
+        <label className="sermon-series">
+          <Layers size={15} aria-hidden="true" />
+          <input list="sermon-series-list" value={sermon.series || ''} onChange={(e) => setSermonSeries(sermon.id, e.target.value)} placeholder={t('Серия (необязательно)')} aria-label={t('Серия (необязательно)')} />
+          <datalist id="sermon-series-list">
+            {[...new Set(allSermons.map((x) => x.series?.trim()).filter(Boolean))].map((x) => (
+              <option key={x} value={x} />
+            ))}
+          </datalist>
+        </label>
         <div className="sermon-actions">
           <button className="btn primary" onClick={() => setPulpit(true)} disabled={!sermon.blocks.length}>
             <Presentation size={17} /> {t('Кафедра')}
@@ -533,8 +633,15 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
                 </>
               ) : (
                 <div className="sermon-block-head text">
-                  <TextBlock sermonId={sermon.id} block={b} fresh={fresh === b.id} onDone={() => fresh === b.id && setFresh(null)} />
-                  <ConfirmButton className="icon-btn subtle sermon-del-block" end small confirmText={t('Удалить')} onConfirm={() => removeBlock(sermon.id, b.id)} aria-label={t('Удалить текст')}>
+                  <div>
+                    {b.type === 'note' && (
+                      <span className="sermon-note-label">
+                        <StickyNote size={13} /> {t('Заметка для себя')}
+                      </span>
+                    )}
+                    <TextBlock sermonId={sermon.id} block={b} note={b.type === 'note'} fresh={fresh === b.id} onDone={() => fresh === b.id && setFresh(null)} />
+                  </div>
+                  <ConfirmButton className="icon-btn subtle sermon-del-block" end small confirmText={t('Удалить')} onConfirm={() => removeBlock(sermon.id, b.id)} aria-label={b.type === 'note' ? t('Заметка для себя') : t('Удалить текст')}>
                     <Trash2 size={16} />
                   </ConfirmButton>
                 </div>
@@ -595,7 +702,7 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
                 )}
               </div>
             </div>
-            <Inserter onText={() => setFresh(addTextBlock(sermon.id, i))} onVerse={() => onAddVerse(i + 1)} />
+            <Inserter onText={() => setFresh(addTextBlock(sermon.id, i))} onVerse={() => onAddVerse(i + 1)} onNote={() => setFresh(addTextBlock(sermon.id, i, 'note'))} />
           </li>
           );
         })}
@@ -610,6 +717,9 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
         </button>
       </div>}
       <div className="sermon-del">
+        <button className="btn link-muted" onClick={() => onOpen(duplicateSermon(sermon.id))}>
+          <CopyPlus size={16} /> {t('Сделать копию')}
+        </button>
         <ConfirmButton
           className="btn link-danger"
           confirmText={t('Удалить проповедь?')}
@@ -696,6 +806,9 @@ export default function SermonsSheet({ pane, payload, onClose }) {
   const [title, setTitle] = useState('');
   const [adding, setAdding] = useState(false); // поиск стихов для проповеди
   const [scrollTo, setScrollTo] = useState(null);
+  const [q, setQ] = useState('');
+  const [sort, setSort] = useState(() => load('sermonSort', 'recent'));
+  useEffect(() => save('sermonSort', sort), [sort]);
   const sermon = sermons.find((s) => s.id === openId);
   const moduleId = (panes[pane]?.moduleId && bibles.find((b) => b.id === panes[pane].moduleId)?.id) || bibles[0]?.id;
   const bodyScroll = useRef(0);
@@ -721,7 +834,7 @@ export default function SermonsSheet({ pane, payload, onClose }) {
     if (ks.length === 1 && ks[0] === 'title') key = 'title';
     else if (ks.length === 1 && ks[0] === 'blocks' && a.blocks.length === b.blocks.length) {
       const ch = b.blocks.map((q, i) => [q, a.blocks[i]]).filter(([q, p]) => JSON.stringify(q) !== JSON.stringify(p));
-      if (ch.length === 1 && ch[0][0].type === 'text' && diff(ch[0][0], ch[0][1]).join() === 'text') key = 'b:' + ch[0][0].id;
+      if (ch.length === 1 && ch[0][0].type !== 'verse' && diff(ch[0][0], ch[0][1]).join() === 'text') key = 'b:' + ch[0][0].id;
     }
     const now = Date.now();
     if (!(key && key === h.key && now - h.at < 800)) {
@@ -807,6 +920,10 @@ export default function SermonsSheet({ pane, payload, onClose }) {
       headerExtra={
         sermon && (
           <>
+            {/* «Печать и PDF»: страница проповеди — печать или «Сохранить как PDF» */}
+            <button className="icon-btn" onClick={() => printSermon(sermon, bibles)} disabled={!sermon.blocks.length} aria-label={t('Печать и PDF')} title={t('Печать и PDF')}>
+              <Printer size={20} />
+            </button>
             {/* «Поделиться» — значком слева от «Отменить» / «Повторить» */}
             <button className="icon-btn" onClick={() => shareSermon(sermon, toast)} disabled={!sermon.blocks.length} aria-label={t('Поделиться')} title={t('Поделиться')}>
               {navigator.share ? <Share2 size={20} /> : <Copy size={20} />}
@@ -822,7 +939,7 @@ export default function SermonsSheet({ pane, payload, onClose }) {
       }
     >
       {sermon ? (
-        <Editor sermon={sermon} pane={pane} moduleId={moduleId} onBackToList={() => setOpenId(null)} onAddVerse={openSearch} scrollTo={scrollTo} />
+        <Editor sermon={sermon} pane={pane} moduleId={moduleId} onBackToList={() => setOpenId(null)} onAddVerse={openSearch} scrollTo={scrollTo} onOpen={(id) => id && setOpenId(id)} />
       ) : (
         <>
           <form className="ref-form" onSubmit={create}>
@@ -836,8 +953,38 @@ export default function SermonsSheet({ pane, payload, onClose }) {
               {t('Создайте проповедь и добавляйте стихи прямо при чтении: зажмите стих → «В проповедь».')}
             </Empty>
           ) : (
-            <div className="sermon-pick sermon-list">
-              {sermons.map((s) => (
+            <>
+            {/* поиск по названию, подзаголовку, серии и тексту; сортировка — недавние или по алфавиту */}
+            <div className="sermon-list-tools">
+              <label className="sermon-search">
+                <Search size={16} aria-hidden="true" />
+                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('Поиск по проповедям')} aria-label={t('Поиск по проповедям')} />
+                {q && (
+                  <button type="button" onClick={() => setQ('')} aria-label={t('Очистить')}>
+                    <X size={15} />
+                  </button>
+                )}
+              </label>
+              <Segmented id="sermon-sort" value={sort} onChange={setSort} options={[['recent', t('Недавние')], ['alpha', t('По алфавиту')]]} />
+            </div>
+            {(() => {
+              const needle = q.trim().toLowerCase();
+              const hit = (s) =>
+                !needle ||
+                [s.title, s.subtitle, s.series, ...s.blocks.map((b) => (b.type === 'verse' ? `${blockRefFull(b)} ${b.text}` : b.text))].some((x) => String(x || '').toLowerCase().includes(needle));
+              const list = sermons.filter(hit).sort((a, b) => (sort === 'alpha' ? a.title.localeCompare(b.title) : (b.updatedAt || 0) - (a.updatedAt || 0)));
+              if (!list.length) return <p className="sermon-none">{t('Ничего не найдено')}</p>;
+              // серии — под общими заголовками; без серии — в конце (если серий нет — просто список)
+              const series = [...new Set(list.map((s) => s.series?.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+              const groups = series.length ? [...series.map((n) => [n, list.filter((s) => s.series?.trim() === n)]), [t('Без серии'), list.filter((s) => !s.series?.trim())]] : [[null, list]];
+              return groups.filter(([, items]) => items.length).map(([name, items]) => (
+            <div key={name || '-'} className="sermon-pick sermon-list">
+              {name && (
+                <h4 className="sermon-group">
+                  <Layers size={14} /> {name}
+                </h4>
+              )}
+              {items.map((s) => (
                 <SwipeRow key={s.id} as="div" onDelete={() => removeSermon(s)} label={t('Удалить проповедь «{title}»', { title: s.title })}>
                   <button className="sermon-pick-row" onClick={() => setOpenId(s.id)}>
                     <ScrollText size={18} />
@@ -852,6 +999,9 @@ export default function SermonsSheet({ pane, payload, onClose }) {
                 </SwipeRow>
               ))}
             </div>
+              ));
+            })()}
+            </>
           )}
         </>
       )}

@@ -2268,3 +2268,24 @@ html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px))
 .sr-back svg { flex: none; }
 .sr-text { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; transform: translateY(-1px); }
 .sr-x { flex: none; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: none; color: color-mix(in srgb, var(--bar-text) 80%, transparent); cursor: pointer; }
+
+/* Проповедь: оформление своего текста, заметка для себя, серия, копия; список — поиск, сортировка, серии */
+.sermon-fmt { display: flex; gap: 4px; margin: -2px 0 4px; }
+.sermon-fmt button { display: grid; place-items: center; width: 30px; height: 26px; padding: 0; border: 0; border-radius: 8px; background: color-mix(in srgb, var(--text) 6%, transparent); color: var(--text); cursor: pointer; }
+.sermon-block.note { background: color-mix(in srgb, var(--muted) 7%, var(--bg)); border-style: dashed; }
+.sermon-note-label { display: inline-flex; align-items: center; gap: 4px; margin-bottom: 2px; font: 600 .74rem/1.3 var(--font-ui); color: var(--muted); }
+.sermon-block.note .sermon-text-view, .sermon-block.note .sermon-text-input { font-size: .92rem; color: color-mix(in srgb, var(--text) 75%, transparent); font-style: italic; }
+.sermon-series { display: flex; align-items: center; gap: 6px; margin: -6px 0 14px; color: var(--muted); }
+.sheet .sermon-series input { flex: 1; min-width: 0; min-height: 0; padding: 4px 0; border: 0; border-radius: 0; background: none; box-shadow: none; color: var(--text); font: inherit; font-size: .9rem; }
+.sheet .sermon-series input:focus { outline: none; }
+.sermon-del { gap: 6px; flex-wrap: wrap; }
+.sermon-del > .btn.link-muted { width: auto; border: 0; background: none; color: var(--muted); font-size: .9rem; padding: 8px 14px; }
+.pulpit-note { margin: .6em 0; padding-left: .7em; border-left: 2px dashed color-mix(in srgb, var(--muted) 60%, transparent); font-size: .7em; font-style: italic; color: var(--muted); }
+.sermon-list-tools { display: flex; flex-direction: column; gap: 8px; margin-bottom: 4px; }
+.sermon-search { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 6px 0 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); color: var(--muted); }
+.sheet .sermon-search input { flex: 1; min-width: 0; min-height: 0; padding: 0; border: 0; background: none; box-shadow: none; color: var(--text); font: inherit; font-size: 1rem; }
+.sheet .sermon-search input:focus { outline: none; }
+.sermon-search button { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; }
+.sermon-search:focus-within { border-color: var(--accent); }
+.sermon-group { display: flex; align-items: center; gap: 6px; margin: 14px 0 2px; padding: 0 20px; font: 700 .78rem/1.3 var(--font-ui); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.sermon-none { margin: 18px 0; text-align: center; color: var(--muted); }

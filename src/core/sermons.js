@@ -1,6 +1,8 @@
 // Проповеди: заголовок, дата и блоки по порядку — стихи (с текстом на момент добавления) и свой текст.
 // Хранятся в localStorage «sermons», общее хранилище для окна проповедей и выбора «В проповедь».
-// { id, title, date, blocks: [{ id, type: 'verse', book, chapter, verse, to, text, texts?, moduleId } | { id, type: 'text', text }], createdAt, updatedAt }
+// { id, title, subtitle?, series?, date, blocks: [{ id, type: 'verse', book, chapter, verse, to, text, texts?, moduleId }
+//   | { id, type: 'text', text } | { id, type: 'note', text } — заметка для себя: в «Поделиться» не уходит], createdAt, updatedAt }
+// В своём тексте **жирный** и *курсив* (fmtParts); в «Поделиться» отметки убираются.
 // Несколько стихов подряд — один блок (verse…to): text — весь текст одной строкой (как раньше, его читают
 // и старые версии приложения), texts — тот же текст по стихам, чтобы показать каждый стих с нового абзаца
 // и убрать любой из середины. В старых проповедях texts нет — его достраивают из перевода (fillVerseTexts).
@@ -54,6 +56,33 @@ export function createSermon(title) {
   setSermons((list) => [s, ...list]);
   return s.id;
 }
+// Копия проповеди: новое название «… — копия», новые id блоков; встаёт первой в списке
+export function duplicateSermon(id) {
+  const src = sermons.find((x) => x.id === id);
+  if (!src) return null;
+  const now = Date.now();
+  const s = { ...JSON.parse(JSON.stringify(src)), id: uid(), title: t('{title} — копия', { title: src.title }), createdAt: now, updatedAt: now };
+  s.blocks = s.blocks.map((b) => ({ ...b, id: uid() }));
+  setSermons((list) => [s, ...list]);
+  return s.id;
+}
+// Серия — несколько проповедей вместе (в списке — под общим заголовком)
+export const setSermonSeries = (id, series) => touch(id, (s) => ({ ...s, series }));
+// Свой текст: **жирный**, *курсив* → части [{ t, b?, i? }]
+export function fmtParts(text) {
+  const out = [];
+  const re = /\*\*([^*\n]+)\*\*|\*([^*\n]+)\*/g;
+  let at = 0;
+  let m;
+  while ((m = re.exec(text))) {
+    if (m.index > at) out.push({ t: text.slice(at, m.index) });
+    out.push(m[1] != null ? { t: m[1], b: true } : { t: m[2], i: true });
+    at = m.index + m[0].length;
+  }
+  if (at < text.length) out.push({ t: text.slice(at) });
+  return out;
+}
+export const plainFmt = (text) => fmtParts(text).map((p) => p.t).join('');
 export const deleteSermon = (id) => setSermons((list) => list.filter((s) => s.id !== id));
 // «Отменить» после удаления: проповедь возвращается на прежнее место
 export function restoreSermon(sermon, index) {
@@ -177,8 +206,8 @@ export function removeVerse(id, blockId, verse) {
 // «Отменить»: блоки проповеди — как были
 export const restoreBlocks = (id, blocks) => touch(id, (s) => ({ ...s, blocks }));
 
-export function addTextBlock(id, afterIndex = null) {
-  const b = { id: uid(), type: 'text', text: '' };
+export function addTextBlock(id, afterIndex = null, type = 'text') {
+  const b = { id: uid(), type, text: '' };
   touch(id, (s) => {
     const blocks = [...s.blocks];
     blocks.splice(afterIndex == null ? blocks.length : Math.max(0, afterIndex + 1), 0, b);
@@ -228,7 +257,7 @@ export function sermonText(s) {
       parts.push(`${blockRefFull(b)}\n«${tx && tx.length > 1 ? tx.map((x, i) => `${b.verse + i} ${x}`).join('\n') : b.text}»`);
       for (const a of b.alt || []) if (a.t?.some(Boolean)) parts.push(`${a.n}: «${a.t.map((x) => (a.il ? plainText(x) : x)).join(' ')}»`);
     }
-    else if (b.text.trim()) parts.push(b.text.trim());
+    else if (b.type !== 'note' && b.text.trim()) parts.push(plainFmt(b.text.trim())); // заметки для себя — не уходят
   }
   return parts.join('\n\n');
 }
