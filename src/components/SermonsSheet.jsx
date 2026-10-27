@@ -225,6 +225,20 @@ function Inserter({ onText, onVerse }) {
   );
 }
 
+// «Поделиться»: на телефоне — системное окно, на компьютере — текст проповеди в буфер обмена
+async function shareSermon(sermon, toast) {
+  const text = sermonText(sermon);
+  try {
+    if (navigator.share && matchMedia('(pointer: coarse)').matches) await navigator.share({ title: sermon.title, text });
+    else {
+      await navigator.clipboard.writeText(text);
+      toast(t('Текст проповеди скопирован'));
+    }
+  } catch {
+    /* отменили «Поделиться» */
+  }
+}
+
 function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) {
   const { navigate, closeSheet, toast, undoToast, bibles } = useApp();
   const [altOpen, setAltOpen] = useState(null); // стих, у которого раскрыт выбор переводов
@@ -271,18 +285,6 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
     const one = !b.to || b.to === b.verse || !verseTexts(b);
     removeVerse(sermon.id, b.id, verse);
     undoToast(t('Убрано: {ref}', { ref: one ? blockRef(b) : blockRef({ ...b, verse, to: null }) }), () => restoreBlocks(sermon.id, before));
-  };
-  const share = async () => {
-    const text = sermonText(sermon);
-    try {
-      if (navigator.share && matchMedia('(pointer: coarse)').matches) await navigator.share({ title: sermon.title, text });
-      else {
-        await navigator.clipboard.writeText(text);
-        toast(t('Текст проповеди скопирован'));
-      }
-    } catch {
-      /* отменили «Поделиться» */
-    }
   };
   const verses = sermon.blocks.filter((b) => b.type === 'verse').length;
 
@@ -385,9 +387,6 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
         <div className="sermon-actions">
           <button className="btn primary" onClick={() => setPulpit(true)} disabled={!sermon.blocks.length}>
             <Presentation size={17} /> {t('Кафедра')}
-          </button>
-          <button className="btn" onClick={share} disabled={!sermon.blocks.length}>
-            {navigator.share ? <Share2 size={17} /> : <Copy size={17} />} {t('Поделиться')}
           </button>
         </div>
       </div>
@@ -777,6 +776,10 @@ export default function SermonsSheet({ pane, payload, onClose }) {
       headerExtra={
         sermon && (
           <>
+            {/* «Поделиться» — значком слева от «Отменить» / «Повторить» */}
+            <button className="icon-btn" onClick={() => shareSermon(sermon, toast)} disabled={!sermon.blocks.length} aria-label={t('Поделиться')} title={t('Поделиться')}>
+              {navigator.share ? <Share2 size={20} /> : <Copy size={20} />}
+            </button>
             <button className="icon-btn" onClick={() => histStep(true)} disabled={!hist.current.undo.length} aria-label={t('Отменить')} title={t('Отменить')}>
               <Undo2 size={20} />
             </button>
