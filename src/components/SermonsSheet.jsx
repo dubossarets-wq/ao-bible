@@ -472,6 +472,9 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
                           {bibles.map((m) => {
                             const main = m.id === b.moduleId;
                             const on = main || !!b.alt?.some((a) => a.m === m.id);
+                            // только переводы, где этот стих есть (уже подключённый — чтобы его можно было снять)
+                            const has = m.books?.some((x) => x.id === b.book && (x.verses?.[b.chapter - 1] || 0) >= b.verse);
+                            if (!main && !on && m.books && !has) return null;
                             return (
                               <button
                                 key={m.id}
