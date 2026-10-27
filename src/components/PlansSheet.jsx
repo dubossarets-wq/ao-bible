@@ -10,7 +10,7 @@ import { bookMeta, BOOKS } from '../core/books.js';
 import { fetchPlanIndex, fetchPlan, makeCustomPlan, makeParallelPlan, chapterList, streamList, firstDayText, CYCLIC, SCOPES, STREAMS, parseReading, planToday, behindDays, readingDone, localDate } from '../core/plans.js';
 import { ConfirmButton, Hint, Switch, Segmented, Reveal } from './ui.jsx';
 import { usePersistentState } from '../core/storage.js';
-import { REMINDERS, REPEATS, getReminder, setReminder, newReminder } from '../core/reminders.js';
+import { REMINDERS, REPEATS, getReminder, setReminder, newReminder, exactAllowed, askExact, scheduleReminders } from '../core/reminders.js';
 import VerseOfDayCard from './VerseOfDayCard.jsx';
 import { t, N_, fmtDate, locale } from '../core/i18n.js';
 
@@ -259,6 +259,21 @@ export const repeatLabel = (n) => (!n ? t('Один раз') : n < 60 ? t('Ка�
 function ReminderCard() {
   const { toast } = useApp();
   const [r, setR] = useState(getReminder);
+  // разрешено ли «Будильники и напоминания»; проверяем и после возврата из настроек телефона
+  const [exact, setExact] = useState(true);
+  useEffect(() => {
+    const check = () =>
+      exactAllowed().then((ok) => {
+        setExact((was) => {
+          if (ok && !was) scheduleReminders(); // разрешили — расписание заново, уже точное
+          return ok;
+        });
+      });
+    check();
+    const onVis = () => document.visibilityState === 'visible' && check();
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
   const apply = async (next) => {
     const ok = await setReminder(next);
     if (!ok) return toast(t('Уведомления запрещены — разрешите их в настройках телефона'), 'error');
@@ -280,6 +295,15 @@ function ReminderCard() {
     <section className="reminder-card" aria-label={t('Напоминание о чтении')}>
       <Switch id="plan-reminder" checked={r.on} onChange={(on) => apply({ on })} label={t('Напоминать о чтении')} hint={t('Уведомление с отрывками на сегодня — сколько угодно напоминаний, в любое время или промежутком')} />
       <Reveal open={r.on}>
+        {!exact && (
+          <div className="rem-exact">
+            <p>{t('Чтобы напоминания приходили вовремя, разрешите приложению «Будильники и напоминания».')}</p>
+            <button type="button" className="btn small primary" onClick={askExact}>
+              {t('Разрешить')}
+            </button>
+          </div>
+        )}
+        <p className="rem-tip">{t('Не приходят уведомления? На Xiaomi, Huawei и других телефонах разрешите приложению автозапуск и работу в фоне без ограничений.')}</p>
         <div className="rem-list">
           {r.list.map((x) => (
             <div key={x.id} className="rem-item">

@@ -100,6 +100,15 @@ async function schedule() {
   if (notifications.length) await LocalNotifications.schedule({ notifications });
 }
 
+// «Будильники и напоминания» (Android 12+): без него уведомление приходит с опозданием или не приходит вовсе
+export async function exactAllowed() {
+  if (!NATIVE) return true;
+  const r = await LocalNotifications.checkExactNotificationSetting().catch(() => null);
+  return !r || r.exact_alarm === 'granted';
+}
+// Открыть системную страницу «Будильники и напоминания» этого приложения
+export const askExact = () => LocalNotifications.changeExactNotificationSetting().catch(() => {});
+
 // Включить или выключить; при включении спрашиваем разрешение (Android 13+). false — разрешения не дали
 export async function setReminder(next) {
   const r = { ...getReminder(), ...next };

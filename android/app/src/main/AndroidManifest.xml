@@ -45,9 +45,10 @@
         </receiver>
     </application>
 
-    <!-- Напоминание о плане не требует точного будильника (Google Play разрешает его только будильникам и
-         календарям): без этого разрешения уведомление приходит с точностью до нескольких минут -->
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" tools:node="remove" />
+    <!-- Напоминания в назначенное время: «Будильники и напоминания» включает сам человек (кнопка «Разрешить» в карточке
+         напоминаний). Без него Android откладывает уведомление, а на Xiaomi и других может не показать вовсе.
+         (USE_EXACT_ALARM, который Google Play оставляет только будильникам и календарям, не нужен) -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <!-- Permissions -->
 

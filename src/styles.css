@@ -2340,3 +2340,7 @@ html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px))
 .sp-muted { color: var(--muted); font-size: .92rem; }
 .sp-sec .source-note { margin: 0; }
 .wp-lemma { color: var(--muted); font-size: .95rem; }
+.rem-exact { display: flex; align-items: center; gap: 10px; margin: 2px 0 8px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--accent) 12%, var(--panel)); }
+.rem-exact p { flex: 1; margin: 0; font-size: .9rem; line-height: 1.4; }
+.rem-exact .btn { flex: none; }
+.rem-tip { margin: 0 0 6px; font-size: .82rem; line-height: 1.4; color: var(--muted); }
