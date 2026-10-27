@@ -71,6 +71,16 @@ export function queryRegex(query, { wholeWord = false, flags = 'giu' } = {}) {
   return new RegExp(pat, flags);
 }
 
+// Заранее готовит текст перевода без разметки (окно поиска открыли — первый запрос уже быстрый); по книге за раз,
+// между книгами уступает поток интерфейсу
+export async function warmSearch(moduleId) {
+  const mod = await getModule(moduleId);
+  for (const b of mod?.books || []) {
+    await plainBook(moduleId, b.id);
+    await yieldNow();
+  }
+}
+
 export async function search({ moduleId, query, scope = 'all', currentBook, wholeWord, onResult, onProgress, signal }) {
   const mod = await getModule(moduleId);
   if (!mod) throw new Error(t('Перевод не установлен'));

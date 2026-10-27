@@ -3,10 +3,10 @@
 // pick — тот же поиск внутри другого окна для выбора стихов (проповедь): нажатие на место добавляет его,
 // а не открывает; ссылка «Ин 3:16-18» добавляет стихи целиком. Свой запрос и свои результаты, настройки — общие.
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Search, X, CornerDownLeft, Clock, Loader2, Copy, Plus, Check } from 'lucide-react';
+import { Search, X, CornerDownLeft, Clock, Copy, Plus, Check } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
-import { search, queryRegex } from '../core/search.js';
+import { search, queryRegex, warmSearch } from '../core/search.js';
 import { parseHumanRef, formatRef, bookMeta, testamentOf } from '../core/books.js';
 import { getVerse, ORIGINALS } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
@@ -14,7 +14,7 @@ import { usePersistentState, save, load } from '../core/storage.js';
 import { shortName } from '../core/moduleShort.js';
 import { copyText } from '../core/clipboard.js';
 import { quoteVerse, quoteLabel } from './SelectionBar.jsx';
-import { Segmented, Switch, Progress, Reveal } from './ui.jsx';
+import { Segmented, Switch, Reveal } from './ui.jsx';
 import SwipeRow from './SwipeRow.jsx';
 import { refRangeLabel, isWholeChapter } from '../core/sermons.js';
 import { StrongPlaces } from './ConcordanceSheet.jsx';
@@ -136,6 +136,8 @@ export default function SearchPanel({ pane, payload = {}, onClose, pick = null }
     // На телефоне при восстановленных результатах клавиатуру не открываем — она закрыла бы список
     const coarse = window.matchMedia?.('(pointer: coarse)').matches;
     const timer = setTimeout(() => (!restored || !coarse) && inputRef.current?.focus({ preventScroll: true }), 220);
+    // текст перевода для поиска готовится сразу — к первому запросу он уже в памяти
+    warmSearch(module.id).catch(() => {});
     // Прокрутка списка запоминается, при повторном открытии — на том же месте
     const body = formRef.current?.closest('.sheet-body');
     const onScroll = () => memos[mk] && memos[mk].key === shownKey.current && (memos[mk].scroll = body.scrollTop);
@@ -280,7 +282,7 @@ export default function SearchPanel({ pane, payload = {}, onClose, pick = null }
         }
         runSearch(q, key);
       },
-      q.length < 4 ? 350 : 220
+      q.length < 3 ? 260 : 150
     );
     return () => clearTimeout(timer);
   }, [query, scope, wholeWord, module.id, targetsKey, scope === 'book' ? p.ref.book : '']);
@@ -434,7 +436,6 @@ export default function SearchPanel({ pane, payload = {}, onClose, pick = null }
           onArticle={pick ? null : () => (remember(query.trim()), openSheet('dict', pane, { token: { text: num, strongs: [num] }, ref: p.ref, autoOpen: true, initial: 'full' }))}
         />
       ))}
-      {progress && <Progress value={progress.p} label={progress.label} />}
 
       {results === null && !refHit && !strongHit && history.length > 0 && (
         <section className="nav-group search-history">
@@ -466,7 +467,7 @@ export default function SearchPanel({ pane, payload = {}, onClose, pick = null }
       {results && (
         <>
           <div className="result-count">
-            {progress ? <Loader2 className="spin" size={14} /> : null} {t('Найдено: {n}', { n: results.length })}
+            {t('Найдено: {n}', { n: results.length })}
             {!progress && results.length === 0 && ` — ${t('попробуйте другую форму слова или отключите «целые слова».')}`}
           </div>
           <ul className="results">

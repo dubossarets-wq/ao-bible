@@ -392,7 +392,7 @@ async function run(label, viewport, isMobile) {
   await page.keyboard.press('Enter');
   await page.waitForTimeout(600);
 
-  // Комментарий: импорт JSON → пометка у стиха → окно с текстом
+  // Комментарий: импорт JSON → значок-облачко у стиха → текст раскрывается под стихом
   const cmFile = path.join(shots, 'test-commentary.json');
   await writeFile(cmFile, JSON.stringify({ format: 'aob-module', formatVersion: 1, type: 'commentary', id: 'test-comm', name: 'Тест-к', title: 'Тестовый комментарий', license: 'тест', entries: { 'Josh.13.33': { title: 'О левитах', text: 'Удел левитов — Сам Господь.' } } }));
   await menu(page, 'Настройки');
@@ -403,10 +403,10 @@ async function run(label, viewport, isMobile) {
   await page.locator('.mod-card .badge.ok').last().waitFor({ timeout: 30000 });
   await page.keyboard.press('Escape');
   await page.waitForSelector('.sheet', { state: 'detached' });
-  await page.waitForSelector('#v-13-33 .cm', { timeout: 10000 });
-  await page.click('#v-13-33 .cm');
-  await page.waitForSelector('.commentary-text', { timeout: 10000 });
-  const cmText = await page.textContent('.commentary-text');
+  await page.waitForSelector('#v-13-33 .cmi', { timeout: 10000 });
+  await page.click('#v-13-33 .cmi');
+  await page.waitForSelector('.vc.open .vc-text', { timeout: 10000 });
+  const cmText = await page.textContent('.vc.open .vc-text');
   check(`${label}: комментарий к стиху`, cmText.includes('Удел левитов'), cmText);
   await page.screenshot({ path: `${shots}/${label}-7f-commentary.png` });
   await page.keyboard.press('Escape');
