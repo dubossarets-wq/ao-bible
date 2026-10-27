@@ -42,23 +42,29 @@ export function highlightRegex(query) {
 // «Введение в книгу», «Введение к главе», «Introduction» — статьи, которые при сборке модуля поставлены к первому стиху
 const isIntro = (title) => !!title && (title.startsWith('Введение') || title === 'Introduction');
 
-// Статьи комментариев к стиху одним списком: введение (к книге или главе — у первого стиха) отдельной вкладкой
+// Статьи комментариев к стиху одним списком: введение (к книге или главе — у первого стиха) — отдельным пунктом.
+// short — после стиха («Лопухин», у введения — «Введение в книгу»), name — в раскрытом тексте (название книги)
 function commentEntries(list) {
   const out = [];
   for (const cm of list) {
     for (const intro of [true, false]) {
       const items = cm.items.filter((e) => isIntro(e.title) === intro);
       // название — по книге: «Толковая Библия Лопухина», а не короткое «Лопухин»
-      if (items.length) out.push({ id: `${cm.id}${intro ? ':i' : ''}`, name: intro ? `${items[0].title} · ${cm.title || cm.name}` : cm.title || cm.name, text: items.map((e) => e.text).join('\n\n') });
+      if (items.length)
+        out.push({
+          id: `${cm.id}${intro ? ':i' : ''}`,
+          short: intro ? items[0].title : cm.name,
+          name: intro ? `${items[0].title} · ${cm.title || cm.name}` : cm.title || cm.name,
+          text: items.map((e) => e.text).join('\n\n'),
+        });
     }
   }
   return out;
 }
 
-// Раскрытый комментарий под стихом (.vc): при нескольких источниках — тонкие вкладки с названиями, текст с линией
-// акцента слева. Раскрывается и сворачивается плавно; нажатие на текст — свернуть
-function VerseComments({ entries, open, size, onClose }) {
-  const [sel, setSel] = useState(0);
+// Раскрытый комментарий под стихом (.vc): заголовок — название книги, текст с линией акцента слева; какой из
+// комментариев стиха — sel (его выбирают названием после стиха). Раскрывается и сворачивается плавно; нажатие — свернуть
+function VerseComments({ entries, open, sel, size, onClose }) {
   // в разметке панель только у раскрытого (и только что свёрнутого) стиха; класс — на следующем кадре, чтобы
   // раскрытие сразу после появления тоже шло плавно
   const [on, setOn] = useState(false);
@@ -70,15 +76,9 @@ function VerseComments({ entries, open, size, onClose }) {
   return (
     <div className={`vc${on ? ' open' : ''}`} aria-hidden={!open}>
       <div>
-        <div className="vc-panel">
-          <div className="vc-tabs" role={entries.length > 1 ? 'tablist' : undefined}>
-            {entries.map((e, i) => (
-              <button key={e.id} type="button" className={i === sel ? 'on' : ''} role={entries.length > 1 ? 'tab' : undefined} aria-selected={i === sel} tabIndex={open ? 0 : -1} onClick={() => (entries.length > 1 ? setSel(i) : onClose())}>
-                {e.name}
-              </button>
-            ))}
-          </div>
-          <p className="vc-text" style={{ fontSize: `${size}px` }} onClick={onClose}>
+        <div className="vc-panel" onClick={onClose}>
+          <b className="vc-name">{cur.name}</b>
+          <p className="vc-text" style={{ fontSize: `${size}px` }}>
             {cur.text}
           </p>
         </div>
@@ -91,6 +91,7 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
   useLang(); // глава в memo — подписи (номер главы, кнопки) обновляются при смене языка
   const [cmOpen, setCmOpen] = useState(null); // стих, у которого раскрыт комментарий
   const [cmLast, setCmLast] = useState(null); // последний раскрытый — его панель остаётся, пока плавно сворачивается
+  const [cmSel, setCmSel] = useState(0); // какой из комментариев стиха раскрыт
   const sel = selected ? new Set(selected.split(',').map(Number)) : null;
   const mk = marks ? Object.fromEntries(marks.split(',').map((x) => x.split(':'))) : {};
   return (
@@ -173,25 +174,27 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
                     {illus.get(`${bookId}.${c}.${v}`).length > 1 && <span>2</span>}
                   </button>
                 )}
-                {/* комментарий — почти незаметный значок-облачко (число — если источников несколько) */}
-                {asText && (
-                  <button
-                    className={`cmi${cmOpen === v ? ' on' : ''}`}
-                    data-act="cmt"
-                    aria-expanded={cmOpen === v}
-                    aria-label={t('Комментарий: {name}', { name: cms[0].name })}
-                    onClick={() => {
-                      setCmOpen(cmOpen === v ? null : v);
-                      setCmLast(v);
-                    }}
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                      <path d="M13 8H7M17 12H7" />
-                    </svg>
-                    {entries.length > 1 && <span>{entries.length}</span>}
-                  </button>
-                )}
+                {/* комментарии — короткими названиями мелким приглушённым текстом; раскрытый — цветом акцента */}
+                {asText &&
+                  entries.map((e, i) => {
+                    const on = cmOpen === v && cmSel === i;
+                    return (
+                      <button
+                        key={e.id}
+                        className={`cmn${on ? ' on' : ''}`}
+                        data-act="cmt"
+                        aria-expanded={on}
+                        aria-label={t('Комментарий: {name}', { name: e.name })}
+                        onClick={() => {
+                          setCmOpen(on ? null : v);
+                          setCmSel(i);
+                          setCmLast(v);
+                        }}
+                      >
+                        {e.short}
+                      </button>
+                    );
+                  })}
                 {!asText &&
                   cms.map((cm) => (
                     <button key={cm.id} className="cm" data-act="comment" data-m={cm.id} aria-label={t('Комментарий: {name}', { name: cm.name })}>
@@ -200,7 +203,7 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
                   ))}
               </p>
               {afterVerse === v && afterNode}
-              {asText && cmLast === v && <VerseComments entries={entries} open={cmOpen === v} size={opts.cmSize} onClose={() => setCmOpen(null)} />}
+              {asText && cmLast === v && <VerseComments entries={entries} open={cmOpen === v} sel={cmSel} size={opts.cmSize} onClose={() => setCmOpen(null)} />}
             </React.Fragment>
           );
         })}

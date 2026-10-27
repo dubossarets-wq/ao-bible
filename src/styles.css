@@ -254,18 +254,15 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
    открытый перевод — отмечен фоном (как во Flutter) */
 .mod-head { display: flex; align-items: center; min-width: 0; }
 .mod-new { flex: none; display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: .68rem; font-weight: 700; line-height: 1.4; vertical-align: 2px; }
-/* комментарий: почти незаметный значок-облачко после стиха; нажатие плавно раскрывает текст под стихом */
-.cmi { display: inline-flex; align-items: center; gap: .1em; vertical-align: -.05em; margin-left: .3em; padding: 0 .1em; border: 0; background: none; color: color-mix(in srgb, var(--muted) 70%, transparent); font: 600 .72em/1 var(--font-ui); cursor: pointer; transition: color .2s; -webkit-tap-highlight-color: transparent; }
-.cmi svg { width: 1.15em; height: 1.15em; }
-.cmi span { font-size: .9em; }
-.cmi.on { color: var(--accent); }
+/* комментарии: короткие названия после стиха мелким приглушённым текстом; нажатие плавно раскрывает текст под стихом */
+.cmn { margin-left: .35em; padding: 0 .1em; border: 0; background: none; color: color-mix(in srgb, var(--muted) 80%, transparent); font: 600 .68em/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: color .2s; -webkit-tap-highlight-color: transparent; }
+.cmn + .cmn { margin-left: .5em; }
+.cmn.on { color: var(--accent); }
 .vc { display: grid; grid-template-rows: 0fr; opacity: 0; font-family: var(--font-ui); text-indent: 0; text-align: left; transition: grid-template-rows .26s cubic-bezier(.4,0,.2,1), opacity .26s; }
 .vc.open { grid-template-rows: 1fr; opacity: 1; }
 .vc > div { min-height: 0; overflow: hidden; }
-.vc-panel { margin: .2em 0 .9em; padding-left: 12px; border-left: 3px solid var(--accent); }
-.vc-tabs { display: flex; flex-wrap: wrap; gap: 2px 12px; }
-.vc-tabs button { padding: 3px 0; border: 0; background: none; color: color-mix(in srgb, var(--muted) 75%, transparent); font: 700 .8rem/1.3 var(--font-ui); cursor: pointer; transition: color .18s; }
-.vc-tabs button.on { color: var(--accent); }
+.vc-panel { margin: .2em 0 .9em; padding-left: 12px; border-left: 3px solid var(--accent); cursor: pointer; }
+.vc-name { display: block; padding: 3px 0; color: var(--accent); font: 700 .8rem/1.3 var(--font-ui); }
 .vc-text { margin: 0; line-height: 1.6; color: color-mix(in srgb, var(--text) 86%, transparent); white-space: pre-line; cursor: pointer; }
 .pick-langs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px 10px; border-bottom: 1px solid var(--line); }
 .pick-langs::-webkit-scrollbar { display: none; }
@@ -993,8 +990,8 @@ html, body, .app { touch-action: manipulation; }
 .pinch-badge.out { opacity: 0; }
 
 /* Картинка со стихом */
-.vimg-preview { position: relative; display: grid; place-items: center; margin: 0 auto 12px; width: min(100%, 340px); border-radius: var(--radius); overflow: hidden; background: var(--bg); box-shadow: 0 4px 18px rgba(0,0,0,.12); min-height: 200px; }
-.vimg-preview.story { width: min(100%, 250px); }
+.vimg-preview { position: relative; display: grid; place-items: center; margin: 0 auto 12px; width: min(100% - 40px, 340px); border-radius: var(--radius); overflow: hidden; background: var(--bg); box-shadow: 0 4px 18px rgba(0,0,0,.12); min-height: 200px; }
+.vimg-preview.story { width: min(100% - 40px, 250px); }
 .vimg-preview canvas { display: block; width: 100%; height: auto; }
 /* фоны — от края до края окна, у краёв затухание; миниатюры без обводки, выбранная — рамка акцента поверх края */
 .vimg-bgs { display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px; padding: 2px 16px; scrollbar-width: none; -webkit-mask-image: linear-gradient(to right, transparent, #000 16px, #000 calc(100% - 16px), transparent); mask-image: linear-gradient(to right, transparent, #000 16px, #000 calc(100% - 16px), transparent); }
