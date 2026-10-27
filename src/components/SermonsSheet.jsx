@@ -35,6 +35,7 @@ import {
   verseTexts,
   fillVerseTexts,
   fillAltTexts,
+  setSermonReturn,
   setBlockAlts,
   setSermonAltDefault,
   versesForRef,
@@ -297,6 +298,7 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
   const goVerse = (b, verse) => {
     closeSheet();
     navigate(pane, { book: b.book, chapter: b.chapter, verse });
+    setSermonReturn({ pane, id: sermon.id }); // под верхним меню — «Вернуться к проповеди»
   };
   // Убрать стих (из диапазона — только его; диапазон делится на части) — с «Отменить»
   const dropVerse = (b, verse) => {

@@ -34,6 +34,19 @@ const subscribe = (fn) => {
 };
 export const useSermons = () => useSyncExternalStore(subscribe, getSermons);
 
+// «Вернуться к проповеди»: из проповеди перешли по стиху в Библию — { pane, id } (панель под верхним меню)
+let sermonReturn = null;
+const retSubs = new Set();
+export function setSermonReturn(v) {
+  sermonReturn = v;
+  retSubs.forEach((fn) => fn());
+}
+export const useSermonReturn = () =>
+  useSyncExternalStore(
+    (fn) => (retSubs.add(fn), () => retSubs.delete(fn)),
+    () => sermonReturn
+  );
+
 const touch = (id, fn) => setSermons((list) => list.map((s) => (s.id === id ? { ...fn(s), updatedAt: Date.now() } : s)));
 
 export function createSermon(title) {

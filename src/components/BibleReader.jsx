@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useApp } from '../App.jsx';
 import ReaderToolbar from './ReaderToolbar.jsx';
+import { useSermons, useSermonReturn, setSermonReturn } from '../core/sermons.js';
 import SelectionBar, { sortedRefs, quoteVerse, quoteLabel } from './SelectionBar.jsx';
 import { listenFrom } from '../core/listen.js';
 import { useAudio } from '../core/audio.js';
@@ -257,6 +258,34 @@ function SelectionInline({ index, module, refs, onDone, onPartStart }) {
   );
 }
 
+// Из проповеди перешли по стиху в Библию — под верхним меню панель «Вернуться к проповеди» (крестик — закрыть)
+function SermonReturn({ index }) {
+  const { openSheet } = useApp();
+  const ret = useSermonReturn();
+  const sermons = useSermons();
+  const s = ret && ret.pane === index ? sermons.find((x) => x.id === ret.id) : null;
+  if (!s) return null;
+  return (
+    <div className="sermon-return">
+      <button
+        className="sr-back"
+        onClick={() => {
+          setSermonReturn(null);
+          openSheet('sermons', index, { open: s.id });
+        }}
+      >
+        <CornerUpLeft size={16} />
+        <span className="sr-text">
+          {t('Вернуться к проповеди')} <b>«{s.title}»</b>
+        </span>
+      </button>
+      <button className="sr-x" onClick={() => setSermonReturn(null)} aria-label={t('Закрыть')} title={t('Закрыть')}>
+        <X size={16} />
+      </button>
+    </div>
+  );
+}
+
 // Человек ушёл из плана читать дальше — кнопка возврата к плану на день
 function PlanReturn({ index, lastPlan }) {
   const { returnToPlan, dismissPlanReturn } = useApp();
@@ -365,6 +394,7 @@ export default function BibleReader({ index }) {
       ) : (
         <ReaderToolbar index={index} pane={pane} module={module} />
       )}
+      {!selection.size && <SermonReturn index={index} />}
       {pane.plan ? <PlanProgress uid={pane.plan.uid} day={pane.plan.day} /> : <ReadingProgress module={module} index={index} fallback={pane.ref} />}
       {pane.plan ? (
         <PlanView index={index} pane={pane} module={module} selection={selection} onSelect={onSelect} selActions={selActions} part={part} onPart={onPart} />
