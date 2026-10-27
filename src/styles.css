@@ -2216,3 +2216,23 @@ html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px))
 .sermon-subtitle-input:focus { outline: none; color: var(--text); }
 .sermon-subtitle-input::placeholder { color: color-mix(in srgb, var(--muted) 65%, transparent); }
 .pulpit-subtitle { margin: -.3em 0 .8em; text-align: center; font-size: .78em; line-height: 1.4; color: var(--muted); white-space: pre-wrap; }
+
+/* Проповедь: стих — с полосой цвета акцента слева (видно места Писания при прокрутке), рядом со ссылкой — перевод,
+   подключённые переводы — под основным текстом; выбор переводов раскрывается в карточке */
+.sermon-block.verse { border-left: 3px solid var(--accent); }
+.sermon-ref-mod { font-weight: 500; color: var(--muted); }
+.sv-alt { margin: 8px 0 2px; padding-top: 6px; border-top: 1px dashed color-mix(in srgb, var(--line) 80%, transparent); font-family: var(--font-text); font-size: .98rem; line-height: 1.5; color: color-mix(in srgb, var(--text) 85%, transparent); }
+.sv-alt-name { display: block; margin-bottom: 1px; font: 700 .74rem/1.3 var(--font-ui); color: var(--muted); letter-spacing: .02em; }
+.sermon-alts { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
+.sermon-alts .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.sermon-alts .chip:disabled { opacity: 1; cursor: default; }
+.sermon-block-tools .icon-btn.on { color: var(--accent); }
+/* «Удалить проповедь» — неброская красная текстовая кнопка по центру */
+.sermon-del { display: flex; justify-content: center; margin-top: 18px; }
+.sermon-del > .btn.link-danger { width: auto; border: 0; background: none; color: var(--danger); font-size: .9rem; padding: 8px 14px; }
+.sermon-del > .btn.link-danger:hover { background: color-mix(in srgb, var(--danger) 8%, transparent); }
+/* «Кафедра»: таймер и переводы */
+.pulpit-timer { flex: none; min-width: 56px; height: 32px; padding: 0 10px; border: 0; border-radius: 16px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); font: 600 .9rem/1 var(--font-ui); font-variant-numeric: tabular-nums; cursor: pointer; }
+.pulpit-timer.paused { color: var(--muted); }
+.pulpit-alt { margin: .6em 0 0; font-size: .88em; color: color-mix(in srgb, var(--text) 85%, transparent); }
+.pulpit-alt cite { display: block; font-style: normal; font-size: .7em; font-weight: 700; color: var(--muted); }

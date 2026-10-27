@@ -4,6 +4,8 @@
 // Несколько стихов подряд — один блок (verse…to): text — весь текст одной строкой (как раньше, его читают
 // и старые версии приложения), texts — тот же текст по стихам, чтобы показать каждый стих с нового абзаца
 // и убрать любой из середины. В старых проповедях texts нет — его достраивают из перевода (fillVerseTexts).
+// Переводы у стиха: alt: [{ m: id перевода, n: короткое название, t: [текст по стихам] }] — показываются под основным;
+// у проповеди altDefault: [{ m, n }] — переводы, которые сами подключаются ко всем новым стихам (тексты — fillAltTexts).
 import { useSyncExternalStore } from 'react';
 import { load, save } from './storage.js';
 import { bookMeta, parseHumanRef } from './books.js';
@@ -70,10 +72,33 @@ export function addVerses(id, items, moduleId, at = null) {
   }
   touch(id, (s) => {
     const all = [...s.blocks];
-    all.splice(at == null ? all.length : Math.max(0, Math.min(all.length, at)), 0, ...blocks);
+    // переводы, выбранные заранее, подключаются к новым стихам сами (тексты дописывает fillAltTexts)
+    const alt = (s.altDefault || []).filter((a) => a.m !== moduleId).map((a) => ({ ...a, t: [] }));
+    all.splice(at == null ? all.length : Math.max(0, Math.min(all.length, at)), 0, ...blocks.map((b) => (alt.length ? { ...b, alt } : b)));
     return { ...s, blocks: all };
   });
   return blocks.map((b) => b.id);
+}
+
+// Переводы у стиха: list — [{ m, n }] (основной перевод блока не входит); тексты дописывает fillAltTexts
+export const setBlockAlts = (id, blockId, list) =>
+  touch(id, (s) => ({ ...s, blocks: s.blocks.map((b) => (b.id === blockId ? { ...b, alt: list.map((a) => b.alt?.find((x) => x.m === a.m) || { ...a, t: [] }) } : b)) }));
+// Переводы, которые сами подключаются ко всем новым стихам проповеди
+export const setSermonAltDefault = (id, list) => touch(id, (s) => ({ ...s, altDefault: list }));
+
+// Тексты подключённых переводов: по стиху из каждого перевода (без отметки изменения — это не правка человека)
+export async function fillAltTexts(id) {
+  const s = sermons.find((x) => x.id === id);
+  for (const b of s?.blocks || []) {
+    if (b.type !== 'verse' || !b.alt?.length) continue;
+    const n = (b.to || b.verse) - b.verse + 1;
+    for (const a of b.alt) {
+      if (a.t?.length === n) continue;
+      const t = [];
+      for (let v = b.verse; v <= (b.to || b.verse); v++) t.push(plainText((await getVerse(a.m, { book: b.book, chapter: b.chapter, verse: v }).catch(() => null)) || ''));
+      setSermons((list) => list.map((x) => (x.id === id ? { ...x, blocks: x.blocks.map((y) => (y.id === b.id ? { ...y, alt: (y.alt || []).map((z) => (z.m === a.m ? { ...z, t } : z)) } : y)) } : x)));
+    }
+  }
 }
 
 // Текст блока по стихам: [текст 16, текст 17, …]; null — у старого блока-диапазона разбивки ещё нет
@@ -123,6 +148,7 @@ export function removeVerse(id, blockId, verse) {
         if (from > end) return [];
         const tx = texts.slice(from - b.verse, end - b.verse + 1);
         const { texts: _, ...rest } = b;
+        if (b.alt) rest.alt = b.alt.map((a) => ({ ...a, t: (a.t || []).slice(from - b.verse, end - b.verse + 1) }));
         return [{ ...rest, id: keepId ? b.id : uid(), verse: from, to: end > from ? end : null, text: tx.join(' '), ...(end > from ? { texts: tx } : {}) }];
       };
       return [...part(b.verse, verse - 1, true), ...part(verse + 1, to, verse === b.verse)];
@@ -181,6 +207,7 @@ export function sermonText(s) {
       // Диапазон — каждый стих с новой строки, с номером
       const tx = verseTexts(b);
       parts.push(`${blockRefFull(b)}\n«${tx && tx.length > 1 ? tx.map((x, i) => `${b.verse + i} ${x}`).join('\n') : b.text}»`);
+      for (const a of b.alt || []) if (a.t?.some(Boolean)) parts.push(`${a.n}: «${a.t.join(' ')}»`);
     }
     else if (b.text.trim()) parts.push(b.text.trim());
   }

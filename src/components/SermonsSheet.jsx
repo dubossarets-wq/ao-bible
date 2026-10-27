@@ -3,13 +3,13 @@
 // Стихи добавляются тем же поиском, что и в приложении (SearchPanel в режиме выбора).
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2, Plus, Presentation, Share2, ScrollText, X, Minus, Type, Copy, GripVertical, Search, ScanText, TextQuote, Undo2, Redo2, ArrowUp, ArrowDown } from 'lucide-react';
+import { Trash2, Plus, Presentation, Share2, ScrollText, X, Minus, Type, Copy, GripVertical, Search, ScanText, TextQuote, Undo2, Redo2, ArrowUp, ArrowDown, Languages } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import SearchPanel from './SearchPanel.jsx';
 import SwipeRow from './SwipeRow.jsx';
 import { plateSvg } from './partShape.js';
 import { useApp } from '../App.jsx';
-import { ConfirmButton, Empty, Reveal } from './ui.jsx';
+import { ConfirmButton, Empty, Reveal, Switch } from './ui.jsx';
 import { formatRef } from '../core/books.js';
 import { getVerse } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
@@ -34,6 +34,9 @@ import {
   sermonText,
   verseTexts,
   fillVerseTexts,
+  fillAltTexts,
+  setBlockAlts,
+  setSermonAltDefault,
   versesForRef,
   refRangeLabel,
 } from '../core/sermons.js';
@@ -71,7 +74,12 @@ function TextBlock({ sermonId, block, fresh, onDone }) {
       <AutoText
         value={block.text}
         onChange={(text) => updateBlock(sermonId, block.id, { text })}
-        onBlur={() => (setEdit(false), onDone?.())}
+        onBlur={() => {
+          setEdit(false);
+          onDone?.();
+          // пустой свой текст исчезает сам, когда из него ушли
+          if (!block.text.trim()) removeBlock(sermonId, block.id);
+        }}
         placeholder={t('Мысль, пояснение, пример…')}
         autoFocus={fresh || edit}
       />
@@ -86,6 +94,16 @@ function TextBlock({ sermonId, block, fresh, onDone }) {
 // «Кафедра»: проповедь крупно, во весь экран, экран не гаснет
 function Pulpit({ sermon, onClose }) {
   const [size, setSize] = useState(() => load('pulpitSize', 26));
+  // таймер проповеди: идёт с открытия «Кафедры», нажатие — пауза / продолжить
+  const [elapsed, setElapsed] = useState(0);
+  const [paused, setPaused] = useState(false);
+  useEffect(() => {
+    if (paused) return;
+    const t0 = Date.now() - elapsed * 1000;
+    const id = setInterval(() => setElapsed(Math.floor((Date.now() - t0) / 1000)), 500);
+    return () => clearInterval(id);
+  }, [paused]);
+  const clock = `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`;
   useEffect(() => save('pulpitSize', size), [size]);
   // Размер букв двумя пальцами: развести — крупнее, свести — мельче
   const body = useRef(null);
@@ -152,6 +170,9 @@ function Pulpit({ sermon, onClose }) {
           <Plus size={20} />
         </button>
         <span className="pulpit-title">{sermon.title}</span>
+        <button className={`pulpit-timer${paused ? ' paused' : ''}`} onClick={() => setPaused((p) => !p)} aria-label={`${t('Время проповеди')}: ${clock}`} title={paused ? t('Продолжить') : t('Пауза')}>
+          {clock}
+        </button>
         <button className="icon-btn" onClick={onClose} aria-label={t('Закрыть кафедру')}>
           <X size={22} />
         </button>
@@ -171,6 +192,11 @@ function Pulpit({ sermon, onClose }) {
                     </p>
                   ))
                 : b.text}
+              {b.alt?.filter((a) => a.t?.some(Boolean)).map((a) => (
+                <p key={a.m} className="pulpit-alt">
+                  <cite>{a.n}</cite> {a.t.join(' ')}
+                </p>
+              ))}
             </blockquote>
           ) : b.text.trim() ? (
             <div key={b.id} className="pulpit-text">
@@ -200,7 +226,12 @@ function Inserter({ onText, onVerse }) {
 }
 
 function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) {
-  const { navigate, closeSheet, toast, undoToast } = useApp();
+  const { navigate, closeSheet, toast, undoToast, bibles } = useApp();
+  const [altOpen, setAltOpen] = useState(null); // стих, у которого раскрыт выбор переводов
+  const nameOf = (mid) => bibles.find((m) => m.id === mid)?.name || mid;
+  // тексты подключённых переводов дописываются, когда их ещё нет
+  const altNeed = sermon.blocks.filter((b) => b.type === 'verse' && b.alt?.some((a) => a.t?.length !== (b.to || b.verse) - b.verse + 1)).length;
+  useEffect(() => void (altNeed && fillAltTexts(sermon.id)), [sermon.id, altNeed]);
   const [pulpit, setPulpit] = useState(false);
   // «Часть стиха» в блоке: { id, full, from, to } — слова полного текста нажимаются: первое — начало, второе — конец
   const [pe, setPe] = useState(null);
@@ -401,6 +432,7 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
                 <>
                   <button className="sermon-ref" onClick={() => goVerse(b, b.verse)} title={t('Открыть в Библии')}>
                     {blockRef(b)}
+                    {b.moduleId && <span className="sermon-ref-mod"> · {nameOf(b.moduleId)}</span>}
                   </button>
                   {/* «Часть стиха»: полный текст для выбора слов и обычные строки сменяют друг друга плавно */}
                   <Reveal open={pe?.id === b.id}>{lastPe.current?.id === b.id && <PartPicker pe={pe?.id === b.id ? pe : lastPe.current} onPick={pickWord} />}</Reveal>
@@ -425,6 +457,46 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
                       );
                     })}
                   </div>
+                  {/* подключённые переводы — под основным текстом */}
+                  {b.alt?.map((a) => (
+                    <div key={a.m} className="sv-alt">
+                      <span className="sv-alt-name">{a.n}</span>
+                      {/* стиха в этом переводе нет (например, Новый Завет в еврейском тексте) — прочерк */}
+                      <span className="sv-alt-text">{!a.t?.some(Boolean) ? (a.t?.length ? '—' : '…') : group && a.t.length > 1 ? a.t.map((x, k) => <span key={k}><sup className="sv-num">{b.verse + k}</sup>{x} </span>) : a.t.join(' ')}</span>
+                    </div>
+                  ))}
+                  </Reveal>
+                  <Reveal open={altOpen === b.id}>
+                    {altOpen === b.id && (
+                      <div className="sermon-alts">
+                        <div className="chips">
+                          {bibles.map((m) => {
+                            const main = m.id === b.moduleId;
+                            const on = main || !!b.alt?.some((a) => a.m === m.id);
+                            return (
+                              <button
+                                key={m.id}
+                                type="button"
+                                className={`chip${on ? ' on' : ''}`}
+                                disabled={main}
+                                aria-pressed={on}
+                                title={m.title || m.name}
+                                onClick={() => setBlockAlts(sermon.id, b.id, on ? (b.alt || []).filter((a) => a.m !== m.id) : [...(b.alt || []).map(({ m: mm, n }) => ({ m: mm, n })), { m: m.id, n: m.name }])}
+                              >
+                                {m.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {/* выбранные здесь переводы — и ко всем новым стихам проповеди */}
+                        <Switch
+                          id={`alt-def-${b.id}`}
+                          checked={!!b.alt?.length && (sermon.altDefault || []).map((a) => a.m).join() === b.alt.map((a) => a.m).join()}
+                          onChange={(on) => setSermonAltDefault(sermon.id, on ? (b.alt || []).map(({ m: mm, n }) => ({ m: mm, n })) : [])}
+                          label={t('Подключать к новым стихам')}
+                        />
+                      </div>
+                    )}
                   </Reveal>
                 </>
               ) : (
@@ -443,6 +515,11 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
                     <ArrowDown size={16} />
                   </button>
                 </span>
+                {b.type === 'verse' && pe?.id !== b.id && (
+                  <button className={`icon-btn subtle${altOpen === b.id || b.alt?.length ? ' on' : ''}`} onClick={() => setAltOpen(altOpen === b.id ? null : b.id)} aria-label={t('Переводы')} title={t('Переводы')} aria-expanded={altOpen === b.id}>
+                    <Languages size={16} />
+                  </button>
+                )}
                 {b.type === 'verse' && !b.to && b.moduleId && pe?.id !== b.id && (
                   <>
                     <button className="icon-btn subtle" onClick={() => startPart(b)} aria-label={t('Часть стиха')} title={t('Часть стиха')}>
@@ -502,10 +579,9 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
           <Search size={17} /> {t('Стих')}
         </button>
       </div>}
-      <p className="sermon-foot">{t('{n} место Писания|{n} места Писания|{n} мест Писания', { n: verses })} · {t('сохраняется само')}</p>
       <div className="sermon-del">
         <ConfirmButton
-          className="btn danger"
+          className="btn link-danger"
           confirmText={t('Удалить проповедь?')}
           onConfirm={() => {
             deleteSermon(sermon.id);
