@@ -1640,6 +1640,8 @@ html.reading-hidden .tabbar { margin-bottom: -68px; }
 html.has-tabbar:not(.reading-hidden):not(.kb-open) { --tabbar-h: var(--tabbar-base); --sab: var(--tabbar-base); }
 .app.with-tabbar { position: relative; }
 .tabbar { position: absolute; left: calc(env(safe-area-inset-left, 0px) + var(--tb-side)); right: calc(env(safe-area-inset-right, 0px) + var(--tb-side)); bottom: var(--tb-bottom); margin: 0; height: 64px; padding: 6px; box-sizing: border-box; transition: transform .25s ease, opacity .25s ease; }
+/* на широком экране капсула не растягивается: по центру, не шире 520 (как на большом телефоне) */
+@media (min-width: 600px) { .tabbar { left: max(calc(env(safe-area-inset-left, 0px) + var(--tb-side)), calc(50% - 260px)); right: max(calc(env(safe-area-inset-right, 0px) + var(--tb-side)), calc(50% - 260px)); } }
 html.reading-hidden .tabbar { margin: 0; transform: translateY(calc(100% + 16px)); opacity: 0; pointer-events: none; }
 /* Под вкладками всё (глава, окно, список) плавно гаснет от верха капсулы к её середине — цветом того, что под ней.
    Слой между окнами (z 40–41) и вкладками (42; ::before идёт раньше вкладок, поэтому под ними) */

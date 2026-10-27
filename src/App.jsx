@@ -11,7 +11,7 @@ import WordPopover from './components/WordPopover.jsx';
 import AudioBar from './components/AudioBar.jsx';
 import TourOverlay from './components/TourOverlay.jsx';
 import TabBar from './components/TabBar.jsx';
-import { usePhoneLayout, isPhoneLayout } from './core/layout.js';
+import { isPhoneLayout } from './core/layout.js';
 import { fitsTranslation, detachFollow, audioState } from './core/audio.js';
 import { useSermons } from './core/sermons.js';
 import { pendingNews, markNewsSeen } from './core/whatsNew.js';
@@ -644,8 +644,7 @@ export default function App() {
   };
 
   const ready = modules !== null && bibles.length > 0;
-  const phone = usePhoneLayout();
-  const tabbar = ready && phone;
+  const tabbar = ready; // нижнее меню — на любой ширине (на широком экране — капсула по центру)
   return (
     <AppCtx.Provider value={ctx}>
       <div className={`app${tabbar ? ' with-tabbar' : ''}`}>
