@@ -258,6 +258,11 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .cmn { margin-left: .35em; padding: 0 .1em; border: 0; background: none; color: color-mix(in srgb, var(--muted) 80%, transparent); font: 600 .68em/1 var(--font-ui); white-space: nowrap; cursor: pointer; transition: color .2s; -webkit-tap-highlight-color: transparent; }
 .cmn + .cmn { margin-left: .5em; }
 .cmn.on { color: var(--accent); }
+/* введения над названием книги и над «Глава N»: строка названий, текст раскрывается под ней */
+.cm-intro { margin-top: 1.3em; font-family: var(--font-ui); }
+.cm-intro-names { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.cm-intro .cmn { margin: 0; padding: 4px 0; font-size: .8rem; line-height: 1.2; }
+.cm-intro + .book-title, .cm-intro + .chapter-title { margin-top: .4em; }
 .vc { display: grid; grid-template-rows: 0fr; opacity: 0; font-family: var(--font-ui); text-indent: 0; text-align: left; transition: grid-template-rows .26s cubic-bezier(.4,0,.2,1), opacity .26s; }
 .vc.open { grid-template-rows: 1fr; opacity: 1; }
 .vc > div { min-height: 0; overflow: hidden; }

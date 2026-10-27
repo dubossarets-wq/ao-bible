@@ -53,7 +53,10 @@ function commentEntries(list) {
       if (items.length)
         out.push({
           id: `${cm.id}${intro ? ':i' : ''}`,
-          short: intro ? items[0].title : cm.name,
+          intro,
+          // введение к книге: «Введение в книгу» (у английских «Introduction» в 1-й главе — тоже к книге)
+          bookLevel: intro && (items[0].title.startsWith('Введение в книгу') || items[0].title === 'Introduction'),
+          short: intro ? `${items[0].title} · ${cm.name}` : cm.name,
           name: intro ? `${items[0].title} · ${cm.title || cm.name}` : cm.title || cm.name,
           text: items.map((e) => e.text).join('\n\n'),
         });
@@ -87,6 +90,35 @@ function VerseComments({ entries, open, sel, size, onClose }) {
   );
 }
 
+// Введения над заголовком: короткие названия мелким приглушённым текстом («Введение в книгу · Лопухин»); нажатие
+// плавно раскрывает текст под ними, повторное или нажатие на текст — сворачивает
+function IntroComments({ entries, size }) {
+  const [open, setOpen] = useState(null);
+  const [last, setLast] = useState(0);
+  return (
+    <div className="cm-intro">
+      <div className="cm-intro-names">
+        {entries.map((e, i) => (
+          <button
+            key={e.id}
+            type="button"
+            className={`cmn${open === i ? ' on' : ''}`}
+            aria-expanded={open === i}
+            aria-label={t('Комментарий: {name}', { name: e.name })}
+            onClick={() => {
+              setOpen(open === i ? null : i);
+              setLast(i);
+            }}
+          >
+            {e.short}
+          </button>
+        ))}
+      </div>
+      <VerseComments entries={entries} open={open != null} sel={open ?? last} size={size} onClose={() => setOpen(null)} />
+    </div>
+  );
+}
+
 export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, xrefs, counts, comments, illus, opts, hlRe, hlVerse = null, flashVerse, isPsalm, selected, marks, from = 1, to = null, idp = '', noBookTitle = false, noChapterTitle = false, afterVerse = null, afterNode = null }) {
   useLang(); // глава в memo — подписи (номер главы, кнопки) обновляются при смене языка
   const [cmOpen, setCmOpen] = useState(null); // стих, у которого раскрыт комментарий
@@ -94,9 +126,17 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
   const [cmSel, setCmSel] = useState(0); // какой из комментариев стиха раскрыт
   const sel = selected ? new Set(selected.split(',').map(Number)) : null;
   const mk = marks ? Object.fromEntries(marks.split(',').map((x) => x.split(':'))) : {};
+  // комментарии к стиху — только на языке этого перевода (у синодального — русские, у KJV — английские)
+  const cmsOf = (v) => comments?.get(`${bookId}.${c}.${v}`)?.filter((cm) => (!opts.inlineComments || opts.inlineComments.includes(cm.id)) && (!opts.lang || cm.lang === opts.lang)) || [];
+  // введения (статьи «Введение…» у первого стиха) — над заголовками: к книге — над названием книги, к главе — над «Глава N»
+  const intros = opts.commentView !== 'tag' && from <= 1 ? commentEntries(cmsOf(1)).filter((e) => e.intro) : [];
+  const bookIntro = c === 1 ? intros.filter((e) => e.bookLevel) : [];
+  const chapIntro = intros.filter((e) => !e.bookLevel || c !== 1);
   return (
     <div className="chapter" data-c={c}>
+      {bookIntro.length > 0 && !noBookTitle && <IntroComments entries={bookIntro} size={opts.cmSize} />}
       {c === 1 && !noBookTitle && <h1 className="book-title">{bookName}</h1>}
+      {chapIntro.length > 0 && !noChapterTitle && <IntroComments entries={chapIntro} size={opts.cmSize} />}
       {!noChapterTitle && <h2 className="chapter-title">{isPsalm ? t('Псалом {n}', { n: c }) : t('Глава {n}', { n: c })}</h2>}
       <div className={`verses ${opts.continuous ? 'continuous' : ''}`}>
         {verses.map((text, i) => {
@@ -104,11 +144,10 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
           if (!text || v < from || (to && v > to)) return null;
           const heading = opts.showHeadings && headings?.[`${c}:${v}`];
           const n = (counts?.get(`${bookId}.${c}.${v}`) || 0) + (xrefs?.[`${c}:${v}`]?.length || 0);
-          // комментарии к стиху — только на языке этого перевода (у синодального — русские, у KJV — английские)
-          const cms =
-            comments?.get(`${bookId}.${c}.${v}`)?.filter((cm) => (!opts.inlineComments || opts.inlineComments.includes(cm.id)) && (!opts.lang || cm.lang === opts.lang)) || [];
-          const asText = opts.commentView !== 'tag' && cms.length > 0;
-          const entries = asText ? commentEntries(cms) : null;
+          const cms = cmsOf(v);
+          // у стиха — обычные статьи; введения — над заголовками
+          const entries = opts.commentView !== 'tag' ? commentEntries(cms).filter((e) => !e.intro) : [];
+          const asText = entries.length > 0;
           return (
             <React.Fragment key={v}>
               {heading && <h3 className="section-title">{heading}</h3>}
@@ -195,7 +234,7 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
                       </button>
                     );
                   })}
-                {!asText &&
+                {opts.commentView === 'tag' &&
                   cms.map((cm) => (
                     <button key={cm.id} className="cm" data-act="comment" data-m={cm.id} aria-label={t('Комментарий: {name}', { name: cm.name })}>
                       {cm.name}
@@ -596,7 +635,10 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
   const setAnchor = () => {
     const el = scroller.current;
     const at = el && verseAtTop();
-    const node = at && el.querySelector(`.verse[data-c="${at.found.c}"][data-v="${at.found.v}"]`);
+    // вверху первый стих — держим начало главы: введение из комментариев, догрузившись над заголовком, встаёт на
+    // своё место, а не уходит под шапку
+    const node =
+      at && (at.found.v === 1 ? el.querySelector(`.chapter[data-c="${at.found.c}"]`) : el.querySelector(`.verse[data-c="${at.found.c}"][data-v="${at.found.v}"]`));
     keep.current = node ? { node, top: node.offsetTop - el.scrollTop } : null;
   };
   const keepAnchor = () => {
