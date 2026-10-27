@@ -1,6 +1,6 @@
 // Закладки «продолжить отсюда» (сколько угодно), любимые стихи, заметки и история переходов
 import React, { useEffect, useState } from 'react';
-import { Bookmark, Heart, History, Trash2, NotebookPen, PlayCircle, Highlighter, Folder, ChevronLeft, Search } from 'lucide-react';
+import { Bookmark, Heart, History, Trash2, NotebookPen, Play, ChevronRight, Highlighter, Folder, ChevronLeft, Search } from 'lucide-react';
 import { HL_COLORS, hlLabel } from '../core/highlights.js';
 import { getVerse } from '../core/modules.js';
 import { plainText } from '../core/verseMarkup.js';
@@ -146,6 +146,15 @@ export default function BookmarksManager({ pane, payload, onClose }) {
   const [nq, setNq] = useState('');
   const [tab, setTab] = useState(payload.tab || 'bookmarks');
   const p = panes[pane]?.kind === 'map' ? panes[0] : panes[pane];
+  // начало стиха, на котором остановились, — одной строкой под местом
+  const [contText, setContText] = useState('');
+  useEffect(() => {
+    let alive = true;
+    if (p?.moduleId && p?.ref) getVerse(p.moduleId, p.ref).then((v) => alive && setContText(plainText(v || ''))).catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [p?.moduleId, p?.ref?.book, p?.ref?.chapter, p?.ref?.verse]);
   const open = (ref) => {
     onClose();
     navigate(pane, { book: ref.book, chapter: ref.chapter, verse: ref.verse });
@@ -196,14 +205,17 @@ export default function BookmarksManager({ pane, payload, onClose }) {
 
       {tab === 'bookmarks' && (
         <>
+          {/* мягкий фон цвета акцента без рамки; круг акцента с «play», подпись, место крупно, начало стиха, стрелка */}
           <button className="continue-card" onClick={() => open(p.ref)}>
-            <PlayCircle size={26} className="accent" />
+            <span className="continue-play" aria-hidden="true">
+              <Play size={22} fill="currentColor" strokeWidth={0} />
+            </span>
             <span className="continue-text">
               <span className="continue-title">{t('Продолжить чтение')}</span>
-              <span className="muted">
-                {`${bookMeta(p.ref.book).name} ${p.ref.chapter}:${p.ref.verse}`}
-              </span>
+              <span className="continue-ref">{`${bookMeta(p.ref.book).name} ${p.ref.chapter}:${p.ref.verse}`}</span>
+              {contText && <span className="continue-verse">{contText}</span>}
             </span>
+            <ChevronRight size={20} className="continue-chev" aria-hidden="true" />
           </button>
           {bookmarks.length ? (
             <ul className="list">
