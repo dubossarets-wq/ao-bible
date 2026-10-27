@@ -314,7 +314,7 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
   const scrollBox = () => list.current?.closest('.sheet-body');
   const justDragged = useRef(0);
   const dragDown = (e) => {
-    if (e.button > 0 || e.target.closest('textarea, input, .sermon-block-tools button, .sermon-pw, .sv-del, .sermon-insert, .sermon-reorder button, .confirm-group')) return;
+    if (e.button > 0 || e.target.closest('textarea, input, .sermon-block-tools button, .sermon-pw, .sv-del, .sermon-insert, .sermon-reorder button, .sermon-del-block, .confirm-group')) return;
     const li = e.target.closest('li[data-id]');
     if (!li) return;
     const d = { id: li.dataset.id, li, x: e.clientX, y: e.clientY, pid: e.pointerId, on: false };
@@ -448,10 +448,16 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
             <div className={`sermon-block ${b.type}${group ? ' group' : ''}`}>
               {b.type === 'verse' ? (
                 <>
-                  <button className="sermon-ref" onClick={() => goVerse(b, b.verse)} title={t('Открыть в Библии')}>
-                    {blockRef(b)}
-                    {b.moduleId && <span className="sermon-ref-mod"> · {nameOf(b.moduleId)}</span>}
-                  </button>
+                  <div className="sermon-block-head">
+                    <button className="sermon-ref" onClick={() => goVerse(b, b.verse)} title={t('Открыть в Библии')}>
+                      {blockRef(b)}
+                      {b.moduleId && <span className="sermon-ref-mod"> · {nameOf(b.moduleId)}</span>}
+                    </button>
+                    {/* корзина — в правом верхнем углу карточки */}
+                    <ConfirmButton className="icon-btn subtle sermon-del-block" end small confirmText={t('Удалить')} onConfirm={() => removeBlock(sermon.id, b.id)} aria-label={t('Удалить стих из проповеди')}>
+                      <Trash2 size={16} />
+                    </ConfirmButton>
+                  </div>
                   {/* «Часть стиха»: полный текст для выбора слов и обычные строки сменяют друг друга плавно */}
                   <Reveal open={pe?.id === b.id}>{lastPe.current?.id === b.id && <PartPicker pe={pe?.id === b.id ? pe : lastPe.current} onPick={pickWord} />}</Reveal>
                   <Reveal open={pe?.id !== b.id}>
@@ -488,7 +494,10 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
                     {altOpen === b.id && (
                       <div className="sermon-alts">
                         <div className="chips">
-                          {bibles.map((m) => {
+                          {/* первым — основной перевод стиха, за ним подключённые, потом остальные */}
+                          {[...bibles]
+                            .sort((x, y) => (x.id === b.moduleId ? 0 : b.alt?.some((a) => a.m === x.id) ? 1 : 2) - (y.id === b.moduleId ? 0 : b.alt?.some((a) => a.m === y.id) ? 1 : 2))
+                            .map((m) => {
                             const main = m.id === b.moduleId;
                             const on = main || !!b.alt?.some((a) => a.m === m.id);
                             // только переводы, где этот стих есть (уже подключённый — чтобы его можно было снять)
@@ -509,19 +518,24 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
                             );
                           })}
                         </div>
-                        {/* выбранные здесь переводы — и ко всем новым стихам проповеди */}
-                        <Switch
+                        {/* выбранные здесь переводы — и ко всем новым стихам проповеди (когда подключён хоть один) */}
+                        {b.alt?.length > 0 && <Switch
                           id={`alt-def-${b.id}`}
                           checked={!!b.alt?.length && (sermon.altDefault || []).map((a) => a.m).join() === b.alt.map((a) => a.m).join()}
                           onChange={(on) => setSermonAltDefault(sermon.id, on ? (b.alt || []).map(({ m: mm, n }) => ({ m: mm, n })) : [])}
                           label={t('Подключать к новым стихам')}
-                        />
+                        />}
                       </div>
                     )}
                   </Reveal>
                 </>
               ) : (
-                <TextBlock sermonId={sermon.id} block={b} fresh={fresh === b.id} onDone={() => fresh === b.id && setFresh(null)} />
+                <div className="sermon-block-head text">
+                  <TextBlock sermonId={sermon.id} block={b} fresh={fresh === b.id} onDone={() => fresh === b.id && setFresh(null)} />
+                  <ConfirmButton className="icon-btn subtle sermon-del-block" end small confirmText={t('Удалить')} onConfirm={() => removeBlock(sermon.id, b.id)} aria-label={t('Удалить текст')}>
+                    <Trash2 size={16} />
+                  </ConfirmButton>
+                </div>
               )}
               <div className="sermon-block-tools">
                 {/* перестановка: «ручка» ⠿ (зажать и тянуть) и стрелки ↑ ↓ одной капсулой */}
@@ -537,32 +551,29 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
                   </button>
                 </span>
                 {b.type === 'verse' && pe?.id !== b.id && (
-                  <button className={`icon-btn subtle${altOpen === b.id || b.alt?.length ? ' on' : ''}`} onClick={() => setAltOpen(altOpen === b.id ? null : b.id)} aria-label={t('Переводы')} title={t('Переводы')} aria-expanded={altOpen === b.id}>
+                  <button className={`sermon-tool round${altOpen === b.id || b.alt?.length ? ' on' : ''}`} onClick={() => setAltOpen(altOpen === b.id ? null : b.id)} aria-label={t('Переводы')} title={t('Переводы')} aria-expanded={altOpen === b.id}>
                     <Languages size={16} />
                   </button>
                 )}
-                {b.type === 'verse' && !b.to && b.moduleId && pe?.id !== b.id && (
-                  <>
-                    <button className="icon-btn subtle" onClick={() => startPart(b)} aria-label={t('Часть стиха')} title={t('Часть стиха')}>
-                      <ScanText size={16} />
+                {/* одна кнопка по ситуации: у полного стиха — «Часть стиха», у части — «Весь стих» */}
+                {b.type === 'verse' && !b.to && b.moduleId && pe?.id !== b.id &&
+                  (b.part ? (
+                    <button
+                      className="sermon-tool"
+                      onClick={async () => {
+                        const full = await fullOf(b);
+                        if (full) setBlockPart(sermon.id, b.id, full, false);
+                      }}
+                    >
+                      <TextQuote size={15} /> {t('Весь стих')}
                     </button>
-                    {b.part && (
-                      <button
-                        className="icon-btn subtle"
-                        onClick={async () => {
-                          const full = await fullOf(b);
-                          if (full) setBlockPart(sermon.id, b.id, full, false);
-                        }}
-                        aria-label={t('Весь стих')}
-                        title={t('Весь стих')}
-                      >
-                        <TextQuote size={16} />
-                      </button>
-                    )}
-                  </>
-                )}
+                  ) : (
+                    <button className="sermon-tool" onClick={() => startPart(b)}>
+                      <ScanText size={15} /> {t('Часть стиха')}
+                    </button>
+                  ))}
                 <span className="sermon-tools-gap" />
-                {pe?.id === b.id ? (
+                {pe?.id === b.id && (
                   <>
                     <button className="btn small" onClick={() => setPe(null)}>
                       {t('Отмена')}
@@ -579,10 +590,6 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
                       {t('Готово')}
                     </button>
                   </>
-                ) : (
-                  <ConfirmButton className="icon-btn subtle" end small confirmText={t('Удалить')} onConfirm={() => removeBlock(sermon.id, b.id)} aria-label={b.type === 'verse' ? t('Удалить стих из проповеди') : t('Удалить текст')}>
-                    <Trash2 size={16} />
-                  </ConfirmButton>
                 )}
               </div>
             </div>

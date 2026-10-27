@@ -2244,3 +2244,18 @@ html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px))
 .sv-ilw .o { font-family: var(--font-greek, var(--font-text)); font-size: 1.05em; color: var(--text); }
 .sv-il[dir='rtl'] .sv-ilw .o { font-family: var(--font-hebrew, var(--font-text)); font-size: 1.15em; }
 .sv-ilw .g { font-family: var(--font-ui); font-size: .78em; color: var(--muted); }
+
+/* Корзина блока проповеди — в правом верхнем углу карточки */
+.sermon-block-head { display: flex; align-items: flex-start; gap: 6px; }
+.sermon-block-head > .sermon-ref { flex: 1; min-width: 0; text-align: left; }
+.sermon-block-head.text > :first-child { flex: 1; min-width: 0; }
+.sermon-block-head .sermon-del-block, .sermon-block-head .confirm-group { flex: none; margin: -6px -6px 0 0; }
+
+/* Нижняя строка карточки стиха: мягкие капсулы без рамки в одном стиле с «⠿ ↑ ↓» */
+.sermon-tool { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 11px 0 9px; border: 0; border-radius: 15px; background: color-mix(in srgb, var(--text) 6%, transparent); color: var(--text); font: 500 .82rem/1 var(--font-ui); cursor: pointer; white-space: nowrap; }
+.sermon-tool svg { flex: none; color: var(--muted); }
+.sermon-tool.round { width: 30px; padding: 0; justify-content: center; }
+.sermon-tool.on { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.sermon-tool.on svg { color: var(--accent); }
+.sermon-tool:active { background: color-mix(in srgb, var(--text) 11%, transparent); }
+.sermon-block-tools { gap: 6px; }
