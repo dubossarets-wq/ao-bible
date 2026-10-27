@@ -21,7 +21,7 @@ export async function commentaryIndex() {
       const vk = `${r.book}.${r.chapter}.${r.verse}`;
       const list = map.get(vk) || [];
       let it = list.find((x) => x.id === m.id);
-      if (!it) list.push((it = { id: m.id, name: m.name, lang: m.language || 'ru', items: [] }));
+      if (!it) list.push((it = { id: m.id, name: m.name, title: m.title || m.name, lang: m.language || 'ru', items: [] }));
       // статьи — для показа текстом под стихом (ссылки на те же строки, что в данных модуля: память не растёт)
       const e = p.entries[k];
       it.items.push(typeof e === 'string' ? { title: '', text: e } : { title: e?.title || '', text: e?.text || '' });

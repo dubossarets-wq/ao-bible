@@ -48,7 +48,8 @@ function commentEntries(list) {
   for (const cm of list) {
     for (const intro of [true, false]) {
       const items = cm.items.filter((e) => isIntro(e.title) === intro);
-      if (items.length) out.push({ id: `${cm.id}${intro ? ':i' : ''}`, name: intro ? `${items[0].title} · ${cm.name}` : cm.name, text: items.map((e) => e.text).join('\n\n') });
+      // название — по книге: «Толковая Библия Лопухина», а не короткое «Лопухин»
+      if (items.length) out.push({ id: `${cm.id}${intro ? ':i' : ''}`, name: intro ? `${items[0].title} · ${cm.title || cm.name}` : cm.title || cm.name, text: items.map((e) => e.text).join('\n\n') });
     }
   }
   return out;

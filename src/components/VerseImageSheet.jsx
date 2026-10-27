@@ -1,7 +1,7 @@
 // Картинка со стихом: фон (фото в общественном достоянии или спокойный цвет), текст стиха и ссылка.
 // Рисуется на холсте; «Поделиться» отправляет картинку в мессенджер, «Сохранить» — скачивает.
 import React, { useEffect, useRef, useState } from 'react';
-import { Share2, Download, Loader2, Minus, Plus } from 'lucide-react';
+import { Share2, Download, Loader2, Minus, Plus, ImagePlus } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { Segmented } from './ui.jsx';
@@ -115,6 +115,13 @@ export default function VerseImageSheet({ payload, onClose }) {
   const [format, setFormat] = useState('post');
   const [scale, setScale] = useState(1);
   const [pos, setPos] = useState({ x: 0, y: 0 });
+  // привязка к центру: рядом с серединой текст «прилипает» к ней, пока его ведут — видны направляющие
+  const [snap, setSnap] = useState({ x: false, y: false, on: false });
+  const snapRef = useRef(snap);
+  snapRef.current = snap;
+  // своё фото фоном (только для этой картинки, никуда не сохраняется)
+  const [own, setOwn] = useState(null);
+  const fileRef = useRef(null);
   // Текст двигается одним пальцем, размер — двумя (разведите — крупнее, сведите — мельче)
   const touch = useRef({ pts: new Map(), base: null });
   const live = useRef({ scale: 1, pos: { x: 0, y: 0 } });
@@ -138,12 +145,19 @@ export default function VerseImageSheet({ payload, onClose }) {
     }
     const b = t.base;
     const clamp = (v, m) => Math.max(-m, Math.min(m, v));
-    setPos({ x: clamp(b.pos.x + (mid.x - b.mid.x) / r.width, 0.45), y: clamp(b.pos.y + (mid.y - b.mid.y) / r.height, 0.45) });
+    const x = clamp(b.pos.x + (mid.x - b.mid.x) / r.width, 0.45);
+    const y = clamp(b.pos.y + (mid.y - b.mid.y) / r.height, 0.45);
+    const sx = Math.abs(x) < 0.025;
+    const sy = Math.abs(y) < 0.025;
+    if ((sx && !snapRef.current.x) || (sy && !snapRef.current.y)) navigator.vibrate?.(8); // «щелчок» при прилипании
+    setSnap({ x: sx, y: sy, on: true });
+    setPos({ x: sx ? 0 : x, y: sy ? 0 : y });
     if (pts.length > 1 && b.d > 0) setScale(Math.max(0.4, Math.min(2.2, +(b.scale * (d / b.d)).toFixed(2))));
   };
   const onUp = (e) => {
     touch.current.pts.delete(e.pointerId);
     touch.current.base = null;
+    if (!touch.current.pts.size) setSnap((s) => ({ ...s, on: false }));
   };
   const [fontsReady, setReady] = useState(false);
   const ref = selectionLabel(refs, true);
@@ -163,7 +177,16 @@ export default function VerseImageSheet({ payload, onClose }) {
     Promise.all([document.fonts?.load('400 40px "PT Serif"'), document.fonts?.load('700 30px "PT Sans"')]).finally(() => setReady(true));
   }, []);
 
-  const photo = photos.find((p) => p.id === bgId);
+  const ownPhoto = own && { id: 'own', src: own, tone: 'dark', title: 'Своё фото' };
+  const photo = bgId === 'own' ? ownPhoto : photos.find((p) => p.id === bgId);
+  const pickOwn = (e) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    if (own) URL.revokeObjectURL(own);
+    setOwn(URL.createObjectURL(f));
+    setBgId('own');
+  };
   const bg = photo || GRADIENTS.find((g) => g.id === bgId) || GRADIENTS[0];
 
   // Фото грузим заранее, чтобы холст рисовался сразу
@@ -176,11 +199,11 @@ export default function VerseImageSheet({ payload, onClose }) {
     const im = new Image();
     im.onload = () => alive && setImg(im);
     im.onerror = () => alive && setImgFailed(true);
-    im.src = `images/verse-bg/${photo.file}`;
+    im.src = photo.src || `images/verse-bg/${photo.file}`;
     return () => {
       alive = false;
     };
-  }, [photo?.id]);
+  }, [photo?.id, photo?.src]);
   const ready = useRef(null); // готовая картинка (JPEG) для «Поделиться»
 
   useEffect(() => {
@@ -216,8 +239,15 @@ export default function VerseImageSheet({ payload, onClose }) {
     <BottomSheet title={t('Картинка со стихом')} subtitle={ref} onClose={onClose} initial={2}>
       <div className={`vimg-preview ${format}`}>
         {text == null || !bgId ? <Loader2 className="spin" /> : <canvas ref={canvas} aria-label={t('Картинка: {ref}. Двигайте текст пальцем, размер — двумя пальцами', { ref })} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} />}
+        <span className={`vimg-guide v${snap.on && snap.x ? ' on' : ''}`} aria-hidden="true" />
+        <span className={`vimg-guide h${snap.on && snap.y ? ' on' : ''}`} aria-hidden="true" />
       </div>
       <div className="vimg-bgs" role="listbox" aria-label={t('Фон')}>
+        {own && (
+          <button className={`vimg-bg ${bgId === 'own' ? 'on' : ''}`} onClick={() => setBgId('own')} title={t('Своё фото')} aria-label={t('Своё фото')} aria-selected={bgId === 'own'}>
+            <img src={own} alt="" />
+          </button>
+        )}
         {photos.map((p) => (
           <button key={p.id} className={`vimg-bg ${bgId === p.id ? 'on' : ''}`} onClick={() => setBgId(p.id)} title={t(p.title)} aria-label={t(p.title)} aria-selected={bgId === p.id}>
             <img src={`images/verse-bg/${p.thumb}`} alt="" loading="lazy" />
@@ -235,6 +265,11 @@ export default function VerseImageSheet({ payload, onClose }) {
           />
         ))}
       </div>
+      {/* своё фото — сразу под всеми фонами */}
+      <button className="btn wide" onClick={() => fileRef.current?.click()}>
+        <ImagePlus size={17} /> {t('Своё фото')}
+      </button>
+      <input ref={fileRef} type="file" accept="image/*" hidden onChange={pickOwn} />
       <Segmented
         id="vimg-format"
         value={format}
@@ -268,7 +303,7 @@ export default function VerseImageSheet({ payload, onClose }) {
           <Download size={17} /> {t('Сохранить')}
         </button>
       </div>
-      {photo && (
+      {photo && photo.id !== 'own' && (
         <p className="vimg-credit">
           {t('Фото: {title}', { title: t(photo.title) })}
           {photo.author ? ` — ${photo.author}` : ''} ({photo.license})
