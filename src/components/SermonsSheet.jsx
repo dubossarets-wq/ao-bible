@@ -3,7 +3,7 @@
 // Стихи добавляются тем же поиском, что и в приложении (SearchPanel в режиме выбора).
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2, Plus, Presentation, Share2, ScrollText, X, Minus, Type, Copy, GripVertical, Search, ScanText, TextQuote, Undo2, Redo2, MoreHorizontal, ChevronDown, ListOrdered, AlignLeft, BookOpen } from 'lucide-react';
+import { Trash2, Plus, Presentation, Share2, ScrollText, X, Minus, Type, Copy, GripVertical, Search, ScanText, TextQuote, Undo2, Redo2, MoreHorizontal } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import SearchPanel from './SearchPanel.jsx';
 import SwipeRow from './SwipeRow.jsx';
@@ -22,8 +22,6 @@ import {
   replaceSermon,
   addVerses,
   addTextBlock,
-  addPoint,
-  pointNumbers,
   updateBlock,
   removeBlock,
   setBlockPart,
@@ -72,12 +70,7 @@ function TextBlock({ sermonId, block, fresh, onDone }) {
       <AutoText
         value={block.text}
         onChange={(text) => updateBlock(sermonId, block.id, { text })}
-        onBlur={() => {
-          setEdit(false);
-          onDone?.();
-          // пустой свой текст исчезает сам, когда из него ушли
-          if (!block.text.trim()) removeBlock(sermonId, block.id);
-        }}
+        onBlur={() => (setEdit(false), onDone?.())}
         placeholder={t('Мысль, пояснение, пример…')}
         autoFocus={fresh || edit}
       />
@@ -166,13 +159,7 @@ function Pulpit({ sermon, onClose }) {
         <h1>{sermon.title}</h1>
         {sermon.date && <div className="pulpit-date">{fmtDate(sermon.date)}</div>}
         {sermon.blocks.map((b) =>
-          b.type === 'point' ? (
-            b.text.trim() ? (
-              <h2 key={b.id} className="pulpit-point">
-                <span>{pointNumbers(sermon.blocks)[b.id]}.</span> {b.text}
-              </h2>
-            ) : null
-          ) : b.type === 'verse' ? (
+          b.type === 'verse' ? (
             <blockquote key={b.id} className="pulpit-verse">
               <cite>{blockRefFull(b)}</cite>
               {(verseTexts(b) || [b.text]).length > 1
@@ -197,29 +184,26 @@ function Pulpit({ sermon, onClose }) {
 }
 
 // Компактная строка между блоками: добавить текст или стих именно сюда
-// Заголовок пункта плана: номер в кружке цвета акцента, название (правится сразу), свернуть/развернуть, удалить
-// (содержимое пункта остаётся — переходит к предыдущему)
-function PointHead({ sermonId, block, n, folded, onToggle, fresh, count }) {
+// Между блоками — маленький «+» на еле заметной линии: нажатие плавно раскрывает «Текст» и «Стих» рядом с ним.
+// end — в конце проповеди: обе кнопки видны всегда (добавляют чаще всего туда)
+function Inserter({ onText, onVerse, end = false }) {
+  const [open, setOpen] = useState(false);
+  const shown = end || open;
   return (
-    <div className={`sermon-point${folded ? ' folded' : ''}`}>
-      <span className="sp-num" aria-hidden="true">
-        {n}
+    <div className={`sermon-insert${shown ? ' open' : ''}${end ? ' end' : ''}`}>
+      {!end && (
+        <button type="button" className="sermon-insert-plus" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-label={t('Добавить блок')}>
+          <Plus size={15} />
+        </button>
+      )}
+      <span className="sermon-insert-opts">
+        <button type="button" className="sermon-insert-btn" tabIndex={shown ? 0 : -1} onClick={() => (setOpen(false), onText())} aria-label={t('Добавить текст')}>
+          <Plus size={14} /> {t('Текст')}
+        </button>
+        <button type="button" className="sermon-insert-btn" tabIndex={shown ? 0 : -1} onClick={() => (setOpen(false), onVerse())} aria-label={t('Добавить стих')}>
+          <Plus size={14} /> {t('Стих')}
+        </button>
       </span>
-      <input
-        className="sp-title"
-        value={block.text}
-        onChange={(e) => updateBlock(sermonId, block.id, { text: e.target.value })}
-        placeholder={t('Название пункта')}
-        aria-label={t('Название пункта')}
-        autoFocus={fresh}
-      />
-      {folded && count > 0 && <span className="sp-count">{count}</span>}
-      <button type="button" className="sp-fold" onClick={onToggle} aria-expanded={!folded} aria-label={folded ? t('Развернуть') : t('Свернуть')} title={folded ? t('Развернуть') : t('Свернуть')}>
-        <ChevronDown size={18} />
-      </button>
-      <ConfirmButton className="icon-btn subtle sp-del" end small confirmText={t('Удалить')} onConfirm={() => removeBlock(sermonId, block.id)} aria-label={t('Удалить пункт')} title={t('Удалить пункт')}>
-        <Trash2 size={15} />
-      </ConfirmButton>
     </div>
   );
 }
@@ -239,9 +223,6 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
   const pickWord = (i) => setPe((p) => (p.from == null || p.to != null ? { ...p, from: i, to: null } : { ...p, to: i }));
   const [fresh, setFresh] = useState(null); // только что добавленный текстовый блок — сразу в него курсор
   const [tools, setTools] = useState(null); // блок, у которого раскрыты инструменты («⋯»)
-  const [freshPoint, setFreshPoint] = useState(null); // только что добавленный пункт — курсор в его название
-  const [folded, setFolded] = useState(() => new Set()); // свёрнутые пункты
-  const [active, setActive] = useState(null); // блок, с которым работали последним: добавление идёт в его пункт
 
   // Старые проповеди: диапазон стихов — одной строкой; разбиваем по стихам (текст не меняется)
   const ranges = sermon.blocks.filter((b) => b.type === 'verse' && b.to && !verseTexts(b)).length;
@@ -283,47 +264,6 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
     }
   };
   const verses = sermon.blocks.filter((b) => b.type === 'verse').length;
-  // план: номер пункта и к какому пункту относится каждый блок
-  const nums = pointNumbers(sermon.blocks);
-  const points = Object.keys(nums).length;
-  const owner = [];
-  {
-    let cur = null;
-    sermon.blocks.forEach((b, i) => {
-      if (b.type === 'point') cur = b.id;
-      owner[i] = cur;
-    });
-  }
-  // время чтения вслух: ~110 слов в минуту (с паузами), не меньше минуты
-  const words = sermon.blocks.reduce((n, b) => n + (b.type === 'verse' ? (verseTexts(b) || [b.text]).join(' ') : b.text || '').split(/\s+/).filter(Boolean).length, 0);
-  const minutes = Math.max(1, Math.round(words / 110));
-  // куда добавлять: в конец пункта, с которым работали последним (иначе — в конец проповеди)
-  const sectionEnd = () => {
-    const ai = active ? sermon.blocks.findIndex((b) => b.id === active) : -1;
-    if (ai < 0) return sermon.blocks.length - 1;
-    let j = ai + 1;
-    while (j < sermon.blocks.length && sermon.blocks[j].type !== 'point') j++;
-    return j - 1;
-  };
-  const unfold = (pid) => pid && folded.has(pid) && setFolded((f) => new Set([...f].filter((x) => x !== pid)));
-  const addText = () => {
-    const end = sectionEnd();
-    unfold(owner[Math.max(0, end)]);
-    const nid = addTextBlock(sermon.id, end);
-    setFresh(nid);
-    setActive(nid);
-  };
-  const addVerse = () => {
-    const end = sectionEnd();
-    unfold(owner[Math.max(0, end)]);
-    onAddVerse(end + 1);
-  };
-  const addPt = () => {
-    const nid = addPoint(sermon.id, sectionEnd());
-    setFreshPoint(nid);
-    setActive(nid);
-  };
-  const toggleFold = (pid) => setFolded((f) => (f.has(pid) ? new Set([...f].filter((x) => x !== pid)) : new Set([...f, pid])));
 
   // Перетаскивание: зажать блок (стих или текст) на полсекунды — он «поднимается» и едет за пальцем,
   // остальные расступаются. Движение раньше времени — это прокрутка, не перетаскивание.
@@ -332,7 +272,7 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
   const scrollBox = () => list.current?.closest('.sheet-body');
   const justDragged = useRef(0);
   const dragDown = (e) => {
-    if (e.button > 0 || e.target.closest('textarea, input, .sermon-block-tools button, .sermon-more, .sermon-pw, .sv-del, .sermon-insert, .confirm-group, .sp-fold, .sp-del')) return;
+    if (e.button > 0 || e.target.closest('textarea, input, .sermon-block-tools button, .sermon-more, .sermon-pw, .sv-del, .sermon-insert, .confirm-group')) return;
     const li = e.target.closest('li[data-id]');
     if (!li) return;
     const d = { id: li.dataset.id, li, x: e.clientX, y: e.clientY, pid: e.pointerId, on: false };
@@ -420,9 +360,7 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
       {/* шапка как у документа: название крупно, под ним — сколько мест Писания; действия — компактные капсулы */}
       <div className="sermon-head">
         <input className="sermon-title-input" value={sermon.title} onChange={(e) => renameSermon(sermon.id, e.target.value)} aria-label={t('Название проповеди')} placeholder={t('Название проповеди')} />
-        <p className="sermon-meta">
-          {[t('≈ {n} мин', { n: minutes }), t('{n} место Писания|{n} места Писания|{n} мест Писания', { n: verses }), points ? t('Пунктов: {n}', { n: points }) : null, t('сохраняется само')].filter(Boolean).join(' · ')}
-        </p>
+        <p className="sermon-meta">{t('{n} место Писания|{n} места Писания|{n} мест Писания', { n: verses })} · {t('сохраняется само')}</p>
         <div className="sermon-actions">
           <button className="btn primary" onClick={() => setPulpit(true)} disabled={!sermon.blocks.length}>
             <Presentation size={17} /> {t('Кафедра')}
@@ -435,11 +373,16 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
 
       {!sermon.blocks.length && (
         <div className="sermon-hint">
-          <ListOrdered size={22} aria-hidden="true" />
-          <p>{t('Разбейте проповедь на пункты — кнопка «Пункт». В пункт добавляйте мысли («Текст») и стихи («Стих»): зажмите стих в Библии → «В проповедь» или найдите его здесь.')}</p>
+          <p>
+            <strong>{t('Как добавить стих:')}</strong> {t('зажмите стих в Библии и нажмите «В проповедь» — или найдите его кнопкой «Стих» ниже.')}
+          </p>
+          <p>
+            <strong>{t('Свой текст')}</strong> {t('— кнопка «Текст». Чтобы переставить блок, зажмите его и тяните.')}
+          </p>
         </div>
       )}
 
+      {sermon.blocks.length > 0 && <Inserter onText={() => setFresh(addTextBlock(sermon.id, -1))} onVerse={() => onAddVerse(0)} />}
       <ol
         className="sermon-blocks"
         ref={list}
@@ -462,20 +405,7 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
           // Старый диапазон, который не удалось разбить, — одним абзацем, как раньше
           const lines = texts ? texts.map((x, k) => ({ v: b.verse + k, text: x })) : b.type === 'verse' ? [{ v: b.verse, text: b.text }] : [];
           return (
-          b.type === 'point' ? (
-            <li key={b.id} data-id={b.id} className="sermon-item point" onPointerDown={() => setActive(b.id)} onFocusCapture={() => setActive(b.id)}>
-              <PointHead
-                sermonId={sermon.id}
-                block={b}
-                n={nums[b.id]}
-                folded={folded.has(b.id)}
-                onToggle={() => toggleFold(b.id)}
-                fresh={freshPoint === b.id}
-                count={sermon.blocks.filter((x, k) => owner[k] === b.id && x.type !== 'point').length}
-              />
-            </li>
-          ) : (
-          <li key={b.id} data-id={b.id} className={`sermon-item${owner[i] ? ' in-point' : ''}${owner[i] && folded.has(owner[i]) ? ' folded' : ''}`} onPointerDown={() => setActive(b.id)} onFocusCapture={() => setActive(b.id)}>
+          <li key={b.id} data-id={b.id} className="sermon-item">
             <div className={`sermon-block ${b.type}${group ? ' group' : ''}`}>
               {b.type === 'verse' ? (
                 <>
@@ -569,11 +499,20 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
               </div>
               </Reveal>
             </div>
+            <Inserter end={i === sermon.blocks.length - 1} onText={() => setFresh(addTextBlock(sermon.id, i))} onVerse={() => onAddVerse(i + 1)} />
           </li>
-          ));
+          );
         })}
       </ol>
 
+      {sermon.blocks.length === 0 && <div className="sermon-add">
+        <button className="btn" onClick={() => setFresh(addTextBlock(sermon.id))}>
+          <Plus size={17} /> {t('Текст')}
+        </button>
+        <button className="btn sermon-add-verse" onClick={() => onAddVerse(null)}>
+          <Search size={17} /> {t('Стих')}
+        </button>
+      </div>}
       <div className="sermon-del">
         <ConfirmButton
           className="btn link-danger"
@@ -585,18 +524,6 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
         >
           <Trash2 size={17} /> {t('Удалить проповедь')}
         </ConfirmButton>
-      </div>
-      {/* закреплённая панель: добавить пункт, текст или стих — в пункт, с которым работали последним */}
-      <div className="sermon-bar">
-        <button type="button" className="sermon-bar-btn" onClick={addPt}>
-          <ListOrdered size={17} /> {t('Пункт')}
-        </button>
-        <button type="button" className="sermon-bar-btn" onClick={addText}>
-          <AlignLeft size={17} /> {t('Текст')}
-        </button>
-        <button type="button" className="sermon-bar-btn" onClick={addVerse}>
-          <BookOpen size={17} /> {t('Стих')}
-        </button>
       </div>
       {pulpit && <Pulpit sermon={sermon} onClose={() => setPulpit(false)} />}
     </>

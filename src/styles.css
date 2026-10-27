@@ -2235,34 +2235,3 @@ html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px))
 .sermon-del { display: flex; justify-content: center; margin-top: 18px; }
 .sermon-del > .btn.link-danger, .btn.link-danger { width: auto; border: 0; background: none; color: color-mix(in srgb, var(--danger) 85%, var(--text)); font-size: .88rem; padding: 8px 12px; }
 .sermon-del > .btn.link-danger:hover { background: color-mix(in srgb, var(--danger) 8%, transparent); }
-
-/* План с пунктами: пункт — номер в кружке акцента и название; блоки пункта — с отступом; свёрнутый пункт прячет их;
-   внизу — закреплённая панель «+ Пункт · + Текст · + Стих» */
-.sermon-hint { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 16px; background: color-mix(in srgb, var(--accent) 8%, var(--panel)); color: var(--text); }
-.sermon-hint svg { flex: none; color: var(--accent); margin-top: 1px; }
-.sermon-hint p { margin: 0; font-size: .9rem; line-height: 1.5; }
-.sermon-blocks { gap: 2px; }
-.sermon-item.folded { display: none; }
-.sermon-item.in-point { padding-left: 38px; }
-.sermon-item.point { margin-top: 14px; }
-.sermon-item.point:first-child { margin-top: 0; }
-.sermon-point { display: flex; align-items: center; gap: 10px; min-height: 40px; }
-.sp-num { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font: 700 .86rem/1 var(--font-ui); }
-.sheet .sermon-point input.sp-title { flex: 1; min-width: 0; min-height: 0; padding: 4px 0; border: 0; border-bottom: 1px solid transparent; border-radius: 0; background: none; box-shadow: none; color: var(--text); font: 700 1.12rem/1.3 var(--font-ui); transition: border-color .2s; }
-.sheet .sermon-point input.sp-title:focus { outline: none; border-bottom-color: var(--accent); }
-.sp-count { flex: none; min-width: 22px; padding: 2px 7px; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--muted); font: 600 .74rem/1.3 var(--font-ui); text-align: center; }
-.sp-fold { flex: none; display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; }
-.sp-fold svg { transition: transform .22s cubic-bezier(.4,0,.2,1); }
-.sermon-point.folded .sp-fold svg { transform: rotate(-90deg); }
-.sermon-point .sp-del { opacity: .55; }
-.sermon-point:hover .sp-del, .sermon-point:focus-within .sp-del { opacity: 1; }
-.pulpit-point { margin: 1.4em 0 .5em; font-size: 1.15em; line-height: 1.25; }
-.pulpit-point span { color: var(--accent); }
-.sermon-bar { position: sticky; bottom: 0; z-index: 3; display: flex; gap: 8px; margin: 18px -16px -20px; padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--panel); border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
-/* под панелью до нижнего меню — тот же фон: текст не просвечивает */
-.sermon-bar::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 140px; background: var(--panel); }
-.sermon-bar-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 44px; padding: 0 8px; border: 0; border-radius: 12px; background: color-mix(in srgb, var(--text) 6%, transparent); color: var(--text); font: 600 .92rem/1 var(--font-ui); cursor: pointer; transition: transform .12s, background-color .15s; }
-.sermon-bar-btn svg { color: var(--accent); }
-.sermon-bar-btn:active { transform: scale(.97); background: color-mix(in srgb, var(--text) 10%, transparent); }
-@media (hover: hover) { .sermon-bar-btn:hover { background: color-mix(in srgb, var(--text) 9%, transparent); } }
-.sermon-del { margin-top: 26px; }

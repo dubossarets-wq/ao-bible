@@ -1,7 +1,6 @@
 // Проповеди: заголовок, дата и блоки по порядку — стихи (с текстом на момент добавления) и свой текст.
 // Хранятся в localStorage «sermons», общее хранилище для окна проповедей и выбора «В проповедь».
-// { id, title, date, blocks: [{ id, type: 'verse', book, chapter, verse, to, text, texts?, moduleId } | { id, type: 'text', text }
-//   | { id, type: 'point', text } — пункт плана: заголовок; блоки после него до следующего пункта — его], createdAt, updatedAt }
+// { id, title, date, blocks: [{ id, type: 'verse', book, chapter, verse, to, text, texts?, moduleId } | { id, type: 'text', text }], createdAt, updatedAt }
 // Несколько стихов подряд — один блок (verse…to): text — весь текст одной строкой (как раньше, его читают
 // и старые версии приложения), texts — тот же текст по стихам, чтобы показать каждый стих с нового абзаца
 // и убрать любой из середины. В старых проповедях texts нет — его достраивают из перевода (fillVerseTexts).
@@ -140,23 +139,6 @@ export function addTextBlock(id, afterIndex = null) {
   });
   return b.id;
 }
-// Пункт плана: заголовок; блоки после него (до следующего пункта) — его содержимое
-export function addPoint(id, afterIndex = null) {
-  const b = { id: uid(), type: 'point', text: '' };
-  touch(id, (s) => {
-    const blocks = [...s.blocks];
-    blocks.splice(afterIndex == null ? blocks.length : Math.max(0, afterIndex + 1), 0, b);
-    return { ...s, blocks };
-  });
-  return b.id;
-}
-// Номера пунктов по порядку: id пункта → 1, 2, 3…
-export const pointNumbers = (blocks) => {
-  const out = {};
-  let n = 0;
-  for (const b of blocks) if (b.type === 'point') out[b.id] = ++n;
-  return out;
-};
 export const updateBlock = (id, blockId, patch) => touch(id, (s) => ({ ...s, blocks: s.blocks.map((b) => (b.id === blockId ? { ...b, ...patch } : b)) }));
 // Часть стиха: text — выбранный фрагмент (part = true) или полный текст (part = false — пометка убирается)
 export const setBlockPart = (id, blockId, text, part) =>
@@ -192,11 +174,8 @@ export const blockRefFull = (b) => `${bookMeta(b.book).name} ${b.chapter}:${b.ve
 // Проповедь обычным текстом — чтобы отправить или распечатать
 export function sermonText(s) {
   const parts = [s.title, s.date ? new Date(s.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : ''].filter(Boolean);
-  const nums = pointNumbers(s.blocks);
   for (const b of s.blocks) {
-    if (b.type === 'point') {
-      if (b.text.trim()) parts.push(`${nums[b.id]}. ${b.text.trim()}`);
-    } else if (b.type === 'verse') {
+    if (b.type === 'verse') {
       // Диапазон — каждый стих с новой строки, с номером
       const tx = verseTexts(b);
       parts.push(`${blockRefFull(b)}\n«${tx && tx.length > 1 ? tx.map((x, i) => `${b.verse + i} ${x}`).join('\n') : b.text}»`);
