@@ -165,6 +165,15 @@ def parse_byz(text):
     return out
 
 
+def similar_greek(a, b):
+    """Одно и то же имя в разном написании: Βοὸζ / Βόες, Ἀμών / Ἀμώς — оба с заглавной, первые две буквы те же, написание
+    похоже. Обычные слова так не сопоставляем: похожее написание там чаще разночтение (ὑπόκρισιν / κρίσιν, ἤπιοι / νήπιοι)"""
+    na, nb = norm_greek(a), norm_greek(b)
+    if not na or not nb or not (a[:1].isupper() and b.lstrip("[")[:1].isupper()) or na[:2] != nb[:2]:
+        return False
+    return difflib.SequenceMatcher(None, na, nb).ratio() >= 0.5
+
+
 def align(byz_words, vin_words):
     """Для каждого слова byz — индекс слова Винокурова или None. Возвращает (список, число неиспользованных слов Винокурова)."""
     nb, nv = len(byz_words), len(vin_words)
@@ -193,6 +202,27 @@ def align(byz_words, vin_words):
         if cand:
             res[i] = cand[0]
             used[cand[0]] = True
+    # 3) имена в разном написании и с разным номером Стронга (Βοὸζ G1003 у византийского — Βόες G1016 у Винокурова):
+    # если между опорными словами с обеих сторон осталось поровну несопоставленных слов — ставим друг против друга
+    # похожие имена (similar_greek). Разночтения — другое слово на этом месте (πνεύματος / φωτός) — не ставим:
+    # перевод другого слова ввёл бы в заблуждение
+    i = 0
+    while i < nb:
+        if res[i] is not None:
+            i += 1
+            continue
+        j = i
+        while j < nb and res[j] is None:
+            j += 1
+        lo = max((res[k] for k in range(i) if res[k] is not None), default=-1)
+        hi = min((res[k] for k in range(j, nb) if res[k] is not None), default=nv)
+        free = [k for k in range(lo + 1, hi) if not used[k]]
+        if len(free) == j - i:
+            for d, k in enumerate(free):
+                if similar_greek(byz_words[i + d][0], vin_words[k][2]):
+                    res[i + d] = k
+                    used[k] = True
+        i = j
     return res, used
 
 
