@@ -39,8 +39,57 @@ export function highlightRegex(query) {
 
 // from/to — показать только часть главы (отрывок плана), idp — приставка к id стихов (на странице плана
 // одна и та же глава может встретиться дважды), noBookTitle/noChapterTitle — без заголовков (их заменяет заголовок отрывка)
+// «Введение в книгу», «Введение к главе», «Introduction» — статьи, которые при сборке модуля поставлены к первому стиху
+const isIntro = (title) => !!title && (title.startsWith('Введение') || title === 'Introduction');
+
+// Статьи комментариев к стиху одним списком: введение (к книге или главе — у первого стиха) отдельной вкладкой
+function commentEntries(list) {
+  const out = [];
+  for (const cm of list) {
+    for (const intro of [true, false]) {
+      const items = cm.items.filter((e) => isIntro(e.title) === intro);
+      if (items.length) out.push({ id: `${cm.id}${intro ? ':i' : ''}`, name: intro ? `${items[0].title} · ${cm.name}` : cm.name, text: items.map((e) => e.text).join('\n\n') });
+    }
+  }
+  return out;
+}
+
+// Раскрытый комментарий под стихом (.vc): при нескольких источниках — тонкие вкладки с названиями, текст с линией
+// акцента слева. Раскрывается и сворачивается плавно; нажатие на текст — свернуть
+function VerseComments({ entries, open, size, onClose }) {
+  const [sel, setSel] = useState(0);
+  // в разметке панель только у раскрытого (и только что свёрнутого) стиха; класс — на следующем кадре, чтобы
+  // раскрытие сразу после появления тоже шло плавно
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setOn(open));
+    return () => cancelAnimationFrame(id);
+  }, [open]);
+  const cur = entries[Math.min(sel, entries.length - 1)];
+  return (
+    <div className={`vc${on ? ' open' : ''}`} aria-hidden={!open}>
+      <div>
+        <div className="vc-panel">
+          <div className="vc-tabs" role={entries.length > 1 ? 'tablist' : undefined}>
+            {entries.map((e, i) => (
+              <button key={e.id} type="button" className={i === sel ? 'on' : ''} role={entries.length > 1 ? 'tab' : undefined} aria-selected={i === sel} tabIndex={open ? 0 : -1} onClick={() => (entries.length > 1 ? setSel(i) : onClose())}>
+                {e.name}
+              </button>
+            ))}
+          </div>
+          <p className="vc-text" style={{ fontSize: `${size}px` }} onClick={onClose}>
+            {cur.text}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, headings, xrefs, counts, comments, illus, opts, hlRe, hlVerse = null, flashVerse, isPsalm, selected, marks, from = 1, to = null, idp = '', noBookTitle = false, noChapterTitle = false, afterVerse = null, afterNode = null }) {
   useLang(); // глава в memo — подписи (номер главы, кнопки) обновляются при смене языка
+  const [cmOpen, setCmOpen] = useState(null); // стих, у которого раскрыт комментарий
+  const [cmLast, setCmLast] = useState(null); // последний раскрытый — его панель остаётся, пока плавно сворачивается
   const sel = selected ? new Set(selected.split(',').map(Number)) : null;
   const mk = marks ? Object.fromEntries(marks.split(',').map((x) => x.split(':'))) : {};
   return (
@@ -53,6 +102,11 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
           if (!text || v < from || (to && v > to)) return null;
           const heading = opts.showHeadings && headings?.[`${c}:${v}`];
           const n = (counts?.get(`${bookId}.${c}.${v}`) || 0) + (xrefs?.[`${c}:${v}`]?.length || 0);
+          // комментарии к стиху — только на языке этого перевода (у синодального — русские, у KJV — английские)
+          const cms =
+            comments?.get(`${bookId}.${c}.${v}`)?.filter((cm) => (!opts.inlineComments || opts.inlineComments.includes(cm.id)) && (!opts.lang || cm.lang === opts.lang)) || [];
+          const asText = opts.commentView !== 'tag' && cms.length > 0;
+          const entries = asText ? commentEntries(cms) : null;
           return (
             <React.Fragment key={v}>
               {heading && <h3 className="section-title">{heading}</h3>}
@@ -118,17 +172,34 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
                     {illus.get(`${bookId}.${c}.${v}`).length > 1 && <span>2</span>}
                   </button>
                 )}
-                {comments
-                  ?.get(`${bookId}.${c}.${v}`)
-                  // только комментарии на языке этого перевода (у синодального — русские, у KJV — английские)
-                  ?.filter((cm) => (!opts.inlineComments || opts.inlineComments.includes(cm.id)) && (!opts.lang || cm.lang === opts.lang))
-                  .map((cm) => (
+                {/* комментарий — почти незаметный значок-облачко (число — если источников несколько) */}
+                {asText && (
+                  <button
+                    className={`cmi${cmOpen === v ? ' on' : ''}`}
+                    data-act="cmt"
+                    aria-expanded={cmOpen === v}
+                    aria-label={t('Комментарий: {name}', { name: cms[0].name })}
+                    onClick={() => {
+                      setCmOpen(cmOpen === v ? null : v);
+                      setCmLast(v);
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                      <path d="M13 8H7M17 12H7" />
+                    </svg>
+                    {entries.length > 1 && <span>{entries.length}</span>}
+                  </button>
+                )}
+                {!asText &&
+                  cms.map((cm) => (
                     <button key={cm.id} className="cm" data-act="comment" data-m={cm.id} aria-label={t('Комментарий: {name}', { name: cm.name })}>
                       {cm.name}
                     </button>
                   ))}
               </p>
               {afterVerse === v && afterNode}
+              {asText && cmLast === v && <VerseComments entries={entries} open={cmOpen === v} size={opts.cmSize} onClose={() => setCmOpen(null)} />}
             </React.Fragment>
           );
         })}
@@ -668,6 +739,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       toggleFavorite(vref, plainText(text));
       return pulseFavorite(verseEl);
     }
+    if (act === 'cmt') return; // значок комментария раскрывает текст сам
     if (act === 'xref') return openSheet('xrefs', index, { ref: vref, moduleId: module.id });
     if (act === 'note') return openSheet('note', index, { refs: [vref], moduleId: module.id });
     if (act === 'sermon') return openSheet('sermons', index, { open: sermonWith(vref)?.id || null });
@@ -836,10 +908,12 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       showXref: settings.showXrefButtons && !settings.focusMode && !settings.bookMode,
       inlineComments: settings.bookMode ? [] : settings.inlineCommentaries, // null — все включённые комментарии
       lang: module.language || 'ru', // комментарии у стихов — на языке перевода
+      commentView: settings.commentView, // below — текстом под стихом, tag — меткой после стиха
+      cmSize: settings.commentaryFontSize || 19,
       continuous: settings.continuousVerses || settings.bookMode,
       showIllus: settings.showIllustrations !== false && !settings.bookMode,
     }),
-    [settings.showVerseNumbers, settings.showStrongs, settings.showHeadings, settings.showXrefButtons, settings.focusMode, settings.continuousVerses, settings.inlineCommentaries, settings.bookMode, settings.showIllustrations, module]
+    [settings.showVerseNumbers, settings.showStrongs, settings.showHeadings, settings.showXrefButtons, settings.focusMode, settings.continuousVerses, settings.inlineCommentaries, settings.commentView, settings.commentaryFontSize, settings.bookMode, settings.showIllustrations, module]
   );
   // Слово из поиска подсвечено только в стихе, к которому перешли: несколько секунд, потом плавно гаснет
   // (сразу — при касании текста). Прежний формат (просто строка) и старые подсветки после перезапуска не показываем.

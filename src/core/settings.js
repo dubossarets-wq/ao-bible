@@ -108,6 +108,7 @@ export const DEFAULT_SETTINGS = {
   syncScroll: true, // синхронная прокрутка двух панелей
   bookMode: false, // режим «как книга»
   commentaryFontSize: 19, // px — текст в окне комментариев
+  commentView: 'below', // комментарии в тексте: below — текстом под стихом, tag — меткой после стиха
   inlineCommentaries: null, // какие комментарии подписывать в тексте: null — все включённые, иначе список id
   primaryModule: 'rst-plus',
   audioFollowsTranslation: true, // сменили перевод во время чтения вслух — запись на его языке

@@ -695,6 +695,19 @@ export default function AppearanceSettings({ onClose, payload }) {
               </div>
               <Range id="set-cm-size" label={t('Размер текста')} big value={s.commentaryFontSize} min={14} max={32} step={1} onChange={(commentaryFontSize) => set({ commentaryFontSize })} word={(v) => `${v} px`} />
             </section>
+            {/* как показывать: текстом под стихом (свёрнут до двух строк) или прежней меткой после стиха */}
+            <section className="ap-card">
+              <Segmented
+                id="set-cm-view"
+                label={t('Как показывать')}
+                value={s.commentView === 'tag' ? 'tag' : 'below'}
+                onChange={(commentView) => set({ commentView })}
+                options={[
+                  ['below', t('Под стихом')],
+                  ['tag', t('Меткой после стиха')],
+                ]}
+              />
+            </section>
             <h4 className="ap-sub">{t('Комментарии в тексте')}</h4>
             <p className="field-hint">{t('Отмеченные видны после стиха. Остальные — зажмите стих → «Комментарии».')}</p>
             {/* источники — строками от края до края, как списки в настройках: название, ниже описание и язык */}

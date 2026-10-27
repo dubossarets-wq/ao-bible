@@ -376,10 +376,12 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
       showXref: settings.showXrefButtons && !settings.focusMode && !settings.bookMode,
       inlineComments: settings.bookMode ? [] : settings.inlineCommentaries,
       lang: module?.language || 'ru', // комментарии у стихов — на языке перевода
+      commentView: settings.commentView,
+      cmSize: settings.commentaryFontSize || 19,
       continuous: settings.continuousVerses || settings.bookMode,
       showIllus: settings.showIllustrations !== false && !settings.bookMode,
     }),
-    [settings.showVerseNumbers, settings.showStrongs, settings.showHeadings, settings.showXrefButtons, settings.focusMode, settings.continuousVerses, settings.inlineCommentaries, settings.bookMode, settings.showIllustrations, module]
+    [settings.showVerseNumbers, settings.showStrongs, settings.showHeadings, settings.showXrefButtons, settings.focusMode, settings.continuousVerses, settings.inlineCommentaries, settings.commentView, settings.commentaryFontSize, settings.bookMode, settings.showIllustrations, module]
   );
 
   if (!plan || !readings.length)
