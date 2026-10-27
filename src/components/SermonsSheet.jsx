@@ -194,7 +194,7 @@ function Pulpit({ sermon, onClose }) {
                 : b.text}
               {b.alt?.filter((a) => a.t?.some(Boolean)).map((a) => (
                 <p key={a.m} className="pulpit-alt">
-                  <cite>{a.n}</cite> {a.t.join(' ')}
+                  <cite>{a.n}</cite> {a.il ? <IlWords texts={a.t} /> : a.t.join(' ')}
                 </p>
               ))}
             </blockquote>
@@ -222,6 +222,25 @@ function Inserter({ onText, onVerse }) {
         <Plus size={14} /> {t('Стих')}
       </button>
     </div>
+  );
+}
+
+// Подстрочник у стиха: слова столбиками — сверху оригинал, под ним перевод; иврит — справа налево
+const IL_WORD = /\{([^|}]*)\|([^|}]*)(?:\|([^|}]*))?(?:\|([^}]*))?\}/g;
+function IlWords({ texts }) {
+  const words = texts.flatMap((x) => [...String(x || '').matchAll(IL_WORD)].map((m) => ({ g: m[1] === '·' ? '' : m[1], o: m[4] || '' })));
+  const rtl = words.some((w) => /[\u0590-\u05FF]/.test(w.o));
+  return (
+    <span className="sv-il" dir={rtl ? 'rtl' : 'ltr'}>
+      {words.map((w, i) => (
+        <span key={i} className="sv-ilw">
+          <span className="o">{w.o || '\u00a0'}</span>
+          <span className="g" dir="ltr">
+            {w.g || '\u00a0'}
+          </span>
+        </span>
+      ))}
+    </span>
   );
 }
 
@@ -461,7 +480,7 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo }) 
                     <div key={a.m} className="sv-alt">
                       <span className="sv-alt-name">{a.n}</span>
                       {/* стиха в этом переводе нет (например, Новый Завет в еврейском тексте) — прочерк */}
-                      <span className="sv-alt-text">{!a.t?.some(Boolean) ? (a.t?.length ? '—' : '…') : group && a.t.length > 1 ? a.t.map((x, k) => <span key={k}><sup className="sv-num">{b.verse + k}</sup>{x} </span>) : a.t.join(' ')}</span>
+                      <span className="sv-alt-text">{!a.t?.some(Boolean) ? (a.t?.length ? '—' : '…') : a.il ? <IlWords texts={a.t} /> : group && a.t.length > 1 ? a.t.map((x, k) => <span key={k}><sup className="sv-num">{b.verse + k}</sup>{x} </span>) : a.t.join(' ')}</span>
                     </div>
                   ))}
                   </Reveal>

@@ -4,12 +4,13 @@
 // Несколько стихов подряд — один блок (verse…to): text — весь текст одной строкой (как раньше, его читают
 // и старые версии приложения), texts — тот же текст по стихам, чтобы показать каждый стих с нового абзаца
 // и убрать любой из середины. В старых проповедях texts нет — его достраивают из перевода (fillVerseTexts).
-// Переводы у стиха: alt: [{ m: id перевода, n: короткое название, t: [текст по стихам] }] — показываются под основным;
+// Переводы у стиха: alt: [{ m: id перевода, n: короткое название, t: [текст по стихам], il? }] — показываются под основным;
+// у подстрочника (il) t — с разметкой слов {перевод|Стронг|морфология|оригинал}: показывается столбиками «оригинал / перевод»;
 // у проповеди altDefault: [{ m, n }] — переводы, которые сами подключаются ко всем новым стихам (тексты — fillAltTexts).
 import { useSyncExternalStore } from 'react';
 import { load, save } from './storage.js';
 import { bookMeta, parseHumanRef } from './books.js';
-import { getVerse } from './modules.js';
+import { getVerse, listModules } from './modules.js';
 import { plainText } from './verseMarkup.js';
 import { t } from './i18n.js';
 
@@ -89,14 +90,19 @@ export const setSermonAltDefault = (id, list) => touch(id, (s) => ({ ...s, altDe
 // Тексты подключённых переводов: по стиху из каждого перевода (без отметки изменения — это не правка человека)
 export async function fillAltTexts(id) {
   const s = sermons.find((x) => x.id === id);
+  const il = new Set((await listModules()).filter((m) => m.features?.interlinear).map((m) => m.id));
   for (const b of s?.blocks || []) {
     if (b.type !== 'verse' || !b.alt?.length) continue;
     const n = (b.to || b.verse) - b.verse + 1;
     for (const a of b.alt) {
-      if (a.t?.length === n) continue;
+      if (a.t?.length === n && !!a.il === il.has(a.m)) continue;
       const t = [];
-      for (let v = b.verse; v <= (b.to || b.verse); v++) t.push(plainText((await getVerse(a.m, { book: b.book, chapter: b.chapter, verse: v }).catch(() => null)) || ''));
-      setSermons((list) => list.map((x) => (x.id === id ? { ...x, blocks: x.blocks.map((y) => (y.id === b.id ? { ...y, alt: (y.alt || []).map((z) => (z.m === a.m ? { ...z, t } : z)) } : y)) } : x)));
+      for (let v = b.verse; v <= (b.to || b.verse); v++) {
+        const raw = (await getVerse(a.m, { book: b.book, chapter: b.chapter, verse: v }).catch(() => null)) || '';
+        t.push(il.has(a.m) ? raw : plainText(raw)); // у подстрочника — с разметкой слов
+      }
+      const z0 = { t, ...(il.has(a.m) ? { il: true } : {}) };
+      setSermons((list) => list.map((x) => (x.id === id ? { ...x, blocks: x.blocks.map((y) => (y.id === b.id ? { ...y, alt: (y.alt || []).map((z) => { if (z.m !== a.m) return z; const { il: _il, ...rest } = z; return { ...rest, ...z0 }; }) } : y)) } : x)));
     }
   }
 }
@@ -207,7 +213,7 @@ export function sermonText(s) {
       // Диапазон — каждый стих с новой строки, с номером
       const tx = verseTexts(b);
       parts.push(`${blockRefFull(b)}\n«${tx && tx.length > 1 ? tx.map((x, i) => `${b.verse + i} ${x}`).join('\n') : b.text}»`);
-      for (const a of b.alt || []) if (a.t?.some(Boolean)) parts.push(`${a.n}: «${a.t.join(' ')}»`);
+      for (const a of b.alt || []) if (a.t?.some(Boolean)) parts.push(`${a.n}: «${a.t.map((x) => (a.il ? plainText(x) : x)).join(' ')}»`);
     }
     else if (b.text.trim()) parts.push(b.text.trim());
   }
