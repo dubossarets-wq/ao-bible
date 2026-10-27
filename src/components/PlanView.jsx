@@ -50,7 +50,7 @@ function nextAfter(r, module, books) {
 }
 
 export default function PlanView({ index, pane, module, selection, onSelect, selActions, part, onPart }) {
-  const { settings, openSheet, openPopover, closePopover, toggleFavorite, popover, sheet, reportPosition, navigate, marks, toast, modules, exitPlan, settlePlan, openPlanDay } = useApp();
+  const { settings, openSheet, openPopover, closePopover, openStrong, toggleFavorite, popover, sheet, reportPosition, navigate, marks, toast, modules, exitPlan, settlePlan, openPlanDay } = useApp();
   const { uid, day } = pane.plan;
   const plan = usePlan(uid);
   const readings = plan?.readings[day] || [];
@@ -335,7 +335,8 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
       const token = wordAt(text, +sn.dataset.i);
       if (!token?.strongs) return;
       closePopover();
-      return openSheet('dict', index, { token: { text: token.text, strongs: token.strongs, morph: token.morph || null }, ref: vref, moduleId: module.id, verseText: plainText(text), wi: +sn.dataset.i, autoOpen: true, initial: 'full' });
+      // номер Стронга в тексте — окно Стронга рядом с текстом
+      return openStrong({ pane: index, num: token.strongs[0].replace(/^([HG])0*/i, (_, x) => x.toUpperCase()), nums: token.strongs.map((x) => x.replace(/^([HG])0*/i, (_, y) => y.toUpperCase())), ref: vref, wi: +sn.dataset.i, morph: token.morph || [] });
     }
     const w = e.target.closest('.w');
     if (!w) return;

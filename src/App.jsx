@@ -141,6 +141,7 @@ export default function App() {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
   const [popover, setPopover] = useState(null); // выборка словарей над словом
+  const [strong, setStrong] = useState(null); // Стронг параллельным окном: { pane, num, nums, ref, wi, origWord, morph }
   const [toasts, setToasts] = useState([]);
   const [bookmarks, setBookmarks] = usePersistentState('bookmarks', []);
   const [favorites, setFavorites] = usePersistentState('favorites', []);
@@ -610,6 +611,9 @@ export default function App() {
     popover,
     openPopover: (p) => setPopover({ ...p, id: Date.now() + Math.random() }),
     closePopover: () => setPopover(null),
+    strong,
+    openStrong: (p) => setStrong({ ...p, id: Date.now() + Math.random() }),
+    closeStrong: () => setStrong(null),
     closeSheet: () => setSheet(null),
     // Закрыть именно это окно: окно закрывается с анимацией, и если за это время открыли другое
     // (например, нажали вкладку внизу), новое не должно закрыться

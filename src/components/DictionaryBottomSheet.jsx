@@ -17,7 +17,7 @@ import { playStrongWord, stopVerse, ORIG_AUDIO } from '../core/origAudio.js';
 const KIND_LABEL = { strongs: N_('по номерам Стронга'), words: N_('по словам') };
 
 // «from H24 (אָבִיב)» → кликабельные номера Стронга
-function StrongLinks({ text, onOpen }) {
+export function StrongLinks({ text, onOpen }) {
   if (!text) return null;
   const parts = text.split(/([HG]\d+)/g);
   return (
@@ -36,7 +36,7 @@ function StrongLinks({ text, onOpen }) {
 }
 
 // Слово живым голосом (из этого стиха или из первого места, где оно есть в записи)
-function SayButton({ num, verseRef }) {
+export function SayButton({ num, verseRef }) {
   const [st, setSt] = useState('idle'); // idle | loading | playing | none
   const say = async () => {
     if (st === 'playing') return (stopVerse(), setSt('idle'));

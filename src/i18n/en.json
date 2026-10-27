@@ -179,6 +179,8 @@
   "one": "day",
   "other": "days"
  },
+ "Стронг": "Strong",
+ "Все словари скрыты — выберите их в «Словари».": "All dictionaries are hidden — choose them under “Dictionaries”.",
  "Один раз": "Once",
  "Каждые {n} мин": "Every {n} min",
  "Каждый час": "Every hour",

@@ -11,7 +11,7 @@ import { t } from '../core/i18n.js';
 const GAP = 10;
 
 export default function WordPopover() {
-  const { popover, closePopover, openSheet, openPlaceMap } = useApp();
+  const { popover, closePopover, openSheet, openPlaceMap, openStrong } = useApp();
   const [res, setRes] = useState(null);
   const [pos, setPos] = useState(null);
   const box = useRef(null);
@@ -69,12 +69,22 @@ export default function WordPopover() {
 
   if (!popover) return null;
 
-  const items = res ? res.results.flatMap((r) => r.found.map((f) => ({ module: r.module, key: f.key, label: f.entry.lemma || f.entry.word || '' }))) : [];
+  // Словари Стронга — одним пунктом на номер («G2703 · καταφεύγω · Стронг»): все их статьи — в окне Стронга
+  const all = res ? res.results.flatMap((r) => r.found.map((f) => ({ module: r.module, key: f.key, label: f.entry.lemma || f.entry.word || '' }))) : [];
+  const nums = [...new Set(all.filter((it) => it.module.dictionaryKind === 'strongs').map((it) => it.key))];
+  const items = [
+    ...nums.map((key) => ({ strong: true, key, label: all.find((it) => it.key === key && it.label)?.label || '' })),
+    ...all.filter((it) => it.module.dictionaryKind !== 'strongs'),
+  ];
   const approx = res?.mapping.mode === 'approx';
   const places = res?.places || [];
 
   const choose = (it) => {
     closePopover({ keepWord: true });
+    if (it.strong) {
+      const pl = popover.payload;
+      return openStrong({ pane: popover.pane, num: it.key, nums, ref: popover.ref, wi: pl.wi, morph: res.mapping.mode === 'exact' ? res.mapping.morph : [] });
+    }
     // Статья по номеру Стронга — на всю высоту, остальные словари — на половину экрана
     openSheet('dict', popover.pane, { ...popover.payload, preselect: { moduleId: it.module.id, key: it.key }, initial: it.module.dictionaryKind === 'strongs' ? 'full' : 0 });
   };
@@ -112,10 +122,11 @@ export default function WordPopover() {
       ))}
       {res &&
         items.map((it) => (
-          <button key={`${it.module.id}|${it.key}`} role="menuitem" className="wp-item" onClick={() => choose(it)}>
+          <button key={`${it.strong ? 'strong' : it.module.id}|${it.key}`} role="menuitem" className="wp-item" onClick={() => choose(it)}>
             <span className={`wp-key${/^[HG]\d/.test(it.key) ? ' wp-num' : ''}`}>{/^[HG]\d/.test(it.key) ? it.key : it.label || it.key}</span>
+            {it.strong && it.label && <span className="wp-lemma">{it.label}</span>}
             <span className="wp-sep">·</span>
-            <span className="wp-dict">{it.module.name}</span>
+            <span className="wp-dict">{it.strong ? t('Стронг') : it.module.name}</span>
             <ChevronRight size={16} className="wp-go" aria-hidden="true" />
           </button>
         ))}
