@@ -1,7 +1,7 @@
 // Планы чтения: активные планы с прогрессом и кнопкой «Читать» (весь день одной страницей),
 // учёт прочитанного, начало нового плана, свой план
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { BookOpen, Scroll, ListChecks, Play, Check, ChevronLeft, ChevronRight, Loader2, Plus, Trash2, Flame, Library, CalendarDays, Sunrise, Music, Feather, Sparkles, CalendarPlus, Minus } from 'lucide-react';
+import { BookOpen, Scroll, ListChecks, Play, Check, ChevronLeft, ChevronRight, Loader2, Plus, Trash2, Flame, Library, CalendarDays, Sunrise, Music, Feather, Sparkles, CalendarPlus, Minus, X } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { usePlans } from '../core/planStore.js';
@@ -10,7 +10,7 @@ import { bookMeta, BOOKS } from '../core/books.js';
 import { fetchPlanIndex, fetchPlan, makeCustomPlan, makeParallelPlan, chapterList, streamList, firstDayText, CYCLIC, SCOPES, STREAMS, parseReading, planToday, behindDays, readingDone, localDate } from '../core/plans.js';
 import { ConfirmButton, Hint, Switch, Segmented, Reveal } from './ui.jsx';
 import { usePersistentState } from '../core/storage.js';
-import { REMINDERS, getReminder, setReminder } from '../core/reminders.js';
+import { REMINDERS, REPEATS, getReminder, setReminder, newReminder } from '../core/reminders.js';
 import VerseOfDayCard from './VerseOfDayCard.jsx';
 import { t, N_, fmtDate, locale } from '../core/i18n.js';
 
@@ -251,24 +251,89 @@ function LoadLine({ load }) {
   );
 }
 
-// Напоминание о чтении (приложение из Google Play): каждый день в выбранное время — что читать сегодня
+// «Каждые 2 ч», «Каждый час», «Один раз»
+export const repeatLabel = (n) => (!n ? t('Один раз') : n < 60 ? t('Каждые {n} мин', { n }) : n === 60 ? t('Каждый час') : t('Каждые {n} ч', { n: n / 60 }));
+
+// Напоминания о чтении (приложение из Google Play): сколько угодно — каждое в своё время или промежутком
+// (с … до … каждые N мин/ч), в выбранные дни недели; уведомление — что читать сегодня
 function ReminderCard() {
   const { toast } = useApp();
   const [r, setR] = useState(getReminder);
   const apply = async (next) => {
     const ok = await setReminder(next);
     if (!ok) return toast(t('Уведомления запрещены — разрешите их в настройках телефона'), 'error');
-    setR(getReminder());
-    if (next.on) toast(t('Напомню в {time}', { time: getReminder().time }));
+    const cur = getReminder();
+    setR(cur);
+    if (next.on) toast(cur.list.length === 1 && !cur.list[0].every ? t('Напомню в {time}', { time: cur.time }) : t('Напоминания включены'));
   };
+  const setItem = (id, patch) => apply({ list: r.list.map((x) => (x.id === id ? { ...x, ...patch } : x)) });
+  // новое — через час после последнего (или в 20:00 после единственного утреннего)
+  const add = () => {
+    const last = r.list[r.list.length - 1];
+    const [h, m] = (last?.until && last.every ? last.until : last?.time || '07:00').split(':').map(Number);
+    const nh = Math.min(23, (h || 0) + (last ? 1 : 0));
+    apply({ list: [...r.list, newReminder(`${String(nh).padStart(2, '0')}:${String(m || 0).padStart(2, '0')}`)] });
+  };
+  // понедельник … воскресенье на языке приложения: 2024-01-01 — понедельник
+  const wd = (i) => new Date(2024, 0, i).toLocaleDateString(locale(), { weekday: 'narrow' });
   return (
     <section className="reminder-card" aria-label={t('Напоминание о чтении')}>
-      <Switch id="plan-reminder" checked={r.on} onChange={(on) => apply({ on })} label={t('Напоминать о чтении')} hint={t('Каждый день в это время — уведомление с отрывками на сегодня')} />
+      <Switch id="plan-reminder" checked={r.on} onChange={(on) => apply({ on })} label={t('Напоминать о чтении')} hint={t('Уведомление с отрывками на сегодня — сколько угодно напоминаний, в любое время или промежутком')} />
       <Reveal open={r.on}>
-        <label className="reminder-time">
-          <span>{t('Время')}</span>
-          <input type="time" value={r.time} onChange={(e) => e.target.value && apply({ time: e.target.value })} />
-        </label>
+        <div className="rem-list">
+          {r.list.map((x) => (
+            <div key={x.id} className="rem-item">
+              <div className="rem-line">
+                <input type="time" value={x.time} aria-label={x.every ? t('С') : t('Время')} onChange={(e) => e.target.value && setItem(x.id, { time: e.target.value })} />
+                {/* промежуток: «с 8:00 до 20:00 каждые 2 ч» */}
+                {x.every > 0 && (
+                  <>
+                    <span className="rem-dash">–</span>
+                    <input type="time" value={x.until} aria-label={t('До')} onChange={(e) => e.target.value && setItem(x.id, { until: e.target.value })} />
+                  </>
+                )}
+                {r.list.length > 1 && (
+                  <button type="button" className="icon-btn subtle rem-del" onClick={() => apply({ list: r.list.filter((y) => y.id !== x.id) })} aria-label={t('Удалить напоминание')} title={t('Удалить напоминание')}>
+                    <X size={17} />
+                  </button>
+                )}
+              </div>
+              <div className="rem-line">
+                <select className="rem-repeat" value={x.every || 0} onChange={(e) => setItem(x.id, { every: +e.target.value })} aria-label={t('Повтор')}>
+                  {REPEATS.map((n) => (
+                    <option key={n} value={n}>
+                      {repeatLabel(n)}
+                    </option>
+                  ))}
+                </select>
+                {/* дни недели: ничего не выбрано — каждый день */}
+                <div className="rem-days" role="group" aria-label={t('Дни недели')}>
+                  {[1, 2, 3, 4, 5, 6, 7].map((d) => {
+                    const on = !x.days?.length || x.days.includes(d);
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        className={on ? 'on' : ''}
+                        aria-pressed={on}
+                        onClick={() => {
+                          const cur = x.days?.length ? x.days : [1, 2, 3, 4, 5, 6, 7];
+                          const days = on ? cur.filter((y) => y !== d) : [...cur, d].sort();
+                          if (days.length) setItem(x.id, { days: days.length === 7 ? [] : days });
+                        }}
+                      >
+                        {wd(d)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ))}
+          <button type="button" className="rem-add" onClick={add}>
+            <Plus size={16} /> {t('Добавить напоминание')}
+          </button>
+        </div>
       </Reveal>
     </section>
   );
