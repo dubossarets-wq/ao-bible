@@ -1178,28 +1178,6 @@
    "added": "2026-10-19"
   },
   {
-   "id": "vin-interlinear",
-   "type": "bible",
-   "name": "Подстрочник (Винокуров)",
-   "title": "Подстрочный перевод греческого текста Нового Завета А. Винокурова",
-   "description": "Греческий текст — византийский (Робинсон — Пирпонт, 2018, общественное достояние); русские слова — подстрочный перевод А. Винокурова (с разрешения автора), сопоставлены по номерам Стронга. Слова идут в порядке греческого текста; квадратные скобки — слова, добавленные для связности русской фразы; точка «·» — слово без русского перевода (например, артикль).",
-   "language": "ru",
-   "version": "2015 / RP2018",
-   "author": "Алексей Винокуров (русские слова подстрочника, 2015); Maurice A. Robinson, William G. Pierpont (греческий текст, 2018)",
-   "source": "https://azbyka.ru/biblia/podstrochnik",
-   "license": "Греческий текст — Public Domain; русские слова А. Винокурова — с разрешения автора, для бесплатного некоммерческого приложения",
-   "features": {
-    "strongs": true,
-    "interlinear": true
-   },
-   "versification": "synodal",
-   "url": "vin-interlinear.json",
-   "urlGz": "vin-interlinear.json.gz",
-   "size": 4393089,
-   "sizeGz": 939662,
-   "added": "2026-10-19"
-  },
-  {
    "id": "lxx-swete",
    "type": "bible",
    "name": "LXX",
@@ -2370,6 +2348,28 @@
    "size": 7648430,
    "sizeGz": 1619418,
    "added": "2026-10-26"
+  },
+  {
+   "id": "vin-interlinear",
+   "type": "bible",
+   "name": "Подстрочник (Винокуров)",
+   "title": "Подстрочный перевод греческого текста Нового Завета А. Винокурова",
+   "description": "Русские слова — подстрочный перевод А. Винокурова (с разрешения автора). Греческий текст — SBLGNT (ближайший свободный к тексту UBS, с которого сделан перевод); в немногих стихах, где лучше совпадает, — Вескотт — Хорт (1881) или византийский (Робинсон — Пирпонт, 2018). Слова идут в порядке греческого текста; квадратные скобки — слова, добавленные для связности русской фразы; точка «·» — слово без русского перевода (например, артикль).",
+   "language": "ru",
+   "version": "2015 / SBLGNT",
+   "author": "Алексей Винокуров (русские слова подстрочника, 2015); греческий текст — SBLGNT (Society of Biblical Literature, Logos Bible Software), Westcott — Hort 1881, Robinson — Pierpont 2018",
+   "source": "https://azbyka.ru/biblia/podstrochnik",
+   "license": "Русские слова А. Винокурова — с разрешения автора, для бесплатного некоммерческого приложения; греческий текст — SBLGNT, CC BY 4.0 (Society of Biblical Literature, Logos Bible Software; разметка Стронга — STEPBible.org, Tyndale House Cambridge, CC BY 4.0), Westcott — Hort 1881 и Robinson — Pierpont 2018 — Public Domain",
+   "features": {
+    "strongs": true,
+    "interlinear": true
+   },
+   "versification": "synodal",
+   "url": "vin-interlinear.json",
+   "urlGz": "vin-interlinear.json.gz",
+   "size": 4362932,
+   "sizeGz": 928559,
+   "added": "2026-10-19"
   },
   {
    "id": "bible-places",
