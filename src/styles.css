@@ -821,6 +821,7 @@ mark.diff { background: color-mix(in srgb, #f2a65a 38%, transparent); border-rad
 .hint-pop { position: fixed; z-index: 70; padding: 10px 12px; border-radius: calc(var(--radius) * .8); background: var(--bar); color: var(--bar-text); font-family: var(--font-ui); font-size: .84rem; font-weight: 400; line-height: 1.45; text-transform: none; letter-spacing: 0; box-shadow: 0 10px 30px rgba(0,0,0,.25); animation: pop .14s ease-out; }
 .hint-pop::before { content: ""; position: absolute; left: calc(var(--arrow) - 7px); width: 14px; height: 14px; background: inherit; transform: rotate(45deg); border-radius: 2px; }
 .hint-pop.below::before { top: -5px; }
+.hint-pop { white-space: pre-line; } /* абзацы в пояснении — через пустую строку */
 .hint-pop.above::before { bottom: -5px; }
 
 /* Верхняя панель — цвета темы (у светлых тем светлая, с тонкой линией снизу): «таблетка» перевода, круглые кнопки */
@@ -1474,7 +1475,7 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .ring-label { position: relative; display: flex; flex-direction: column; align-items: center; line-height: 1.05; font-size: .78rem; font-weight: 700; }
 .ring-label b { font-size: 1.15rem; }
 .ring-label small { font-weight: 500; color: var(--muted); font-size: .68rem; }
-.read-hero { display: flex; flex-direction: column; gap: 14px; padding: 16px; margin-bottom: 14px; border-radius: calc(var(--radius) + 6px); background: color-mix(in srgb, var(--text) 4%, var(--panel)); border: 1px solid var(--line); } /* чистая нейтральная подложка */
+.read-hero { display: flex; flex-direction: column; gap: 14px; padding: 16px; border-radius: calc(var(--radius) + 6px); background: color-mix(in srgb, var(--text) 4%, var(--panel)); border: 1px solid var(--line); } /* чистая нейтральная подложка */
 .hero-top { display: flex; align-items: center; gap: 16px; }
 .hero-nums { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .hero-streak { display: inline-flex; align-items: center; gap: 6px; font-size: 1rem; color: var(--muted); }
@@ -1490,10 +1491,32 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .read-hero .chips { margin: 0; }
 .plan-head-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .plan-banner { height: 84px; margin: -12px -14px 4px -14px; border-radius: var(--radius) var(--radius) 0 0; background: center/cover no-repeat; }
-.plan-card { overflow: hidden; flex: none; margin-bottom: 12px; scroll-margin-top: 12px; }
+/* Карточка начатого плана: обложка с названием и прогрессом поверх, тонкая полоса прогресса, ниже — день,
+   отрывки и кнопки «Читать» и «Отметить» рядом */
+.plan-card { padding: 0; gap: 0; }
+.plan-card .plan-banner { position: relative; height: 104px; margin: 0; border-radius: 0; background-color: color-mix(in srgb, var(--cv, var(--accent)) 30%, transparent); }
+.plan-card .plan-banner::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 25%, rgba(0,0,0,.65)); }
+.plan-banner-text { position: absolute; z-index: 1; left: 14px; right: 52px; bottom: 10px; display: flex; flex-direction: column; gap: 2px; color: #fff; }
+.plan-banner-text .plan-name { font-size: 1.06rem; font-weight: 800; line-height: 1.2; text-shadow: 0 1px 4px rgba(0,0,0,.4); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.plan-banner-text .plan-meta { flex: none; color: rgba(255,255,255,.9); font-size: .82rem; font-weight: 600; }
+.plan-del { position: absolute; z-index: 1; top: 8px; right: 8px; background: color-mix(in srgb, var(--panel) 88%, transparent) !important; border-radius: 999px; }
+.plan-progress { height: 4px; background: linear-gradient(90deg, var(--cv, var(--accent)) var(--pct), color-mix(in srgb, var(--muted) 16%, transparent) var(--pct)); }
+.plan-body { display: flex; flex-direction: column; gap: 10px; padding: 10px 12px 14px; }
+.plan-card .plan-day-label { font-size: .95rem; font-weight: 700; }
+.plan-card .plan-day-label small { font-size: .8rem; }
+.plan-day-label small.ok { color: var(--ok); }
+.plan-parts { justify-content: center; }
+.plan-actions { display: flex; gap: 8px; margin-top: 2px; }
+.plan-actions .plan-read { flex: 1; min-width: 0; }
+.plan-actions .plan-mark { flex: none; gap: 6px; }
+.plan-card { overflow: hidden; flex: none; scroll-margin-top: 12px; } /* промежуток между блоками — общий, 12 */
 .read-hero, .plan-grid, .plan-detail { flex: none; }
-.plan-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-.plan-tile { position: relative; display: block; aspect-ratio: 4 / 5; padding: 0; border: 0; border-radius: 18px; overflow: hidden; cursor: pointer; background: linear-gradient(135deg, var(--cv), var(--cv2)); color: #fff; text-align: left; font: inherit; box-shadow: 0 6px 16px rgba(0,0,0,.14); transition: transform .15s; }
+.plan-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+/* план, оставшийся в последнем ряду один, — на оба столбца той же высоты */
+.plan-grid { container-type: inline-size; }
+.plan-grid > .plan-tile:last-child:nth-child(odd) { grid-column: 1 / -1; aspect-ratio: 16 / 5; }
+@supports (height: 1cqw) { .plan-grid > .plan-tile:last-child:nth-child(odd) { aspect-ratio: auto; height: calc((100cqw - 12px) / 3.2); } }
+.plan-tile { position: relative; display: block; aspect-ratio: 8 / 5; /* невысокая, как во Flutter */ padding: 0; border: 0; border-radius: 18px; overflow: hidden; cursor: pointer; background: linear-gradient(135deg, var(--cv), var(--cv2)); color: #fff; text-align: left; font: inherit; box-shadow: 0 6px 16px rgba(0,0,0,.14); transition: transform .15s; }
 .plan-tile:active { transform: scale(.98); }
 .plan-tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .plan-tile::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,.72)); }
@@ -2335,19 +2358,33 @@ html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px))
 .sermon-none { margin: 18px 0; text-align: center; color: var(--muted); }
 
 /* Напоминания о чтении: список — время или промежуток, повтор, дни недели; «+ Добавить напоминание» */
-.rem-list { display: flex; flex-direction: column; padding-bottom: 6px; }
-.rem-item { display: flex; flex-direction: column; gap: 8px; padding: 10px 0; border-top: 1px solid var(--line); }
-.rem-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.rem-line input[type='time'] { width: auto; min-height: 40px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--text); font: inherit; font-size: 1rem; }
-.rem-dash { color: var(--muted); }
-.rem-del { margin-left: auto; }
-.rem-repeat { width: auto; min-height: 34px; padding: 4px 28px 4px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--text); font: inherit; font-size: .9rem; }
-.rem-days { display: flex; justify-content: space-between; gap: 4px; width: 100%; }
-.rem-days button { width: 36px; height: 36px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: none; color: var(--muted); font: 600 .78rem/1 var(--font-ui); text-transform: uppercase; cursor: pointer; transition: background .2s, color .2s, border-color .2s; }
-.rem-days button.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
-.rem-add { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; margin-top: 2px; border: 1px dashed var(--line); border-radius: 12px; background: none; color: var(--accent); font: 600 .92rem var(--font-ui); cursor: pointer; }
-
+/* Напоминания — как будильник iPhone: каждое — карточка, время крупно (нажатие — колёсики в карточке),
+   «Повтор» строкой с выбором справа, дни недели — «Пн Вт Ср…» таблетками */
+.rem-list { display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; }
+.rem-item { display: flex; flex-direction: column; gap: 10px; padding: 10px 12px 12px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); }
+.rem-head { display: flex; align-items: center; gap: 6px; }
+.rem-time { border: 0; background: none; padding: 0 2px; margin: 0; font: 400 2rem/1.15 var(--font-ui); letter-spacing: -.01em; font-variant-numeric: tabular-nums; color: var(--text); border-radius: 8px; cursor: pointer; transition: color .16s; }
+.rem-time.on { color: var(--accent); }
+@media (hover: hover) { .rem-time:hover { color: var(--accent); } }
+.rem-dash { color: var(--muted); font-size: 1.5rem; }
+.rem-del { margin-left: auto; align-self: flex-start; }
+.rem-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 36px; padding-top: 8px; border-top: 1px solid var(--line); font-size: .95rem; }
+.rem-select { position: relative; display: inline-flex; align-items: center; color: var(--muted); }
+.rem-select select { appearance: none; -webkit-appearance: none; border: 0; background: none; padding: 4px 22px 4px 4px; color: var(--muted); font: inherit; text-align: right; cursor: pointer; }
+.rem-select svg { position: absolute; right: 0; pointer-events: none; }
+.rem-days { display: flex; gap: 5px; width: 100%; }
+.rem-days button { flex: 1 1 0; min-width: 0; height: 34px; padding: 0; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 6%, transparent); color: var(--muted); font: 600 .8rem/1 var(--font-ui); cursor: pointer; transition: background-color .16s, color .16s; overflow: hidden; }
+.rem-days button.on { background: color-mix(in srgb, var(--accent) 15%, var(--panel)); color: var(--accent); font-weight: 700; }
+.rem-add { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; min-height: 40px; padding: 0 4px; border: 0; background: none; color: var(--accent); font: 600 .95rem var(--font-ui); cursor: pointer; }
+/* колёсики времени: полоса выбора посередине, строки к краям тают */
+.tw { position: relative; display: flex; justify-content: center; align-items: center; gap: 4px; height: 180px; }
+.tw::before { content: ''; position: absolute; left: 0; right: 0; top: 72px; height: 36px; border-radius: 10px; background: color-mix(in srgb, var(--text) 7%, transparent); pointer-events: none; }
+.tw-col { position: relative; width: 76px; height: 180px; overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none; overscroll-behavior: contain; -webkit-mask-image: linear-gradient(transparent, #000 38%, #000 62%, transparent); mask-image: linear-gradient(transparent, #000 38%, #000 62%, transparent); outline: none; }
+.tw-col::-webkit-scrollbar { display: none; }
+.tw-pad { height: 72px; }
+.tw-item { height: 36px; display: grid; place-items: center; scroll-snap-align: center; font: 400 1.4rem/1 var(--font-ui); font-variant-numeric: tabular-nums; color: var(--text); cursor: pointer; user-select: none; }
+.tw-colon { position: relative; font: 500 1.4rem/1 var(--font-ui); color: var(--text); }
+.tw-col:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); border-radius: 10px; }
 .rem-exact { display: flex; align-items: center; gap: 10px; margin: 2px 0 8px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--accent) 12%, var(--panel)); }
 .rem-exact p { flex: 1; margin: 0; font-size: .9rem; line-height: 1.4; }
 .rem-exact .btn { flex: none; }
-.rem-tip { margin: 0 0 6px; font-size: .82rem; line-height: 1.4; color: var(--muted); }

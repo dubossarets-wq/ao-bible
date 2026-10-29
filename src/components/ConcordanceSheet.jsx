@@ -30,24 +30,43 @@ function Verse({ raw, num }) {
 export function StrongPlaces({ num, filter, onOpen }) {
   const [st, setSt] = useState(null);
   const [word, setWord] = useState(null); // выбранный вариант перевода
+  const [book, setBook] = useState(null); // выбранная книга (её главы — только после выбора книги)
+  const [chapter, setChapter] = useState(null);
   const [shown, setShown] = useState(PAGE);
   const [texts, setTexts] = useState({});
 
   useEffect(() => {
     setSt(null);
     setWord(null);
+    setBook(null);
+    setChapter(null);
     setShown(PAGE);
     strongStats(num).then((r) => setSt(r || { total: 0, refs: [], renderings: [] }));
   }, [num]);
 
   const all = useMemo(() => (st ? st.refs.filter((r) => !filter || filter(r)) : []), [st, filter]);
-  const list = useMemo(() => all.filter((r) => !word || r.words.includes(word)), [all, word]);
+  // книги, где слово встречается (по порядку Библии), и главы выбранной книги — со счётом стихов
+  const books = useMemo(() => {
+    const m = new Map();
+    for (const r of all) m.set(r.book, (m.get(r.book) || 0) + 1);
+    const short = new Map((st?.byBook || []).map((b) => [b.book, b.short.replace(/\.$/, '')]));
+    return [...m.entries()].map(([b, n]) => ({ book: b, n, name: short.get(b) || b }));
+  }, [all, st]);
+  const chapters = useMemo(() => {
+    if (!book) return [];
+    const m = new Map();
+    for (const r of all) if (r.book === book) m.set(r.chapter, (m.get(r.chapter) || 0) + 1);
+    return [...m.entries()].sort((a, b) => a[0] - b[0]);
+  }, [all, book]);
+  const inPlace = useMemo(() => all.filter((r) => (!book || r.book === book) && (!chapter || r.chapter === chapter)), [all, book, chapter]);
+  const list = useMemo(() => inPlace.filter((r) => !word || r.words.includes(word)), [inPlace, word]);
   const page = list.slice(0, shown);
   const renderings = useMemo(() => {
     const m = new Map();
-    for (const r of all) for (const w of new Set(r.words)) m.set(w, (m.get(w) || 0) + 1);
+    for (const r of inPlace) for (const w of new Set(r.words)) m.set(w, (m.get(w) || 0) + 1);
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
-  }, [all]);
+  }, [inPlace]);
+  const pickBook = (b) => (setBook(b), setChapter(null), setWord(null), setShown(PAGE));
 
   // Тексты стихов подгружаем только для показанных мест
   useEffect(() => {
@@ -71,9 +90,34 @@ export function StrongPlaces({ num, filter, onOpen }) {
   if (!all.length) return <p className="muted">{t('В этой части Библии мест нет.')}</p>;
   return (
     <>
+      {/* книги, где встречается; после выбора книги — её главы */}
+      {books.length > 1 && (
+        <div className="chips filter-chips" role="group" aria-label={t('Книги')}>
+          <button className={`chip ${!book ? 'on' : ''}`} aria-pressed={!book} onClick={() => pickBook(null)}>
+            {t('Все книги')} <span className="tab-n">{all.length}</span>
+          </button>
+          {books.map((b) => (
+            <button key={b.book} className={`chip ${book === b.book ? 'on' : ''}`} aria-pressed={book === b.book} onClick={() => pickBook(book === b.book ? null : b.book)}>
+              {b.name} <span className="tab-n">{b.n}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {book && chapters.length > 1 && (
+        <div className="chips filter-chips" role="group" aria-label={t('Главы')}>
+          <button className={`chip ${!chapter ? 'on' : ''}`} aria-pressed={!chapter} onClick={() => (setChapter(null), setWord(null), setShown(PAGE))}>
+            {t('Все главы')} <span className="tab-n">{books.find((b) => b.book === book)?.n}</span>
+          </button>
+          {chapters.map(([c, n]) => (
+            <button key={c} className={`chip ${chapter === c ? 'on' : ''}`} aria-pressed={chapter === c} onClick={() => (setChapter(chapter === c ? null : c), setWord(null), setShown(PAGE))}>
+              {t('Гл. {n}', { n: c })} <span className="tab-n">{n}</span>
+            </button>
+          ))}
+        </div>
+      )}
       <div className="chips filter-chips" role="group" aria-label={t('Как переведено')}>
         <button className={`chip ${!word ? 'on' : ''}`} aria-pressed={!word} onClick={() => (setWord(null), setShown(PAGE))}>
-          {t('Все')} <span className="tab-n">{all.length}</span>
+          {t('Все')} <span className="tab-n">{inPlace.length}</span>
         </button>
         {renderings.slice(0, 14).map(([w, n]) => (
           <button key={w} className={`chip ${word === w ? 'on' : ''}`} aria-pressed={word === w} onClick={() => (setWord(w), setShown(PAGE))}>

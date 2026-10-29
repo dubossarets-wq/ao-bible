@@ -226,6 +226,10 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
   useEffect(() => {
     // Из подстрочника по оригиналу слово оригинала известно сразу
     if (payload.origWord) return void setOrig({ orig: payload.origWord.text, origMorph: payload.origWord.morph, num: payload.origWord.num });
+    // Нажали слово греческого или еврейского текста (LXX, Textus Receptus…): оно само и есть слово стиха —
+    // в статье видно, что εἶπεν — форма словарного ἔπω
+    const sn = token.strongs?.[0];
+    if (sn && /[Ͱ-Ͽἀ-῿֐-׿]/.test(token.text || '')) return void setOrig({ orig: token.text.replace(/[.,;:·!?»«“”()\[\]]+$/u, ''), origMorph: token.morph?.[0], num: sn.replace(/^([HG])0*/i, (m, l) => l.toUpperCase()) });
     if (payload.wi == null || !ref) return;
     ruInterlinear(ref)
       .then((ws) => ws?.[payload.wi]?.orig && setOrig(ws[payload.wi]))

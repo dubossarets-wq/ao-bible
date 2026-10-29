@@ -1,7 +1,7 @@
 // Планы чтения: активные планы с прогрессом и кнопкой «Читать» (весь день одной страницей),
 // учёт прочитанного, начало нового плана, свой план
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { BookOpen, Scroll, ListChecks, Play, Check, ChevronLeft, ChevronRight, Loader2, Plus, Trash2, Flame, Library, CalendarDays, Sunrise, Music, Feather, Sparkles, CalendarPlus, Minus, X } from 'lucide-react';
+import { BookOpen, Scroll, ListChecks, Play, Check, ChevronLeft, ChevronRight, Loader2, Plus, Trash2, Flame, Music, Sparkles, CalendarPlus, Minus, X, ChevronDown } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
 import { usePlans } from '../core/planStore.js';
@@ -9,6 +9,8 @@ import { readStats } from '../core/readLog.js';
 import { bookMeta, BOOKS } from '../core/books.js';
 import { fetchPlanIndex, fetchPlan, makeCustomPlan, makeParallelPlan, chapterList, streamList, firstDayText, CYCLIC, SCOPES, STREAMS, parseReading, planToday, behindDays, readingDone, localDate } from '../core/plans.js';
 import { ConfirmButton, Hint, Switch, Segmented, Reveal } from './ui.jsx';
+import TimeWheel from './TimeWheel.jsx';
+import { weekdayShort } from '../core/weekdays.js';
 import { usePersistentState } from '../core/storage.js';
 import { REMINDERS, REPEATS, getReminder, setReminder, newReminder, exactAllowed, askExact, scheduleReminders } from '../core/reminders.js';
 import VerseOfDayCard from './VerseOfDayCard.jsx';
@@ -32,13 +34,6 @@ function Ring({ value, size = 64, stroke = 7, children }) {
 
 // Обложки планов: фотография (свободные снимки из фонов для картинок со стихом), значок и цвет;
 // свой план и неизвестные — по умолчанию
-const LOOK = {
-  mcheyne: [Library, 'c1', '10'],
-  'bible-year': [CalendarDays, 'c2', '06'],
-  'nt-90': [Sunrise, 'c3', '01'],
-  'ps-prov-31': [Music, 'c4', '07'],
-  'gospels-30': [Feather, 'c5', '02'],
-};
 // Свои значки в манере lucide (сетка 24, линия 2). Новый Завет — книга с крестом (рядом со свитком Ветхого Завета);
 // Евангелия — латинский крест: жизнь, смерть и воскресение Христа
 const lineIcon = (paths) => {
@@ -54,6 +49,14 @@ const lineIcon = (paths) => {
 const BookCross = lineIcon(['M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20', 'M12 6v7', 'M9.5 8.5h5']);
 const LatinCross = lineIcon(['M10 2h4v5h5v4h-5v11h-4V11H5V7h5Z']); // контуром — с объёмом, как соседние значки
 const SCOPE_ICONS = { all: BookOpen, ot: Scroll, nt: BookCross, gospels: LatinCross, ps: Music, own: ListChecks };
+// Обложки планов: значок (тот же, что у раздела в «Своём плане» — что читаем), цвет и фото
+const LOOK = {
+  mcheyne: [BookOpen, 'c1', '10'],
+  'bible-year': [BookOpen, 'c2', '06'],
+  'nt-90': [BookCross, 'c3', '01'],
+  'ps-prov-31': [Music, 'c4', '07'],
+  'gospels-30': [LatinCross, 'c5', '02'],
+};
 const look = (id) => LOOK[id] || [Sparkles, 'c6', '08'];
 const coverUrl = (id) => `images/verse-bg/${look(id)[2]}.jpg`;
 
@@ -84,56 +87,63 @@ function ActivePlan({ plan, onChange, onRemove, read }) {
     onChange({ ...plan, done: next, parts });
   };
   return (
-    <div className={`plan-card cover-${look(plan.planId)[1]}`}>
-      <div className="plan-banner" style={{ backgroundImage: `url(${coverUrl(plan.planId)})` }} aria-hidden="true" />
-      <div className="plan-head">
-        <Ring value={doneCount / days} size={48} stroke={5}>
-          {Math.round((doneCount / days) * 100)}%
-        </Ring>
-        <span className="plan-head-text">
+    // обложка-фото с названием и прогрессом поверх, под ней тонкая полоса прогресса; ниже — день со стрелками,
+    // отрывки дня и две кнопки рядом: «Читать» (главная) и «Отметить»
+    <div className={`plan-card cover-${look(plan.planId)[1]}`} style={{ '--pct': `${Math.round((doneCount / days) * 100)}%` }}>
+      <div className="plan-banner" style={{ backgroundImage: `url(${coverUrl(plan.planId)})` }}>
+        <span className="plan-banner-text">
           <span className="plan-name">{t(plan.name)}</span>
-          <span className="plan-meta">{t('{done} из {total} дн.', { done: doneCount, total: days })}</span>
+          <span className="plan-meta">
+            {t('{done} из {total} дн.', { done: doneCount, total: days })} · {Math.round((doneCount / days) * 100)}%
+          </span>
         </span>
-        <ConfirmButton className="icon-btn subtle" confirmText={t('Удалить')} onConfirm={onRemove} aria-label={t('Удалить план')}>
+        <ConfirmButton className="icon-btn subtle plan-del" confirmText={t('Удалить')} onConfirm={onRemove} aria-label={t('Удалить план')}>
           <Trash2 size={15} />
         </ConfirmButton>
       </div>
-      {behind.length > 0 && (
-        <div className="plan-behind">
-          {t('Пропущено дней: {n}', { n: behind.length })}
-          {day !== behind[0] && (
-            <button className="link-btn" onClick={() => setDay(behind[0])}>
-              {t('к первому пропущенному')}
-            </button>
-          )}
-        </div>
-      )}
-      <div className="plan-day">
-        <button className="icon-btn subtle" onClick={() => setDay((d) => Math.max(0, d - 1))} disabled={day === 0} aria-label={t('Предыдущий день')}>
-          <ChevronLeft size={18} />
-        </button>
-        <span className="plan-day-label">
-          {t('День {n}', { n: day + 1 })}
-          {day === today ? ` · ${t('сегодня')}` : ''}
-          <small>{dayDone ? t('прочитано') : t('{done} из {total} отрывков', { done: partDone, total: rs.length })}</small>
-        </span>
-        <button className="icon-btn subtle" onClick={() => setDay((d) => Math.min(days - 1, d + 1))} disabled={day === days - 1} aria-label={t('Следующий день')}>
-          <ChevronRight size={18} />
-        </button>
-        <button className={`btn small ${dayDone ? 'primary' : ''}`} onClick={() => toggle(day)} title={dayDone ? t('Снять отметку дня') : t('Отметить весь день прочитанным')}>
-          <Check size={14} /> {dayDone ? t('Прочитано') : t('Отметить')}
-        </button>
-      </div>
-      <div className="chips">
-        {rs.map((r, i) => (
-          <button key={r + i} className={`chip ${flags[i] ? 'done' : ''}`} onClick={() => read(plan, day, i)}>
-            {flags[i] && <Check size={12} />} {parseReading(r).label}
+      <div className="plan-progress" aria-hidden="true" />
+      <div className="plan-body">
+        {behind.length > 0 && (
+          <div className="plan-behind">
+            {t('Пропущено дней: {n}', { n: behind.length })}
+            {day !== behind[0] && (
+              <button className="link-btn" onClick={() => setDay(behind[0])}>
+                {t('к первому пропущенному')}
+              </button>
+            )}
+          </div>
+        )}
+        {/* день: стрелки по краям, посередине — какой день и сколько отрывков прочитано */}
+        <div className="plan-day">
+          <button className="icon-btn subtle" onClick={() => setDay((d) => Math.max(0, d - 1))} disabled={day === 0} aria-label={t('Предыдущий день')}>
+            <ChevronLeft size={18} />
           </button>
-        ))}
+          <span className="plan-day-label">
+            {t('День {n}', { n: day + 1 })}
+            {day === today ? ` · ${t('сегодня')}` : ''}
+            <small className={dayDone ? 'ok' : ''}>{dayDone ? t('прочитано') : t('{done} из {total} отрывков', { done: partDone, total: rs.length })}</small>
+          </span>
+          <button className="icon-btn subtle" onClick={() => setDay((d) => Math.min(days - 1, d + 1))} disabled={day === days - 1} aria-label={t('Следующий день')}>
+            <ChevronRight size={18} />
+          </button>
+        </div>
+        {/* отрывки дня: прочитанные — с галочкой; нажатие — читать с этого отрывка */}
+        <div className="chips plan-parts">
+          {rs.map((r, i) => (
+            <button key={r + i} className={`chip ${flags[i] ? 'done' : ''}`} onClick={() => read(plan, day, i)}>
+              {flags[i] && <Check size={12} />} {parseReading(r).label}
+            </button>
+          ))}
+        </div>
+        <div className="plan-actions">
+          <button className={`btn ${dayDone ? '' : 'primary'} plan-read`} onClick={() => read(plan, day, dayDone || firstLeft < 0 ? 0 : firstLeft)}>
+            <BookOpen size={17} /> {dayDone ? t('Перечитать') : partDone ? t('Продолжить чтение') : t('Читать')}
+          </button>
+          <button className={`btn ${dayDone ? 'primary' : ''} plan-mark`} onClick={() => toggle(day)} title={dayDone ? t('Снять отметку дня') : t('Отметить весь день прочитанным')}>
+            <Check size={16} /> {dayDone ? t('Прочитано') : t('Отметить')}
+          </button>
+        </div>
       </div>
-      <button className={`btn ${dayDone ? '' : 'primary'} plan-read`} onClick={() => read(plan, day, dayDone || firstLeft < 0 ? 0 : firstLeft)}>
-        <BookOpen size={17} /> {dayDone ? t('Перечитать') : partDone ? t('Продолжить чтение') : t('Читать')}
-      </button>
     </div>
   );
 }
@@ -289,11 +299,20 @@ function ReminderCard() {
     const nh = Math.min(23, (h || 0) + (last ? 1 : 0));
     apply({ list: [...r.list, newReminder(`${String(nh).padStart(2, '0')}:${String(m || 0).padStart(2, '0')}`)] });
   };
-  // понедельник … воскресенье на языке приложения: 2024-01-01 — понедельник
-  const wd = (i) => new Date(2024, 0, i).toLocaleDateString(locale(), { weekday: 'narrow' });
+  // открытые колёсики времени: «id:time» или «id:until» (одни на всё окно)
+  const [wheel, setWheel] = useState(null);
   return (
     <section className="reminder-card" aria-label={t('Напоминание о чтении')}>
-      <Switch id="plan-reminder" checked={r.on} onChange={(on) => apply({ on })} label={t('Напоминать о чтении')} hint={t('Уведомление с отрывками на сегодня — сколько угодно напоминаний, в любое время или промежутком')} />
+      <Switch
+        id="plan-reminder"
+        checked={r.on}
+        onChange={(on) => apply({ on })}
+        label={t('Напоминать о чтении')}
+        // «Не приходят уведомления?» — тоже в подсказке за «!», а не текстом в блоке
+        hint={`${t('Уведомление с отрывками на сегодня — сколько угодно напоминаний, в любое время или промежутком')}
+
+${t('Не приходят уведомления?')} ${t('На Xiaomi, Huawei и других телефонах разрешите приложению автозапуск и работу в фоне без ограничений.')}`}
+      />
       <Reveal open={r.on}>
         {!exact && (
           <div className="rem-exact">
@@ -303,33 +322,50 @@ function ReminderCard() {
             </button>
           </div>
         )}
-        <p className="rem-tip">{t('Не приходят уведомления? На Xiaomi, Huawei и других телефонах разрешите приложению автозапуск и работу в фоне без ограничений.')}</p>
         <div className="rem-list">
-          {r.list.map((x) => (
-            <div key={x.id} className="rem-item">
-              <div className="rem-line">
-                <input type="time" value={x.time} aria-label={x.every ? t('С') : t('Время')} onChange={(e) => e.target.value && setItem(x.id, { time: e.target.value })} />
-                {/* промежуток: «с 8:00 до 20:00 каждые 2 ч» */}
-                {x.every > 0 && (
-                  <>
-                    <span className="rem-dash">–</span>
-                    <input type="time" value={x.until} aria-label={t('До')} onChange={(e) => e.target.value && setItem(x.id, { until: e.target.value })} />
-                  </>
-                )}
-                {r.list.length > 1 && (
-                  <button type="button" className="icon-btn subtle rem-del" onClick={() => apply({ list: r.list.filter((y) => y.id !== x.id) })} aria-label={t('Удалить напоминание')} title={t('Удалить напоминание')}>
-                    <X size={17} />
-                  </button>
-                )}
-              </div>
-              <div className="rem-line">
-                <select className="rem-repeat" value={x.every || 0} onChange={(e) => setItem(x.id, { every: +e.target.value })} aria-label={t('Повтор')}>
-                  {REPEATS.map((n) => (
-                    <option key={n} value={n}>
-                      {repeatLabel(n)}
-                    </option>
-                  ))}
-                </select>
+          {r.list.map((x) => {
+            const toggle = (k) => setWheel((w) => (w === `${x.id}:${k}` ? null : `${x.id}:${k}`));
+            const timeBtn = (k, label) => (
+              <button type="button" className={`rem-time${wheel === `${x.id}:${k}` ? ' on' : ''}`} onClick={() => toggle(k)} aria-label={label} aria-expanded={wheel === `${x.id}:${k}`}>
+                {x[k]}
+              </button>
+            );
+            return (
+              <div key={x.id} className="rem-item">
+                {/* время крупно, как в будильнике iPhone; нажатие — колёсики прямо в карточке */}
+                <div className="rem-head">
+                  {timeBtn('time', x.every ? t('С') : t('Время'))}
+                  {/* промежуток: «с 8:00 до 20:00 каждые 2 ч» */}
+                  {x.every > 0 && (
+                    <>
+                      <span className="rem-dash">–</span>
+                      {timeBtn('until', t('До'))}
+                    </>
+                  )}
+                  {r.list.length > 1 && (
+                    <button type="button" className="icon-btn subtle rem-del" onClick={() => apply({ list: r.list.filter((y) => y.id !== x.id) })} aria-label={t('Удалить напоминание')} title={t('Удалить напоминание')}>
+                      <X size={17} />
+                    </button>
+                  )}
+                </div>
+                {['time', 'until'].map((k) => (
+                  <Reveal key={k} open={wheel === `${x.id}:${k}`}>
+                    <TimeWheel value={x[k] || '20:00'} onChange={(v) => setItem(x.id, { [k]: v })} />
+                  </Reveal>
+                ))}
+                <label className="rem-row">
+                  <span>{t('Повтор')}</span>
+                  <span className="rem-select">
+                    <select value={x.every || 0} onChange={(e) => setItem(x.id, { every: +e.target.value })}>
+                      {REPEATS.map((n) => (
+                        <option key={n} value={n}>
+                          {repeatLabel(n)}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown size={16} aria-hidden="true" />
+                  </span>
+                </label>
                 {/* дни недели: ничего не выбрано — каждый день */}
                 <div className="rem-days" role="group" aria-label={t('Дни недели')}>
                   {[1, 2, 3, 4, 5, 6, 7].map((d) => {
@@ -346,16 +382,16 @@ function ReminderCard() {
                           if (days.length) setItem(x.id, { days: days.length === 7 ? [] : days });
                         }}
                       >
-                        {wd(d)}
+                        {weekdayShort(d)}
                       </button>
                     );
                   })}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           <button type="button" className="rem-add" onClick={add}>
-            <Plus size={16} /> {t('Добавить напоминание')}
+            <Plus size={17} /> {t('Добавить напоминание')}
           </button>
         </div>
       </Reveal>
