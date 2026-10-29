@@ -13,7 +13,7 @@ const KINDS = [
   ['full', 'Вся Библия', (b) => has(b, (m) => m.t === 'OT' && !m.dc) && has(b, (m) => m.t === 'NT')],
   ['ot', 'Ветхий Завет', (b) => has(b, (m) => m.t === 'OT' && !m.dc)],
   ['nt', 'Новый Завет', (b) => has(b, (m) => m.t === 'NT')],
-  ['dc', 'Неканонические', (b) => has(b, (m) => m.dc || m.t === 'AP')],
+  ['dc', 'Неканон', (b) => has(b, (m) => m.dc || m.t === 'AP')],
   ['strongs', 'С номерами Стронга', (b) => !!b.features?.strongs],
   ['il', 'Подстрочник', (b) => !!b.features?.interlinear],
 ];
