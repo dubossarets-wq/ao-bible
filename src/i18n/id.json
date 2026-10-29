@@ -1387,5 +1387,19 @@
  "За срок": "Dalam jangka waktu",
  "Разделы": "Bagian",
  "Отсюда": "Dari sini",
- "Синайский кодекс": "Kodeks Sinaiticus"
+ "Синайский кодекс": "Kodeks Sinaiticus",
+ "В Синодальном переводе": "Dalam terjemahan Sinodal",
+ "употребление|употребления|употреблений": {
+  "one": "kemunculan",
+  "other": "kemunculan"
+ },
+ "стих|стиха|стихов": {
+  "one": "ayat",
+  "other": "ayat"
+ },
+ "книга|книги|книг": {
+  "one": "kitab",
+  "other": "kitab"
+ },
+ "Ещё {n}": "{n} lagi"
 }

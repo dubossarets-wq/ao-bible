@@ -1396,5 +1396,19 @@
  "За срок": "Für einen Zeitraum",
  "Разделы": "Abschnitte",
  "Отсюда": "Ab hier",
- "Синайский кодекс": "Codex Sinaiticus"
+ "Синайский кодекс": "Codex Sinaiticus",
+ "В Синодальном переводе": "In der Synodalübersetzung",
+ "употребление|употребления|употреблений": {
+  "one": "Vorkommen",
+  "other": "Vorkommen"
+ },
+ "стих|стиха|стихов": {
+  "one": "Vers",
+  "other": "Verse"
+ },
+ "книга|книги|книг": {
+  "one": "Buch",
+  "other": "Bücher"
+ },
+ "Ещё {n}": "{n} weitere"
 }

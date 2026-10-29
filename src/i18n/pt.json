@@ -1402,5 +1402,19 @@
  "За срок": "Por prazo",
  "Разделы": "Seções",
  "Отсюда": "Daqui",
- "Синайский кодекс": "Códice Sinaítico"
+ "Синайский кодекс": "Códice Sinaítico",
+ "В Синодальном переводе": "Na tradução sinodal",
+ "употребление|употребления|употреблений": {
+  "one": "ocorrência",
+  "other": "ocorrências"
+ },
+ "стих|стиха|стихов": {
+  "one": "versículo",
+  "other": "versículos"
+ },
+ "книга|книги|книг": {
+  "one": "livro",
+  "other": "livros"
+ },
+ "Ещё {n}": "Mais {n}"
 }

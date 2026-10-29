@@ -53,6 +53,23 @@ function SayButton({ num, verseRef }) {
   );
 }
 
+// Статья толкового словаря (Дворецкий) — длинная, с цитатами: сначала несколько строк, по нажатию — целиком
+function LexSection({ name, text }) {
+  const [open, setOpen] = useState(false);
+  const long = text.length > 420;
+  return (
+    <section className="lex-sec">
+      <h4>{name}</h4>
+      <p className={`prewrap${long && !open ? ' clamp' : ''}`}>{text}</p>
+      {long && (
+        <button className="link-inline se-more" onClick={() => setOpen(!open)}>
+          {open ? t('Свернуть') : t('Развернуть')}
+        </button>
+      )}
+    </section>
+  );
+}
+
 function StrongEntry({ num, entry, module, mapping, orig, verseRef, onOpenStrong, onOpenRef, onOpenAll }) {
   const isHeb = num.startsWith('H');
   // толковый словарь (Дворецкий) — разделом в статье Стронга; в симфонии — не повторяем
@@ -70,71 +87,56 @@ function StrongEntry({ num, entry, module, mapping, orig, verseRef, onOpenStrong
     };
   }, [num, module.id, entry]);
   const renderings = entry.renderings || sym?.entry.renderings;
-  const count = entry.renderings ? entry.count : sym?.entry.count;
+  // вариантов перевода бывает за двадцать — сначала самые частые, остальные по кнопке
+  const [allR, setAllR] = useState(false);
   // orig — это слово в оригинале стиха (из подстрочника): точная форма с лицом, числом и падежом
   const exact = orig && orig.num === num.replace(/^([HG])0*/, '$1') ? orig : null;
   const morph = exact ? [] : mapping?.mode === 'exact' ? mapping.morph : [];
+  const lang = isHeb ? 'hebrew' : 'greek';
   return (
-    <article className="entry">
-      {entry.lemma && (
-        // Кнопка «послушать» — перед словом по направлению письма: у еврейского (справа налево) — слева, у греческого — справа
-        <div className={`orig-row ${isHeb ? 'rtl' : 'ltr'}`}>
-          {isHeb && <SayButton num={num} verseRef={verseRef} />}
-          <div className={`orig ${isHeb ? 'hebrew' : 'greek'}`} lang={isHeb ? 'he' : 'grc'} dir={isHeb ? 'rtl' : 'ltr'}>
-            {entry.lemma}
-          </div>
-          {!isHeb && <SayButton num={num} verseRef={verseRef} />}
-        </div>
-      )}
-      <dl className="facts">
-        <div>
-          <dt>{t('Номер Стронга')}</dt>
-          <dd className="mono">{num}</dd>
-        </div>
-        {entry.xlit && (
-          <div>
-            <dt>{t('Транслитерация')}</dt>
-            <dd>{entry.xlit}</dd>
+    <article className="entry strong-entry">
+      {/* Шапка: слово оригинала крупно, под ним одной строкой — транслитерация, номер, язык; ниже — форма в этом стихе */}
+      <header className="se-hero">
+        {entry.lemma && (
+          // Кнопка «послушать» — перед словом по направлению письма: у еврейского (справа налево) — слева, у греческого — справа
+          <div className={`orig-row ${isHeb ? 'rtl' : 'ltr'}`}>
+            {isHeb && <SayButton num={num} verseRef={verseRef} />}
+            <div className={`orig ${lang}`} lang={isHeb ? 'he' : 'grc'} dir={isHeb ? 'rtl' : 'ltr'}>
+              {entry.lemma}
+            </div>
+            {!isHeb && <SayButton num={num} verseRef={verseRef} />}
           </div>
         )}
-        {entry.pron && (
-          <div>
-            <dt>{t('Произношение')}</dt>
-            <dd>{entry.pron}</dd>
-          </div>
-        )}
-        <div>
-          <dt>{t('Язык')}</dt>
-          <dd>{isHeb ? t('иврит / арамейский (ВЗ)') : t('греческий (НЗ)')}</dd>
+        <div className="se-meta">
+          {entry.xlit && <span className="se-xlit">{entry.xlit}</span>}
+          {entry.pron && entry.pron !== entry.xlit && <span>{entry.pron}</span>}
+          <span className="mono se-num">{num}</span>
+          <span>{isHeb ? t('иврит / арамейский (ВЗ)') : t('греческий (НЗ)')}</span>
         </div>
         {exact && (
-          <div>
-            <dt>{t('В этом стихе')}</dt>
-            <dd>
-              <span className={isHeb ? 'hebrew' : 'greek'} lang={isHeb ? 'he' : 'grc'} dir={isHeb ? 'rtl' : 'ltr'}>
+          <div className="se-here">
+            <span className="se-k">{t('В этом стихе')}</span>
+            <span>
+              <span className={lang} lang={isHeb ? 'he' : 'grc'} dir={isHeb ? 'rtl' : 'ltr'}>
                 {exact.orig}
               </span>
               {exact.origMorph && describeMorph(exact.origMorph).text ? ` — ${describeMorph(exact.origMorph).text}` : ''}
-            </dd>
+            </span>
           </div>
         )}
-        {morph.length > 0 &&
-          morph.map((m) => {
-            const d = describeMorph(m);
-            return (
-              <div key={m}>
-                <dt>{t('Грамматическая форма')}</dt>
-                <dd>
-                  {d.text || t('без расшифровки')} <span className="mono muted">({m})</span>
-                </dd>
-              </div>
-            );
-          })}
-      </dl>
+        {morph.map((m) => (
+          <div key={m} className="se-here">
+            <span className="se-k">{t('Грамматическая форма')}</span>
+            <span>
+              {describeMorph(m).text || t('без расшифровки')} <span className="mono muted">({m})</span>
+            </span>
+          </div>
+        ))}
+      </header>
       {entry.definition && (
         <section>
           <h4>{t('Значение')}</h4>
-          <p>
+          <p className="se-def">
             <StrongLinks text={entry.definition} onOpen={onOpenStrong} />
           </p>
         </section>
@@ -148,16 +150,13 @@ function StrongEntry({ num, entry, module, mapping, orig, verseRef, onOpenStrong
         </section>
       )}
       {lex.map(({ module: m, entry: e }) => (
-        <section key={m.id} className="lex-sec">
-          <h4>{m.name}</h4>
-          <p className="prewrap">{e.text}</p>
-        </section>
+        <LexSection key={m.id} name={m.name} text={e.text} />
       ))}
       {renderings && (
         <section>
-          <h4>{t('Как переведено в синодальном тексте · {n} употр.', { n: count })}</h4>
+          <h4>{t('В Синодальном переводе')}</h4>
           <ul className="renderings">
-            {renderings.map(([w, n]) => (
+            {(allR ? renderings : renderings.slice(0, 6)).map(([w, n]) => (
               <li key={w}>
                 <span className="r-word">{w}</span>
                 <span className="r-bar" style={{ '--w': `${Math.max(4, (n / renderings[0][1]) * 100)}%` }} />
@@ -165,6 +164,11 @@ function StrongEntry({ num, entry, module, mapping, orig, verseRef, onOpenStrong
               </li>
             ))}
           </ul>
+          {!allR && renderings.length > 6 && (
+            <button className="link-inline se-more" onClick={() => setAllR(true)}>
+              {t('Ещё {n}', { n: renderings.length - 6 })}
+            </button>
+          )}
         </section>
       )}
       {entry.text && (
@@ -271,16 +275,6 @@ export default function DictionaryBottomSheet({ pane, payload, onClose }) {
       )}
       {res && !top && (
         <div className="mapping">
-          {mapping.mode === 'exact' && (
-            <div className="map-line">
-              <span className="badge ok">{t('Точная привязка')}</span>
-              {mapping.strongs.map((s) => (
-                <span key={s} className="mono strong-chip">
-                  {s}
-                </span>
-              ))}
-            </div>
-          )}
           {mapping.mode === 'approx' && (
             <div className="warn">
               <AlertTriangle size={16} />

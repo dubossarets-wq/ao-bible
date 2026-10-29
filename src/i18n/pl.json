@@ -1414,5 +1414,25 @@
  "За срок": "Na okres",
  "Разделы": "Działy",
  "Отсюда": "Stąd",
- "Синайский кодекс": "Kodeks Synajski"
+ "Синайский кодекс": "Kodeks Synajski",
+ "В Синодальном переводе": "W przekładzie synodalnym",
+ "употребление|употребления|употреблений": {
+  "one": "wystąpienie",
+  "few": "wystąpienia",
+  "many": "wystąpień",
+  "other": "wystąpienia"
+ },
+ "стих|стиха|стихов": {
+  "one": "werset",
+  "few": "wersety",
+  "many": "wersetów",
+  "other": "wersetu"
+ },
+ "книга|книги|книг": {
+  "one": "księga",
+  "few": "księgi",
+  "many": "ksiąg",
+  "other": "księgi"
+ },
+ "Ещё {n}": "Jeszcze {n}"
 }

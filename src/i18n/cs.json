@@ -1414,5 +1414,25 @@
  "За срок": "Na dobu",
  "Разделы": "Oddíly",
  "Отсюда": "Odsud",
- "Синайский кодекс": "Sinajský kodex"
+ "Синайский кодекс": "Sinajský kodex",
+ "В Синодальном переводе": "V synodálním překladu",
+ "употребление|употребления|употреблений": {
+  "one": "výskyt",
+  "few": "výskyty",
+  "many": "výskytu",
+  "other": "výskytů"
+ },
+ "стих|стиха|стихов": {
+  "one": "verš",
+  "few": "verše",
+  "many": "verše",
+  "other": "veršů"
+ },
+ "книга|книги|книг": {
+  "one": "kniha",
+  "few": "knihy",
+  "many": "knihy",
+  "other": "knih"
+ },
+ "Ещё {n}": "Další {n}"
 }

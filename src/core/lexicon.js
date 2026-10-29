@@ -70,8 +70,10 @@ function findWord(entries, keys, text) {
     if (hits.length) return hits.slice(0, 2).map((k) => ({ key: k, entry: entries[k], match: 'root' }));
   }
   // Ближайшие слова с той же основой: сначала с той же основой целиком, потом по близости длины
+  // словосочетания («Дни очищения», «Дни рождения») — только когда искали словосочетание, а не одно слово «дни»
   const st = stem(key);
   return prefixMatches(keys, st, 50)
+    .filter((k) => key.includes(' ') || !k.includes(' '))
     .sort((a, b) => (stem(a) === st ? 0 : 1) - (stem(b) === st ? 0 : 1) || Math.abs(a.length - key.length) - Math.abs(b.length - key.length))
     .slice(0, 4)
     .map((k) => ({ key: k, entry: entries[k], match: 'stem' }));

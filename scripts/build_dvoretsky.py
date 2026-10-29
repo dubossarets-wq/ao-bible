@@ -76,17 +76,19 @@ def render(el, head):
 
 def article(entry):
     head = head_of(entry)
-    lines = []
-    body = entry.find("body")
-    for part in body:
-        if part.tag == "text":
-            lines.append(render(part, head))
-        elif part.tag == "list":
-            for it in part.findall("item"):
-                lvl = int(it.get("level") or 1)
-                lines.append(("   " * (lvl - 1)) + render(it, head))
-    text = "\n".join(re.sub(r"[ \t]+", " ", x).strip() for x in lines if x.strip())
-    return text
+    # омонимы (I ἡμέρα — прил., II ἡμέρα — день) идут в одной статье отдельными <body> — берём все
+    parts = []
+    for body in entry.findall("body"):
+        lines = []
+        for part in body:
+            if part.tag == "text":
+                lines.append(render(part, head))
+            elif part.tag == "list":
+                for it in part.findall("item"):
+                    lvl = int(it.get("level") or 1)
+                    lines.append(("   " * (lvl - 1)) + render(it, head))
+        parts.append("\n".join(re.sub(r"[ \t]+", " ", x).strip() for x in lines if x.strip()))
+    return "\n\n".join(x for x in parts if x)
 
 
 # все статьи: точный ключ и ключ без диакритики

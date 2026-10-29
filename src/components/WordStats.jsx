@@ -1,6 +1,6 @@
 // Блок статистики слова в статье Стронга: число употреблений, книги (полосы), как переведено, все места
 import React, { useEffect, useState } from 'react';
-import { Loader2, BarChart3 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { strongStats } from '../core/wordstats.js';
 import { formatRef } from '../core/books.js';
 import { t } from '../core/i18n.js';
@@ -26,29 +26,48 @@ export default function WordStats({ num, onOpenRef, onOpenAll }) {
     );
   if (!st.total) return null;
   const max = Math.max(...st.byBook.map((b) => b.n));
-  const top = [...st.byBook].sort((a, b) => b.n - a.n).slice(0, 10);
+  const top = [...st.byBook].sort((a, b) => b.n - a.n).slice(0, 6);
+  const books = st.byBook.length;
   return (
     <section className="word-stats">
       <h4>
-        <BarChart3 size={13} /> {t('Употребление в {module}: {total} раз в {verses} стихах, {books} книгах', { module: st.module, total: st.total, verses: st.verses, books: st.byBook.length })}
+        {t('Где встречается')} <span className="ws-mod">· {st.module}</span>
       </h4>
-      <ul className="stat-bars" aria-label={t('По книгам')}>
-        {top.map((b) => (
-          <li key={b.book}>
-            <span className="sb-name">{b.short.replace(/\.$/, '')}</span>
-            <span className="sb-bar" style={{ '--w': `${Math.max(3, (b.n / max) * 100)}%` }} />
-            <span className="r-n">{b.n}</span>
-          </li>
-        ))}
-      </ul>
-      {st.byBook.length > top.length && <p className="field-hint">{t('И ещё в {n} книгах.', { n: st.byBook.length - top.length })}</p>}
+      {/* три числа плитками: употреблений, стихов, книг */}
+      <div className="ws-tiles">
+        <div>
+          <b>{st.total}</b>
+          <span>{t('употребление|употребления|употреблений', { n: st.total })}</span>
+        </div>
+        <div>
+          <b>{st.verses}</b>
+          <span>{t('стих|стиха|стихов', { n: st.verses })}</span>
+        </div>
+        <div>
+          <b>{books}</b>
+          <span>{t('книга|книги|книг', { n: books })}</span>
+        </div>
+      </div>
+      {/* по книгам — только когда книг больше одной: одна полоса ничего не сравнивает */}
+      {books > 1 && (
+        <ul className="stat-bars" aria-label={t('По книгам')}>
+          {top.map((b) => (
+            <li key={b.book}>
+              <span className="sb-name">{b.short.replace(/\.$/, '')}</span>
+              <span className="sb-bar" style={{ '--w': `${Math.max(3, (b.n / max) * 100)}%` }} />
+              <span className="r-n">{b.n}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {books > top.length && <p className="field-hint">{t('И ещё в {n} книгах.', { n: books - top.length })}</p>}
       <div className="chips">
-        {(all ? st.refs : st.refs.slice(0, 24)).map((r) => (
+        {(all ? st.refs : st.refs.slice(0, 8)).map((r) => (
           <button key={`${r.book}.${r.chapter}.${r.verse}`} className="chip" onClick={() => onOpenRef(r)}>
             {formatRef(r)}
           </button>
         ))}
-        {!all && !onOpenAll && st.refs.length > 24 && (
+        {!all && !onOpenAll && st.refs.length > 8 && (
           <button className="chip ghost" onClick={() => setAll(true)}>
             {t('Все {n}', { n: st.refs.length })}
           </button>

@@ -1396,5 +1396,19 @@
  "За срок": "Kwa muda",
  "Разделы": "Sehemu",
  "Отсюда": "Kuanzia hapa",
- "Синайский кодекс": "Kodeksi ya Sinai"
+ "Синайский кодекс": "Kodeksi ya Sinai",
+ "В Синодальном переводе": "Katika tafsiri ya Sinodi",
+ "употребление|употребления|употреблений": {
+  "one": "tukio",
+  "other": "matukio"
+ },
+ "стих|стиха|стихов": {
+  "one": "aya",
+  "other": "aya"
+ },
+ "книга|книги|книг": {
+  "one": "kitabu",
+  "other": "vitabu"
+ },
+ "Ещё {n}": "{n} zaidi"
 }
