@@ -359,7 +359,7 @@ async function run(label, viewport, isMobile) {
   check(`${label}: неканонические книги`, stars === 12 && tobRef.includes('Тов. 1:3') && tob.includes('благодеяний'), `${stars} книг со *, ${tobRef}: ${tob.slice(0, 50)}`);
   await page.screenshot({ path: `${shots}/${label}-7e-tobit.png` });
 
-  // Личный модуль с апокрифами — импорт файла
+  // Личный модуль с неканоническими книгами — импорт файла
   const local = path.join(root, 'local-modules/rst-bibles-org-uk.json.gz');
   if (await readFile(local).then(() => true, () => false)) {
     await menu(page, 'Настройки');
@@ -375,13 +375,13 @@ async function run(label, viewport, isMobile) {
     await page.waitForTimeout(500);
     await page.click('.pane-slot.first .tb-ref');
     const groups = await page.$$eval('.bn-seg [role=tab]', (e) => e.map((x) => x.textContent));
-    await page.click('.bn-seg [role=tab]:has-text("Апокрифы")');
+    await page.click('.bn-seg [role=tab]:has-text("Неканон")');
     await page.locator('.book-cell', { hasText: 'Завещание Левия' }).click();
     await page.locator('.num-grid button', { hasText: /^1$/ }).first().click();
     await page.locator('.btn.wide:has-text("С начала главы")').click();
     await page.waitForSelector('#v-1-1', { timeout: 15000 });
     const lvRef = await page.textContent('.pane-slot.first .tb-ref');
-    check(`${label}: импорт апокрифов`, groups.includes('Апокрифы') && lvRef.includes('1:1'), `${groups.join(', ')}; ${lvRef}`);
+    check(`${label}: импорт неканонических книг`, groups.includes('Неканон') && lvRef.includes('1:1'), `${groups.join(', ')}; ${lvRef}`);
     await page.click('.pane-slot.first .tb-module');
     await page.locator('.pick-row', { hasText: 'RST+' }).click();
     await page.waitForTimeout(400);
