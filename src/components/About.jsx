@@ -8,6 +8,7 @@ import { fetchCatalog } from '../core/modules.js';
 import { MODULE_SECTIONS } from '../core/schema.js';
 import { Segmented } from './ui.jsx';
 import { t } from '../core/i18n.js';
+import { buildDate, BUILD } from '../core/updates.js';
 import { licenseUrl, EXTRA_ATTRIBUTION } from '../core/licenses.js';
 
 // Текст лицензии — ссылкой на её полный текст, если он известен
@@ -183,7 +184,7 @@ function Privacy() {
 export default function About({ onClose, payload }) {
   const [tab, setTab] = useState(payload?.tab || 'about');
   return (
-    <BottomSheet title={t('О приложении')} subtitle={t('AO Bible · версия {v}', { v: '0.1' })} onClose={onClose} initial={2}>
+    <BottomSheet title={t('О приложении')} subtitle={`AO Bible · ${t('Версия от {date}', { date: buildDate(BUILD) })}`} onClose={onClose} initial={2}>
       <Segmented
         id="about-tab"
         value={tab}

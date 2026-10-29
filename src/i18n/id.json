@@ -177,6 +177,11 @@
  "день|дня|дней": {
   "other": "hari"
  },
+ "Проповеди: заметки для себя, жирный и курсив, копия проповеди, серии, поиск и сортировка, печать и PDF; к стиху можно подключить другие переводы, а на «Кафедре» идёт таймер.": "Khotbah: catatan pribadi, tebal dan miring, salinan khotbah, seri, pencarian dan urutan, cetak dan PDF; ayat bisa diberi terjemahan lain, dan di «Mimbar» ada pengatur waktu.",
+ "Напоминаний о чтении — сколько угодно: в любое время или промежутком, по дням недели.": "Pengingat membaca sebanyak yang Anda mau: kapan saja atau berkala, menurut hari dalam seminggu.",
+ "В библиотеке — модуль «Неканон»: неканонические книги синодального перевода, Книга Еноха, Книга Юбилеев и Заветы двенадцати патриархов.": "Di perpustakaan — modul «Deuterokanon»: kitab-kitab nonkanonik terjemahan Sinodal, Kitab Henokh, Kitab Yobel, dan Wasiat Dua Belas Bapa Bangsa.",
+ "«Перевод»: выбор по книгам — вся Библия, Ветхий или Новый Завет, неканонические, с номерами Стронга, подстрочники.": "«Terjemahan»: pilih menurut kitab — seluruh Alkitab, Perjanjian Lama atau Baru, deuterokanonika, dengan nomor Strong, interlinear.",
+ "Параллельные места: стих, к которому ищете места, остаётся вверху; после перехода из проповеди к стиху — кнопка «Вернуться к проповеди».": "Ayat paralel: ayat yang Anda cari tetap di atas; setelah berpindah dari khotbah ke ayat — tombol «Kembali ke khotbah».",
  "Неканон": "Deuterokanon",
  "Неканонические": "Deuterokanonika",
  "С номерами Стронга": "Dengan nomor Strong",

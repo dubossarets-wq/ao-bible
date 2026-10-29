@@ -179,6 +179,11 @@
   "one": "siku",
   "other": "siku"
  },
+ "Проповеди: заметки для себя, жирный и курсив, копия проповеди, серии, поиск и сортировка, печать и PDF; к стиху можно подключить другие переводы, а на «Кафедре» идёт таймер.": "Mahubiri: madokezo binafsi, herufi nzito na italiki, nakala ya hubiri, mfululizo, utafutaji na upangaji, kuchapa na PDF; kifungu kinaweza kuongezewa tafsiri nyingine, na kwenye «Mimbari» kuna kipima muda.",
+ "Напоминаний о чтении — сколько угодно: в любое время или промежутком, по дням недели.": "Vikumbusho vya kusoma vingi upendavyo: wakati wowote au kwa vipindi, kwa siku za wiki.",
+ "В библиотеке — модуль «Неканон»: неканонические книги синодального перевода, Книга Еноха, Книга Юбилеев и Заветы двенадцати патриархов.": "Kwenye maktaba — moduli «Nje ya kanuni»: vitabu visivyo vya kanuni vya tafsiri ya Sinodi, Kitabu cha Henoko, Kitabu cha Yubile na Wasia wa Mababu Kumi na Wawili.",
+ "«Перевод»: выбор по книгам — вся Библия, Ветхий или Новый Завет, неканонические, с номерами Стронга, подстрочники.": "«Tafsiri»: chagua kwa vitabu — Biblia nzima, Agano la Kale au Jipya, visivyo vya kanuni, pamoja na namba za Strong, za mstari kwa mstari.",
+ "Параллельные места: стих, к которому ищете места, остаётся вверху; после перехода из проповеди к стиху — кнопка «Вернуться к проповеди».": "Vifungu sambamba: kifungu unachotafutia kinabaki juu; baada ya kuhama kutoka hubiri hadi kifungu — kitufe «Rudi kwenye hubiri».",
  "Неканон": "Nje ya kanuni",
  "Неканонические": "Yasiyo ya kanuni",
  "С номерами Стронга": "Pamoja na namba za Strong",

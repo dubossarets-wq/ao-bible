@@ -181,6 +181,11 @@
   "few": "zile",
   "other": "de zile"
  },
+ "Проповеди: заметки для себя, жирный и курсив, копия проповеди, серии, поиск и сортировка, печать и PDF; к стиху можно подключить другие переводы, а на «Кафедре» идёт таймер.": "Predici: notițe pentru mine, aldin și cursiv, copia predicii, serii, căutare și sortare, tipărire și PDF; la un verset se pot adăuga alte traduceri, iar la „Amvon” merge un cronometru.",
+ "Напоминаний о чтении — сколько угодно: в любое время или промежутком, по дням недели.": "Oricâte mementouri de citire: la orice oră sau la interval, pe zile ale săptămânii.",
+ "В библиотеке — модуль «Неканон»: неканонические книги синодального перевода, Книга Еноха, Книга Юбилеев и Заветы двенадцати патриархов.": "În bibliotecă — modulul „Necanon”: cărțile necanonice ale traducerii sinodale, Cartea lui Enoh, Cartea Jubileelor și Testamentele celor doisprezece patriarhi.",
+ "«Перевод»: выбор по книгам — вся Библия, Ветхий или Новый Завет, неканонические, с номерами Стронга, подстрочники.": "„Traducere”: alegere după cărți — toată Biblia, Vechiul sau Noul Testament, necanonice, cu numere Strong, interliniare.",
+ "Параллельные места: стих, к которому ищете места, остаётся вверху; после перехода из проповеди к стиху — кнопка «Вернуться к проповеди».": "Locuri paralele: versetul pentru care căutați rămâne sus; după trecerea dintr-o predică la un verset — butonul „Înapoi la predică”.",
  "Неканон": "Necanon",
  "Неканонические": "Necanonice",
  "С номерами Стронга": "Cu numere Strong",

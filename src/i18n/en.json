@@ -179,6 +179,11 @@
   "one": "day",
   "other": "days"
  },
+ "Проповеди: заметки для себя, жирный и курсив, копия проповеди, серии, поиск и сортировка, печать и PDF; к стиху можно подключить другие переводы, а на «Кафедре» идёт таймер.": "Sermons: notes to self, bold and italic, copy a sermon, series, search and sorting, print and PDF; add other translations to a verse, and the “Pulpit” shows a timer.",
+ "Напоминаний о чтении — сколько угодно: в любое время или промежутком, по дням недели.": "As many reading reminders as you like: at any time or at intervals, on chosen days of the week.",
+ "В библиотеке — модуль «Неканон»: неканонические книги синодального перевода, Книга Еноха, Книга Юбилеев и Заветы двенадцати патриархов.": "New in the library: the “Deuterocanon” module — the non-canonical books of the Synodal translation, 1 Enoch, Jubilees and the Testaments of the Twelve Patriarchs.",
+ "«Перевод»: выбор по книгам — вся Библия, Ветхий или Новый Завет, неканонические, с номерами Стронга, подстрочники.": "“Translation”: filter by books — whole Bible, Old or New Testament, deuterocanonical, with Strong’s numbers, interlinear.",
+ "Параллельные места: стих, к которому ищете места, остаётся вверху; после перехода из проповеди к стиху — кнопка «Вернуться к проповеди».": "Cross-references: the verse you are looking up stays at the top; after jumping from a sermon to a verse — a “Back to sermon” button.",
  "Неканон": "Deuterocanon",
  "Неканонические": "Deuterocanonical",
  "С номерами Стронга": "With Strong’s numbers",

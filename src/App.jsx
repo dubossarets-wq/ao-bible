@@ -143,6 +143,8 @@ export default function App() {
   const [popover, setPopover] = useState(null); // выборка словарей над словом
   const [toasts, setToasts] = useState([]);
   const [bookmarks, setBookmarks] = usePersistentState('bookmarks', []);
+  // окнам — только исправные закладки (испорченная запись из старой копии не показывается как «undefined»)
+  const goodBookmarks = useMemo(() => (Array.isArray(bookmarks) ? bookmarks : []).filter((b) => b && typeof b.book === 'string' && +b.chapter > 0 && +b.verse > 0), [bookmarks]);
   const [favorites, setFavorites] = usePersistentState('favorites', []);
   // Заметки к стихам: { 'Josh.14.15': { text, label, at, updated } } — label хранит выделение («Нав. 14:15–16»)
   const [notes, setNotes] = usePersistentState('notes', {});
@@ -620,7 +622,7 @@ export default function App() {
     returnSheet: (id, to, pane) => setSheet((s) => (!s || s.id === id ? { kind: to.kind, pane, payload: to.payload, id: to.id } : s)),
     toast,
     undoToast,
-    bookmarks,
+    bookmarks: goodBookmarks,
     setBookmarks,
     favorites,
     setFavorites,

@@ -181,6 +181,8 @@ export function t(key, params) {
 }
 
 // Даты и числа — в формате текущего языка
-export const fmtDate = (d, opts) => new Date(d).toLocaleDateString(info.locale, opts);
-export const fmtDateTime = (d, opts) => new Date(d).toLocaleString(info.locale, opts);
+// дата, которую нельзя разобрать (пусто, испорченная запись из старой копии), — пустая строка, а не «Invalid Date»
+const okDate = (d) => d != null && d !== '' && !Number.isNaN(new Date(d).getTime());
+export const fmtDate = (d, opts) => (okDate(d) ? new Date(d).toLocaleDateString(info.locale, opts) : '');
+export const fmtDateTime = (d, opts) => (okDate(d) ? new Date(d).toLocaleString(info.locale, opts) : '');
 export const fmtNum = (n) => (n == null ? '' : Number(n).toLocaleString(info.locale));

@@ -943,7 +943,7 @@ export default function SermonsSheet({ pane, payload, onClose }) {
       ) : (
         <>
           <form className="ref-form" onSubmit={create}>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('Название новой проповеди')} aria-label={t('Название новой проповеди')} autoComplete="off" enterKeyHint="done" />
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('Новая проповедь')} aria-label={t('Название новой проповеди')} autoComplete="off" enterKeyHint="done" />
             <button className="btn primary" type="submit">
               <Plus size={17} /> {t('Создать')}
             </button>

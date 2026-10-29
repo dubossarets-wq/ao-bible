@@ -183,6 +183,11 @@
   "many": "dne",
   "other": "dní"
  },
+ "Проповеди: заметки для себя, жирный и курсив, копия проповеди, серии, поиск и сортировка, печать и PDF; к стиху можно подключить другие переводы, а на «Кафедре» идёт таймер.": "Kázání: poznámky pro sebe, tučné písmo a kurzíva, kopie kázání, série, hledání a řazení, tisk a PDF; k verši lze připojit další překlady a na „Kazatelně“ běží časovač.",
+ "Напоминаний о чтении — сколько угодно: в любое время или промежутком, по дням недели.": "Připomínek čtení může být libovolně mnoho: v jakýkoli čas nebo v intervalu, podle dnů v týdnu.",
+ "В библиотеке — модуль «Неканон»: неканонические книги синодального перевода, Книга Еноха, Книга Юбилеев и Заветы двенадцати патриархов.": "V knihovně je modul „Deuterokanon“: nekanonické knihy synodálního překladu, Kniha Henochova, Kniha jubileí a Závěti dvanácti patriarchů.",
+ "«Перевод»: выбор по книгам — вся Библия, Ветхий или Новый Завет, неканонические, с номерами Стронга, подстрочники.": "„Překlad“: výběr podle knih — celá Bible, Starý nebo Nový zákon, nekanonické, s čísly Strong, interlineární.",
+ "Параллельные места: стих, к которому ищете места, остаётся вверху; после перехода из проповеди к стиху — кнопка «Вернуться к проповеди».": "Paralelní místa: verš, ke kterému hledáte místa, zůstává nahoře; po přechodu z kázání k verši — tlačítko „Zpět ke kázání“.",
  "Неканон": "Deuterokanon",
  "Неканонические": "Nekanonické",
  "С номерами Стронга": "S čísly Strong",
