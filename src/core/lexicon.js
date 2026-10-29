@@ -5,7 +5,7 @@
 //    симфонии (wordIndex) — это приблизительное соответствие, и интерфейс об этом предупреждает.
 // 3. Словари «по словам» ищутся по самой словоформе, затем по начальной форме (благодати → благодать,
 //    агнца → агнец), затем без приставки (возлюбил → любить), и лишь потом — ближайшие слова с той же основой.
-import { getPayload, listModules } from './modules.js';
+import { getPayload, listModules, LEXICONS } from './modules.js';
 import { testamentOf } from './books.js';
 import { normalizeWord } from './verseMarkup.js';
 
@@ -101,7 +101,16 @@ function prefixMatches(keys, prefix, limit = 6) {
 const dictRank = (m) => (m.dictionaryKind === 'strongs' && m.language === 'ru' && m.id !== 'rst-symphony' ? 0 : m.language === 'ru' ? 1 : 2);
 const byRank = (list) => list.sort((a, b) => dictRank(a) - dictRank(b));
 // Статьи Стронга — только русские словари (английские Стронг, Abbott-Smith, BDB в статьях не показываем)
-const ruStrongs = (m) => m.dictionaryKind !== 'strongs' || m.language === 'ru';
+const ruStrongs = (m) => (m.dictionaryKind !== 'strongs' || m.language === 'ru') && !LEXICONS.includes(m.id);
+// толковые словари к Стронгу (Дворецкий) — не отдельной вкладкой, а разделом внутри статьи Стронга
+export async function lexiconEntries(num) {
+  const out = [];
+  for (const m of (await listModules()).filter((x) => LEXICONS.includes(x.id) && x.enabled !== false)) {
+    const e = (await getPayload(m.id))?.entries?.[num];
+    if (e?.text) out.push({ module: m, entry: e });
+  }
+  return out;
+}
 
 const strongKey = (s) => {
   const m = /^([HG])0*(\d+)([a-z]?)$/i.exec(s);
@@ -162,7 +171,22 @@ async function lookupWordNow({ token, ref }) {
     }
     if (found.length) results.push({ module: m, found });
   }
-  return { word: token.text, ref, testament, mapping, results, dictionaryCount: modules.length };
+  return { word: token.text, ref, testament, mapping, results: mergeSymphony(results), dictionaryCount: modules.length };
+}
+
+// Симфония RST+ — не отдельной вкладкой: её «Как переведено» показывается в статье Стронга. Отдельно она остаётся
+// только для номеров, которых нет в словаре Стронга
+export const SYMPHONY = 'rst-symphony';
+function mergeSymphony(results) {
+  const keys = new Set(results.filter((r) => r.module.dictionaryKind === 'strongs' && r.module.id !== SYMPHONY).flatMap((r) => r.found.map((f) => f.key)));
+  return results
+    .map((r) => (r.module.id === SYMPHONY ? { ...r, found: r.found.filter((f) => !keys.has(f.key)) } : r))
+    .filter((r) => r.found.length);
+}
+export async function symphonyEntry(num) {
+  const m = (await listModules()).find((x) => x.id === SYMPHONY && x.enabled !== false);
+  const e = m && (await getPayload(m.id))?.entries?.[num];
+  return e ? { module: m, entry: e } : null;
 }
 
 // Статья по номеру Стронга (переход по ссылке «от H24» внутри статьи)
@@ -174,5 +198,5 @@ export async function lookupStrong(num) {
     const e = p?.entries?.[num];
     if (e) results.push({ module: m, found: [{ key: num, entry: e, match: 'exact' }] });
   }
-  return results;
+  return mergeSymphony(results);
 }

@@ -178,11 +178,11 @@ async function run(label, viewport, isMobile) {
   check(`${label}: статья Стронга на всю высоту`, sheetH > 0.9, sheetH.toFixed(2));
   const lemma = await page.textContent('.orig.hebrew');
   check(`${label}: статья с ивритом`, /[\u0590-\u05FF]/.test(lemma), lemma);
-  // Переключение на другой словарь, не закрывая панель
-  await page.locator('.tabs [role=tab]', { hasText: 'Симфония RST+' }).click();
-  await page.waitForSelector('.renderings li');
+  // Симфония — не отдельной вкладкой: «Как переведено в синодальном тексте» прямо в статье Стронга
+  await page.waitForSelector('.renderings li', { timeout: 15000 });
   const r1 = await page.textContent('.renderings li');
-  check(`${label}: переключение словаря`, r1.length > 0, r1.trim().slice(0, 40));
+  const symTab = await page.locator('.tabs [role=tab]', { hasText: 'Симфония RST+' }).count();
+  check(`${label}: симфония в статье Стронга`, r1.length > 0 && symTab === 0, `${r1.trim().slice(0, 40)}; вкладка симфонии: ${symTab}`);
   await page.screenshot({ path: `${shots}/${label}-3-dict-entry.png` });
   await page.keyboard.press('Escape');
   await page.waitForSelector('.sheet', { state: 'detached' });

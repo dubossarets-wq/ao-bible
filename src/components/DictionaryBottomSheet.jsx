@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { BookText, AlertTriangle, Link2, Loader2, Library, Volume2 } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
 import { useApp } from '../App.jsx';
-import { lookupWord, lookupStrong } from '../core/lexicon.js';
+import { lookupWord, lookupStrong, lexiconEntries, symphonyEntry, SYMPHONY } from '../core/lexicon.js';
 import { describeMorph } from '../core/morph.js';
 import { formatRef, parseOsisRef, bookMeta } from '../core/books.js';
 import { Empty } from './ui.jsx';
@@ -55,6 +55,22 @@ function SayButton({ num, verseRef }) {
 
 function StrongEntry({ num, entry, module, mapping, orig, verseRef, onOpenStrong, onOpenRef, onOpenAll }) {
   const isHeb = num.startsWith('H');
+  // толковый словарь (Дворецкий) — разделом в статье Стронга; в симфонии — не повторяем
+  const [lex, setLex] = useState([]);
+  // как переведено в синодальном тексте — из Симфонии RST+, если у самого словаря этого нет
+  const [sym, setSym] = useState(null);
+  useEffect(() => {
+    let live = true;
+    setLex([]);
+    setSym(null);
+    if (module.id !== SYMPHONY) lexiconEntries(num).then((l) => live && setLex(l), () => {});
+    if (module.id !== SYMPHONY && !entry.renderings) symphonyEntry(num).then((x) => live && setSym(x), () => {});
+    return () => {
+      live = false;
+    };
+  }, [num, module.id, entry]);
+  const renderings = entry.renderings || sym?.entry.renderings;
+  const count = entry.renderings ? entry.count : sym?.entry.count;
   // orig — это слово в оригинале стиха (из подстрочника): точная форма с лицом, числом и падежом
   const exact = orig && orig.num === num.replace(/^([HG])0*/, '$1') ? orig : null;
   const morph = exact ? [] : mapping?.mode === 'exact' ? mapping.morph : [];
@@ -131,14 +147,20 @@ function StrongEntry({ num, entry, module, mapping, orig, verseRef, onOpenStrong
           </p>
         </section>
       )}
-      {entry.renderings && (
+      {lex.map(({ module: m, entry: e }) => (
+        <section key={m.id} className="lex-sec">
+          <h4>{m.name}</h4>
+          <p className="prewrap">{e.text}</p>
+        </section>
+      ))}
+      {renderings && (
         <section>
-          <h4>{t('Как переведено в синодальном тексте · {n} употр.', { n: entry.count })}</h4>
+          <h4>{t('Как переведено в синодальном тексте · {n} употр.', { n: count })}</h4>
           <ul className="renderings">
-            {entry.renderings.map(([w, n]) => (
+            {renderings.map(([w, n]) => (
               <li key={w}>
                 <span className="r-word">{w}</span>
-                <span className="r-bar" style={{ '--w': `${Math.max(4, (n / entry.renderings[0][1]) * 100)}%` }} />
+                <span className="r-bar" style={{ '--w': `${Math.max(4, (n / renderings[0][1]) * 100)}%` }} />
                 <span className="r-n">{n}</span>
               </li>
             ))}
@@ -170,6 +192,18 @@ function StrongEntry({ num, entry, module, mapping, orig, verseRef, onOpenStrong
       <p className="source-note">
         {module.name}
         {' · '}{module.license}
+        {sym && (
+          <>
+            <br />
+            {sym.module.name} · {sym.module.license}
+          </>
+        )}
+        {lex.map(({ module: m }) => (
+          <React.Fragment key={m.id}>
+            <br />
+            {m.name}: {m.author}{m.license ? ` · ${m.license}` : ''}
+          </React.Fragment>
+        ))}
       </p>
     </article>
   );

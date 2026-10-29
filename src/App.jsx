@@ -223,7 +223,7 @@ export default function App() {
             study.push(entry.name);
             continue;
           }
-          if (entry.id === 'strongs-ru-greek' || repo.ORIGINALS.includes(entry.id)) continue; // о русском Стронге — одно уведомление на оба модуля; оригиналы ставятся молча
+          if (entry.id === 'strongs-ru-greek' || repo.ORIGINALS.includes(entry.id) || repo.LEXICONS.includes(entry.id)) continue; // о русском Стронге — одно уведомление на оба модуля; оригиналы ставятся молча
           toast(
             entry.type === 'illustrations'
               ? t('Добавлены иллюстрации к стихам: нажмите на значок картинки в конце стиха')

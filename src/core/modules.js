@@ -308,6 +308,9 @@ const LANG_DICTIONARY = { ru: 'nikifor', uk: 'nikifor', be: 'nikifor' };
 export const langDictionary = () => LANG_DICTIONARY[getLang()] || 'easton';
 // Для изучения — у каждого сразу: карты, толкования Лопухина, подстрочники (большой «Подстрочник» — последним)
 export const STUDY = ['bible-maps', 'lopukhin', 'vin-interlinear', 'rst-interlinear'];
+// Толковые словари к Стронгу (Дворецкий): ставятся сами и молча, показываются внутри статьи Стронга, а не отдельно.
+// Пока модуля нет в каталоге, его просто нет — доустановка пробует снова при следующем запуске
+export const LEXICONS = ['dvoretsky-gr'];
 // Перевод на языке интерфейса — новому человеку первым и основным. Полной Библии на языке нет — для кириллических
 // языков остаётся Синодальный, для остальных — английский BSB; Новый Завет на родном языке ставится дополнительно.
 const FULL_BIBLE = { cs: 'kralicka', de: 'luther1912', en: 'bsb', es: 'rv1909', fr: 'segond1910', hi: 'hin-irv', it: 'riveduta', ja: 'bungo', ko: 'korrv', pl: 'gdanska', pt: 'biblia-livre', sr: 'dk-cyr', sw: 'swh-ulb', zh: 'cuv-s' };
@@ -315,10 +318,10 @@ const NT_BIBLE = { hy: 'arm-nt1853', id: 'alkitab-gratis', ro: 'ronbl', uk: 'ukr
 const CYRILLIC = new Set(['ru', 'uk', 'be', 'bg', 'sr']);
 export const homeBible = () => FULL_BIBLE[getLang()] || (CYRILLIC.has(getLang()) ? 'rst-plus' : 'bsb');
 const langExtras = () => [NT_BIBLE[getLang()], ...(CYRILLIC.has(getLang()) ? [] : ['strongs-hebrew', 'strongs-greek'])].filter(Boolean);
-export const starter = () => [...new Set([homeBible(), 'rst-plus', 'xrefs-rst', 'rst-symphony', 'strongs-ru-hebrew', 'strongs-ru-greek', 'bible-places', 'bible-illustrations', ...ORIGINALS, langDictionary(), ...langExtras(), ...STUDY])];
+export const starter = () => [...new Set([homeBible(), 'rst-plus', 'xrefs-rst', 'rst-symphony', 'strongs-ru-hebrew', 'strongs-ru-greek', 'bible-places', 'bible-illustrations', ...ORIGINALS, langDictionary(), ...langExtras(), ...STUDY, ...LEXICONS])];
 
 // Модули, которые один раз доустанавливаются тем, кто начал пользоваться приложением до их появления
-export const lateStarter = () => ['bible-places', 'bible-illustrations', 'strongs-ru-hebrew', 'strongs-ru-greek', ...ORIGINALS, langDictionary(), ...STUDY];
+export const lateStarter = () => ['bible-places', 'bible-illustrations', 'strongs-ru-hebrew', 'strongs-ru-greek', ...ORIGINALS, langDictionary(), ...STUDY, ...LEXICONS];
 
 // Модули, собранные в один: многотомный комментарий одного автора стал одним модулем.
 // У кого стоят старые части — ставится общий модуль, части удаляются (см. App.jsx).
