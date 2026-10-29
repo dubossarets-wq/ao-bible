@@ -656,13 +656,16 @@ button.wp-item:active { background: color-mix(in srgb, var(--accent) 12%, transp
    Наведён, в фокусе или тянется — ручка вытягивается и становится цвета акцента */
 /* без полосы цвета панели: фон страницы, видна только тёмная ручка; текст верхней панели к ручке растворяется, а не режется */
 .divider { background: var(--bg); }
-.split.rows .divider::after { content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 22px; background: linear-gradient(to bottom, color-mix(in srgb, var(--bg) 0%, transparent), var(--bg)); pointer-events: none; }
-.split.rows .divider { flex-basis: 16px; }
-.split.columns .divider { flex-basis: 12px; }
-.divider::before { content: ""; position: absolute; inset: -10px 0; }
+/* друг над другом: подложки нет совсем — ползунок висит над текстом в 5 px от шапки нижней панели;
+   зона захвата — только вокруг ползунка, текст рядом нажимается как обычно */
+.split.rows .divider { flex-basis: 0; background: none; }
+.split.rows .divider-grip { position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); }
+/* колонки рядом: вдоль линии раздела — сероватая подложка чуть шире ползунка, шапки панелей — через 5 px */
+.split.columns .divider { flex-basis: 5px; background: color-mix(in srgb, var(--text) 9%, var(--bg)); }
+.divider::before { content: ""; position: absolute; inset: -26px calc(50% - 60px) -6px; }
 .split.columns .divider::before { inset: 0 -10px; }
 .divider-grip { width: 36px; height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--text) 60%, transparent); transition: width .16s ease, height .16s ease, background-color .16s ease; }
-.split.columns .divider-grip { width: 5px; height: 36px; }
+.split.columns .divider-grip { width: 3px; height: 36px; border-radius: 2px; }
 @media (hover: hover) { .split.rows .divider:hover .divider-grip { width: 56px; } .split.columns .divider:hover .divider-grip { height: 56px; } }
 .split.rows .divider:focus-visible .divider-grip, .resizing .split.rows .divider-grip { width: 56px; background: var(--accent); }
 .split.columns .divider:focus-visible .divider-grip, .resizing .split.columns .divider-grip { height: 56px; background: var(--accent); }
@@ -1257,10 +1260,6 @@ html.kb-open .tour-ctrl.top { top: auto; bottom: calc(var(--kb, 0px) + 8px); }
 /* Ручки для свайпа: полоса вдвое толще, зона захвата почти та же */
 .sheet-grip { height: 19px; place-items: start center; padding-top: 5px; box-sizing: border-box; } /* полоска у верхнего края, заголовок — сразу под ней */
 .grip-bar { height: 10px; border-radius: 5px; }
-.split.rows .divider { flex-basis: 22px; }
-.split.columns .divider { flex-basis: 18px; }
-.divider-grip { height: 12px; border-radius: 6px; }
-.split.columns .divider-grip { width: 12px; height: 72px; }
 /* Номер Стронга в тексте нажимается — открывает статью */
 .sn { cursor: pointer; }
 
@@ -1621,6 +1620,14 @@ html.kb-open .chap-nav { display: none; }
    (ступенька и двойной оттенок); здесь капсула снова цельная: скругления только снаружи, части встык */
 .toolbar.is-phone .tb-module { border-radius: 999px 0 0 999px; }
 .toolbar.is-phone .tb-module + .tb-ref { border-radius: 0 999px 999px 0; }
+/* Капсула ниже — 30 px (как во Flutter): «RST+» мельче и с разрядкой, место — 15,5 px; зона нажатия прежняя —
+   невидимый запас по 7 px сверху и снизу */
+.toolbar .tb-module, .toolbar .tb-ref, .toolbar.is-phone .tb-module, .toolbar.is-phone .tb-ref { height: 30px; min-height: 30px; }
+.toolbar .tb-module, .toolbar.is-phone .tb-module { font-size: .78rem; letter-spacing: .05em; padding: 0 10px 0 13px; }
+.toolbar .tb-module + .tb-ref, .toolbar.is-phone .tb-module + .tb-ref { font-size: .97rem; padding: 0 9px 0 10px; }
+.toolbar .tb-module::after { top: 8px; bottom: 8px; }
+.toolbar .tb-ref { position: relative; }
+.toolbar .tb-module::before, .toolbar .tb-ref::before { content: ''; position: absolute; inset: -7px 0; }
 /* Обрезанный текст — плавное затухание в конце строки вместо многоточия (класс ставит core/fadeEnd.js) */
 .fade-end { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2.2em), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 2.2em), transparent); }
 input.fade-end { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 3em), transparent 100%); mask-image: linear-gradient(to right, #000 calc(100% - 3em), transparent 100%); }
@@ -1655,14 +1662,14 @@ input.fade-end { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 
 :root { --tab-sab: 0px; --tabbar-base: 80px; } /* отступ капсулы снизу = отступу слева и справа (12 px) */
 html.has-tabbar:not(.reading-hidden):not(.kb-open) { --tabbar-h: calc(var(--tabbar-base) + var(--tab-sab)); }
 html.has-tabbar .app.with-tabbar { background: var(--bg); }
-.tabbar { height: 64px; margin: 4px calc(env(safe-area-inset-right, 0px) + 12px) calc(12px + var(--tab-sab)) calc(env(safe-area-inset-left, 0px) + 12px); padding: 0 5px; border-radius: 32px; background: var(--panel); /* сплошное, без просвечивания */ -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); border: 1px solid color-mix(in srgb, var(--text) 9%, transparent); box-shadow: 0 6px 24px rgba(0,0,0,.14); transition: margin-bottom .22s ease; }
+.tabbar { height: 64px; margin: 4px calc(env(safe-area-inset-right, 0px) + 12px) calc(12px + var(--tab-sab)) calc(env(safe-area-inset-left, 0px) + 12px); padding: 0 5px; border-radius: 32px; background: var(--tabbar); /* сплошное, без просвечивания; цвет — свой у каждой темы */ -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); border: 1px solid color-mix(in srgb, var(--text) 9%, transparent); box-shadow: 0 6px 24px rgba(0,0,0,.14); transition: margin-bottom .22s ease; border-color: color-mix(in srgb, var(--tabbar-text) 10%, transparent); }
 html.reading-hidden .tabbar { margin-bottom: -68px; }
-.tab { margin: 5px 0; padding: 3px 2px; border-radius: 26px; color: var(--muted); }
+.tab { margin: 5px 0; padding: 3px 2px; border-radius: 26px; color: color-mix(in srgb, var(--tabbar-text) 64%, var(--tabbar)); }
 .tab-icon { height: 26px; }
-.tab.on { color: var(--text); background: color-mix(in srgb, var(--text) 9%, transparent); }
-.tab:active { background: color-mix(in srgb, var(--text) 14%, transparent); }
-@media (hover: hover) { .tab:hover { background: color-mix(in srgb, var(--text) 6%, transparent); } .tab.on:hover { background: color-mix(in srgb, var(--text) 11%, transparent); } }
-.tab .update-dot { box-shadow: 0 0 0 2px var(--panel); }
+.tab.on { color: var(--tabbar-text); background: color-mix(in srgb, var(--tabbar-text) 10%, transparent); }
+.tab:active { background: color-mix(in srgb, var(--tabbar-text) 15%, transparent); }
+@media (hover: hover) { .tab:hover { background: color-mix(in srgb, var(--tabbar-text) 7%, transparent); } .tab.on:hover { background: color-mix(in srgb, var(--tabbar-text) 12%, transparent); } }
+.tab .update-dot { box-shadow: 0 0 0 2px var(--tabbar); }
 /* «Ещё»: просторнее — удобнее попадать пальцем */
 .more-list .menu-item { padding-top: 12px; padding-bottom: 12px; }
 /* История поиска — строками: часы, запрос, крестик */
@@ -1717,7 +1724,7 @@ html.has-tabbar .toasts { bottom: calc(max(var(--kb, 0px), var(--sab)) + 16px); 
 html.has-tabbar .app:has(.plan-return) .toasts, html.has-tabbar .app:has(.sheet-foot) .toasts { bottom: calc(var(--sab) + 70px); }
 html.has-tabbar .staging-badge { bottom: calc(var(--sab) + 6px); }
 /* Нижнее меню: подсветка — одна плашка, переезжает к выбранному пункту (и идёт за пальцем при свайпе) */
-.tab-pill { position: absolute; z-index: 0; top: 6px; bottom: 6px; left: calc(6px + (100% - 12px) / var(--tab-n) * var(--tab-i)); width: calc((100% - 12px) / var(--tab-n)); border-radius: 26px; background: color-mix(in srgb, var(--text) 9%, transparent); transition: left .3s cubic-bezier(.2,.8,.2,1), width .3s cubic-bezier(.2,.8,.2,1); pointer-events: none; }
+.tab-pill { position: absolute; z-index: 0; top: 6px; bottom: 6px; left: calc(6px + (100% - 12px) / var(--tab-n) * var(--tab-i)); width: calc((100% - 12px) / var(--tab-n)); border-radius: 26px; background: color-mix(in srgb, var(--tabbar-text) 11%, transparent); transition: left .3s cubic-bezier(.2,.8,.2,1), width .3s cubic-bezier(.2,.8,.2,1); pointer-events: none; }
 .tabbar.swiping .tab-pill { transition-duration: .14s; }
 .tab { position: relative; z-index: 1; touch-action: pan-y; }
 .tab.on, .tab:active, .tab.on:hover { background: none; }
@@ -2203,18 +2210,17 @@ html.has-tabbar .sheet.page { top: 0; height: auto; max-height: none; }
 .search-pick { display: flex; flex-direction: column; gap: 12px; }
 /* Android: нижнее меню — сплошная полоса во всю ширину, прижатая к низу, без скруглений (на iPhone и компьютере — капсула) */
 html.is-android { --tb-side: 0px; --tb-bottom: 0px; --tabbar-base: calc(64px + env(safe-area-inset-bottom, 0px)); }
-html.is-android .tabbar { left: 0; right: 0; bottom: 0; height: calc(64px + env(safe-area-inset-bottom, 0px)); padding: 6px calc(env(safe-area-inset-right, 0px) + 6px) calc(6px + env(safe-area-inset-bottom, 0px)) calc(env(safe-area-inset-left, 0px) + 6px); border: 0; border-top: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 0; box-shadow: none; background: var(--panel); -webkit-backdrop-filter: none; backdrop-filter: none; }
+html.is-android .tabbar { left: 0; right: 0; bottom: 0; height: calc(64px + env(safe-area-inset-bottom, 0px)); padding: 6px calc(env(safe-area-inset-right, 0px) + 6px) calc(6px + env(safe-area-inset-bottom, 0px)) calc(env(safe-area-inset-left, 0px) + 6px); border: 0; border-top: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 0; box-shadow: none; background: var(--tabbar); -webkit-backdrop-filter: none; backdrop-filter: none; }
 html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px)); left: calc(env(safe-area-inset-left, 0px) + 6px + (100% - 12px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)) / var(--tab-n) * var(--tab-i)); width: calc((100% - 12px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)) / var(--tab-n)); }
 /* Высота окна при перетаскивании за ручку: переменная не наследуется — иначе каждое движение пальца пересчитывало
    стили всего содержимого окна (в каталоге модулей 26–95 мс на шаг вместо ~1 мс) */
 @property --sheet-h { syntax: '<number>'; inherits: false; initial-value: 50; }
 /* Строки длинных списков, которых не видно, браузер не рисует (заметки, закладки, каталог; у результатов поиска — нет: сбивалось восстановление прокрутки) */
 .list-row, .mod-row { content-visibility: auto; contain-intrinsic-size: auto 56px; }
-/* Две панели друг над другом: полоска разделителя ближе к кнопкам второй панели */
-.split.rows .divider { flex-basis: 16px; }
+/* Две панели друг над другом: шапка второй панели пониже */
 .split.rows .pane-slot.second .toolbar { height: calc(var(--bar-h) - 8px); }
-/* Верхняя из двух панелей: нижнего меню под ней нет — стрелки глав и «Слушать» отстоят от низа панели так же, как от боков (14 px) */
-.split.rows.is-split .pane-slot.first .reader, .app:has(.audio-bar) .split.rows.is-split .pane-slot.first .reader { --chap-bottom: 14px; }
+/* Верхняя из двух панелей: нижнего меню под ней нет — стрелки глав и «Слушать» — над ползунком разделителя (16 px от низа, как во Flutter) */
+.split.rows.is-split .pane-slot.first .reader, .app:has(.audio-bar) .split.rows.is-split .pane-slot.first .reader { --chap-bottom: 16px; }
 /* Две панели с синхронной прокруткой на телефоне: прокрутку пальцем ведёт приложение (useSyncTouchScroll) */
 .text-scroller.js-scroll { touch-action: none; }
 /* Стихи в проповеди — без цветной полосы слева: рамка как у остальных блоков */

@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '../App.jsx';
 import BibleReader from './BibleReader.jsx';
 import { t } from '../core/i18n.js';
+import { setDriver } from '../core/scrollSync.js';
 
 function useOrientation(pref) {
   const calc = () => {
@@ -34,6 +35,9 @@ export default function SplitScreenReader() {
 
   const onDown = (e) => {
     dragging.current = true;
+    // пока тянется разделитель, высота панелей меняется — синхронная прокрутка молчит (ведущей панели нет),
+    // иначе вторая панель прыгала бы вслед за первой; ведущей снова станет та, которой коснутся
+    setDriver(null);
     e.currentTarget.setPointerCapture?.(e.pointerId);
     document.documentElement.classList.add('resizing');
   };
@@ -50,6 +54,7 @@ export default function SplitScreenReader() {
     setSettings({ splitRatio: ratio });
   };
   const onKey = (e) => {
+    setDriver(null);
     const d = { ArrowLeft: -0.05, ArrowUp: -0.05, ArrowRight: 0.05, ArrowDown: 0.05 }[e.key];
     if (d) {
       e.preventDefault();

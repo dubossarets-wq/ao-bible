@@ -133,7 +133,7 @@ ${FONTS}
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="${SHORT_NAME}">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/icon-64.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 ${FONTS}
 <style>html:root{--sat:env(safe-area-inset-top,0px)}html,body{height:100%}/* iOS: приложение прибито ко всем краям экрана, текст доходит до нижнего края */html:root .app{position:fixed;inset:0;height:auto}/* iOS 26 размывает верх экрана: под строкой состояния — сплошной цвет верхней панели, размытие сливается с ним */html:root,html:root body{background:var(--bar)}html:root body::before{content:"";position:fixed;left:0;right:0;top:0;height:calc(env(safe-area-inset-top,0px) + 2px);background:var(--bar);z-index:100;pointer-events:none}</style>
@@ -186,7 +186,7 @@ ${FONTS}
   // обложек планов и фона) кладём в кэш сразу при установке
   const ownFiles = async (sub, re) => (await readdir(path.join(out, PWA_DIR, sub)).catch(() => [])).filter((f) => re.test(f)).map((f) => `${sub}/${f}`);
   const shell = [
-    './', 'index.html', 'manifest.webmanifest', 'modules/catalog.json', 'icons/icon.svg', 'icons/icon-192.png', 'icons/apple-touch-icon.png',
+    './', 'index.html', 'manifest.webmanifest', 'modules/catalog.json', 'icons/icon-64.png', 'icons/icon-192.png', 'icons/apple-touch-icon.png',
     ...(await ownFiles('plans', /\.json$/)),
     ...(await ownFiles('images/verse-bg', /\.(json|jpg)$/)),
   ];
