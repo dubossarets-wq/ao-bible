@@ -40,18 +40,6 @@ export default function ModulePicker({ pane, onClose }) {
   const list = shownKind ? byLang.filter(shownKind[2]) : byLang;
   return (
     <BottomSheet title={t('Перевод')} subtitle={pane === 1 ? t('Вторая панель') : t('Основная панель')} onClose={onClose}>
-      {langs.length > 1 && (
-        <div className="pick-langs" role="group" aria-label={t('Язык')}>
-          <button type="button" className={`chip ${!shown ? 'on' : ''}`} aria-pressed={!shown} onClick={() => setLang(null)}>
-            {t('Все')}
-          </button>
-          {langs.map((l) => (
-            <button key={l} type="button" className={`chip ${shown === l ? 'on' : ''}`} aria-pressed={shown === l} onClick={() => setLang(l)}>
-              {langName(l)}
-            </button>
-          ))}
-        </div>
-      )}
       {kinds.length > 0 && (
         <div className="pick-langs pick-kinds" role="group" aria-label={t('Что в переводе')}>
           <button type="button" className={`chip ${!shownKind ? 'on' : ''}`} aria-pressed={!shownKind} onClick={() => setKind(null)}>
@@ -60,6 +48,18 @@ export default function ModulePicker({ pane, onClose }) {
           {kinds.map(([k, label]) => (
             <button key={k} type="button" className={`chip ${shownKind?.[0] === k ? 'on' : ''}`} aria-pressed={shownKind?.[0] === k} onClick={() => setKind(k)}>
               {t(label)}
+            </button>
+          ))}
+        </div>
+      )}
+      {langs.length > 1 && (
+        <div className="pick-langs" role="group" aria-label={t('Язык')}>
+          <button type="button" className={`chip ${!shown ? 'on' : ''}`} aria-pressed={!shown} onClick={() => setLang(null)}>
+            {t('Все')}
+          </button>
+          {langs.map((l) => (
+            <button key={l} type="button" className={`chip ${shown === l ? 'on' : ''}`} aria-pressed={shown === l} onClick={() => setLang(l)}>
+              {langName(l)}
             </button>
           ))}
         </div>

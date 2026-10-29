@@ -450,6 +450,8 @@ export default function PlansSheet({ pane, onClose }) {
   };
   const add = (plan) => {
     setPlans((ps) => [{ ...plan, uid: Date.now().toString(36), start: localDate(), done: {}, ...(plan.calendar ? { year: new Date().getFullYear() } : {}) }, ...ps]);
+    // новый план — первым в списке: прокручиваем окно, чтобы его карточка встала вверху
+    setTimeout(() => document.querySelector('.sheet .plan-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
     const started = t('План «{name}» начат — нажмите «Читать»', { name: t(plan.name) });
     // без напоминания планы чаще бросают — сразу предлагаем включить (приложение из Google Play)
     if (REMINDERS && !getReminder().on) {
