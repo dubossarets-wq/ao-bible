@@ -24,6 +24,10 @@
    "urlGz": "rst-plus.json.gz",
    "size": 9961545,
    "sizeGz": 2375965,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-13"
   },
   {
@@ -46,6 +50,10 @@
    "urlGz": "rst.json.gz",
    "size": 6435258,
    "sizeGz": 1531035,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-13"
   },
   {
@@ -68,6 +76,11 @@
    "urlGz": "rst-dc.json.gz",
    "size": 7333962,
    "sizeGz": 1755471,
+   "scope": [
+    "ot",
+    "nt",
+    "dc"
+   ],
    "added": "2026-10-13"
   },
   {
@@ -90,6 +103,9 @@
    "urlGz": "noncanon-ru.json.gz",
    "size": 2069056,
    "sizeGz": 509594,
+   "scope": [
+    "dc"
+   ],
    "added": "2026-10-29"
   },
   {
@@ -113,6 +129,10 @@
    "urlGz": "kjv.json.gz",
    "size": 7080240,
    "sizeGz": 1825110,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-13"
   },
   {
@@ -135,6 +155,10 @@
    "urlGz": "bsb.json.gz",
    "size": 7142131,
    "sizeGz": 1977013,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-13"
   },
   {
@@ -158,6 +182,9 @@
    "urlGz": "oshb.json.gz",
    "size": 10093043,
    "sizeGz": 2272691,
+   "scope": [
+    "ot"
+   ],
    "added": "2026-10-13"
   },
   {
@@ -181,6 +208,9 @@
    "urlGz": "byz-rp2018.json.gz",
    "size": 3703944,
    "sizeGz": 730002,
+   "scope": [
+    "nt"
+   ],
    "added": "2026-10-13"
   },
   {
@@ -204,6 +234,11 @@
    "urlGz": "csl-elizabeth.json.gz",
    "size": 6675351,
    "sizeGz": 1583020,
+   "scope": [
+    "ot",
+    "nt",
+    "dc"
+   ],
    "added": "2026-10-13"
   },
   {
@@ -226,6 +261,9 @@
    "urlGz": "rus-makarij.json.gz",
    "size": 2514758,
    "sizeGz": 576384,
+   "scope": [
+    "ot"
+   ],
    "added": "2026-10-13"
   },
   {
@@ -248,6 +286,9 @@
    "urlGz": "ukr-kulish.json.gz",
    "size": 1350287,
    "sizeGz": 348864,
+   "scope": [
+    "nt"
+   ],
    "added": "2026-10-13"
   },
   {
@@ -270,6 +311,9 @@
    "urlGz": "jps1917.json.gz",
    "size": 3265110,
    "sizeGz": 928020,
+   "scope": [
+    "ot"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -292,6 +336,10 @@
    "urlGz": "luther1912.json.gz",
    "size": 7017526,
    "sizeGz": 1980582,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -314,6 +362,10 @@
    "urlGz": "schlachter1951.json.gz",
    "size": 4305715,
    "sizeGz": 1371543,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -336,6 +388,10 @@
    "urlGz": "cuv-s.json.gz",
    "size": 3382861,
    "sizeGz": 1193083,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -358,6 +414,10 @@
    "urlGz": "cuv-t.json.gz",
    "size": 3392810,
    "sizeGz": 1196142,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -380,6 +440,10 @@
    "urlGz": "ccb.json.gz",
    "size": 3274368,
    "sizeGz": 1186799,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -402,6 +466,10 @@
    "urlGz": "bungo.json.gz",
    "size": 4347505,
    "sizeGz": 1275716,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -424,6 +492,10 @@
    "urlGz": "korrv.json.gz",
    "size": 4502074,
    "sizeGz": 1241675,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -446,6 +518,10 @@
    "urlGz": "hin-irv.json.gz",
    "size": 9818771,
    "sizeGz": 1686779,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -468,6 +544,10 @@
    "urlGz": "swh-ulb.json.gz",
    "size": 4063077,
    "sizeGz": 1265496,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -490,6 +570,10 @@
    "urlGz": "swh-neno.json.gz",
    "size": 4114909,
    "sizeGz": 1277689,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -512,6 +596,9 @@
    "urlGz": "alkitab-gratis.json.gz",
    "size": 1247051,
    "sizeGz": 356216,
+   "scope": [
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -534,6 +621,10 @@
    "urlGz": "web.json.gz",
    "size": 9579631,
    "sizeGz": 2217788,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -556,6 +647,10 @@
    "urlGz": "asv.json.gz",
    "size": 9891170,
    "sizeGz": 2269188,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -578,6 +673,10 @@
    "urlGz": "ylt.json.gz",
    "size": 4244474,
    "sizeGz": 1224309,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -600,6 +699,10 @@
    "urlGz": "darby.json.gz",
    "size": 9455560,
    "sizeGz": 2174240,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -622,6 +725,11 @@
    "urlGz": "dra.json.gz",
    "size": 9663816,
    "sizeGz": 2325934,
+   "scope": [
+    "ot",
+    "nt",
+    "dc"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -644,6 +752,10 @@
    "urlGz": "geneva1599.json.gz",
    "size": 4255706,
    "sizeGz": 1246306,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -666,6 +778,10 @@
    "urlGz": "lsv.json.gz",
    "size": 9875237,
    "sizeGz": 2219145,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -688,6 +804,10 @@
    "urlGz": "elberfelder1905.json.gz",
    "size": 4402085,
    "sizeGz": 1339283,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -710,6 +830,11 @@
    "urlGz": "menge.json.gz",
    "size": 5583468,
    "sizeGz": 1857915,
+   "scope": [
+    "ot",
+    "nt",
+    "dc"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -732,6 +857,10 @@
    "urlGz": "segond1910.json.gz",
    "size": 10111583,
    "sizeGz": 2447757,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -754,6 +883,10 @@
    "urlGz": "darby-fr.json.gz",
    "size": 4486393,
    "sizeGz": 1319353,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -776,6 +909,10 @@
    "urlGz": "ostervald.json.gz",
    "size": 9895607,
    "sizeGz": 2393745,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -798,6 +935,11 @@
    "urlGz": "neo-crampon.json.gz",
    "size": 10654519,
    "sizeGz": 2663258,
+   "scope": [
+    "ot",
+    "nt",
+    "dc"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -820,6 +962,10 @@
    "urlGz": "rv1909.json.gz",
    "size": 7105340,
    "sizeGz": 1908851,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -842,6 +988,10 @@
    "urlGz": "biblia-livre.json.gz",
    "size": 3998279,
    "sizeGz": 1254214,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -864,6 +1014,10 @@
    "urlGz": "nbv-pt.json.gz",
    "size": 4513060,
    "sizeGz": 1452091,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -886,6 +1040,10 @@
    "urlGz": "riveduta.json.gz",
    "size": 4254686,
    "sizeGz": 1335578,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -908,6 +1066,10 @@
    "urlGz": "diodati.json.gz",
    "size": 4571430,
    "sizeGz": 1410977,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -930,6 +1092,10 @@
    "urlGz": "gdanska.json.gz",
    "size": 4075102,
    "sizeGz": 1326524,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -952,6 +1118,9 @@
    "urlGz": "slowo-zycia.json.gz",
    "size": 1037197,
    "sizeGz": 368258,
+   "scope": [
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -974,6 +1143,10 @@
    "urlGz": "kralicka.json.gz",
    "size": 3960600,
    "sizeGz": 1334341,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -996,6 +1169,10 @@
    "urlGz": "dk-cyr.json.gz",
    "size": 5850916,
    "sizeGz": 1371416,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -1018,6 +1195,10 @@
    "urlGz": "ukr-nup.json.gz",
    "size": 1872796,
    "sizeGz": 479021,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -1040,6 +1221,9 @@
    "urlGz": "ronbl.json.gz",
    "size": 1011220,
    "sizeGz": 325420,
+   "scope": [
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -1062,6 +1246,9 @@
    "urlGz": "arm-nt1853.json.gz",
    "size": 1571537,
    "sizeGz": 361611,
+   "scope": [
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -1084,6 +1271,9 @@
    "urlGz": "be-nt1931.json.gz",
    "size": 1389085,
    "sizeGz": 356728,
+   "scope": [
+    "nt"
+   ],
    "added": "2026-10-16"
   },
   {
@@ -1109,6 +1299,10 @@
    "urlGz": "rst-interlinear.json.gz",
    "size": 15357746,
    "sizeGz": 3642565,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-17"
   },
   {
@@ -1131,6 +1325,9 @@
    "urlGz": "rus-pobedonostsev.json.gz",
    "size": 1384464,
    "sizeGz": 351140,
+   "scope": [
+    "nt"
+   ],
    "added": "2026-10-19"
   },
   {
@@ -1153,6 +1350,9 @@
    "urlGz": "rus-rbo-nt.json.gz",
    "size": 956298,
    "sizeGz": 238934,
+   "scope": [
+    "nt"
+   ],
    "added": "2026-10-19"
   },
   {
@@ -1175,6 +1375,9 @@
    "urlGz": "rus-yungerov.json.gz",
    "size": 585642,
    "sizeGz": 149246,
+   "scope": [
+    "ot"
+   ],
    "added": "2026-10-19"
   },
   {
@@ -1197,6 +1400,9 @@
    "urlGz": "rus-sergievsky.json.gz",
    "size": 451523,
    "sizeGz": 118101,
+   "scope": [
+    "dc"
+   ],
    "added": "2026-10-19"
   },
   {
@@ -1220,6 +1426,10 @@
    "urlGz": "lxx-swete.json.gz",
    "size": 10989512,
    "sizeGz": 2095040,
+   "scope": [
+    "ot",
+    "dc"
+   ],
    "added": "2026-10-19"
   },
   {
@@ -1964,6 +2174,11 @@
    "urlGz": "vulg-interlinear.json.gz",
    "size": 12690525,
    "sizeGz": 3166997,
+   "scope": [
+    "ot",
+    "nt",
+    "dc"
+   ],
    "added": "2026-10-20"
   },
   {
@@ -1986,6 +2201,10 @@
    "urlGz": "rus-rob.json.gz",
    "size": 7333712,
    "sizeGz": 1760629,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-24"
   },
   {
@@ -2008,6 +2227,10 @@
    "urlGz": "bel-bokun.json.gz",
    "size": 6249499,
    "sizeGz": 1474000,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-24"
   },
   {
@@ -2030,6 +2253,9 @@
    "urlGz": "rus-desp.json.gz",
    "size": 1503657,
    "sizeGz": 385075,
+   "scope": [
+    "nt"
+   ],
    "added": "2026-10-24"
   },
   {
@@ -2052,6 +2278,9 @@
    "urlGz": "rus-otnt.json.gz",
    "size": 1426199,
    "sizeGz": 365673,
+   "scope": [
+    "nt"
+   ],
    "added": "2026-10-24"
   },
   {
@@ -2074,6 +2303,10 @@
    "urlGz": "rst-stress.json.gz",
    "size": 6783359,
    "sizeGz": 1539223,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-24"
   },
   {
@@ -2096,6 +2329,9 @@
    "urlGz": "be-skoryna.json.gz",
    "size": 677609,
    "sizeGz": 175480,
+   "scope": [
+    "nt"
+   ],
    "added": "2026-10-24"
   },
   {
@@ -2119,6 +2355,9 @@
    "urlGz": "wh1881.json.gz",
    "size": 3681190,
    "sizeGz": 719814,
+   "scope": [
+    "nt"
+   ],
    "added": "2026-10-26"
   },
   {
@@ -2142,6 +2381,9 @@
    "urlGz": "sblgnt.json.gz",
    "size": 3628999,
    "sizeGz": 716455,
+   "scope": [
+    "nt"
+   ],
    "added": "2026-10-26"
   },
   {
@@ -2165,6 +2407,10 @@
    "urlGz": "lxx-brenton.json.gz",
    "size": 10895378,
    "sizeGz": 2092503,
+   "scope": [
+    "ot",
+    "dc"
+   ],
    "added": "2026-10-26"
   },
   {
@@ -2187,6 +2433,10 @@
    "urlGz": "brenton.json.gz",
    "size": 3970600,
    "sizeGz": 1163073,
+   "scope": [
+    "ot",
+    "dc"
+   ],
    "added": "2026-10-26"
   },
   {
@@ -2210,6 +2460,9 @@
    "urlGz": "tregelles.json.gz",
    "size": 3671186,
    "sizeGz": 711604,
+   "scope": [
+    "nt"
+   ],
    "added": "2026-10-26"
   },
   {
@@ -2233,6 +2486,9 @@
    "urlGz": "antoniades1904.json.gz",
    "size": 3713105,
    "sizeGz": 733608,
+   "scope": [
+    "nt"
+   ],
    "added": "2026-10-26"
   },
   {
@@ -2256,6 +2512,9 @@
    "urlGz": "tr1894.json.gz",
    "size": 3754192,
    "sizeGz": 729712,
+   "scope": [
+    "nt"
+   ],
    "added": "2026-10-26"
   },
   {
@@ -2279,6 +2538,9 @@
    "urlGz": "stephanus1550.json.gz",
    "size": 3758797,
    "sizeGz": 730760,
+   "scope": [
+    "nt"
+   ],
    "added": "2026-10-26"
   },
   {
@@ -2302,6 +2564,9 @@
    "urlGz": "elzevir1624.json.gz",
    "size": 3758986,
    "sizeGz": 730631,
+   "scope": [
+    "nt"
+   ],
    "added": "2026-10-26"
   },
   {
@@ -2325,6 +2590,9 @@
    "urlGz": "tischendorf.json.gz",
    "size": 3635894,
    "sizeGz": 738640,
+   "scope": [
+    "nt"
+   ],
    "added": "2026-10-26"
   },
   {
@@ -2347,6 +2615,9 @@
    "urlGz": "f35.json.gz",
    "size": 2815748,
    "sizeGz": 593429,
+   "scope": [
+    "nt"
+   ],
    "added": "2026-10-26"
   },
   {
@@ -2369,6 +2640,10 @@
    "urlGz": "vamvas.json.gz",
    "size": 7648430,
    "sizeGz": 1619418,
+   "scope": [
+    "ot",
+    "nt"
+   ],
    "added": "2026-10-26"
   },
   {
@@ -2391,6 +2666,9 @@
    "urlGz": "vin-interlinear.json.gz",
    "size": 4362932,
    "sizeGz": 928559,
+   "scope": [
+    "nt"
+   ],
    "added": "2026-10-19"
   },
   {
