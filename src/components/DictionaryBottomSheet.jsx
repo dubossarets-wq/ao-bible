@@ -17,7 +17,7 @@ import { playStrongWord, stopVerse, ORIG_AUDIO } from '../core/origAudio.js';
 const KIND_LABEL = { strongs: N_('по номерам Стронга'), words: N_('по словам') };
 
 // «from H24 (אָבִיב)» → кликабельные номера Стронга
-export function StrongLinks({ text, onOpen }) {
+function StrongLinks({ text, onOpen }) {
   if (!text) return null;
   const parts = text.split(/([HG]\d+)/g);
   return (
@@ -36,7 +36,7 @@ export function StrongLinks({ text, onOpen }) {
 }
 
 // Слово живым голосом (из этого стиха или из первого места, где оно есть в записи)
-export function SayButton({ num, verseRef }) {
+function SayButton({ num, verseRef }) {
   const [st, setSt] = useState('idle'); // idle | loading | playing | none
   const say = async () => {
     if (st === 'playing') return (stopVerse(), setSt('idle'));
@@ -131,12 +131,6 @@ function StrongEntry({ num, entry, module, mapping, orig, verseRef, onOpenStrong
           </p>
         </section>
       )}
-      {entry.kjv && (
-        <section>
-          <h4>{t('Переводы в KJV')}</h4>
-          <p>{entry.kjv}</p>
-        </section>
-      )}
       {entry.renderings && (
         <section>
           <h4>{t('Как переведено в синодальном тексте · {n} употр.', { n: entry.count })}</h4>
@@ -175,7 +169,7 @@ function StrongEntry({ num, entry, module, mapping, orig, verseRef, onOpenStrong
       <WordStats num={num} onOpenRef={onOpenRef} onOpenAll={onOpenAll && (() => onOpenAll(num, entry.lemma))} />
       <p className="source-note">
         {module.name}
-        {module.language === 'en' ? ` · ${t('на английском')}` : ''} · {module.license}
+        {' · '}{module.license}
       </p>
     </article>
   );

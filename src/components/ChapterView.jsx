@@ -274,7 +274,7 @@ export function selectedIn(selection, bookId, c) {
 
 // selection — Set ключей «Книга.глава.стих»; onSelect(ref, 'start' | 'toggle') — выделение стихов
 export default function ChapterView({ index, pane, module, onScrollDirection, selection, onSelect, selActions, part, onPart }) {
-  const { settings, openSheet, openPopover, closePopover, openStrong, popover, reportPosition, navigate, clearHighlight, sheet, modules, marks, toast, toggleFavorite, panes } = useApp();
+  const { settings, openSheet, openPopover, closePopover, popover, reportPosition, navigate, clearHighlight, sheet, modules, marks, toast, toggleFavorite, panes } = useApp();
   const scroller = useRef(null);
   usePinchFont(scroller);
   const [book, setBook] = useState(null); // { id, data, meta }
@@ -798,8 +798,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       const token = wordAt(text, +sn.dataset.i);
       if (!token?.strongs) return;
       closePopover();
-      // номер Стронга в тексте — окно Стронга рядом с текстом
-      return openStrong({ pane: index, num: token.strongs[0].replace(/^([HG])0*/i, (_, x) => x.toUpperCase()), nums: token.strongs.map((x) => x.replace(/^([HG])0*/i, (_, y) => y.toUpperCase())), ref: vref, wi: +sn.dataset.i, morph: token.morph || [] });
+      return openSheet('dict', index, { token: { text: token.text, strongs: token.strongs, morph: token.morph || null }, ref: vref, moduleId: module.id, verseText: plainText(text), wi: +sn.dataset.i, autoOpen: true, initial: 'full' });
     }
     const w = e.target.closest('.w');
     if (w) {

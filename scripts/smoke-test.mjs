@@ -163,30 +163,29 @@ async function run(label, viewport, isMobile) {
   // Сначала — выборка словарей прямо над словом
   await page.waitForSelector('.word-pop button.wp-item', { timeout: 15000 });
   const popItems = await page.$$eval('.word-pop button.wp-item', (els) => els.map((e) => e.textContent.trim()));
-  check(`${label}: выборка над словом`, popItems.some((t) => t.includes('H3068') && t.includes('Стронг')) && popItems.length >= 2, popItems.join(' | '));
+  check(`${label}: выборка над словом`, popItems.some((t) => t.includes('H3068') && t.includes('Стронг: иврит')) && popItems.length >= 2, popItems.join(' | '));
   const popBox = await page.locator('.word-pop').boundingBox();
   const wordBox = await word.boundingBox();
   check(`${label}: выборка у слова`, Math.abs(popBox.y - wordBox.y - wordBox.height) < 20 || Math.abs(popBox.y + popBox.height - wordBox.y) < 20, `слово y=${Math.round(wordBox.y)}, выборка y=${Math.round(popBox.y)}`);
   await page.screenshot({ path: `${shots}/${label}-2-dict-list.png` });
-  // номер Стронга — окно Стронга рядом с текстом, на половину экрана, со статьями всех словарей подряд
-  await page.locator('.word-pop button.wp-item', { hasText: 'H3068' }).click();
-  await page.waitForSelector('.strong-panel .orig.hebrew');
+  await page.locator('.word-pop button.wp-item', { hasText: 'Стронг: иврит' }).click();
+  await page.waitForSelector('.orig.hebrew');
   await page.waitForTimeout(350);
-  const dicts = await page.$$eval('.strong-panel .sp-dict', (e) => e.map((x) => x.textContent));
-  check(`${label}: окно Стронга со словарями`, dicts.some((x) => /стронг: иврит/i.test(x)) && dicts.length >= 2, dicts.join(' | '));
-  const half = await page.evaluate(() => {
-    const p = document.querySelector('.strong-panel').getBoundingClientRect();
-    const r = document.querySelector('.strong-reader').getBoundingClientRect();
-    return Math.abs(p.height - r.height) < 4 || Math.abs(p.width - r.width) < 4;
-  });
-  check(`${label}: Стронг — на половину экрана`, half);
-  const lemma = await page.textContent('.strong-panel .orig.hebrew');
-  check(`${label}: статья с ивритом`, /[֐-׿]/.test(lemma), lemma);
-  const r1 = await page.textContent('.strong-panel .renderings li');
-  check(`${label}: варианты перевода (симфония)`, r1.length > 0, r1.trim().slice(0, 40));
+  const title = await page.textContent('.sheet-title');
+  check(`${label}: словарная панель`, title.includes('Господь'), title);
+  // доля высоты, свободной над нижними вкладками (окно не заходит под них)
+  const sheetH = await page.evaluate(() => document.querySelector('.sheet').getBoundingClientRect().height / (document.querySelector('.tabbar')?.getBoundingClientRect().top || window.innerHeight));
+  check(`${label}: статья Стронга на всю высоту`, sheetH > 0.9, sheetH.toFixed(2));
+  const lemma = await page.textContent('.orig.hebrew');
+  check(`${label}: статья с ивритом`, /[\u0590-\u05FF]/.test(lemma), lemma);
+  // Переключение на другой словарь, не закрывая панель
+  await page.locator('.tabs [role=tab]', { hasText: 'Симфония RST+' }).click();
+  await page.waitForSelector('.renderings li');
+  const r1 = await page.textContent('.renderings li');
+  check(`${label}: переключение словаря`, r1.length > 0, r1.trim().slice(0, 40));
   await page.screenshot({ path: `${shots}/${label}-3-dict-entry.png` });
-  await page.locator('.strong-panel .sp-btn[aria-label="Закрыть"]').click();
-  await page.waitForSelector('.strong-panel', { state: 'detached' });
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.sheet', { state: 'detached' });
 
   // Параллельные места
   await page.click('#v-13-33 .xr');

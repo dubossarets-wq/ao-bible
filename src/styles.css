@@ -2303,43 +2303,6 @@ html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px))
 .rem-days button.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
 .rem-add { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; margin-top: 2px; border: 1px dashed var(--line); border-radius: 12px; background: none; color: var(--accent); font: 600 .92rem var(--font-ui); cursor: pointer; }
 
-/* Стронг — параллельным окном на половину экрана: на телефоне снизу, на широком экране справа */
-.strong-split { display: flex; height: 100%; width: 100%; }
-.strong-split.rows { flex-direction: column; }
-.strong-reader, .strong-panel { flex: 1 1 0; min-width: 0; min-height: 0; display: flex; }
-.strong-reader > .split { flex: 1; }
-.strong-split.rows .strong-reader .reader { --chap-bottom: 16px; } /* нижнее меню — над окном Стронга, не над текстом */
-.divider.static { cursor: default; }
-.strong-split.rows > .divider.static { flex: 0 0 1px; background: var(--line); }
-.strong-split.columns > .divider.static { flex: 0 0 1px; background: var(--line); }
-.strong-panel { flex-direction: column; background: var(--bg); color: var(--text); position: relative; z-index: 1; animation: spIn .22s ease-out; }
-@keyframes spIn { from { opacity: 0; transform: translateY(16px); } }
-.sp-bar { flex: none; display: flex; align-items: center; gap: 2px; height: 48px; padding: 0 6px; border-bottom: 1px solid var(--line); background: var(--bar); color: var(--bar-text); font-family: var(--font-ui); }
-.sp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 40px; height: 40px; padding: 0 8px; border: 0; border-radius: 12px; background: none; color: inherit; font: 600 .9rem var(--font-ui); cursor: pointer; }
-.sp-btn:disabled { opacity: .35; cursor: default; }
-.sp-btn:not(:disabled):active, .sp-btn.on { background: color-mix(in srgb, var(--bar-text) 14%, transparent); }
-.sp-btn.wide { padding: 0 10px; }
-.sp-gap { flex: 1; }
-.sp-nums { display: flex; gap: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
-.sp-num { flex: none; height: 30px; padding: 0 10px; border: 1px solid color-mix(in srgb, var(--bar-text) 28%, transparent); border-radius: 15px; background: none; color: inherit; font: 600 .85rem var(--font-mono, ui-monospace, monospace); cursor: pointer; }
-.sp-num.on { background: var(--bar-text); color: var(--bar); border-color: var(--bar-text); }
-.sp-pick { position: relative; }
-.sp-menu { position: absolute; z-index: 5; top: calc(100% + 4px); left: 0; min-width: 230px; padding: 4px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); color: var(--text); box-shadow: 0 14px 38px rgba(0,0,0,.18); }
-.sp-menu button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 42px; padding: 0 10px; border: 0; border-radius: 10px; background: none; color: inherit; font: 500 .95rem var(--font-ui); text-align: left; cursor: pointer; }
-.sp-menu button:active { background: color-mix(in srgb, var(--text) 7%, transparent); }
-.sp-check { display: grid; place-items: center; flex: none; width: 20px; height: 20px; border: 1.5px solid var(--muted); border-radius: 6px; color: var(--on-accent, #fff); }
-.sp-check.on { background: var(--accent); border-color: var(--accent); }
-.sp-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 16px 20px; }
-.strong-split.rows .sp-body, .strong-split.columns .sp-body { padding-bottom: calc(var(--sab, 0px) + 20px); }
-.sp-entry { gap: 10px; max-width: 720px; }
-.sp-entry .orig { font-size: 2rem; }
-.sp-facts { color: var(--muted); font-size: .92rem; }
-.sp-form { font-size: .95rem; }
-.sp-sec { display: flex; flex-direction: column; gap: 6px; padding-top: 12px; border-top: 1px solid var(--line); }
-.sp-dict { margin: 0; font: 700 .78rem/1.3 var(--font-ui); text-transform: uppercase; letter-spacing: .05em; color: var(--accent); }
-.sp-muted { color: var(--muted); font-size: .92rem; }
-.sp-sec .source-note { margin: 0; }
-.wp-lemma { color: var(--muted); font-size: .95rem; }
 .rem-exact { display: flex; align-items: center; gap: 10px; margin: 2px 0 8px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--accent) 12%, var(--panel)); }
 .rem-exact p { flex: 1; margin: 0; font-size: .9rem; line-height: 1.4; }
 .rem-exact .btn { flex: none; }

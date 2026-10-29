@@ -3,7 +3,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '../App.jsx';
 import BibleReader from './BibleReader.jsx';
-import StrongPanel from './StrongPanel.jsx';
 import { t } from '../core/i18n.js';
 
 function useOrientation(pref) {
@@ -24,7 +23,7 @@ function useOrientation(pref) {
 }
 
 export default function SplitScreenReader() {
-  const { panes, settings, setSettings, strong } = useApp();
+  const { panes, settings, setSettings } = useApp();
   const orientation = useOrientation(settings.splitLayout);
   const split = !!panes[1];
   const [ratio, setRatio] = useState(settings.splitRatio);
@@ -58,7 +57,7 @@ export default function SplitScreenReader() {
     }
   };
 
-  const reader = (
+  return (
     <div ref={box} className={`split ${orientation} ${split ? 'is-split' : ''}`} style={{ '--ratio': split ? ratio : 1 }}>
       <div className="pane-slot first">
         <BibleReader index={0} />
@@ -85,15 +84,6 @@ export default function SplitScreenReader() {
           </div>
         </>
       )}
-    </div>
-  );
-  // Стронг — параллельным окном, всегда пополам с текстом: на телефоне снизу, на широком экране справа
-  if (!strong) return reader;
-  return (
-    <div className={`strong-split ${orientation}`}>
-      <div className="strong-reader">{reader}</div>
-      <div className="divider static" aria-hidden="true" />
-      <StrongPanel />
     </div>
   );
 }
