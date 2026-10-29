@@ -289,6 +289,14 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .pick-row.on .pick-name { color: var(--accent); }
 .pick-name { font-weight: 700; }
 .pick-desc { grid-column: 1; font-size: .85rem; color: var(--muted); }
+/* «Можно скачать»: переводы из каталога, которых нет на устройстве — под установленными, «Скачать» в строке */
+.pick-more-h { margin: 0 -16px; padding: 18px 20px 8px; border-top: 1px solid var(--line); font-size: .74rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.pick-more-h .tab-n { font-weight: 600; letter-spacing: 0; }
+.pick-more-wait { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: .85rem; }
+.pick-more-h + .pick-list { margin-top: -12px; } /* вплотную к заголовку, как список под рядами выборки */
+.pick-more li { padding-right: 16px; }
+.pick-more .pick-row { cursor: default; }
+@media (hover: hover) { .pick-list.pick-more li:not(:has(.pick-row.on)):hover { background: none; } }
 .pick-check { grid-row: 1 / span 2; grid-column: 2; align-self: center; color: var(--accent); }
 .actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
 .action-row { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--line); background: var(--bg); border-radius: var(--radius); text-align: left; }

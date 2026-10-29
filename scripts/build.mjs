@@ -65,7 +65,27 @@ const today = new Date().toISOString().slice(0, 10);
 let addedChanged = false;
 for (const id of catalogIds) if (!added[id]) (added[id] = today), (addedChanged = true);
 if (addedChanged) await writeFile(addedPath, JSON.stringify(Object.fromEntries(Object.entries(added).sort()), null, 1) + '\n');
-const publishedCatalog = (dropGz) => JSON.stringify({ ...fullCatalog, modules: fullCatalog.modules.filter((m) => catalogIds.has(m.id)).map((m0) => {
+// Что в переводе (scope: 'ot' — Ветхий Завет, 'nt' — Новый, 'dc' — неканонические книги): по нему окно выбора перевода
+// отбирает и ещё не скачанные переводы. Считается по книгам файла модуля; файлы большие, поэтому ответ хранится
+// в scripts/module-scope.json и пересчитывается, только когда файл изменился (размер или время)
+const BOOK_KIND = new Map(JSON.parse(await readFile(path.join(root, 'src/core/books.json'), 'utf8')).map((b) => [b.id, b.dc ? 'dc' : b.t === 'NT' ? 'nt' : 'ot']));
+const scopePath = path.join(root, 'scripts/module-scope.json');
+const scopes = JSON.parse(await readFile(scopePath, 'utf8').catch(() => '{}'));
+let scopeChanged = false;
+for (const m of fullCatalog.modules) {
+  if (m.type !== 'bible' || !catalogIds.has(m.id) || m.unavailable) continue;
+  const file = path.join(root, 'public/modules', m.url || `${m.id}.json`);
+  const st = await stat(file).catch(() => null);
+  if (!st) continue;
+  const stamp = `${st.size}:${Math.round(st.mtimeMs)}`;
+  if (scopes[m.id]?.stamp === stamp) continue;
+  const kinds = new Set((JSON.parse(await readFile(file, 'utf8')).books || []).map((b) => BOOK_KIND.get(b.id) || 'dc'));
+  scopes[m.id] = { stamp, scope: ['ot', 'nt', 'dc'].filter((k) => kinds.has(k)) };
+  scopeChanged = true;
+}
+if (scopeChanged) await writeFile(scopePath, JSON.stringify(Object.fromEntries(Object.entries(scopes).sort()), null, 1) + '\n');
+const publishedCatalog = (dropGz) => JSON.stringify({ ...fullCatalog, modules: fullCatalog.modules.filter((m) => catalogIds.has(m.id)).map((m1) => {
+  const m0 = scopes[m1.id] && m1.type === 'bible' ? { ...m1, scope: scopes[m1.id].scope } : m1;
   const m = added[m0.id] ? { ...m0, added: added[m0.id] } : m0;
   if (!dropGz) return m;
   const { urlGz, sizeGz, ...rest } = m;

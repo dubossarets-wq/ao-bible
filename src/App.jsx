@@ -25,6 +25,7 @@ import { checkPlayUpdate, installPlayUpdate } from './core/playUpdate.js';
 import { Toasts } from './components/ui.jsx';
 import { t, useLang } from './core/i18n.js';
 import { verseModules } from './core/verseOfDay.js';
+import { getLivePosition } from './core/livePosition.js';
 
 const AppCtx = createContext(null);
 export const useApp = () => useContext(AppCtx);
@@ -441,7 +442,15 @@ export default function App() {
   });
   const closePlaceMap = useEvent(() => setPanes((ps) => [ps[0], ps[1]?.kind === 'map' ? ps[1].under || null : ps[1]]));
 
-  const closeSplit = useEvent(() => setPanes((ps) => [ps[0], null]));
+  // Закрыть панель, на которой нажали «×»: закрыли первую — вторая остаётся одна, на том месте, где её читали
+  // (карта во второй панели закрывается сама, первая остаётся)
+  const closeSplit = useEvent((index = 1) =>
+    setPanes((ps) => {
+      if (index !== 0 || !ps[1] || ps[1].kind === 'map') return [ps[0], null];
+      const live = getLivePosition(1);
+      return [{ ...ps[1], ref: live ? { ...ps[1].ref, ...live } : ps[1].ref, flash: null }, null];
+    })
+  );
 
   // Открыть место во второй панели (из первой) или в самой второй панели (из второй).
   const openInOther = useEvent((fromPane, ref) => {

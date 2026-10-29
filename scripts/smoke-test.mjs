@@ -214,8 +214,8 @@ async function run(label, viewport, isMobile) {
   await page.keyboard.press('Escape');
   await page.waitForTimeout(300);
 
-  // Закрытие второй панели крестиком
-  await page.click('.pane-slot.first .tb-split');
+  // Закрытие второй панели её крестиком («×» первой панели закрывает первую — вторая остаётся одна)
+  await page.click('.pane-slot.second .tb-split');
   await page.waitForTimeout(300);
   const after = await page.$$eval('.reader', (e) => e.length);
   const ref0 = await page.textContent('.tb-ref');

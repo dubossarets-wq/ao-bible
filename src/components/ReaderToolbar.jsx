@@ -25,6 +25,8 @@ export default function ReaderToolbar({ index, pane, module }) {
   const [menu, setMenu] = useState(false);
   const menuRef = useRef(null);
   const split = !!panes[1];
+  // «×» закрывает свою панель: у первой — первую (вторая остаётся одна), у второй — вторую
+  const closeLabel = index === 0 && panes[1]?.kind !== 'map' ? t('Закрыть эту панель') : t('Закрыть вторую панель');
   // Место при прокрутке меняется на каждом стихе — его показывает отдельная маленькая кнопка (RefButton),
   // а шапка со всеми значками не перерисовывается
   const ref = getLivePosition(index) || pane.ref;
@@ -73,9 +75,9 @@ export default function ReaderToolbar({ index, pane, module }) {
       <button
         key="split"
         className={`tb tb-icon tb-split ${split ? 'on' : ''}`}
-        onClick={() => (split ? closeSplit() : openSplit())}
-        aria-label={split ? t('Закрыть вторую панель') : t('Разделить экран')}
-        title={split ? t('Закрыть вторую панель') : t('Разделить экран')}
+        onClick={() => (split ? closeSplit(index) : openSplit())}
+        aria-label={split ? closeLabel : t('Разделить экран')}
+        title={split ? closeLabel : t('Разделить экран')}
       >
         {split ? <X size={21} /> : <Columns2 size={21} />}
       </button>
