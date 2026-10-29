@@ -13,7 +13,7 @@ import { t, N_ } from '../core/i18n.js';
 const TESTAMENTS = [
   ['OT', N_('Ветхий Завет')],
   ['NT', N_('Новый Завет')],
-  ['AP', N_('Апокрифы')],
+  ['AP', N_('Неканонические книги')],
 ];
 
 // Сравнение без регистра, точек, пробелов и дефисов; «ё» = «е»: «1 кор» ≈ «1Кор.»
@@ -48,7 +48,12 @@ export default function BookNavigator({ pane, onClose }) {
   const listScroll = useRef(0); // где был список книг — туда же вернёмся «назад»
   const focusNext = useRef(null); // клавиатура: что получит фокус после смены шага
 
-  const groups = useMemo(() => TESTAMENTS.map(([id, label]) => ({ id, label, list: module.books.filter((b) => testamentOf(b.id) === id) })).filter((g) => g.list.length), [module]);
+  // модуль без канонических книг («Неканонические») — все его книги одной вкладкой, в порядке модуля
+  const groups = useMemo(() => {
+    const onlyDc = module.books.every((b) => bookMeta(b.id).dc || testamentOf(b.id) === 'AP');
+    const tOf = (id) => (onlyDc ? 'AP' : testamentOf(id));
+    return TESTAMENTS.map(([id, label]) => ({ id, label, list: module.books.filter((b) => tOf(b.id) === id) })).filter((g) => g.list.length);
+  }, [module]);
   const [tab, setTab] = useState(() => {
     const cur = testamentOf(p.ref.book);
     return groups.some((g) => g.id === cur) ? cur : groups[0]?.id;
