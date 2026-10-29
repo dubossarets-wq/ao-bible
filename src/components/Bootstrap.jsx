@@ -6,17 +6,9 @@ import { load, save } from '../core/storage.js';
 import { useApp } from '../App.jsx';
 import { t } from '../core/i18n.js';
 
-// Значок приложения (public/icons/icon.svg) — прямо в разметке: виден сразу, без загрузки файла
+// Логотип AO Bible («AΩ Bible»: крест над раскрытой Библией) — как значок приложения в Google Play
 function AppLogo() {
-  return (
-    <svg className="boot-logo" viewBox="0 0 512 512" aria-hidden="true">
-      <rect width="512" height="512" rx="112" fill="#38363a" />
-      <path d="M256 150c-38-26-92-34-150-26v236c58-8 112 0 150 26z" fill="#f6f5f2" />
-      <path d="M256 150c38-26 92-34 150-26v236c-58-8-112 0-150 26z" fill="#e9e4d8" />
-      <path d="M300 128v120l26-18 26 18V122c-18 0-36 2-52 6z" fill="#c9893f" />
-      <path d="M146 200h76M146 236h76M146 272h76M290 284h76M290 320h60" stroke="#b9b2a3" strokeWidth="10" strokeLinecap="round" />
-    </svg>
-  );
+  return <img className="boot-logo" src="icons/logo-264.jpg" width="132" height="132" alt="" aria-hidden="true" />;
 }
 
 // Этапы установки по доле прогресса: каталог (ещё 0) → загрузка (до 60 %) → распаковка и запись
@@ -100,7 +92,8 @@ export default function Bootstrap() {
     <div className="bootstrap">
       <div className="bootstrap-card">
         <AppLogo />
-        <h1>AO Bible</h1>
+        {/* название — уже на логотипе; для чтения с экрана — скрытым заголовком */}
+        <h1 className="sr-only">AO Bible</h1>
         {state.phase === 'run' && (
           <>
             <p>{t('Готовлю Синодальный перевод, словари и параллельные места…')}</p>
