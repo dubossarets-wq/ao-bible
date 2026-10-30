@@ -114,17 +114,6 @@ function ActivePlan({ plan, onChange, onRemove, read }) {
       </div>
       <div className="plan-progress" aria-hidden="true" />
       <div className="plan-body">
-        {/* пропущенные дни — мягкой плашкой; «Догнать» — к первому пропущенному */}
-        {behind.length > 0 && (
-          <div className="plan-miss">
-            <span>{t('Пропущено дней: {n}', { n: behind.length })}</span>
-            {day !== behind[0] && (
-              <button type="button" onClick={() => setDay(behind[0])}>
-                {t('Догнать')}
-              </button>
-            )}
-          </div>
-        )}
         {/* лента дней вокруг выбранного: прочитанный — с галочкой, пропущенный — оранжевый, сегодняшний — в кольце */}
         <div className="plan-days-row" role="group" aria-label={t('Дни плана')}>
           <button className="icon-btn subtle" onClick={() => setDay((d) => Math.max(0, d - 1))} disabled={day === 0} aria-label={t('Предыдущий день')}>
@@ -146,14 +135,25 @@ function ActivePlan({ plan, onChange, onRemove, read }) {
             <ChevronRight size={18} />
           </button>
         </div>
-        {/* выбранный день: название слева, сколько прочитано — справа */}
+        {/* выбранный день: название слева (сегодня / пропущен), сколько прочитано — справа */}
         <div className="plan-head">
           <b>
             {t('День {n}', { n: day + 1 })}
-            {day === today ? ` · ${t('сегодня')}` : ''}
+            {day === today ? ` · ${t('сегодня')}` : missed.has(day) ? <span className="plan-late"> · {t('пропущен')}</span> : ''}
           </b>
           <small className={dayDone ? 'ok' : ''}>{dayDone ? t('прочитано') : t('{done} из {total} отрывков', { done: partDone, total: rs.length })}</small>
         </div>
+        {/* пропущенные дни — тихой строкой, а не плашкой: точка, сколько, справа «Догнать ›» (к первому пропущенному) */}
+        {behind.length > 0 && day !== behind[0] && (
+          <button type="button" className="plan-miss" onClick={() => setDay(behind[0])}>
+            <span className="plan-miss-dot" aria-hidden="true" />
+            <span className="plan-miss-text">{t('Пропущено дней: {n}', { n: behind.length })}</span>
+            <span className="plan-miss-go">
+              {t('Догнать')}
+              <ChevronRight size={15} aria-hidden="true" />
+            </span>
+          </button>
+        )}
         {/* отрывки дня — списком с полными названиями: нажатие — читать с этого отрывка */}
         <ul className="plan-list">
           {rs.map((r, i) => (

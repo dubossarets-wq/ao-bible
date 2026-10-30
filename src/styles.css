@@ -1516,17 +1516,20 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .plan-actions .plan-mark { flex: none; gap: 6px; }
 /* фон — как у остальных блоков окна (.read-hero) */
 .plan-card { overflow: hidden; flex: none; scroll-margin-top: 12px; background: color-mix(in srgb, var(--text) 4%, var(--panel)); } /* промежуток между блоками — общий, 12 */
-/* пропущенные дни — мягкой оранжевой плашкой, «Догнать» справа */
-.plan-miss { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 4px 6px 4px 12px; border-radius: 12px; background: color-mix(in srgb, #e08a3c 14%, var(--panel)); color: #a8561d; font-size: .86rem; font-weight: 600; }
-.plan-miss span { flex: 1; min-width: 0; }
-.plan-miss button { flex: none; height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: #c96a26; color: #fff; font: inherit; font-size: .8rem; font-weight: 700; cursor: pointer; }
-[data-app-tone="dark"] .plan-miss { color: #f0a868; background: color-mix(in srgb, #e08a3c 16%, var(--panel)); }
+/* пропущенные дни — тихой строкой под днём: оранжевая точка, сколько, справа «Догнать ›» цветом акцента */
+.plan-miss { display: flex; align-items: center; gap: 8px; margin: -8px 0 -2px; min-height: 36px; padding: 0 4px; border: 0; background: none; font: inherit; font-size: .84rem; text-align: left; cursor: pointer; }
+.plan-miss-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--late); }
+.plan-miss-text { flex: 1; min-width: 0; color: var(--muted); }
+.plan-miss-go { flex: none; display: inline-flex; align-items: center; gap: 1px; color: var(--accent); font-weight: 600; }
+.plan-late { color: var(--late); }
+:root { --late: #c2621f; }
+[data-app-tone="dark"] { --late: #f0a868; }
 /* лента дней: кружки 7 дней вокруг выбранного */
 .plan-days-row { display: flex; align-items: center; gap: 4px; }
 .plan-days-row .icon-btn { flex: none; }
 .pd { flex: 1; min-width: 0; max-width: 40px; aspect-ratio: 1; margin: 0 auto; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: var(--panel); color: var(--text); font: inherit; font-size: .84rem; font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer; box-shadow: inset 0 0 0 1px var(--line); transition: background-color .16s, color .16s, box-shadow .16s; }
-.pd.done { background: color-mix(in srgb, var(--cv, var(--accent)) 18%, var(--panel)); color: var(--cv, var(--accent)); box-shadow: none; }
-.pd.missed { color: #c96a26; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, #c96a26 55%, transparent); }
+.pd.done { background: color-mix(in srgb, var(--ok) 15%, var(--panel)); color: var(--ok); box-shadow: none; } /* зелёный — как галочки отрывков */
+.pd.missed { color: var(--late); background: color-mix(in srgb, var(--late) 13%, var(--panel)); box-shadow: none; }
 .pd.today { box-shadow: inset 0 0 0 2px var(--accent); }
 .pd.on { background: var(--text); color: var(--panel); box-shadow: none; }
 /* выбранный день: название слева, ход — справа */
@@ -1537,7 +1540,7 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 /* отрывки дня — белым списком на подложке карточки */
 .plan-list { list-style: none; margin: 0; padding: 0; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; }
 .plan-list li + li { border-top: 1px solid var(--line); }
-.plan-list button { width: 100%; min-height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 10px 0 14px; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.plan-list button { width: 100%; min-height: 46px; display: flex; align-items: center; gap: 12px; padding: 0 10px 0 14px; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
 @media (hover: hover) { .plan-list button:hover { background: color-mix(in srgb, var(--accent) 5%, transparent); } }
 .plan-dot { flex: none; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--muted) 55%, transparent); color: #fff; }
 .plan-list .done .plan-dot { background: var(--ok); box-shadow: none; }
