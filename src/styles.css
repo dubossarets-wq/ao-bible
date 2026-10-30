@@ -1693,6 +1693,13 @@ html.kb-open .chap-nav { display: none; }
 input.fade-end { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 3em), transparent 100%); mask-image: linear-gradient(to right, #000 calc(100% - 3em), transparent 100%); }
 
 /* ===== Окно поиска: поле без лупы слева, крестик внутри поля, лупа справа, копирование у каждого места, метка перевода ===== */
+/* Поле поиска прилипает к верху окна; при прокрутке (.stuck) — ниже (46 → 38) и с тонкой линией снизу */
+.sheet-body > .search-form { position: sticky; top: -12px; z-index: 3; /* -12 — sticky считает от края содержимого, без отступа окна */ flex: none; margin: -12px -16px 0; padding: 12px 16px 0; background: var(--panel); border-bottom: 1px solid transparent; transition: padding .18s ease, border-color .18s ease; }
+.sheet-body > .search-form.stuck { padding-top: 6px; padding-bottom: 6px; border-bottom-color: var(--line); }
+.search-form .input-wrap input { transition: padding .18s ease; }
+.sheet-body > .search-form.stuck .input-wrap input { padding-top: 6px; padding-bottom: 6px; }
+.sheet-body > .search-form.stuck .search-go { min-width: 38px; padding-left: 10px; padding-right: 10px; }
+.sheet-body > .search-form.stuck .search-clear { width: 30px; height: 30px; }
 .search-form .input-wrap { padding-left: 0; }
 .search-form .input-wrap input { padding-left: 12px; padding-right: 4px; }
 .search-form .input-wrap input::-webkit-search-cancel-button, .search-form .input-wrap input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }

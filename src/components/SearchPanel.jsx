@@ -140,7 +140,11 @@ export default function SearchPanel({ pane, payload = {}, onClose, pick = null }
     warmSearch(module.id).catch(() => {});
     // Прокрутка списка запоминается, при повторном открытии — на том же месте
     const body = formRef.current?.closest('.sheet-body');
-    const onScroll = () => memos[mk] && memos[mk].key === shownKey.current && (memos[mk].scroll = body.scrollTop);
+    // Поле поиска прилипает к верху окна (CSS sticky); прокрутили — становится компактнее (.stuck)
+    const onScroll = () => {
+      formRef.current?.classList.toggle('stuck', body.scrollTop > 12);
+      if (memos[mk] && memos[mk].key === shownKey.current) memos[mk].scroll = body.scrollTop;
+    };
     body?.addEventListener('scroll', onScroll, { passive: true });
     if (body && restored?.scroll) requestAnimationFrame(() => requestAnimationFrame(() => (body.scrollTop = restored.scroll)));
     return () => {
