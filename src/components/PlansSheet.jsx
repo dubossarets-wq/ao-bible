@@ -60,6 +60,13 @@ const LOOK = {
 const look = (id) => LOOK[id] || [Sparkles, 'c6', '08'];
 const coverUrl = (id) => `images/verse-bg/${look(id)[2]}.jpg`;
 
+// Отрывок с полным названием книги: «От Матфея 5», «Псалтирь 9:1–21»
+const fullLabel = (r) => {
+  const [b, c, v] = r.split('.');
+  const name = bookMeta(b).name;
+  return v ? `${name} ${c}:${v.replace('-', '–')}` : `${name} ${(c || '1').replace('-', '–')}`;
+};
+
 function ActivePlan({ plan, onChange, onRemove, read }) {
   const days = plan.readings.length;
   const today = planToday(plan);
@@ -77,6 +84,10 @@ function ActivePlan({ plan, onChange, onRemove, read }) {
   const partDone = flags.filter(Boolean).length;
   const dayDone = !!done[day];
   const firstLeft = flags.findIndex((f) => !f);
+  // лента дней: 7 кружков вокруг выбранного дня (у начала и конца плана — сдвинута)
+  const from = Math.max(0, Math.min(day - 3, days - 7));
+  const strip = Array.from({ length: Math.min(7, days) }, (_, k) => from + k);
+  const missed = new Set(behind);
   const toggle = (i) => {
     const next = { ...done };
     const parts = { ...plan.parts };
@@ -103,38 +114,60 @@ function ActivePlan({ plan, onChange, onRemove, read }) {
       </div>
       <div className="plan-progress" aria-hidden="true" />
       <div className="plan-body">
+        {/* пропущенные дни — мягкой плашкой; «Догнать» — к первому пропущенному */}
         {behind.length > 0 && (
-          <div className="plan-behind">
-            {t('Пропущено дней: {n}', { n: behind.length })}
+          <div className="plan-miss">
+            <span>{t('Пропущено дней: {n}', { n: behind.length })}</span>
             {day !== behind[0] && (
-              <button className="link-btn" onClick={() => setDay(behind[0])}>
-                {t('к первому пропущенному')}
+              <button type="button" onClick={() => setDay(behind[0])}>
+                {t('Догнать')}
               </button>
             )}
           </div>
         )}
-        {/* день: стрелки по краям, посередине — какой день и сколько отрывков прочитано */}
-        <div className="plan-day">
+        {/* лента дней вокруг выбранного: прочитанный — с галочкой, пропущенный — оранжевый, сегодняшний — в кольце */}
+        <div className="plan-days-row" role="group" aria-label={t('Дни плана')}>
           <button className="icon-btn subtle" onClick={() => setDay((d) => Math.max(0, d - 1))} disabled={day === 0} aria-label={t('Предыдущий день')}>
             <ChevronLeft size={18} />
           </button>
-          <span className="plan-day-label">
-            {t('День {n}', { n: day + 1 })}
-            {day === today ? ` · ${t('сегодня')}` : ''}
-            <small className={dayDone ? 'ok' : ''}>{dayDone ? t('прочитано') : t('{done} из {total} отрывков', { done: partDone, total: rs.length })}</small>
-          </span>
+          {strip.map((i) => (
+            <button
+              key={i}
+              type="button"
+              className={`pd ${done[i] ? 'done' : ''} ${missed.has(i) ? 'missed' : ''} ${i === today ? 'today' : ''} ${i === day ? 'on' : ''}`}
+              aria-pressed={i === day}
+              aria-label={`${t('День {n}', { n: i + 1 })}${i === today ? `, ${t('сегодня')}` : ''}${done[i] ? `, ${t('прочитано')}` : ''}`}
+              onClick={() => setDay(i)}
+            >
+              {done[i] ? <Check size={15} strokeWidth={3} /> : i + 1}
+            </button>
+          ))}
           <button className="icon-btn subtle" onClick={() => setDay((d) => Math.min(days - 1, d + 1))} disabled={day === days - 1} aria-label={t('Следующий день')}>
             <ChevronRight size={18} />
           </button>
         </div>
-        {/* отрывки дня: прочитанные — с галочкой; нажатие — читать с этого отрывка */}
-        <div className="chips plan-parts">
-          {rs.map((r, i) => (
-            <button key={r + i} className={`chip ${flags[i] ? 'done' : ''}`} onClick={() => read(plan, day, i)}>
-              {flags[i] && <Check size={12} />} {parseReading(r).label}
-            </button>
-          ))}
+        {/* выбранный день: название слева, сколько прочитано — справа */}
+        <div className="plan-head">
+          <b>
+            {t('День {n}', { n: day + 1 })}
+            {day === today ? ` · ${t('сегодня')}` : ''}
+          </b>
+          <small className={dayDone ? 'ok' : ''}>{dayDone ? t('прочитано') : t('{done} из {total} отрывков', { done: partDone, total: rs.length })}</small>
         </div>
+        {/* отрывки дня — списком с полными названиями: нажатие — читать с этого отрывка */}
+        <ul className="plan-list">
+          {rs.map((r, i) => (
+            <li key={r + i}>
+              <button type="button" className={flags[i] ? 'done' : ''} onClick={() => read(plan, day, i)}>
+                <span className="plan-dot" aria-hidden="true">
+                  {flags[i] && <Check size={13} strokeWidth={3} />}
+                </span>
+                <span className="plan-ref">{fullLabel(r)}</span>
+                <ChevronRight size={17} className="plan-go" aria-hidden="true" />
+              </button>
+            </li>
+          ))}
+        </ul>
         <div className="plan-actions">
           <button className={`btn ${dayDone ? '' : 'primary'} plan-read`} onClick={() => read(plan, day, dayDone || firstLeft < 0 ? 0 : firstLeft)}>
             <BookOpen size={17} /> {dayDone ? t('Перечитать') : partDone ? t('Продолжить чтение') : t('Читать')}

@@ -1509,15 +1509,41 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .plan-banner-text .plan-meta { flex: none; color: rgba(255,255,255,.9); font-size: .82rem; font-weight: 600; }
 .plan-del { position: absolute; z-index: 1; top: 8px; right: 8px; background: color-mix(in srgb, var(--panel) 88%, transparent) !important; border-radius: 999px; }
 .plan-progress { height: 4px; background: linear-gradient(90deg, var(--cv, var(--accent)) var(--pct), color-mix(in srgb, var(--muted) 16%, transparent) var(--pct)); }
-.plan-body { display: flex; flex-direction: column; gap: 10px; padding: 10px 12px 14px; }
-.plan-card .plan-day-label { font-size: .95rem; font-weight: 700; }
-.plan-card .plan-day-label small { font-size: .8rem; }
+.plan-body { display: flex; flex-direction: column; gap: 12px; padding: 12px 12px 14px; }
 .plan-day-label small.ok { color: var(--ok); }
-.plan-parts { justify-content: center; }
-.plan-actions { display: flex; gap: 8px; margin-top: 2px; }
-.plan-actions .plan-read { flex: 1; min-width: 0; }
+.plan-actions { display: flex; gap: 8px; }
+.plan-actions .plan-read { flex: 1; min-width: 0; flex-wrap: nowrap; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .plan-actions .plan-mark { flex: none; gap: 6px; }
-.plan-card { overflow: hidden; flex: none; scroll-margin-top: 12px; } /* промежуток между блоками — общий, 12 */
+/* фон — как у остальных блоков окна (.read-hero) */
+.plan-card { overflow: hidden; flex: none; scroll-margin-top: 12px; background: color-mix(in srgb, var(--text) 4%, var(--panel)); } /* промежуток между блоками — общий, 12 */
+/* пропущенные дни — мягкой оранжевой плашкой, «Догнать» справа */
+.plan-miss { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 4px 6px 4px 12px; border-radius: 12px; background: color-mix(in srgb, #e08a3c 14%, var(--panel)); color: #a8561d; font-size: .86rem; font-weight: 600; }
+.plan-miss span { flex: 1; min-width: 0; }
+.plan-miss button { flex: none; height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: #c96a26; color: #fff; font: inherit; font-size: .8rem; font-weight: 700; cursor: pointer; }
+[data-app-tone="dark"] .plan-miss { color: #f0a868; background: color-mix(in srgb, #e08a3c 16%, var(--panel)); }
+/* лента дней: кружки 7 дней вокруг выбранного */
+.plan-days-row { display: flex; align-items: center; gap: 4px; }
+.plan-days-row .icon-btn { flex: none; }
+.pd { flex: 1; min-width: 0; max-width: 40px; aspect-ratio: 1; margin: 0 auto; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: var(--panel); color: var(--text); font: inherit; font-size: .84rem; font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer; box-shadow: inset 0 0 0 1px var(--line); transition: background-color .16s, color .16s, box-shadow .16s; }
+.pd.done { background: color-mix(in srgb, var(--cv, var(--accent)) 18%, var(--panel)); color: var(--cv, var(--accent)); box-shadow: none; }
+.pd.missed { color: #c96a26; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, #c96a26 55%, transparent); }
+.pd.today { box-shadow: inset 0 0 0 2px var(--accent); }
+.pd.on { background: var(--text); color: var(--panel); box-shadow: none; }
+/* выбранный день: название слева, ход — справа */
+.plan-head { display: flex; align-items: baseline; gap: 8px; padding: 0 4px; }
+.plan-head b { flex: 1; min-width: 0; font-size: 1rem; }
+.plan-head small { flex: none; font-size: .82rem; color: var(--muted); }
+.plan-head small.ok { color: var(--ok); font-weight: 600; }
+/* отрывки дня — белым списком на подложке карточки */
+.plan-list { list-style: none; margin: 0; padding: 0; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; }
+.plan-list li + li { border-top: 1px solid var(--line); }
+.plan-list button { width: 100%; min-height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 10px 0 14px; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+@media (hover: hover) { .plan-list button:hover { background: color-mix(in srgb, var(--accent) 5%, transparent); } }
+.plan-dot { flex: none; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--muted) 55%, transparent); color: #fff; }
+.plan-list .done .plan-dot { background: var(--ok); box-shadow: none; }
+.plan-ref { flex: 1; min-width: 0; font-weight: 600; }
+.plan-list .done .plan-ref { color: var(--muted); font-weight: 500; }
+.plan-go { flex: none; color: var(--muted); }
 .read-hero, .plan-grid, .plan-detail { flex: none; }
 .plan-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 /* план, оставшийся в последнем ряду один, — на оба столбца той же высоты */
