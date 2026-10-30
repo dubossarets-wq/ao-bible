@@ -613,9 +613,19 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo, on
                       {/* название перевода и «×» — убрать этот перевод у стиха */}
                       <span className="sv-alt-head">
                         <span className="sv-alt-name">{a.n}</span>
-                        <ConfirmButton className="icon-btn subtle sv-alt-del" end small confirmText={t('Убрать')} onConfirm={() => setBlockAlts(sermon.id, b.id, b.alt.filter((x) => x.m !== a.m).map(({ m, n }) => ({ m, n })))} aria-label={`${t('Убрать')}: ${a.n}`} title={t('Убрать')}>
+                        <button
+                          type="button"
+                          className="icon-btn subtle sv-alt-del"
+                          onClick={() => {
+                            const before = b.alt.map(({ m, n }) => ({ m, n }));
+                            setBlockAlts(sermon.id, b.id, before.filter((x) => x.m !== a.m));
+                            undoToast(t('Убрано: {ref}', { ref: a.n }), () => setBlockAlts(sermon.id, b.id, before));
+                          }}
+                          aria-label={`${t('Убрать')}: ${a.n}`}
+                          title={t('Убрать')}
+                        >
                           <X size={15} />
-                        </ConfirmButton>
+                        </button>
                       </span>
                       {/* стиха в этом переводе нет (например, Новый Завет в еврейском тексте) — прочерк; слово подстрочника — к статье Стронга */}
                       <span className="sv-alt-text">{!a.t?.some(Boolean) ? (a.t?.length ? '—' : '…') : a.il ? <IlWords texts={a.t} onWord={(sn, g, o, k) => strongOf(b, a, sn, g, o, k)} /> : group && a.t.length > 1 ? a.t.map((x, k) => <span key={k}><sup className="sv-num">{b.verse + k}</sup>{x} </span>) : a.t.join(' ')}</span>
