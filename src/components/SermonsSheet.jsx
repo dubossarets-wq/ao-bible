@@ -266,6 +266,47 @@ function Inserter({ onText, onVerse, onNote }) {
 
 // Подстрочник у стиха: слова столбиками — сверху оригинал, под ним перевод; иврит — справа налево
 const IL_WORD = /\{([^|}]*)\|([^|}]*)(?:\|([^|}]*))?(?:\|([^}]*))?\}/g;
+// Размер текста проповеди в шапке: «−», проценты (нажатие — снова 100 %), «+»; шаг 10 %, от 80 до 160 %
+const ZOOM_MIN = 0.8, ZOOM_MAX = 1.6;
+function SermonZoom({ value, onChange }) {
+  const step = (d) => onChange(Math.round(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, value + d)) * 10) / 10);
+  return (
+    <span className="sermon-zoom" role="group" aria-label={t('Размер текста')}>
+      <button type="button" className="icon-btn" onClick={() => step(-0.1)} disabled={value <= ZOOM_MIN} aria-label={t('Мельче')} title={t('Мельче')}>
+        <Minus size={18} />
+      </button>
+      <button type="button" className="sermon-zoom-val" onClick={() => onChange(1)} title={t('Размер текста')}>
+        {Math.round(value * 100)}%
+      </button>
+      <button type="button" className="icon-btn" onClick={() => step(0.1)} disabled={value >= ZOOM_MAX} aria-label={t('Крупнее')} title={t('Крупнее')}>
+        <Plus size={18} />
+      </button>
+    </span>
+  );
+}
+
+// Подключённые переводы стиха: новый плавно раскрывается, убранный ещё 0,3 с виден и плавно сворачивается
+// (те, что были при открытии проповеди, — сразу, без анимации)
+function AltRows({ alts, render }) {
+  const [rows, setRows] = useState(() => alts.map((a) => ({ a, open: true })));
+  const sig = alts.map((a) => a.m).join('|');
+  useEffect(() => {
+    setRows((prev) => {
+      const ids = new Set(alts.map((a) => a.m));
+      const next = alts.map((a) => (prev.some((r) => r.a.m === a.m && r.open) ? prev.find((r) => r.a.m === a.m) : { a, open: true, appear: true }));
+      prev.forEach((r, i) => !ids.has(r.a.m) && next.splice(Math.min(i, next.length), 0, { a: r.a, open: false, gone: true }));
+      return next;
+    });
+    const timer = setTimeout(() => setRows((rs) => rs.filter((r) => !r.gone)), 320);
+    return () => clearTimeout(timer);
+  }, [sig]); // eslint-disable-line react-hooks/exhaustive-deps
+  return rows.map((r) => (
+    <Reveal key={r.a.m} open={r.open} appear={!!r.appear}>
+      {render(alts.find((x) => x.m === r.a.m) || r.a)}
+    </Reveal>
+  ));
+}
+
 // Подстрочник в проповеди: слово оригинала и перевод под ним; слово с номером Стронга — кнопка, открывает статью
 // (onWord(номер, перевод, оригинал, номер стиха в блоке))
 function IlWords({ texts, onWord }) {
@@ -361,7 +402,7 @@ async function shareSermon(sermon, toast) {
   }
 }
 
-function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo, onOpen, returnTo }) {
+function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo, onOpen, returnTo, zoom = 1 }) {
   const { navigate, closeSheet, openSheet, toast, undoToast, bibles } = useApp();
   const allSermons = useSermons();
   const [altOpen, setAltOpen] = useState(null); // стих, у которого раскрыт выбор переводов
@@ -413,6 +454,7 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo, on
       autoOpen: true,
       initial: 'full',
       returnTo,
+      closeToParent: true, // «×» статьи — обратно в проповедь
     });
   // Убрать стих (из диапазона — только его; диапазон делится на части) — с «Отменить»
   const dropVerse = (b, verse) => {
@@ -550,6 +592,7 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo, on
       {sermon.blocks.length > 0 && <Inserter onText={() => setFresh(addTextBlock(sermon.id, -1))} onVerse={() => onAddVerse(0)} />}
       <ol
         className="sermon-blocks"
+        style={{ '--sz': zoom }}
         ref={list}
         onPointerDown={dragDown}
         onPointerMove={dragMove}
@@ -607,9 +650,11 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo, on
                       );
                     })}
                   </div>
-                  {/* подключённые переводы — под основным текстом */}
-                  {b.alt?.map((a) => (
-                    <div key={a.m} className="sv-alt">
+                  {/* подключённые переводы — под основным текстом; новый плавно раскрывается, убранный — сворачивается */}
+                  <AltRows
+                    alts={b.alt || []}
+                    render={(a) => (
+                    <div className="sv-alt">
                       {/* название перевода и «×» — убрать этот перевод у стиха */}
                       <span className="sv-alt-head">
                         <span className="sv-alt-name">{a.n}</span>
@@ -630,7 +675,8 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo, on
                       {/* стиха в этом переводе нет (например, Новый Завет в еврейском тексте) — прочерк; слово подстрочника — к статье Стронга */}
                       <span className="sv-alt-text">{!a.t?.some(Boolean) ? (a.t?.length ? '—' : '…') : a.il ? <IlWords texts={a.t} onWord={(sn, g, o, k) => strongOf(b, a, sn, g, o, k)} /> : group && a.t.length > 1 ? a.t.map((x, k) => <span key={k}><sup className="sv-num">{b.verse + k}</sup>{x} </span>) : a.t.join(' ')}</span>
                     </div>
-                  ))}
+                    )}
+                  />
                   </Reveal>
                   <Reveal open={altOpen === b.id}>
                     {altOpen === b.id && (
@@ -849,6 +895,9 @@ export default function SermonsSheet({ pane, payload, sheetId, onClose }) {
   const [q, setQ] = useState('');
   const [sort, setSort] = useState(() => load('sermonSort', 'recent'));
   useEffect(() => save('sermonSort', sort), [sort]);
+  // размер текста проповеди (стихи, переводы, свой текст): 80–160 %, запоминается на устройстве
+  const [zoom, setZoom] = useState(() => load('sermonZoom', 1));
+  useEffect(() => save('sermonZoom', zoom), [zoom]);
   const sermon = sermons.find((s) => s.id === openId);
   const moduleId = (panes[pane]?.moduleId && bibles.find((b) => b.id === panes[pane].moduleId)?.id) || bibles[0]?.id;
   const bodyScroll = useRef(0);
@@ -953,7 +1002,8 @@ export default function SermonsSheet({ pane, payload, sheetId, onClose }) {
 
   return (
     <BottomSheet
-      title={sermon ? t('Проповедь') : t('Проповеди')}
+      // в открытой проповеди вместо названия окна — размер текста «− 100% +» (стихи, переводы, свой текст)
+      title={sermon ? <SermonZoom value={zoom} onChange={setZoom} /> : t('Проповеди')}
       onClose={onClose}
       onBack={sermon && !(payload.open && openId === payload.open) ? () => setOpenId(null) : null}
       variant="page"
@@ -979,7 +1029,7 @@ export default function SermonsSheet({ pane, payload, sheetId, onClose }) {
       }
     >
       {sermon ? (
-        <Editor sermon={sermon} pane={pane} moduleId={moduleId} onBackToList={() => setOpenId(null)} onAddVerse={openSearch} scrollTo={scrollTo} onOpen={(id) => id && setOpenId(id)} returnTo={{ kind: 'sermons', payload: { ...payload, open: sermon.id }, id: sheetId }} />
+        <Editor sermon={sermon} pane={pane} moduleId={moduleId} onBackToList={() => setOpenId(null)} onAddVerse={openSearch} scrollTo={scrollTo} onOpen={(id) => id && setOpenId(id)} returnTo={{ kind: 'sermons', payload: { ...payload, open: sermon.id }, id: sheetId }} zoom={zoom} />
       ) : (
         <>
           <form className="ref-form" onSubmit={create}>

@@ -189,9 +189,10 @@ export function Switch({ id, checked, onChange, label, hint, sub }) {
 // Вариант — [значение, подпись, (необязательно) название для чтения с экрана, если подпись — картинка].
 // Плавно раскрывает и сворачивает содержимое: высота и прозрачность, как у настроек проигрывателя (280 мс).
 // Свёрнутое убирается из страницы после анимации. Открытое с самого начала — без анимации
-export function Reveal({ open, children, className = '' }) {
+// appear — и открытое с самого начала раскрывается плавно (новая строка в списке), а не появляется сразу
+export function Reveal({ open, children, className = '', appear = false }) {
   const [shown, setShown] = useState(open);
-  const first = useRef(open);
+  const first = useRef(open && !appear);
   useEffect(() => {
     if (open) return setShown(true);
     first.current = false;

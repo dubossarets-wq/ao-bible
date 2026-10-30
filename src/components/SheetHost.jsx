@@ -89,7 +89,8 @@ export default function SheetHost() {
         const push = below ? { back: () => (below.kind === 'more' ? backSheetIf(id, 'more', sheet.pane) : returnSheet(id, below, sheet.pane)) } : null;
         return (
           <SheetBack.Provider key={L.kind === 'more' ? 'more-host' : String(L.id)} value={push}>
-            <C pane={sheet.pane} payload={L.payload} sheetId={L.id} onClose={() => closeSheetIf(id)} />
+            {/* closeToParent — «×» возвращает в окно, из которого открыли (статья Стронга из проповеди), а не закрывает всё */}
+            <C pane={sheet.pane} payload={L.payload} sheetId={L.id} onClose={() => (L.payload.closeToParent && push ? push.back() : closeSheetIf(id))} />
           </SheetBack.Provider>
         );
       })}
