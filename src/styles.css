@@ -2468,3 +2468,7 @@ html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px))
 .rem-exact { display: flex; align-items: center; gap: 10px; margin: 2px 0 8px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--accent) 12%, var(--panel)); }
 .rem-exact p { flex: 1; margin: 0; font-size: .9rem; line-height: 1.4; }
 .rem-exact .btn { flex: none; }
+/* Блоки проповеди — лёгкий фон, как у карточек планов; заметка для себя — ещё приглушённее */
+.sermon-blocks .sermon-block, .sermon-blocks .sermon-block .swipe-content { background: color-mix(in srgb, var(--text) 4%, var(--panel)); }
+.sermon-blocks .sermon-block.note, .sermon-blocks .sermon-block.note .swipe-content { background: color-mix(in srgb, var(--muted) 7%, color-mix(in srgb, var(--text) 4%, var(--panel))); }
+.sermon-blocks .sermon-item.dragging > .sermon-block, .sermon-blocks .sermon-block.dragging, .sermon-blocks .sermon-block.dragging .swipe-content { background: var(--panel); }
