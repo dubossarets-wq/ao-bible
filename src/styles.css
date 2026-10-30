@@ -1539,14 +1539,25 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .plan-head small.ok { color: var(--ok); font-weight: 600; }
 /* отрывки дня — белым списком на подложке карточки */
 .plan-list { list-style: none; margin: 0; padding: 0; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; }
+.plan-list li { display: flex; align-items: stretch; transition: opacity .2s; }
 .plan-list li + li { border-top: 1px solid var(--line); }
-.plan-list button { width: 100%; min-height: 46px; display: flex; align-items: center; gap: 12px; padding: 0 10px 0 14px; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
-@media (hover: hover) { .plan-list button:hover { background: color-mix(in srgb, var(--accent) 5%, transparent); } }
-.plan-dot { flex: none; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--muted) 55%, transparent); color: #fff; }
+.plan-list button { min-height: 46px; display: flex; align-items: center; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+/* кружок — своя кнопка «прочитано» (поле нажатия — 48 в ширину), название со стрелкой — открыть отрывок */
+.plan-check { flex: none; width: 48px; justify-content: center; padding: 0 0 0 4px; }
+.plan-open { flex: 1; min-width: 0; gap: 12px; padding: 0 10px 0 2px; }
+@media (hover: hover) { .plan-list li:hover { background: color-mix(in srgb, var(--accent) 5%, transparent); } }
+.plan-dot { flex: none; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--muted) 55%, transparent); color: #fff; transition: background-color .16s, box-shadow .16s, transform .16s; }
+.plan-check:active .plan-dot { transform: scale(.88); }
 .plan-list .done .plan-dot { background: var(--ok); box-shadow: none; }
-.plan-ref { flex: 1; min-width: 0; font-weight: 600; }
+.plan-ref { flex: 1; min-width: 0; font-weight: 600; transition: color .2s; }
+/* прочитанный отрывок — слегка приглушён */
 .plan-list .done .plan-ref { color: var(--muted); font-weight: 500; }
+.plan-list .done .plan-open { opacity: .7; }
 .plan-go { flex: none; color: var(--muted); }
+/* «Ещё N» / «Свернуть» — по центру, цветом акцента */
+.plan-list .plan-more { flex: 1; justify-content: center; gap: 4px; min-height: 42px; color: var(--accent); font-size: .88rem; font-weight: 600; }
+.plan-more svg { transition: transform .2s; }
+.plan-more svg.flip { transform: rotate(180deg); }
 .read-hero, .plan-grid, .plan-detail { flex: none; }
 .plan-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 /* план, оставшийся в последнем ряду один, — на оба столбца той же высоты */

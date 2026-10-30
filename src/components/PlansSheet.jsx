@@ -7,7 +7,7 @@ import { useApp } from '../App.jsx';
 import { usePlans } from '../core/planStore.js';
 import { readStats } from '../core/readLog.js';
 import { bookMeta, BOOKS } from '../core/books.js';
-import { fetchPlanIndex, fetchPlan, makeCustomPlan, makeParallelPlan, chapterList, streamList, firstDayText, CYCLIC, SCOPES, STREAMS, parseReading, planToday, behindDays, readingDone, localDate } from '../core/plans.js';
+import { fetchPlanIndex, fetchPlan, makeCustomPlan, makeParallelPlan, chapterList, streamList, firstDayText, CYCLIC, SCOPES, STREAMS, parseReading, planToday, behindDays, readingDone, readingUnits, localDate } from '../core/plans.js';
 import { ConfirmButton, Hint, Switch, Segmented, Reveal } from './ui.jsx';
 import TimeWheel from './TimeWheel.jsx';
 import { weekdayShort } from '../core/weekdays.js';
@@ -67,10 +67,14 @@ const fullLabel = (r) => {
   return v ? `${name} ${c}:${v.replace('-', '–')}` : `${name} ${(c || '1').replace('-', '–')}`;
 };
 
+// Отрывков дня в списке — не больше пяти, остальные — за строкой «Ещё N»
+const PARTS_MAX = 5;
+
 function ActivePlan({ plan, onChange, onRemove, read }) {
   const days = plan.readings.length;
   const today = planToday(plan);
   // Показываем день, с которого читать: прочитали вперёд — первый непрочитанный после сегодняшнего
+  const [openDay, setOpenDay] = useState(null); // день, у которого раскрыты все отрывки
   const [day, setDay] = useState(() => {
     let d = today;
     while (d < days - 1 && plan.done?.[d]) d++;
@@ -96,6 +100,21 @@ function ActivePlan({ plan, onChange, onRemove, read }) {
       delete parts[i]; // снимаем и отметки отрывков — иначе день уже не закроется сам
     } else next[i] = Date.now();
     onChange({ ...plan, done: next, parts });
+  };
+  // Кружок у отрывка: отметить прочитанным или снять отметку. Отмечены все отрывки — день закрывается сам;
+  // сняли отметку в закрытом дне — день открывается, остальные отрывки остаются отмеченными
+  const togglePart = (i) => {
+    const now = Date.now();
+    const keys = readingUnits(rs[i]).map((u) => u.key);
+    const all = rs.flatMap(readingUnits).map((u) => u.key);
+    const have = dayDone ? Object.fromEntries(all.map((k) => [k, done[day]])) : { ...(plan.parts?.[day] || {}) };
+    if (flags[i]) keys.forEach((k) => delete have[k]);
+    else keys.forEach((k) => (have[k] = now));
+    const closed = all.every((k) => have[k]);
+    const next = { ...done };
+    if (closed) next[day] = next[day] || now;
+    else delete next[day];
+    onChange({ ...plan, done: next, parts: { ...plan.parts, [day]: have } });
   };
   return (
     // обложка-фото с названием и прогрессом поверх, под ней тонкая полоса прогресса; ниже — день со стрелками,
@@ -154,19 +173,37 @@ function ActivePlan({ plan, onChange, onRemove, read }) {
             </span>
           </button>
         )}
-        {/* отрывки дня — списком с полными названиями: нажатие — читать с этого отрывка */}
+        {/* отрывки дня — списком с полными названиями: нажатие — читать с этого отрывка; больше пяти — остальные
+            за строкой «Ещё N» (раскрыто — до смены дня) */}
         <ul className="plan-list">
-          {rs.map((r, i) => (
-            <li key={r + i}>
-              <button type="button" className={flags[i] ? 'done' : ''} onClick={() => read(plan, day, i)}>
+          {(rs.length > PARTS_MAX && openDay !== day ? rs.slice(0, PARTS_MAX) : rs).map((r, i) => (
+            <li key={r + i} className={flags[i] ? 'done' : ''}>
+              {/* кружок — отметка «прочитано»; название — открыть отрывок */}
+              <button
+                type="button"
+                className="plan-check"
+                aria-pressed={flags[i]}
+                aria-label={`${flags[i] ? t('Снять отметку') : t('Отметить прочитанным')}: ${fullLabel(r)}`}
+                onClick={() => togglePart(i)}
+              >
                 <span className="plan-dot" aria-hidden="true">
                   {flags[i] && <Check size={13} strokeWidth={3} />}
                 </span>
+              </button>
+              <button type="button" className="plan-open" onClick={() => read(plan, day, i)}>
                 <span className="plan-ref">{fullLabel(r)}</span>
                 <ChevronRight size={17} className="plan-go" aria-hidden="true" />
               </button>
             </li>
           ))}
+          {rs.length > PARTS_MAX && (
+            <li>
+              <button type="button" className="plan-more" aria-expanded={openDay === day} onClick={() => setOpenDay(openDay === day ? null : day)}>
+                {openDay === day ? t('Свернуть') : t('Ещё {n}', { n: rs.length - PARTS_MAX })}
+                <ChevronDown size={16} className={openDay === day ? 'flip' : ''} aria-hidden="true" />
+              </button>
+            </li>
+          )}
         </ul>
         <div className="plan-actions">
           <button className={`btn ${dayDone ? '' : 'primary'} plan-read`} onClick={() => read(plan, day, dayDone || firstLeft < 0 ? 0 : firstLeft)}>
