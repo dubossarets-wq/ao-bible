@@ -147,7 +147,7 @@ function ActivePlan({ plan, onChange, onRemove, read }) {
               aria-label={`${t('День {n}', { n: i + 1 })}${i === today ? `, ${t('сегодня')}` : ''}${done[i] ? `, ${t('прочитано')}` : ''}`}
               onClick={() => setDay(i)}
             >
-              {done[i] ? <Check size={15} strokeWidth={3} /> : i + 1}
+              {i + 1}
             </button>
           ))}
           <button className="icon-btn subtle" onClick={() => setDay((d) => Math.min(days - 1, d + 1))} disabled={day === days - 1} aria-label={t('Следующий день')}>
@@ -277,17 +277,37 @@ function ReadHero({ open }) {
   );
 }
 
-// Готовый план — вертикальная обложка с фотографией и названием; нажатие выбирает план
-function PlanTile({ m, on, onPick }) {
+// Готовый план — строкой: фото-миниатюра со значком раздела, название, о чём план и сколько дней (идёт — помечен).
+// Нажатие раскрывает строку на месте: описание, до какого числа (если начать сегодня) и «Начать»
+function PlanRow({ m, open, running, busy, onToggle, onStart }) {
   const [Icon, c] = look(m.id);
   return (
-    <button className={`plan-tile cover-${c} ${on ? 'on' : ''}`} onClick={onPick} aria-pressed={on}>
-      <img src={coverUrl(m.id)} alt="" loading="lazy" />
-      <span className="plan-tile-days">
-        <Icon size={13} /> {t('{n} дн.', { n: m.days })}
-      </span>
-      <span className="plan-tile-name">{t(m.name)}</span>
-    </button>
+    <li className={`plan-row cover-${c} ${open ? 'open' : ''}`}>
+      <button type="button" className="plan-row-main" aria-expanded={open} onClick={onToggle}>
+        <span className="plan-thumb" aria-hidden="true">
+          <img src={coverUrl(m.id)} alt="" loading="lazy" />
+          <Icon size={18} />
+        </span>
+        <span className="plan-row-text">
+          <span className="plan-row-name">{t(m.name)}</span>
+          {m.short && <span className="plan-row-short">{t(m.short)}</span>}
+          <span className="plan-row-meta">
+            {t('{n} дн.', { n: m.days })}
+            {running && <span className="plan-row-run">{t('идёт')}</span>}
+          </span>
+        </span>
+        <ChevronDown size={18} className="plan-row-chev" aria-hidden="true" />
+      </button>
+      <Reveal open={open}>
+        <div className="plan-row-more">
+          {m.description && <p className="plan-desc">{t(m.description)}</p>}
+          <span className="plan-row-end">{t('до {date}', { date: planEndText(m.days) })}</span>
+          <button className="btn primary" disabled={!!busy} onClick={onStart}>
+            {busy === m.id ? <Loader2 size={16} className="spin" /> : <Plus size={16} />} {t('Начать')}
+          </button>
+        </div>
+      </Reveal>
+    </li>
   );
 }
 
@@ -681,25 +701,20 @@ export default function PlansSheet({ pane, onClose }) {
           </div>
         )}
         {index && (
-          <div className="plan-grid">
+          <ul className="plan-rows">
             {index.map((m) => (
-              <PlanTile key={m.id} m={m} on={pick === m.id} onPick={() => (setPick((x) => (x === m.id ? null : m.id)), setTimeout(() => document.querySelector('.plan-detail')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60))} />
+              <PlanRow
+                key={m.id}
+                m={m}
+                open={pick === m.id}
+                running={plans.some((p) => p.planId === m.id)}
+                busy={busy}
+                onToggle={() => setPick((x) => (x === m.id ? null : m.id))}
+                onStart={() => start(m)}
+              />
             ))}
-          </div>
+          </ul>
         )}
-        {index?.filter((m) => m.id === pick).map((m) => (
-          <div key={m.id} className={`plan-detail cover-${look(m.id)[1]}`}>
-            <span className="plan-name">{t(m.name)}</span>
-            <span className="plan-meta">
-              {t('{n} дн.', { n: m.days })}
-              {m.short ? ` · ${t(m.short)}` : ''}
-            </span>
-            {m.description && <p className="plan-desc">{t(m.description)}</p>}
-            <button className="btn primary" disabled={!!busy} onClick={() => start(m)}>
-              {busy === m.id ? <Loader2 size={16} className="spin" /> : <Plus size={16} />} {t('Начать')}
-            </button>
-          </div>
-        ))}
       </section>
 
       {/* Свой план — отдельной карточкой: что читать, за сколько дней, начать */}

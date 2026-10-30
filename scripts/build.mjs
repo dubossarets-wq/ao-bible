@@ -142,7 +142,7 @@ ${FONTS}
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>${APP_NAME}</title>
 <meta name="description" content="Чтение и изучение Библии: переводы, словари Стронга, параллельные места, две панели.">
 <meta name="theme-color" content="#38363a">

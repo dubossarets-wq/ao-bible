@@ -14,6 +14,9 @@ import { P } from './core/channel.js';
 import { listModules, getBook } from './core/modules.js';
 
 installErrorLog(); // последние ошибки — для письма «Сообщить о проблеме» (только на устройстве)
+// Интерфейс не увеличивается щипком: в Safari на iPhone user-scalable=no не действует — гасим его жест увеличения
+// (размер шрифта читалки меняется своим щипком на касаниях — usePinchFont)
+['gesturestart', 'gesturechange'].forEach((type) => document.addEventListener(type, (e) => e.preventDefault(), { passive: false }));
 // Ранний старт: список модулей и книга последнего места читаются из памяти устройства,
 // пока загружаются словари интерфейса и рисуется оболочка приложения
 try {
