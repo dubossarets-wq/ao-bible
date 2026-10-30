@@ -266,19 +266,32 @@ function Inserter({ onText, onVerse, onNote }) {
 
 // Подстрочник у стиха: слова столбиками — сверху оригинал, под ним перевод; иврит — справа налево
 const IL_WORD = /\{([^|}]*)\|([^|}]*)(?:\|([^|}]*))?(?:\|([^}]*))?\}/g;
-function IlWords({ texts }) {
-  const words = texts.flatMap((x) => [...String(x || '').matchAll(IL_WORD)].map((m) => ({ g: m[1] === '·' ? '' : m[1], o: m[4] || '' })));
-  const rtl = words.some((w) => /[\u0590-\u05FF]/.test(w.o));
+// Подстрочник в проповеди: слово оригинала и перевод под ним; слово с номером Стронга — кнопка, открывает статью
+// (onWord(номер, перевод, оригинал, номер стиха в блоке))
+function IlWords({ texts, onWord }) {
+  const words = texts.flatMap((x, k) => [...String(x || '').matchAll(IL_WORD)].map((m) => ({ g: m[1] === '·' ? '' : m[1], s: m[2] || '', o: m[4] || '', k })));
+  const rtl = words.some((w) => /[֐-׿]/.test(w.o));
   return (
     <span className="sv-il" dir={rtl ? 'rtl' : 'ltr'}>
-      {words.map((w, i) => (
-        <span key={i} className="sv-ilw">
-          <span className="o">{w.o || '\u00a0'}</span>
-          <span className="g" dir="ltr">
-            {w.g || '\u00a0'}
+      {words.map((w, i) => {
+        const inner = (
+          <>
+            <span className="o">{w.o || ' '}</span>
+            <span className="g" dir="ltr">
+              {w.g || ' '}
+            </span>
+          </>
+        );
+        return w.s && onWord ? (
+          <button key={i} type="button" className="sv-ilw sv-ilw-btn" onClick={() => onWord(w.s, w.g, w.o, w.k)} title={w.s}>
+            {inner}
+          </button>
+        ) : (
+          <span key={i} className="sv-ilw">
+            {inner}
           </span>
-        </span>
-      ))}
+        );
+      })}
     </span>
   );
 }
@@ -348,8 +361,8 @@ async function shareSermon(sermon, toast) {
   }
 }
 
-function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo, onOpen }) {
-  const { navigate, closeSheet, toast, undoToast, bibles } = useApp();
+function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo, onOpen, returnTo }) {
+  const { navigate, closeSheet, openSheet, toast, undoToast, bibles } = useApp();
   const allSermons = useSermons();
   const [altOpen, setAltOpen] = useState(null); // стих, у которого раскрыт выбор переводов
   const nameOf = (mid) => bibles.find((m) => m.id === mid)?.name || mid;
@@ -390,6 +403,17 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo, on
     navigate(pane, { book: b.book, chapter: b.chapter, verse });
     setSermonReturn({ pane, id: sermon.id }); // под верхним меню — «Вернуться к проповеди»
   };
+  // Слово подстрочника — статья Стронга поверх проповеди; «назад» возвращает в проповедь на то же место
+  const strongOf = (b, a, sn, gloss, orig, k) =>
+    openSheet('dict', pane, {
+      token: { text: gloss || orig, strongs: [sn] },
+      ref: { book: b.book, chapter: b.chapter, verse: b.verse + k },
+      moduleId: a.m,
+      origWord: { text: orig, num: sn.replace(/^([HG])0*/i, (_, l) => l.toUpperCase()) },
+      autoOpen: true,
+      initial: 'full',
+      returnTo,
+    });
   // Убрать стих (из диапазона — только его; диапазон делится на части) — с «Отменить»
   const dropVerse = (b, verse) => {
     const before = sermon.blocks;
@@ -586,9 +610,15 @@ function Editor({ sermon, pane, moduleId, onBackToList, onAddVerse, scrollTo, on
                   {/* подключённые переводы — под основным текстом */}
                   {b.alt?.map((a) => (
                     <div key={a.m} className="sv-alt">
-                      <span className="sv-alt-name">{a.n}</span>
-                      {/* стиха в этом переводе нет (например, Новый Завет в еврейском тексте) — прочерк */}
-                      <span className="sv-alt-text">{!a.t?.some(Boolean) ? (a.t?.length ? '—' : '…') : a.il ? <IlWords texts={a.t} /> : group && a.t.length > 1 ? a.t.map((x, k) => <span key={k}><sup className="sv-num">{b.verse + k}</sup>{x} </span>) : a.t.join(' ')}</span>
+                      {/* название перевода и «×» — убрать этот перевод у стиха */}
+                      <span className="sv-alt-head">
+                        <span className="sv-alt-name">{a.n}</span>
+                        <ConfirmButton className="icon-btn subtle sv-alt-del" end small confirmText={t('Убрать')} onConfirm={() => setBlockAlts(sermon.id, b.id, b.alt.filter((x) => x.m !== a.m).map(({ m, n }) => ({ m, n })))} aria-label={`${t('Убрать')}: ${a.n}`} title={t('Убрать')}>
+                          <X size={15} />
+                        </ConfirmButton>
+                      </span>
+                      {/* стиха в этом переводе нет (например, Новый Завет в еврейском тексте) — прочерк; слово подстрочника — к статье Стронга */}
+                      <span className="sv-alt-text">{!a.t?.some(Boolean) ? (a.t?.length ? '—' : '…') : a.il ? <IlWords texts={a.t} onWord={(sn, g, o, k) => strongOf(b, a, sn, g, o, k)} /> : group && a.t.length > 1 ? a.t.map((x, k) => <span key={k}><sup className="sv-num">{b.verse + k}</sup>{x} </span>) : a.t.join(' ')}</span>
                     </div>
                   ))}
                   </Reveal>
@@ -799,7 +829,7 @@ function PartPicker({ pe, onPick }) {
   );
 }
 
-export default function SermonsSheet({ pane, payload, onClose }) {
+export default function SermonsSheet({ pane, payload, sheetId, onClose }) {
   const { panes, bibles, toast, undoToast } = useApp();
   const sermons = useSermons();
   const [openId, setOpenId] = useState(payload.open || null);
@@ -939,7 +969,7 @@ export default function SermonsSheet({ pane, payload, onClose }) {
       }
     >
       {sermon ? (
-        <Editor sermon={sermon} pane={pane} moduleId={moduleId} onBackToList={() => setOpenId(null)} onAddVerse={openSearch} scrollTo={scrollTo} onOpen={(id) => id && setOpenId(id)} />
+        <Editor sermon={sermon} pane={pane} moduleId={moduleId} onBackToList={() => setOpenId(null)} onAddVerse={openSearch} scrollTo={scrollTo} onOpen={(id) => id && setOpenId(id)} returnTo={{ kind: 'sermons', payload: { ...payload, open: sermon.id }, id: sheetId }} />
       ) : (
         <>
           <form className="ref-form" onSubmit={create}>

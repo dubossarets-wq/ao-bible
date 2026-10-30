@@ -2354,6 +2354,10 @@ html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px))
 .sermon-ref-mod { font-weight: 500; color: var(--muted); }
 .sv-alt { margin: 8px 0 2px; padding-top: 6px; border-top: 1px dashed color-mix(in srgb, var(--line) 80%, transparent); font-family: var(--font-text); font-size: .98rem; line-height: 1.5; color: color-mix(in srgb, var(--text) 85%, transparent); }
 .sv-alt-name { display: block; margin-bottom: 1px; font: 700 .74rem/1.3 var(--font-ui); color: var(--muted); letter-spacing: .02em; }
+/* название подключённого перевода и «×» — убрать перевод у стиха */
+.sv-alt-head { display: flex; align-items: center; gap: 6px; margin: -4px -6px 0 0; }
+.sv-alt-head .sv-alt-name { flex: 1; min-width: 0; margin: 0; }
+.sv-alt-del { flex: none; width: 30px; height: 30px; }
 .sermon-alts { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
 .sermon-alts .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .sermon-alts .chip:disabled { opacity: 1; cursor: default; }
@@ -2375,6 +2379,10 @@ html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px))
 .sv-ilw .o { font-family: var(--font-greek, var(--font-text)); font-size: 1.05em; color: var(--text); }
 .sv-il[dir='rtl'] .sv-ilw .o { font-family: var(--font-hebrew, var(--font-text)); font-size: 1.15em; }
 .sv-ilw .g { font-family: var(--font-ui); font-size: .78em; color: var(--muted); }
+/* слово подстрочника с номером Стронга — кнопка: нажатие открывает статью */
+.sv-ilw-btn { padding: 1px 3px; margin: -1px -3px; border: 0; border-radius: 6px; background: none; font: inherit; color: inherit; text-align: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.sv-ilw-btn:active { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+@media (hover: hover) { .sv-ilw-btn:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); } .sv-ilw-btn:hover .o { color: var(--accent); } }
 
 /* Корзина блока проповеди — в правом верхнем углу карточки */
 .sermon-block-head { display: flex; align-items: flex-start; gap: 6px; }
