@@ -28,6 +28,9 @@ import { verseModules } from './core/verseOfDay.js';
 import { getLivePosition } from './core/livePosition.js';
 
 const AppCtx = createContext(null);
+// Сколько панелей чтения можно открыть рядом (кнопка «+» в шапке последней панели)
+export const MAX_PANES = 4;
+
 export const useApp = () => useContext(AppCtx);
 
 // Самое первое открытие — с начала Библии; дальше — с последнего места (панели хранятся в localStorage)
@@ -429,7 +432,16 @@ export default function App() {
     });
   });
 
-  const openSplit = useEvent(() => setPanes((ps) => (ps[1] ? ps : [ps[0], { ...newPane(ps[0].moduleId, ps[0].ref), flash: null }])));
+  // Ещё одна панель (до MAX_PANES): перевод — как у первой, место — где сейчас читают первую.
+  // В сохранённом состоянии после закрытия второй панели остаётся [первая, null] — null отбрасываем
+  const openSplit = useEvent(() =>
+    setPanes((ps) => {
+      const list = ps.filter(Boolean);
+      if (list.length >= MAX_PANES) return ps;
+      const at = getLivePosition(0) || list[0].ref;
+      return [...list, { ...newPane(list[0].moduleId, { book: at.book, chapter: at.chapter, verse: at.verse }), flash: null }];
+    })
+  );
 
   // Карта одного места во второй половине экрана. Если там была панель чтения, она запоминается
   // и возвращается, когда карту закрывают.
@@ -437,18 +449,30 @@ export default function App() {
     const { module, ...rest } = place;
     setPanes((ps) => {
       const under = ps[1]?.kind === 'map' ? ps[1].under : ps[1];
-      return [ps[0], { kind: 'map', place: { ...rest, moduleName: module?.name, license: module?.license, author: module?.author }, under: under || null }];
+      return [ps[0], { kind: 'map', place: { ...rest, moduleName: module?.name, license: module?.license, author: module?.author }, under: under || null }, ...ps.slice(2).filter(Boolean)];
     });
   });
-  const closePlaceMap = useEvent(() => setPanes((ps) => [ps[0], ps[1]?.kind === 'map' ? ps[1].under || null : ps[1]]));
+  const closePlaceMap = useEvent(() => setPanes((ps) => [ps[0], ps[1]?.kind === 'map' ? ps[1].under || null : ps[1], ...ps.slice(2)].filter((p, i) => i === 0 || p)));
 
   // Закрыть панель, на которой нажали «×»: закрыли первую — вторая остаётся одна, на том месте, где её читали
   // (карта во второй панели закрывается сама, первая остаётся)
+  // Панелей больше двух — закрывается та, где нажали «×»; те, что ниже (правее), сдвигаются на её место и остаются
+  // там, где их читали (новый nav — панель на этом месте экрана перейдёт к своему стиху)
   const closeSplit = useEvent((index = 1) =>
     setPanes((ps) => {
-      if (index !== 0 || !ps[1] || ps[1].kind === 'map') return [ps[0], null];
-      const live = getLivePosition(1);
-      return [{ ...ps[1], ref: live ? { ...ps[1].ref, ...live } : ps[1].ref, flash: null }, null];
+      const list = ps.filter(Boolean);
+      if (list.length < 2) return ps;
+      const top = Math.max(...list.map((p) => p.nav || 0)) + 1;
+      const out = [];
+      list.forEach((p, j) => {
+        if (j === index) return;
+        if (out.length === j || p.kind === 'map') return void out.push(p);
+        const live = getLivePosition(j);
+        out.push({ ...p, ref: live ? { ...p.ref, ...live } : p.ref, nav: top + out.length, flash: null });
+      });
+      // карта не бывает первой панелью: закрыли первую при карте второй — остаётся то, что под картой
+      if (out[0]?.kind === 'map') out[0] = out[0].under || { ...newPane(list[0].moduleId, list[0].ref), nav: top };
+      return out;
     })
   );
 

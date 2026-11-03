@@ -388,7 +388,7 @@ export default function BibleReader({ index }) {
       }
     : null;
   return (
-    <section className={`reader ${hidden ? 'bar-hidden' : ''}`} aria-label={index === 0 ? t('Основная панель') : t('Вторая панель')}>
+    <section className={`reader ${hidden ? 'bar-hidden' : ''}`} aria-label={index === 0 ? t('Основная панель') : index === 1 ? t('Вторая панель') : t('Панель {n}', { n: index + 1 })}>
       {selection.size ? (
         <SelectionBar index={index} module={module} selection={selection} onDone={() => setSelection(new Set())} />
       ) : (

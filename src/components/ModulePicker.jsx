@@ -86,7 +86,7 @@ export default function ModulePicker({ pane, onClose }) {
   const list = shownKind ? byLang.filter(fits(shownKind[2])) : byLang;
   const moreList = shownKind ? moreByLang.filter(fits(shownKind[2])) : moreByLang;
   return (
-    <BottomSheet title={t('Перевод')} subtitle={pane === 1 ? t('Вторая панель') : t('Основная панель')} onClose={onClose}>
+    <BottomSheet title={t('Перевод')} subtitle={pane === 0 ? t('Основная панель') : pane === 1 ? t('Вторая панель') : t('Панель {n}', { n: pane + 1 })} onClose={onClose}>
       {kinds.length > 0 && (
         <div className="pick-langs pick-kinds" role="group" aria-label={t('Что в переводе')}>
           <button type="button" className={`chip ${!shownKind ? 'on' : ''}`} aria-pressed={!shownKind} onClick={() => setKind(null)}>

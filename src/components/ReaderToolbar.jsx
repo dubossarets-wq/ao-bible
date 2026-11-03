@@ -1,8 +1,8 @@
 // Верхняя панель панели чтения. Состав и порядок кнопок — в TOP_BAR: на телефоне (есть нижняя панель вкладок)
 // и на широком экране свой список; переставить кнопки — поменять массив, логика не меняется.
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, X, MoreVertical, ChevronDown, ArrowLeft, ArrowRight, Columns2 } from 'lucide-react';
-import { useApp } from '../App.jsx';
+import { Search, X, MoreVertical, ChevronDown, ArrowLeft, ArrowRight, Columns2, Plus } from 'lucide-react';
+import { useApp, MAX_PANES } from '../App.jsx';
 import { bookMeta } from '../core/books.js';
 import { useLivePosition, getLivePosition } from '../core/livePosition.js';
 import { t } from '../core/i18n.js';
@@ -14,8 +14,8 @@ import { moreItems, MoreItem } from './moreItems.jsx';
 // Кнопки: module — перевод (пилюля), ref — место (пилюля), back/forward — история переходов,
 // search — поиск, split — разделить экран, more — меню ⋮. Пустая строка '|' — распорка (дальше — прижато вправо).
 export const TOP_BAR = {
-  phone: ['module', 'ref', '|', 'back', 'forward', 'split'], // поиск и ⋮ — на нижней панели вкладок (TabBar.jsx)
-  wide: ['module', 'ref', '|', 'back', 'forward', 'search', 'split', 'more'],
+  phone: ['module', 'ref', '|', 'back', 'forward', 'add', 'split'], // поиск и ⋮ — на нижней панели вкладок (TabBar.jsx)
+  wide: ['module', 'ref', '|', 'back', 'forward', 'search', 'add', 'split', 'more'],
 };
 
 export default function ReaderToolbar({ index, pane, module }) {
@@ -24,9 +24,12 @@ export default function ReaderToolbar({ index, pane, module }) {
   const phone = usePhoneLayout();
   const [menu, setMenu] = useState(false);
   const menuRef = useRef(null);
-  const split = !!panes[1];
+  const count = panes.filter(Boolean).length;
+  const split = count > 1;
   // «×» закрывает свою панель: у первой — первую (вторая остаётся одна), у второй — вторую
-  const closeLabel = index === 0 && panes[1]?.kind !== 'map' ? t('Закрыть эту панель') : t('Закрыть вторую панель');
+  const closeLabel = count > 2 || (index === 0 && panes[1]?.kind !== 'map') ? t('Закрыть эту панель') : t('Закрыть вторую панель');
+  // «+» — ещё одна панель: у последней, пока панелей меньше MAX_PANES
+  const canAdd = split && index === count - 1 && count < MAX_PANES;
   // Место при прокрутке меняется на каждом стихе — его показывает отдельная маленькая кнопка (RefButton),
   // а шапка со всеми значками не перерисовывается
   const ref = getLivePosition(index) || pane.ref;
@@ -82,6 +85,12 @@ export default function ReaderToolbar({ index, pane, module }) {
         {split ? <X size={21} /> : <Columns2 size={21} />}
       </button>
     ),
+    add: () =>
+      canAdd && (
+        <button key="add" className="tb tb-icon tb-add" onClick={() => openSplit()} aria-label={t('Ещё одна панель')} title={t('Ещё одна панель')}>
+          <Plus size={21} />
+        </button>
+      ),
     more: () => (
       <div key="more" className="tb-menu-wrap" ref={menuRef}>
         <button
