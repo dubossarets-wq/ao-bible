@@ -1,4 +1,4 @@
-const CACHE = 'aob-shell-20261103-214227';
+const CACHE = 'aob-shell-20261103-221221';
 const PREFIX = 'aob-shell-';
 const ILLUS = 'aob-illus';
 const ILLUS_MAX = 120;
@@ -19,7 +19,7 @@ self.addEventListener('fetch', (e) => {
   if (url.pathname.endsWith('version.json')) return;
   // Манифест — тоже сначала из сети: по нему Android обновляет установленное приложение (например, поворот экрана)
   // Страница и каталог: сначала сеть мимо HTTP-кэша (GitHub Pages кэширует на 10 минут), при офлайне — кэш
-  if (url.origin === location.origin && (url.pathname.endsWith('/') || url.pathname.endsWith('.html') || url.pathname.endsWith('catalog.json') || url.pathname.endsWith('manifest.webmanifest'))) {
+  if (url.origin === location.origin && (url.pathname.endsWith('/') || url.pathname.endsWith('.html') || url.pathname.endsWith('catalog.json') || url.pathname.endsWith('catalog-more.json') || url.pathname.endsWith('manifest.webmanifest'))) {
     // Сеть не ответила за 2,5 с (слабая связь, «сеть есть, а ответа нет») — показываем сохранённое, а свежее докачается
     // в кэш к следующему запуску. Переход «Обновить приложение» (?v=…) ждёт сеть: там нужна именно новая версия.
     const net = fetch(e.request, { cache: 'no-store' }).then((r) => { const copy = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); return r; });
