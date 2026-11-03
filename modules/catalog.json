@@ -2690,6 +2690,52 @@
    "added": "2026-10-13"
   },
   {
+   "id": "karoli1908",
+   "type": "bible",
+   "name": "Károli 1908",
+   "title": "Károli Biblia (revideált kiadás, 1908)",
+   "description": "Венгерская Библия Гашпара Кароли (1590) в пересмотренном издании 1908 года — классический протестантский перевод.",
+   "language": "hu",
+   "version": "bolls.life KB",
+   "author": "Gáspár Károli (1529–1591); пересмотр 1908 г.",
+   "source": "https://bolls.life/KB/1/1/ (полный текст: https://bolls.life/static/translations/KB.json)",
+   "license": "Public Domain",
+   "features": {},
+   "versification": "kjv",
+   "url": "karoli1908.json",
+   "urlGz": "karoli1908.json.gz",
+   "size": 4250395,
+   "sizeGz": 1370723,
+   "scope": [
+    "ot",
+    "nt"
+   ],
+   "added": "2026-11-03"
+  },
+  {
+   "id": "peking1899",
+   "type": "bible",
+   "name": "京委本",
+   "title": "京委本聖經 (Peking Committee Bible, 1899)",
+   "description": "Китайская Библия на мандаринском наречии, перевод Пекинского комитета (XIX век), издание 1899 года.",
+   "language": "zh",
+   "version": "bolls.life PCB",
+   "author": "Пекинский комитет переводчиков",
+   "source": "https://bolls.life/PCB/1/1/ (полный текст: https://bolls.life/static/translations/PCB.json)",
+   "license": "Public Domain",
+   "features": {},
+   "versification": "kjv",
+   "url": "peking1899.json",
+   "urlGz": "peking1899.json.gz",
+   "size": 3241689,
+   "sizeGz": 1150883,
+   "scope": [
+    "ot",
+    "nt"
+   ],
+   "added": "2026-11-03"
+  },
+  {
    "id": "api-a81b73293d3080c9-01",
    "type": "bible",
    "name": "AMP",
