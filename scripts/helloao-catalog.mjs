@@ -97,6 +97,8 @@ const modules = list
     language: LANG[t.language] || t.language,
     // название языка на нём самом — запасное, если у приложения и браузера своего названия нет
     languageName: t.languageName || t.languageEnglishName || undefined,
+    // по-английски — запасное название для интерфейса на любом языке (родное — не всем прочитать)
+    languageEnglish: t.languageEnglishName || undefined,
     license: licenseName(t),
     source: t.website && t.website !== 'https://helloao.org/' ? t.website : t.licenseUrl || 'https://bible.helloao.org',
     url: `${BASE}/api/${t.id}/complete.json`,

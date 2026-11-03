@@ -96,6 +96,24 @@ const haoRows = hao.modules;
 // Переводы API.Bible и bible.helloao.org — отдельным каталогом (modules/catalog-more.json): его читают только новые
 // версии приложения. Старые (сборка из Google Play, закэшированный сайт) не умеют их ставить — в общем каталоге
 // они бы скачивались сломанными
+// Названия языков модулей на каждом языке интерфейса (modules/lang-names.json): у сайта есть Intl в браузере,
+// приложению на Flutter таблица нужна готовой. Чего ICU не знает (редкие языки helloao) — по-английски из каталога
+const UI_LANGS = (await readdir(path.join(root, 'src/i18n'))).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5)).concat('ru');
+const langNames = {};
+for (const m of [...fullCatalog.modules, ...apiRows, ...haoRows]) {
+  const code = m.language;
+  if (!code || langNames[code]) continue;
+  const names = {};
+  for (const l of UI_LANGS) {
+    let n = null;
+    try {
+      n = new Intl.DisplayNames([l], { type: 'language' }).of(code);
+    } catch {}
+    if (n && n !== code) names[l] = n[0].toLocaleUpperCase(l) + n.slice(1);
+  }
+  if (!names.en && m.languageEnglish) names.en = m.languageEnglish;
+  if (Object.keys(names).length) langNames[code] = names;
+}
 const moreCatalog = JSON.stringify({ format: 'aob-catalog', formatVersion: 1, modules: [...apiRows, ...haoRows] }, null, 1);
 const publishedCatalog = (dropGz) => JSON.stringify({ ...fullCatalog, modules: [...fullCatalog.modules.filter((m) => catalogIds.has(m.id)).map((m1) => {
   const m0 = scopes[m1.id] && m1.type === 'bible' ? { ...m1, scope: scopes[m1.id].scope } : m1;
@@ -182,6 +200,7 @@ ${FONTS}
   await cp(path.join(root, 'public/modules'), path.join(dir, 'modules'), { recursive: true, dereference: true, filter: isPublished });
   await writeFile(path.join(dir, 'modules/catalog.json'), publishedCatalog(false));
   await writeFile(path.join(dir, 'modules/catalog-more.json'), moreCatalog);
+  await writeFile(path.join(dir, 'modules/lang-names.json'), JSON.stringify(langNames));
   await mkdir(path.join(dir, 'modules/api'), { recursive: true });
   for (const m of apiCatalog.filter((x) => !apiDup.has(x.id))) await writeFile(path.join(dir, `modules/api/${m.online.api}.json`), JSON.stringify({ books: m.books }));
   await copyDicts(dir);

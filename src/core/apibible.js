@@ -5,7 +5,7 @@
 import * as db from './db.js';
 import { bookMeta } from './books.js';
 import { NATIVE } from './native.js';
-import WESTERN from './versesWestern.json';
+import { synodalVerses, westernChaptersFor, placeSynodal } from './versification.js';
 
 const BASES = ['https://aobible.app/bapi', 'https://aobible-apibible.apibible.workers.dev'];
 const KEEP_VERSES = 480;
@@ -39,7 +39,7 @@ export async function onlineModule(entry) {
   const list = Object.entries(books)
     .map(([id, n]) => {
       const b = bookMeta(id);
-      const v = WESTERN[id] || [];
+      const v = synodalVerses(id);
       return { id, name: b.name, short: b.short, t: b.t, order: b.order, verses: Array.from({ length: n }, (_, i) => v[i] || 0) };
     })
     .sort((a, b) => a.order - b.order)
@@ -55,7 +55,7 @@ export async function onlineModule(entry) {
     author: entry.author || '',
     source: entry.source,
     license: entry.license,
-    versification: 'kjv',
+    versification: 'synodal',
     features: {},
     online: entry.online,
     books: list,
@@ -69,7 +69,8 @@ const books = new Map(); // `${moduleId}|${bookId}` -> { chapters, headings, xre
 const stores = new Map(); // moduleId -> Promise<{ items: { 'John.3': { v, h, at, cr, tok } } }>
 const loading = new Map(); // `${moduleId}|${bookId}|${c}` -> Promise
 
-const storeKey = (id) => `api|${id}`;
+// api2 — главы в синодальной нумерации (в api| лежали западные — их не читаем)
+const storeKey = (id) => `api2|${id}`;
 function store(id) {
   if (!stores.has(id)) {
     stores.set(
@@ -122,7 +123,12 @@ export function loadChapter(m, bookId, c) {
       const b = await onlineBook(m, bookId);
       if (!b || !b.chapters[c - 1]) throw new OnlineError('chapter');
       if (b.loaded.has(c)) return b;
-      const it = await fetchChapter(m.online.api, bookId, c);
+      // глава в синодальной нумерации — из одной или двух глав API (в нём западная нумерация, versification.js)
+      const parts = [];
+      for (const kc of westernChaptersFor(bookId, c)) parts.push([kc, await fetchChapter(m.online.api, bookId, kc)]);
+      const into = { v: [], h: {} };
+      for (const [kc, p] of parts) placeSynodal(bookId, kc, p.v, p.h, c, into, p.t);
+      const it = { v: Array.from(into.v, (x) => x || ''), h: into.h, at: Date.now(), cr: parts[0]?.[1].cr || '', tok: parts.map(([, p]) => p.tok).filter(Boolean).join(' ') };
       fill(b, c, it);
       remember(m.id, `${bookId}.${c}`, it);
       return b;
@@ -172,6 +178,7 @@ export async function forgetOnline(id) {
   for (const k of [...books.keys()]) if (k.startsWith(`${id}|`)) books.delete(k);
   stores.delete(id);
   await db.del(db.STORES.payload, storeKey(id)).catch(() => {});
+  await db.del(db.STORES.payload, `api|${id}`).catch(() => {});
 }
 
 // --- Разбор главы (JSON API.Bible) → стихи с разметкой приложения ---------------------------
@@ -183,6 +190,7 @@ export function parse(content) {
   const v = [];
   const h = {};
   let head = [];
+  let title = ''; // надписание псалма (стиль d до первого стиха)
   const text = (n) => (n.type === 'text' ? n.text : (n.items || []).map(text).join(''));
   const walk = (n, added) => {
     if (n.type === 'text') {
@@ -206,20 +214,24 @@ export function parse(content) {
     const style = n.attrs?.style || '';
     if (n.name === 'para' && HEAD.test(style)) {
       const s = text(n).trim();
-      if (s) head.push(s);
+      if (s && style === 'd' && !v.length) title = s;
+      else if (s) head.push(s);
       return;
     }
     for (const x of n.items || []) walk(x, added || (n.name === 'char' && ADDED.has(style)));
   };
   for (const n of content || []) walk(n, false);
   for (let i = 0; i < v.length; i++) v[i] = (v[i] || '').replace(/\s+/g, ' ').replace(/›\s*‹/g, ' ').trim();
-  return { v, h };
+  return { v, h, t: title };
 }
 
 // --- Учёт показов (FUMS) — только на сайте -------------------------------------------------
 
 const tracked = new Set();
-function track(tok) {
+function track(toks) {
+  for (const tok of String(toks || '').split(' ')) trackOne(tok);
+}
+function trackOne(tok) {
   if (NATIVE || !tok || tracked.has(tok) || typeof document === 'undefined') return;
   tracked.add(tok);
   if (!window.fums) {
