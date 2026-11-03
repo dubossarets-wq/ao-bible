@@ -265,6 +265,8 @@ async function fetchWithProgress(url, onProgress, expected) {
 // Каталог помним 2 минуты: при первом запуске его просили 4–5 раз подряд (установка, аудиокниги, объединение модулей).
 // fresh — «Обновить список» в библиотеке.
 const catalogMemo = new Map(); // url -> { at, promise }
+// Названия языков из каталога (у переводов bible.helloao.org — на самом языке): запасные, если у браузера нет своего
+export const catalogLangNames = new Map();
 export function fetchCatalog(url = CATALOG_URL, { fresh = false } = {}) {
   const hit = catalogMemo.get(url);
   if (!fresh && hit && Date.now() - hit.at < 120000) return hit.promise;
@@ -277,6 +279,7 @@ async function fetchCatalogNow(url) {
   const json = await bytesToJson(buf);
   if (json?.format !== 'aob-catalog' || !Array.isArray(json.modules)) throw new ModuleError(t('По этому адресу нет каталога в формате aob-catalog.'));
   const base = new URL(url, location.href);
+  for (const m of json.modules) if (m.languageName && !catalogLangNames.has(m.language)) catalogLangNames.set(m.language, m.languageName);
   return json.modules.map((m) => ({
     ...m,
     url: m.url ? new URL(m.url, base).href : null,

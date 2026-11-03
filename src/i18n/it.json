@@ -1453,5 +1453,7 @@
  "по сети (API.Bible): главы приходят, когда вы их открываете": "online (API.Bible): i capitoli arrivano quando li apri",
  "Эти переводы предоставляет API.Bible на своих условиях; авторские права перевода указаны под каждой главой.": "Queste traduzioni sono fornite da API.Bible alle sue condizioni; il copyright di ogni traduzione è indicato sotto ogni capitolo.",
  "Ещё языки": "Altre lingue",
- "Показать ещё {n}": "Mostra altri {n}"
+ "Показать ещё {n}": "Mostra altri {n}",
+ "Переводы bible.helloao.org": "Traduzioni da bible.helloao.org",
+ "Свободные переводы (общественное достояние и Creative Commons) из Free Use Bible API — bible.helloao.org, по материалам eBible.org. Лицензия и источник каждого указаны в «Библиотеке модулей» в подробностях перевода.": "Traduzioni libere (pubblico dominio e Creative Commons) dalla Free Use Bible API — bible.helloao.org, su materiali di eBible.org. Licenza e fonte di ciascuna sono indicate nella «Libreria moduli», nei dettagli della traduzione."
 }

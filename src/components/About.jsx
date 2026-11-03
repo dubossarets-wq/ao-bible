@@ -68,7 +68,7 @@ function Licenses() {
     <>
       <p>{t('Тексты, словари, записи и иллюстрации взяты из свободных источников (общественное достояние и открытые лицензии) или используются с разрешения авторов. У каждой иллюстрации автор и лицензия указаны под картинкой.')}</p>
       {MODULE_SECTIONS.map(([type, label]) => {
-        const list = cat.filter((m) => m.type === type && !m.online);
+        const list = cat.filter((m) => m.type === type && !m.online && !m.helloao);
         if (!list.length) return null;
         return (
           <section key={type} className="lic-group">
@@ -107,7 +107,16 @@ function Licenses() {
           </section>
         );
       })}
-      {/* переводы по сети — одним абзацем: их полторы сотни, права каждого — под каждой главой */}
+      {/* переводы bible.helloao.org — одним абзацем: их больше тысячи, лицензия каждого — в подробностях перевода */}
+      {cat.some((m) => m.helloao) && (
+        <section className="lic-group">
+          <h4>{t('Переводы bible.helloao.org')}</h4>
+          <p>
+            {t('Свободные переводы (общественное достояние и Creative Commons) из Free Use Bible API — bible.helloao.org, по материалам eBible.org. Лицензия и источник каждого указаны в «Библиотеке модулей» в подробностях перевода.')}
+          </p>
+        </section>
+      )}
+      {/* переводы по сети — одним абзацем, права каждого — под каждой главой */}
       {cat.some((m) => m.online) && (
         <section className="lic-group">
           <h4>{t('Переводы по сети')}</h4>

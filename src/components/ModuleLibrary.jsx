@@ -338,7 +338,7 @@ export const langName = (code) => {
       /* старый браузер — ниже запасной вариант */
     }
   }
-  return LANGS[code] || code.toUpperCase();
+  return LANGS[code] || repo.catalogLangNames.get(code) || code.toUpperCase();
 };
 
 function LangFilter({ value, onChange, items }) {

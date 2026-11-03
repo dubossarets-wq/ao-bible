@@ -95,6 +95,8 @@ const modules = list
     title: t.name !== t.englishName && t.englishName ? `${t.name} (${t.englishName})` : t.name,
     description: '',
     language: LANG[t.language] || t.language,
+    // название языка на нём самом — запасное, если у приложения и браузера своего названия нет
+    languageName: t.languageName || t.languageEnglishName || undefined,
     license: licenseName(t),
     source: t.website && t.website !== 'https://helloao.org/' ? t.website : t.licenseUrl || 'https://bible.helloao.org',
     url: `${BASE}/api/${t.id}/complete.json`,
