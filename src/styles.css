@@ -2479,3 +2479,5 @@ html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px))
 .chip.chip-select { position: relative; display: inline-flex; align-items: center; gap: 2px; cursor: pointer; }
 .chip.chip-select select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
 .mod-more-btn { margin: 8px 0 4px; }
+/* «Перейти» у установленного модуля — рядом со звездой/переключателем */
+.mod-go { margin-right: 4px; }

@@ -89,7 +89,7 @@ function Details({ m }) {
 }
 
 // Одна компактная строка модуля
-function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle }) {
+function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle, onGo }) {
   const { settings, setSettings, toast } = useApp();
   const isPrimary = installed && settings.primaryModule === installed.id;
   const updatable = installed && cat && !cat.unavailable && cat.version && installed.catalogVersion && cat.version !== installed.catalogVersion;
@@ -180,6 +180,12 @@ function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle })
             {meta && <span className="mod-sub">{meta}</span>}
           </span>
         </button>
+        {/* «Перейти»: перевод — во второй панели, комментарий и карты — своим окном */}
+        {installed && onGo && GO_TYPES.has(installed.type) && !installed.features?.helper && !busy && (
+          <button className="mod-pill outline mod-go" onClick={() => onGo(installed)} aria-label={t('Перейти к {name}', { name: m.name })}>
+            {t('Перейти')}
+          </button>
+        )}
         {action}
         <button className="row-chev" onClick={onToggle} aria-label={open ? t('Свернуть') : t('Подробнее')} aria-expanded={open}>
           <ChevronDown size={16} />
@@ -226,7 +232,10 @@ function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle })
 // Длинный раздел (сотни переводов каталога) — сначала первые PAGE строк, остальные — кнопкой «Показать ещё»
 const PAGE = 60;
 
-function Sections({ items, mode, catalog, busy, onInstall, filter }) {
+// У каких модулей есть «Перейти» (словари, параллельные места, аудио и иллюстрации открываются от стиха)
+const GO_TYPES = new Set(['bible', 'commentary', 'maps']);
+
+function Sections({ items, mode, catalog, busy, onInstall, filter, onGo }) {
   const { modules } = useApp();
   const [open, setOpen] = useState(null);
   const [more, setMore] = useState({});
@@ -257,6 +266,7 @@ function Sections({ items, mode, catalog, busy, onInstall, filter }) {
                 busy={busy[m.id]}
                 mode={mode}
                 onInstall={onInstall}
+                onGo={onGo}
                 open={open === m.id}
                 onToggle={() => setOpen((o) => (o === m.id ? null : m.id))}
               />
@@ -368,7 +378,16 @@ function Filter({ value, onChange, counts }) {
 }
 
 export default function ModuleLibrary({ payload, onClose }) {
-  const { toast, modules } = useApp();
+  const { toast, modules, panes, openSplit, setPaneModule, openSheet } = useApp();
+  // «Перейти»: перевод открывается во второй панели (рядом с первой), комментарий — к стиху первой панели, карты — окном
+  const go = (m) => {
+    onClose();
+    if (m.type === 'bible') {
+      openSplit();
+      setPaneModule(1, m.id);
+    } else if (m.type === 'commentary') openSheet('commentary', 0, { ref: panes[0].ref, moduleId: m.id });
+    else if (m.type === 'maps') openSheet('maps', 0, {});
+  };
   const [tab, setTab] = useState(payload.tab || 'installed');
   const [filter, setFilter] = useState(payload.section || 'all');
   const [catalog, setCatalog] = useState(null);
@@ -446,7 +465,7 @@ export default function ModuleLibrary({ payload, onClose }) {
           <LangFilter value={lang} onChange={setLang} items={langItems} />
         </>
       )}
-      {tab === 'installed' && <Sections items={list} mode="installed" catalog={catalog} busy={busy} onInstall={install} filter={filter} />}
+      {tab === 'installed' && <Sections items={list} mode="installed" catalog={catalog} busy={busy} onInstall={install} filter={filter} onGo={go} />}
       {tab === 'catalog' && (
         <>
           {catErr && <p className="error-text">{catErr}</p>}
@@ -455,7 +474,7 @@ export default function ModuleLibrary({ payload, onClose }) {
               <Loader2 className="spin" size={20} /> {t('Загружаю каталог…')}
             </div>
           )}
-          {catalog && <Sections items={list} mode="catalog" catalog={catalog} busy={busy} onInstall={install} filter={filter} />}
+          {catalog && <Sections items={list} mode="catalog" catalog={catalog} busy={busy} onInstall={install} filter={filter} onGo={go} />}
           <Fold title={t('Источник каталога')} id="cat-src">
             <p className="field-hint">
               {sourceUrl === repo.CATALOG_URL ? `${t('Сейчас — встроенный каталог.')} ` : `${t('Сейчас — {url}.', { url: sourceUrl })} `}

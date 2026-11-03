@@ -93,13 +93,17 @@ const hao = JSON.parse(await readFile(path.join(root, 'scripts/helloao-catalog.j
 const apiDup = new Set(hao.apiDup);
 const apiRows = apiCatalog.filter((m) => !apiDup.has(m.id)).map(({ books, ...m }) => ({ ...m, url: `api/${m.online.api}.json` }));
 const haoRows = hao.modules;
+// Переводы API.Bible и bible.helloao.org — отдельным каталогом (modules/catalog-more.json): его читают только новые
+// версии приложения. Старые (сборка из Google Play, закэшированный сайт) не умеют их ставить — в общем каталоге
+// они бы скачивались сломанными
+const moreCatalog = JSON.stringify({ format: 'aob-catalog', formatVersion: 1, modules: [...apiRows, ...haoRows] }, null, 1);
 const publishedCatalog = (dropGz) => JSON.stringify({ ...fullCatalog, modules: [...fullCatalog.modules.filter((m) => catalogIds.has(m.id)).map((m1) => {
   const m0 = scopes[m1.id] && m1.type === 'bible' ? { ...m1, scope: scopes[m1.id].scope } : m1;
   const m = added[m0.id] ? { ...m0, added: added[m0.id] } : m0;
   if (!dropGz) return m;
   const { urlGz, sizeGz, ...rest } = m;
   return rest;
-}), ...apiRows, ...haoRows] }, null, 1);
+})] }, null, 1);
 // dereference в cp ниже: если public/modules — ссылка (копия проекта для срочных исправлений), копируются файлы, а не ссылка
 const isPublished = (src) => {
   const rel = path.relative(path.join(root, 'public/modules'), src).split(path.sep);
@@ -177,6 +181,7 @@ ${FONTS}
   await writeFile(path.join(dir, 'index.html'), html);
   await cp(path.join(root, 'public/modules'), path.join(dir, 'modules'), { recursive: true, dereference: true, filter: isPublished });
   await writeFile(path.join(dir, 'modules/catalog.json'), publishedCatalog(false));
+  await writeFile(path.join(dir, 'modules/catalog-more.json'), moreCatalog);
   await mkdir(path.join(dir, 'modules/api'), { recursive: true });
   for (const m of apiCatalog.filter((x) => !apiDup.has(x.id))) await writeFile(path.join(dir, `modules/api/${m.online.api}.json`), JSON.stringify({ books: m.books }));
   await copyDicts(dir);
@@ -249,7 +254,7 @@ self.addEventListener('fetch', (e) => {
   if (url.pathname.endsWith('version.json')) return;
   // Манифест — тоже сначала из сети: по нему Android обновляет установленное приложение (например, поворот экрана)
   // Страница и каталог: сначала сеть мимо HTTP-кэша (GitHub Pages кэширует на 10 минут), при офлайне — кэш
-  if (url.origin === location.origin && (url.pathname.endsWith('/') || url.pathname.endsWith('.html') || url.pathname.endsWith('catalog.json') || url.pathname.endsWith('manifest.webmanifest'))) {
+  if (url.origin === location.origin && (url.pathname.endsWith('/') || url.pathname.endsWith('.html') || url.pathname.endsWith('catalog.json') || url.pathname.endsWith('catalog-more.json') || url.pathname.endsWith('manifest.webmanifest'))) {
     // Сеть не ответила за 2,5 с (слабая связь, «сеть есть, а ответа нет») — показываем сохранённое, а свежее докачается
     // в кэш к следующему запуску. Переход «Обновить приложение» (?v=…) ждёт сеть: там нужна именно новая версия.
     const net = fetch(e.request, { cache: 'no-store' }).then((r) => { const copy = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); return r; });

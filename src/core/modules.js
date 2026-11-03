@@ -23,6 +23,8 @@ const listeners = new Set();
 let modulesCache = null;
 
 export const CATALOG_URL = REMOTE + 'modules/catalog.json'; // в приложении из Google Play — с aobible.app
+// переводы API.Bible и bible.helloao.org — отдельным файлом: старые версии приложения его не читают
+const MORE_URL = REMOTE + 'modules/catalog-more.json';
 
 export function subscribe(fn) {
   listeners.add(fn);
@@ -270,7 +272,8 @@ export const catalogLangNames = new Map();
 export function fetchCatalog(url = CATALOG_URL, { fresh = false } = {}) {
   const hit = catalogMemo.get(url);
   if (!fresh && hit && Date.now() - hit.at < 120000) return hit.promise;
-  const promise = fetchCatalogNow(url).catch((e) => (catalogMemo.delete(url), Promise.reject(e)));
+  // встроенный каталог — вместе с дополнительным (его нет или не открылся — без него)
+  const promise = (url === CATALOG_URL ? Promise.all([fetchCatalogNow(url), fetchCatalogNow(MORE_URL).catch(() => [])]).then(([a, b]) => [...a, ...b]) : fetchCatalogNow(url)).catch((e) => (catalogMemo.delete(url), Promise.reject(e)));
   catalogMemo.set(url, { at: Date.now(), promise });
   return promise;
 }
