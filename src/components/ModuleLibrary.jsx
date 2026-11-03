@@ -4,7 +4,7 @@
 // (капсула «Скачать» / тихое «Установлен» / прогресс загрузки) и стрелка «подробнее».
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import {
-  Download, RefreshCw, Trash2, Star, Check, Ban, Globe, BookOpen, BookText, Link2, ChevronDown,
+  Download, RefreshCw, Trash2, Star, Check, Ban, Globe, BookOpen, BookText, Link2, ChevronDown, Plus,
   MessageSquareText, Map as MapIcon, Loader2,
   Search,
   Headphones,
@@ -49,7 +49,13 @@ function Details({ m }) {
         {m.language && (
           <>
             <dt>{t('Язык')}</dt>
-            <dd>{m.language.toUpperCase()}</dd>
+            <dd>{langName(m.language)}</dd>
+          </>
+        )}
+        {m.online && (
+          <>
+            <dt>{t('Чтение')}</dt>
+            <dd>{t('по сети (API.Bible): главы приходят, когда вы их открываете')}</dd>
           </>
         )}
         {m.version && (
@@ -136,8 +142,15 @@ function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle })
     action = (
       <span className="mod-state">
         <Check size={14} aria-hidden="true" />
-        {t('Установлен')}
+        {m.online ? t('Добавлен') : t('Установлен')}
       </span>
+    );
+  else if (m.online)
+    // перевод по сети (API.Bible): не скачивается — добавляется
+    action = (
+      <button className="mod-pill" onClick={() => onInstall(cat || m)} aria-label={t('Добавить {name}', { name: m.name })}>
+        {t('Добавить')}
+      </button>
     );
   else
     action = (
@@ -150,7 +163,7 @@ function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle })
   // «Новый» — модуль появился в каталоге за последние 7 дней (поле added каталога)
   const addedAt = Date.parse((cat && cat.added) || m.added || '');
   const isNew = addedAt > 0 && Date.now() - addedAt < 7 * 86400000;
-  const meta = [m.language && langName(m.language), !installed && (m.sizeGz || m.size) && fmtSize(m.sizeGz || m.size)].filter(Boolean).join(' · ');
+  const meta = [m.language && langName(m.language), m.online ? t('по сети') : !installed && (m.sizeGz || m.size) && fmtSize(m.sizeGz || m.size)].filter(Boolean).join(' · ');
 
   return (
     <li className={`mod-row ${open ? 'open' : ''} ${toggleable && !on ? 'off' : ''} ${m.unavailable ? 'unavailable' : ''}`}>
@@ -182,12 +195,17 @@ function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle })
                 <Star size={14} /> {t('Сделать основным')}
               </button>
             )}
-            {!installed && !m.unavailable && (
+            {!installed && !m.unavailable && m.online && (
+              <button className="btn small primary" disabled={!!busy} onClick={() => onInstall(cat || m)}>
+                <Plus size={14} /> {t('Добавить')}
+              </button>
+            )}
+            {!installed && !m.unavailable && !m.online && (
               <button className="btn small primary" disabled={!!busy} onClick={() => onInstall(cat || m)}>
                 <Download size={14} /> {t('Скачать')}{m.sizeGz || m.size ? ` · ${fmtSize(m.sizeGz || m.size)}` : ''}
               </button>
             )}
-            {installed && cat && !cat.unavailable && (
+            {installed && cat && !cat.unavailable && !installed.online && (
               <button className="btn small" disabled={!!busy} onClick={() => onInstall(cat)}>
                 <RefreshCw size={14} /> {updatable ? t('Обновить') : t('Переустановить')}
               </button>
@@ -207,8 +225,11 @@ function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle })
 function Sections({ items, mode, catalog, busy, onInstall, filter }) {
   const { modules } = useApp();
   const [open, setOpen] = useState(null);
-  const groups = MODULE_SECTIONS.map(([type, label]) => [type, label, items.filter((m) => m.type === type)]).filter(
-    ([type, , list]) => (filter === 'all' ? list.length : type === filter)
+  // переводы по сети (API.Bible) — отдельным разделом сразу после скачиваемых
+  const sections = MODULE_SECTIONS.flatMap((x) => (x[0] === 'bible' ? [x, ['online', N_('Переводы по сети')]] : [x]));
+  const inGroup = (type) => (m) => (type === 'online' ? m.type === 'bible' && !!m.online : m.type === type && !(type === 'bible' && m.online));
+  const groups = sections.map(([type, label]) => [type, label, items.filter(inGroup(type))]).filter(
+    ([type, , list]) => (filter === 'all' ? list.length : type === filter || (type === 'online' && filter === 'bible' && list.length))
   );
   if (!groups.length) return <Empty icon={BookOpen} title={t('Модулей нет')}>{mode === 'installed' ? t('Скачайте из каталога или импортируйте JSON-файл.') : t('В каталоге пока нет модулей.')}</Empty>;
   return groups.map(([type, label, list]) => (
@@ -366,7 +387,7 @@ export default function ModuleLibrary({ payload, onClose }) {
     setBusy((b) => ({ ...b, [c.id]: { p: 0, label: t('Подготовка…') } }));
     try {
       await repo.installFromCatalog(c, (p, label) => setBusy((b) => ({ ...b, [c.id]: { p, label } })));
-      toast(t('{name} установлен', { name: c.name }));
+      toast(c.online ? t('{name} добавлен', { name: c.name }) : t('{name} установлен', { name: c.name }));
     } catch (e) {
       toast(`${c.name}: ${repo.errorText(e)}`, 'error');
     } finally {

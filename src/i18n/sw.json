@@ -1433,5 +1433,17 @@
  "Дни плана": "Siku za mpango",
  "пропущен": "lililorukwa",
  "Снять отметку": "Ondoa alama",
- "идёт": "unaendelea"
+ "идёт": "unaendelea",
+ "{name} добавлен": "{name} imeongezwa",
+ "Добавить": "Ongeza",
+ "Добавить {name}": "Ongeza {name}",
+ "Добавлен": "Imeongezwa",
+ "Можно читать по сети": "Soma mtandaoni",
+ "Нет связи: этот перевод читается по сети. Подключитесь к интернету или выберите скачанный перевод.": "Hakuna muunganisho: tafsiri hii inasomwa mtandaoni. Unganisha intaneti au chagua tafsiri iliyopakuliwa.",
+ "Переводы по сети": "Tafsiri za mtandaoni",
+ "Переводы по сети сейчас недоступны: исчерпан месячный лимит запросов. Выберите скачанный перевод или загляните позже.": "Tafsiri za mtandaoni hazipatikani sasa: kikomo cha maombi cha mwezi kimefikiwa. Chagua tafsiri iliyopakuliwa au jaribu baadaye.",
+ "Эти переводы не скачиваются: главы приходят по сети (API.Bible), когда вы их открываете.": "Tafsiri hizi hazipakuliwi: sura huja mtandaoni (API.Bible) unapozifungua.",
+ "по сети": "mtandaoni",
+ "по сети (API.Bible): главы приходят, когда вы их открываете": "mtandaoni (API.Bible): sura huja unapozifungua",
+ "Эти переводы предоставляет API.Bible на своих условиях; авторские права перевода указаны под каждой главой.": "Tafsiri hizi zinatolewa na API.Bible kwa masharti yake; hakimiliki ya tafsiri imeonyeshwa chini ya kila sura."
 }

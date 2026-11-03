@@ -1,0 +1,7 @@
+# Посредник к API.Bible: ключ — секрет APIBIBLE_KEY (wrangler secret put APIBIBLE_KEY), в репозитории его нет
+name = "aobible-apibible"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+# тот же посредник по адресу сайта: https://aobible.app/bapi/...
+routes = [{ pattern = "aobible.app/bapi/*", zone_name = "aobible.app" }]

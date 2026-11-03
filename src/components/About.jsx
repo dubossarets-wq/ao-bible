@@ -68,7 +68,7 @@ function Licenses() {
     <>
       <p>{t('Тексты, словари, записи и иллюстрации взяты из свободных источников (общественное достояние и открытые лицензии) или используются с разрешения авторов. У каждой иллюстрации автор и лицензия указаны под картинкой.')}</p>
       {MODULE_SECTIONS.map(([type, label]) => {
-        const list = cat.filter((m) => m.type === type);
+        const list = cat.filter((m) => m.type === type && !m.online);
         if (!list.length) return null;
         return (
           <section key={type} className="lic-group">
@@ -107,6 +107,18 @@ function Licenses() {
           </section>
         );
       })}
+      {/* переводы по сети — одним абзацем: их полторы сотни, права каждого — под каждой главой */}
+      {cat.some((m) => m.online) && (
+        <section className="lic-group">
+          <h4>{t('Переводы по сети')}</h4>
+          <p>
+            {t('Эти переводы предоставляет API.Bible на своих условиях; авторские права перевода указаны под каждой главой.')}{' '}
+            <a href="https://api.bible" target="_blank" rel="noopener noreferrer">
+              api.bible
+            </a>
+          </p>
+        </section>
+      )}
       {photos.length > 0 && (
         <section className="lic-group">
           <h4>{t('Фотографии')}</h4>

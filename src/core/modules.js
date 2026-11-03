@@ -6,6 +6,7 @@ import { normalize, bytesToJson, ModuleError } from './schema.js';
 import { t, getLang } from './i18n.js';
 import { REMOTE, MIRROR } from './native.js';
 import { CapacitorHttp } from '@capacitor/core';
+import { isOnline, onlineBook, onlineModule, loadChapter, forgetOnline } from './apibible.js';
 
 // Текст ошибки для человека: нехватку места браузер сообщает по-английски и непонятно — объясняем, что делать
 export const errorText = (e) =>
@@ -99,6 +100,7 @@ export async function installNormalized({ meta, data }, { origin = 'file', catal
 }
 
 async function removeData(id) {
+  await forgetOnline(id);
   await db.delPrefix(db.STORES.bookdata, `${id}|`);
   await db.del(db.STORES.payload, id);
   for (const k of [...bookCache.keys()]) if (k.startsWith(`${id}|`)) bookCache.delete(k);
@@ -121,11 +123,15 @@ export async function removeModule(id) {
 
 // Книга без записи в кэш читалки (поиск и статистика проходят всю Библию и вытеснили бы книгу, которую читают)
 export async function peekBook(moduleId, bookId) {
+  if (isOnline(modulesCache?.find((m) => m.id === moduleId))) return null; // перевод по сети: поиск и статистика его не проходят
   const key = `${moduleId}|${bookId}`;
   return bookCache.get(key) || (await db.get(db.STORES.bookdata, key)) || null;
 }
 
 export async function getBook(moduleId, bookId) {
+  // перевод по сети (API.Bible): главы приходят по одной — loadChapter; здесь только уже загруженные
+  const online = (modulesCache || (await listModules())).find((m) => m.id === moduleId);
+  if (isOnline(online)) return onlineBook(online, bookId);
   const key = `${moduleId}|${bookId}`;
   if (bookCache.has(key)) {
     // Свежая книга — в конец очереди (вытесняется самая давно нужная, а не самая давно загруженная)
@@ -168,8 +174,25 @@ export function getPayload(moduleId) {
   return payloadCache.get(moduleId);
 }
 
+// Глава перевода по сети. Число стихов в списке книг сначала — по западному счёту; пришла глава — уточняем
+export async function loadOnlineChapter(m, bookId, c) {
+  const b = await loadChapter(m, bookId, c);
+  const n = b.chapters[c - 1].length;
+  const cur = (await getModule(m.id))?.books?.find((x) => x.id === bookId);
+  if (cur && n && cur.verses[c - 1] !== n) {
+    const books = (await getModule(m.id)).books.map((x) => (x.id === bookId ? { ...x, verses: x.verses.map((k, i) => (i === c - 1 ? n : k)) } : x));
+    await updateModuleMeta(m.id, { books });
+  }
+  return b;
+}
+
 // Текст одного стиха (с разметкой модуля) или null
 export async function getVerse(moduleId, ref) {
+  const m = (await listModules()).find((x) => x.id === moduleId);
+  if (isOnline(m)) {
+    const b = await loadOnlineChapter(m, ref.book, ref.chapter).catch(() => null);
+    return b?.chapters?.[ref.chapter - 1]?.[ref.verse - 1] || null;
+  }
   const b = await getBook(moduleId, ref.book);
   return b?.chapters?.[ref.chapter - 1]?.[ref.verse - 1] ?? null;
 }
@@ -269,6 +292,8 @@ export function downloadModule(entry, onProgress) {
 
 // prefetched — уже идущее скачивание (обещание буфера) из downloadModule
 export async function installFromCatalog(entry, onProgress, prefetched = null) {
+  // перевод по сети: «Добавить» — запись без текста
+  if (isOnline(entry)) return installNormalized({ meta: await onlineModule(entry), data: { books: [] } }, { origin: 'catalog', catalogVersion: entry.version, onProgress });
   if (entry.unavailable || !entry.url) throw new ModuleError(t('Этот модуль пока недоступен для загрузки.'));
   const buf = await (prefetched || downloadModule(entry, (p, l) => onProgress?.(p * 0.6, l)));
   const json = await bytesToJson(buf, (l) => onProgress?.(0.65, l));

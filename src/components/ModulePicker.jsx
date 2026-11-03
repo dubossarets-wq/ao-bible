@@ -1,5 +1,6 @@
 // Быстрое переключение перевода в панели: книга, глава и стих сохраняются. Ниже установленных — переводы
 // из каталога, которых ещё нет на устройстве: их можно скачать прямо отсюда, фильтры отбирают и их.
+// Переводы API.Bible не скачиваются — их «Добавить», главы приходят по сети.
 import React, { useEffect, useState } from 'react';
 import { Library, Star } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
@@ -43,7 +44,7 @@ export default function ModulePicker({ pane, onClose }) {
     setBusy((b) => ({ ...b, [c.id]: 0 }));
     try {
       await repo.installFromCatalog(c, (p) => setBusy((b) => ({ ...b, [c.id]: p })));
-      toast(t('{name} установлен', { name: c.name }));
+      toast(c.online ? t('{name} добавлен', { name: c.name }) : t('{name} установлен', { name: c.name }));
     } catch (e) {
       toast(`${c.name}: ${repo.errorText(e)}`, 'error');
     } finally {
@@ -138,39 +139,49 @@ export default function ModulePicker({ pane, onClose }) {
       </ul>
       {/* не скачанные переводы — с теми же фильтрами; «Скачать» прямо в строке, скачанный перевод встаёт в список выше */}
       {!catalog && !catErr && <p className="pick-more-h pick-more-wait">{t('Загружаю каталог…')}</p>}
-      {moreList.length > 0 && (
-        <>
-          <h4 className="pick-more-h">
-            {t('Можно скачать')} <span className="tab-n">{moreList.length}</span>
-          </h4>
-          <ul className="pick-list pick-more">
-            {moreList.map((b) => {
-              const size = b.sizeGz || b.size;
-              const p = busy[b.id];
-              const pct = Math.round((p || 0) * 100);
-              return (
-                <li key={b.id}>
-                  <div className="pick-row">
-                    <span className="pick-name">{b.name}</span>
-                    <span className="pick-desc">
-                      {[b.title !== b.name && b.title, b.features?.strongs && t('номера Стронга'), !shown && langs.length > 1 && langName(b.language || 'ru'), size && fmtSize(size)].filter(Boolean).join(' · ')}
-                    </span>
-                  </div>
-                  {p != null ? (
-                    <span className="mod-busy" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label={t('Загрузка {pct}%', { pct })}>
-                      <span className="mod-ring" style={{ '--p': pct }} aria-hidden="true" />
-                      {pct}%
-                    </span>
-                  ) : (
-                    <button className="mod-pill" onClick={() => install(b)} aria-label={`${t('Скачать {name}', { name: b.name })}${size ? `, ${fmtSize(size)}` : ''}`}>
-                      {t('Скачать')}
-                    </button>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </>
+      {[
+        [moreList.filter((b) => !b.online), t('Можно скачать')],
+        [moreList.filter((b) => b.online), t('Можно читать по сети'), t('Эти переводы не скачиваются: главы приходят по сети (API.Bible), когда вы их открываете.')],
+      ].map(([items, title, note]) =>
+        items.length > 0 ? (
+          <React.Fragment key={title}>
+            <h4 className="pick-more-h">
+              {title} <span className="tab-n">{items.length}</span>
+            </h4>
+            {note && <p className="pick-more-note">{note}</p>}
+            <ul className="pick-list pick-more">
+              {items.map((b) => {
+                const size = !b.online && (b.sizeGz || b.size);
+                const p = busy[b.id];
+                const pct = Math.round((p || 0) * 100);
+                return (
+                  <li key={b.id}>
+                    <div className="pick-row">
+                      <span className="pick-name">{b.name}</span>
+                      <span className="pick-desc">
+                        {[b.title !== b.name && b.title, b.features?.strongs && t('номера Стронга'), !shown && langs.length > 1 && langName(b.language || 'ru'), size && fmtSize(size)].filter(Boolean).join(' · ')}
+                      </span>
+                    </div>
+                    {p != null ? (
+                      <span className="mod-busy" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label={t('Загрузка {pct}%', { pct })}>
+                        <span className="mod-ring" style={{ '--p': pct }} aria-hidden="true" />
+                        {pct}%
+                      </span>
+                    ) : b.online ? (
+                      <button className="mod-pill" onClick={() => install(b)} aria-label={t('Добавить {name}', { name: b.name })}>
+                        {t('Добавить')}
+                      </button>
+                    ) : (
+                      <button className="mod-pill" onClick={() => install(b)} aria-label={`${t('Скачать {name}', { name: b.name })}${size ? `, ${fmtSize(size)}` : ''}`}>
+                        {t('Скачать')}
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </React.Fragment>
+        ) : null
       )}
       <button className="btn wide" onClick={() => openSheet('library', pane, { tab: 'catalog' })}>
         <Library size={16} /> {t('Другие переводы')}

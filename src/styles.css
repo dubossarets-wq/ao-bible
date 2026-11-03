@@ -2472,3 +2472,6 @@ html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px))
 .sermon-blocks .sermon-block, .sermon-blocks .sermon-block .swipe-content { background: color-mix(in srgb, var(--text) 4%, var(--panel)); }
 .sermon-blocks .sermon-block.note, .sermon-blocks .sermon-block.note .swipe-content { background: color-mix(in srgb, var(--muted) 7%, color-mix(in srgb, var(--text) 4%, var(--panel))); }
 .sermon-blocks .sermon-item.dragging > .sermon-block, .sermon-blocks .sermon-block.dragging, .sermon-blocks .sermon-block.dragging .swipe-content { background: var(--panel); }
+/* Переводы по сети (API.Bible): авторские права под каждой главой, пояснение над списком в окне выбора перевода */
+.api-copyright { margin: .6em 0 1.4em; font-family: var(--font-ui); font-size: .72rem; line-height: 1.4; color: var(--muted); }
+.pick-more-note { margin: -4px 0 8px; font-size: .8rem; line-height: 1.4; color: var(--muted); }

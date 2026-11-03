@@ -20,3 +20,6 @@ data-src/verse-bg-src/
 data-src/illustrations/
 # Исходники подстрочника к Вульгате (Викисловарь kaikki.org, частоты Collatinus) — scripts/build_vulg_il.py
 data-src/vulg/
+# Посредник API.Bible (Cloudflare Worker): зависимости и служебные файлы wrangler
+worker/apibible/node_modules/
+worker/apibible/.wrangler/

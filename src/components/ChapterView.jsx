@@ -7,7 +7,8 @@ import { visibleInterval } from '../core/visibleInterval.js';
 import React, { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import { useApp } from '../App.jsx';
-import { getBook } from '../core/modules.js';
+import { getBook, loadOnlineChapter } from '../core/modules.js';
+import { isLoaded } from '../core/apibible.js';
 import { crossrefCounts } from '../core/crossrefs.js';
 import { commentaryIndex } from '../core/commentary.js';
 import { illustrationIndex } from '../core/illustrations.js';
@@ -40,6 +41,11 @@ export function highlightRegex(query) {
 // from/to — показать только часть главы (отрывок плана), idp — приставка к id стихов (на странице плана
 // одна и та же глава может встретиться дважды), noBookTitle/noChapterTitle — без заголовков (их заменяет заголовок отрывка)
 // «Введение в книгу», «Введение к главе», «Introduction» — статьи, которые при сборке модуля поставлены к первому стиху
+// Глава перевода по сети не пришла: исчерпан месячный лимит API.Bible или нет связи
+const onlineError = (e) =>
+  e?.message === 'limit'
+    ? t('Переводы по сети сейчас недоступны: исчерпан месячный лимит запросов. Выберите скачанный перевод или загляните позже.')
+    : t('Нет связи: этот перевод читается по сети. Подключитесь к интернету или выберите скачанный перевод.');
 const isIntro = (title) => !!title && (title.startsWith('Введение') || title === 'Introduction');
 
 // Статьи комментариев к стиху одним списком: введение (к книге или главе — у первого стиха) — отдельным пунктом.
@@ -324,16 +330,26 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       return;
     }
     clearLivePosition(index);
-    getBook(module.id, ref.book).then((data) => {
+    getBook(module.id, ref.book).then(async (data) => {
       if (!alive) return;
       if (!data) return setError(t('Книга не открылась. Переустановите модуль в библиотеке.'));
       const total = data.chapters.length;
       const c = Math.min(Math.max(1, ref.chapter), total);
+      // перевод по сети: сначала нужная глава, следующая — заодно (не пришла — подгрузится при прокрутке)
+      if (data.online) {
+        try {
+          await Promise.all([loadOnlineChapter(module, ref.book, c), c < total && loadOnlineChapter(module, ref.book, c + 1).catch(() => {})]);
+        } catch (e) {
+          if (alive) setError(onlineError(e));
+          return;
+        }
+        if (!alive) return;
+      }
       pending.current = { type: 'nav', c, v: ref.verse };
       setBook({ id: ref.book, data, meta });
       // Сначала текущая и следующая глава (снизу нужен запас, чтобы стих встал к верхнему краю), предыдущая —
       // следом, когда первый кадр уже на экране (loadEdges после смены ленты; место держит keepAnchor)
-      setRange({ start: c, end: Math.min(total, c + 1) });
+      setRange({ start: c, end: Math.min(total, isLoaded(data, c + 1) ? c + 1 : c) });
     }).catch(() => alive && setError(t('Книга не открылась. Перезапустите приложение.')));
     return () => {
       alive = false;
@@ -486,14 +502,28 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     const el = scroller.current;
     if (!el || !range || pending.current) return;
     const y = el.scrollTop;
-    if (y < 900 && range.start > 1 && Date.now() - prependAt.current > 300) {
+    const up = y < 900 && range.start > 1 && Date.now() - prependAt.current > 300;
+    const down = !up && el.scrollHeight - y - el.clientHeight < 1400 && range.end < total;
+    // перевод по сети: соседняя глава попадает в ленту, только когда пришла (иначе текст прыгнул бы при её появлении)
+    const next = up ? range.start - 1 : down ? range.end + 1 : 0;
+    if (next && book?.data.online && !isLoaded(book.data, next)) {
+      if (!fetching.current) {
+        fetching.current = true;
+        loadOnlineChapter(module, book.id, next)
+          .then(() => setTimeout(loadEdges, 0), () => {})
+          .finally(() => (fetching.current = false));
+      }
+      return;
+    }
+    if (up) {
       prependAt.current = Date.now();
       pending.current = { type: 'prepend', top: y, height: el.scrollHeight };
       setRange((r) => ({ ...r, start: r.start - 1 }));
-    } else if (el.scrollHeight - y - el.clientHeight < 1400 && range.end < total) {
+    } else if (down) {
       setRange((r) => ({ ...r, end: r.end + 1 }));
     }
   };
+  const fetching = useRef(false);
   // После каждого изменения ленты — ещё раз: у самого верха прокрутки событий уже нет, а сверху может
   // не хватать глав (быстро долистали до начала ленты)
   useEffect(() => {
@@ -1045,7 +1075,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
                 selected={selectedIn(selection, book.id, c)}
                 {...afterProps(selActions, book.id, c)}
               />
-            ))}
+            )).flatMap((el, k) => (book.data.online && book.data.copyright ? [el, <p key={`cr-${range.start + k}`} className="api-copyright">{book.data.copyright}</p>] : [el]))}
             {range.end === total && (
               <div className="book-end">
                 {nextBook ? (
