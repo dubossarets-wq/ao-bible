@@ -1436,5 +1436,7 @@
  "Эти переводы не скачиваются: главы приходят по сети (API.Bible), когда вы их открываете.": "Terjemahan ini tidak diunduh: pasal dimuat secara daring (API.Bible) saat Anda membukanya.",
  "по сети": "daring",
  "по сети (API.Bible): главы приходят, когда вы их открываете": "daring (API.Bible): pasal dimuat saat Anda membukanya",
- "Эти переводы предоставляет API.Bible на своих условиях; авторские права перевода указаны под каждой главой.": "Terjemahan ini disediakan oleh API.Bible dengan ketentuannya sendiri; hak cipta terjemahan tercantum di bawah setiap pasal."
+ "Эти переводы предоставляет API.Bible на своих условиях; авторские права перевода указаны под каждой главой.": "Terjemahan ini disediakan oleh API.Bible dengan ketentuannya sendiri; hak cipta terjemahan tercantum di bawah setiap pasal.",
+ "Ещё языки": "Bahasa lain",
+ "Показать ещё {n}": "Tampilkan {n} lagi"
 }

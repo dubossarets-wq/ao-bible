@@ -87,14 +87,19 @@ if (scopeChanged) await writeFile(scopePath, JSON.stringify(Object.fromEntries(O
 // Переводы API.Bible (читаются по сети через aobible.app/bapi): строки — из scripts/apibible-catalog.json
 // (собирает scripts/apibible-catalog.mjs), книги каждого — отдельным файлом modules/api/<id>.json, он нужен при «Добавить»
 const apiCatalog = JSON.parse(await readFile(path.join(root, 'scripts/apibible-catalog.json'), 'utf8').catch(() => '{"modules":[]}')).modules;
-const apiRows = apiCatalog.map(({ books, ...m }) => ({ ...m, url: `api/${m.online.api}.json` }));
+// Переводы bible.helloao.org (свободное зеркало eBible.org): скачиваются целиком с их сайта — scripts/helloao-catalog.json
+// (собирает scripts/helloao-catalog.mjs). Те же тексты в API.Bible (apiDup) по сети не предлагаем
+const hao = JSON.parse(await readFile(path.join(root, 'scripts/helloao-catalog.json'), 'utf8').catch(() => '{"modules":[],"apiDup":[]}'));
+const apiDup = new Set(hao.apiDup);
+const apiRows = apiCatalog.filter((m) => !apiDup.has(m.id)).map(({ books, ...m }) => ({ ...m, url: `api/${m.online.api}.json` }));
+const haoRows = hao.modules;
 const publishedCatalog = (dropGz) => JSON.stringify({ ...fullCatalog, modules: [...fullCatalog.modules.filter((m) => catalogIds.has(m.id)).map((m1) => {
   const m0 = scopes[m1.id] && m1.type === 'bible' ? { ...m1, scope: scopes[m1.id].scope } : m1;
   const m = added[m0.id] ? { ...m0, added: added[m0.id] } : m0;
   if (!dropGz) return m;
   const { urlGz, sizeGz, ...rest } = m;
   return rest;
-}), ...apiRows] }, null, 1);
+}), ...apiRows, ...haoRows] }, null, 1);
 // dereference в cp ниже: если public/modules — ссылка (копия проекта для срочных исправлений), копируются файлы, а не ссылка
 const isPublished = (src) => {
   const rel = path.relative(path.join(root, 'public/modules'), src).split(path.sep);
@@ -173,7 +178,7 @@ ${FONTS}
   await cp(path.join(root, 'public/modules'), path.join(dir, 'modules'), { recursive: true, dereference: true, filter: isPublished });
   await writeFile(path.join(dir, 'modules/catalog.json'), publishedCatalog(false));
   await mkdir(path.join(dir, 'modules/api'), { recursive: true });
-  for (const m of apiCatalog) await writeFile(path.join(dir, `modules/api/${m.online.api}.json`), JSON.stringify({ books: m.books }));
+  for (const m of apiCatalog.filter((x) => !apiDup.has(x.id))) await writeFile(path.join(dir, `modules/api/${m.online.api}.json`), JSON.stringify({ books: m.books }));
   await copyDicts(dir);
   // Планы чтения (готовые) — рядом с приложением
   if (existsSync(path.join(root, 'public/plans'))) await cp(path.join(root, 'public/plans'), path.join(dir, 'plans'), { recursive: true });

@@ -7,6 +7,7 @@ import { t, getLang } from './i18n.js';
 import { REMOTE, MIRROR } from './native.js';
 import { CapacitorHttp } from '@capacitor/core';
 import { isOnline, onlineBook, onlineModule, loadChapter, forgetOnline } from './apibible.js';
+import { fromHelloao } from './helloao.js';
 
 // Текст ошибки для человека: нехватку места браузер сообщает по-английски и непонятно — объясняем, что делать
 export const errorText = (e) =>
@@ -296,7 +297,9 @@ export async function installFromCatalog(entry, onProgress, prefetched = null) {
   if (isOnline(entry)) return installNormalized({ meta: await onlineModule(entry), data: { books: [] } }, { origin: 'catalog', catalogVersion: entry.version, onProgress });
   if (entry.unavailable || !entry.url) throw new ModuleError(t('Этот модуль пока недоступен для загрузки.'));
   const buf = await (prefetched || downloadModule(entry, (p, l) => onProgress?.(p * 0.6, l)));
-  const json = await bytesToJson(buf, (l) => onProgress?.(0.65, l));
+  const raw = await bytesToJson(buf, (l) => onProgress?.(0.65, l));
+  // перевод с bible.helloao.org — сначала в формат модуля приложения
+  const json = entry.helloao ? fromHelloao(raw, entry) : raw;
   const norm = normalize(json, { fileName: entry.id });
   norm.meta.id = entry.id;
   norm.meta.size = entry.size || buf.byteLength;

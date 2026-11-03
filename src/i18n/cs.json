@@ -1469,5 +1469,7 @@
  "Эти переводы не скачиваются: главы приходят по сети (API.Bible), когда вы их открываете.": "Tyto překlady se nestahují: kapitoly přicházejí online (API.Bible), když je otevřete.",
  "по сети": "online",
  "по сети (API.Bible): главы приходят, когда вы их открываете": "online (API.Bible): kapitoly přicházejí, když je otevřete",
- "Эти переводы предоставляет API.Bible на своих условиях; авторские права перевода указаны под каждой главой.": "Tyto překlady poskytuje API.Bible za svých podmínek; autorská práva překladu jsou uvedena pod každou kapitolou."
+ "Эти переводы предоставляет API.Bible на своих условиях; авторские права перевода указаны под каждой главой.": "Tyto překlady poskytuje API.Bible za svých podmínek; autorská práva překladu jsou uvedena pod každou kapitolou.",
+ "Ещё языки": "Další jazyky",
+ "Показать ещё {n}": "Zobrazit dalších {n}"
 }

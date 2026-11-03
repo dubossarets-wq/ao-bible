@@ -9,6 +9,7 @@ import * as repo from '../core/modules.js';
 import { t, getLang } from '../core/i18n.js';
 import { bookMeta } from '../core/books.js';
 import { langName } from './ModuleLibrary.jsx';
+import LangChips from './LangChips.jsx';
 import { fmtSize } from './ui.jsx';
 
 // Что в переводе: 'ot', 'nt', 'dc' — у установленного по его книгам, у не скачанного — по полю scope каталога
@@ -72,7 +73,8 @@ export default function ModulePicker({ pane, onClose }) {
   const shown = langs.includes(lang) ? lang : null;
   const ofLang = (l) => (shown ? l.filter((b) => (b.language || 'ru') === shown) : l);
   const byLang = ofLang(sorted);
-  const moreByLang = ofLang(more);
+  // без выбранного языка — не скачанные переводы только на своих языках (каталог — больше тысячи переводов)
+  const moreByLang = shown ? ofLang(more) : more.filter((b) => mine.includes(b.language || 'ru') || (b.language || 'ru') === getLang());
   // что в переводе: вся Библия, Ветхий или Новый Завет, неканонические книги, номера Стронга, подстрочник
   const [kind, setKind] = useState(null);
   const pool = [...byLang, ...moreByLang];
@@ -97,18 +99,7 @@ export default function ModulePicker({ pane, onClose }) {
           ))}
         </div>
       )}
-      {langs.length > 1 && (
-        <div className="pick-langs" role="group" aria-label={t('Язык')}>
-          <button type="button" className={`chip ${!shown ? 'on' : ''}`} aria-pressed={!shown} onClick={() => setLang(null)}>
-            {t('Все')}
-          </button>
-          {langs.map((l) => (
-            <button key={l} type="button" className={`chip ${shown === l ? 'on' : ''}`} aria-pressed={shown === l} onClick={() => setLang(l)}>
-              {langName(l)}
-            </button>
-          ))}
-        </div>
-      )}
+      {langs.length > 1 && <LangChips codes={langs} value={shown} onChange={setLang} max={Math.max(8, mine.length + 4)} />}
       <ul className="pick-list">
         {list.map((b) => (
           <li key={b.id}>

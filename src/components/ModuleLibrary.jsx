@@ -10,6 +10,7 @@ import {
   Headphones,
 } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
+import LangChips from './LangChips.jsx';
 import ModuleImporter from './ModuleImporter.jsx';
 import { useApp } from '../App.jsx';
 import * as repo from '../core/modules.js';
@@ -222,9 +223,13 @@ function ModuleRow({ m, installed, cat, busy, mode, onInstall, open, onToggle })
   );
 }
 
+// Длинный раздел (сотни переводов каталога) — сначала первые PAGE строк, остальные — кнопкой «Показать ещё»
+const PAGE = 60;
+
 function Sections({ items, mode, catalog, busy, onInstall, filter }) {
   const { modules } = useApp();
   const [open, setOpen] = useState(null);
+  const [more, setMore] = useState({});
   // переводы по сети (API.Bible) — отдельным разделом сразу после скачиваемых
   const sections = MODULE_SECTIONS.flatMap((x) => (x[0] === 'bible' ? [x, ['online', N_('Переводы по сети')]] : [x]));
   const inGroup = (type) => (m) => (type === 'online' ? m.type === 'bible' && !!m.online : m.type === type && !(type === 'bible' && m.online));
@@ -238,8 +243,9 @@ function Sections({ items, mode, catalog, busy, onInstall, filter }) {
         {t(label)} <span className="tab-n">{list.length}</span>
       </h4>
       {list.length ? (
+        <>
         <ul className="mod-list">
-          {list.map((m) => {
+          {list.slice(0, more[type] || PAGE).map((m) => {
             const installed = mode === 'installed' ? m : modules.find((x) => x.id === m.id);
             const cat = mode === 'catalog' ? m : catalog?.find((c) => c.id === m.id);
             return (
@@ -257,6 +263,12 @@ function Sections({ items, mode, catalog, busy, onInstall, filter }) {
             );
           })}
         </ul>
+        {list.length > (more[type] || PAGE) && (
+          <button className="btn wide mod-more-btn" onClick={() => setMore((x) => ({ ...x, [type]: (x[type] || PAGE) + 200 }))}>
+            {t('Показать ещё {n}', { n: Math.min(200, list.length - (more[type] || PAGE)) })}
+          </button>
+        )}
+        </>
       ) : (
         <p className="field-hint">
           {mode === 'installed' ? `${t('Не установлено.')} ` : `${t('В каталоге пока нет.')} `}
@@ -317,7 +329,8 @@ const ORDER = Object.keys(LANGS);
 export const langRank = (code) => (ORDER.includes(code) ? ORDER.indexOf(code) : ORDER.length + (code ? 0 : 1));
 export const langName = (code) => {
   if (!code) return t('Другие');
-  if (getLang() !== 'ru') {
+  // языка нет в списке выше (их сотни в каталоге bible.helloao.org) — название от браузера и в русском интерфейсе
+  if (getLang() !== 'ru' || !LANGS[code]) {
     try {
       const s = new Intl.DisplayNames([locale()], { type: 'language' }).of(code);
       if (s && s !== code) return s[0].toLocaleUpperCase(locale()) + s.slice(1);
@@ -334,16 +347,8 @@ function LangFilter({ value, onChange, items }) {
   // слева направо по числу модулей (больше — левее); при равенстве — прежний порядок
   const codes = Object.keys(counts).sort((a, b) => counts[b] - counts[a] || langRank(a) - langRank(b) || a.localeCompare(b));
   if (codes.length < 2) return null;
-  return (
-    <div className="chips filter-chips lang-chips mod-chips" role="group" aria-label={t('Язык модулей')}>
-      {[['all', t('Все языки')], ...codes.map((c) => [c, langName(c)])].map(([k, l]) => (
-        <button key={k} className={`chip ${value === k ? 'on' : ''}`} aria-pressed={value === k} onClick={() => onChange(k)}>
-          {l}
-          {k !== 'all' ? <span className="tab-n"> {counts[k]}</span> : null}
-        </button>
-      ))}
-    </div>
-  );
+  // языков сотни (каталог bible.helloao.org): кнопками — первые по числу модулей, остальные — списком «Ещё языки»
+  return <LangChips className="chips filter-chips lang-chips mod-chips" label={t('Язык модулей')} codes={codes} value={value} onChange={onChange} counts={counts} allValue="all" allLabel={t('Все языки')} max={10} />;
 }
 
 // Поиск по названию, описанию, автору и языку модуля

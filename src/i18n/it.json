@@ -1451,5 +1451,7 @@
  "Эти переводы не скачиваются: главы приходят по сети (API.Bible), когда вы их открываете.": "Queste traduzioni non si scaricano: i capitoli arrivano online (API.Bible) quando li apri.",
  "по сети": "online",
  "по сети (API.Bible): главы приходят, когда вы их открываете": "online (API.Bible): i capitoli arrivano quando li apri",
- "Эти переводы предоставляет API.Bible на своих условиях; авторские права перевода указаны под каждой главой.": "Queste traduzioni sono fornite da API.Bible alle sue condizioni; il copyright di ogni traduzione è indicato sotto ogni capitolo."
+ "Эти переводы предоставляет API.Bible на своих условиях; авторские права перевода указаны под каждой главой.": "Queste traduzioni sono fornite da API.Bible alle sue condizioni; il copyright di ogni traduzione è indicato sotto ogni capitolo.",
+ "Ещё языки": "Altre lingue",
+ "Показать ещё {n}": "Mostra altri {n}"
 }
