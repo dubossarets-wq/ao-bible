@@ -30,6 +30,15 @@ const prefRow = (text) => () => byText('.sheet .pref-row', text);
 const menuOpen = () => $('.menu') || $('.sheet .more-list');
 const openMenu = () => !menuOpen() && click(phone() ? tab('more') : $(P1 + '.tb-more'));
 const menuButton = () => (phone() ? tab('more') : $(P1 + '.tb-more'));
+// Первое видимое слово первой панели: стихи нарисованы простым текстом, слова-элементы стих получает при наведении
+const firstWord = () => {
+  const hit = firstVisible(P1 + '.verse .w');
+  if (hit) return hit;
+  const v = firstVisible(P1 + '.verse');
+  v?.querySelector('.vt')?.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }));
+  return firstVisible(P1 + '.verse .w');
+};
+
 export function selectVerse() {
   const v = verse();
   if (!v || $('.selection-bar')) return;
@@ -51,11 +60,11 @@ export const TOURS = [
   {
     id: 'word', icon: MousePointerClick, title: N_('Значение слова'), group: N_('Основное'),
     steps: [
-      { text: N_('Нажмите на любое слово.'), target: () => firstVisible(P1 + '.verse .w'), next: () => click(firstVisible(P1 + '.verse .w')), until: () => $('.word-pop') },
+      { text: N_('Нажмите на любое слово.'), target: () => firstWord(), next: () => click(firstWord()), until: () => $('.word-pop') },
       {
         text: N_('Вот словари с этим словом. Нажмите на любой — откроется статья.'),
         target: () => $('.word-pop') || $('.sheet'),
-        before: () => !$('.word-pop') && !$('.sheet') && click(firstVisible(P1 + '.verse .w')),
+        before: () => !$('.word-pop') && !$('.sheet') && click(firstWord()),
         next: () => click([...document.querySelectorAll('.word-pop button')].find((b) => !b.textContent.includes(t('Карта')))),
         until: () => $('.sheet') || $('.map-pane'),
       },

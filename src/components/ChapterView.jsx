@@ -5,6 +5,7 @@ import { useSyncTouchScroll } from './useSyncTouchScroll.js';
 import { lookupWord } from '../core/lexicon.js';
 import { visibleInterval } from '../core/visibleInterval.js';
 import React, { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { getBook, loadOnlineChapter } from '../core/modules.js';
@@ -15,7 +16,7 @@ import { illustrationIndex } from '../core/illustrations.js';
 import { setLivePosition, clearLivePosition } from '../core/livePosition.js';
 import { setDriver, isDriver, onSync, emitSync } from '../core/scrollSync.js';
 import { useAudio } from '../core/audio.js';
-import { verseHtml, wordAt, plainText } from '../core/verseMarkup.js';
+import { verseHtml, wordAt, plainText, wordFromEvent } from '../core/verseMarkup.js';
 import { wasClosedOnWord, isDoubleTap, pulseFavorite, DOUBLE_TAP_MS } from '../core/tapState.js';
 import { logChapter, minSeconds } from '../core/readLog.js';
 import { creditChapter } from '../core/planStore.js';
@@ -132,6 +133,18 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
   const [cmSel, setCmSel] = useState(0); // какой из комментариев стиха раскрыт
   const sel = selected ? new Set(selected.split(',').map(Number)) : null;
   const mk = marks ? Object.fromEntries(marks.split(',').map((x) => x.split(':'))) : {};
+  // Стихи — простым текстом (verseHtml lite): слова-элементы получает стих, которого коснулись или над которым мышь,
+  // — до того, как палец отпустят, поэтому нажатие на слово работает как прежде. Выделенные стихи и с любимой
+  // частью — сразу со словами (их части подсвечиваются по словам)
+  const [touched, setTouched] = useState(() => new Set());
+  const touchedRef = useRef(touched);
+  touchedRef.current = touched;
+  const touch = (e) => {
+    const v = +e.target.closest?.('.verse')?.dataset.v;
+    if (!v || touchedRef.current.has(v)) return;
+    touchedRef.current = new Set(touchedRef.current).add(v);
+    flushSync(() => setTouched(touchedRef.current));
+  };
   // комментарии к стиху — только на языке этого перевода (у синодального — русские, у KJV — английские)
   const cmsOf = (v) => comments?.get(`${bookId}.${c}.${v}`)?.filter((cm) => (!opts.inlineComments || opts.inlineComments.includes(cm.id)) && (!opts.lang || cm.lang === opts.lang)) || [];
   // введения (статьи «Введение…» у первого стиха) — над заголовками: к книге — над названием книги, к главе — над «Глава N»
@@ -144,7 +157,7 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
       {c === 1 && !noBookTitle && <h1 className="book-title">{bookName}</h1>}
       {chapIntro.length > 0 && !noChapterTitle && <IntroComments entries={chapIntro} size={opts.cmSize} />}
       {!noChapterTitle && <h2 className="chapter-title">{isPsalm ? t('Псалом {n}', { n: c }) : t('Глава {n}', { n: c })}</h2>}
-      <div className={`verses ${opts.continuous ? 'continuous' : ''}`}>
+      <div className={`verses ${opts.continuous ? 'continuous' : ''}`} onPointerDown={touch} onPointerOver={touch} onFocus={touch}>
         {verses.map((text, i) => {
           const v = i + 1;
           if (!text || v < from || (to && v > to)) return null;
@@ -195,7 +208,7 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
                     </svg>
                   </span>
                 )}
-                <span className="vt" dangerouslySetInnerHTML={{ __html: verseHtml(text, { showStrongs: opts.showStrongs, highlight: hlRe && (hlVerse == null || hlVerse === v) ? hlRe : null, interlinear: opts.interlinear }) }} />
+                <span className="vt" dangerouslySetInnerHTML={{ __html: verseHtml(text, { showStrongs: opts.showStrongs, highlight: hlRe && (hlVerse == null || hlVerse === v) ? hlRe : null, interlinear: opts.interlinear, lite: !touched.has(v) && !sel?.has(v) && !/p/.test(mk[v] || '') }) }} />
                 {mk[v]?.includes('n') && (
                   <button className="note-tag" data-act="note" aria-label={t('Заметка к стиху')} title={t('Заметка')}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -486,9 +499,10 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     const kept = Math.abs(el.scrollTop - keepTop.current) < 1;
     if (kept) keepTop.current = -1;
     else emitPosition();
-    // Долгое чтение: лента глав растёт — когда прокрутка стихла, оставляем по две главы вокруг текущей
+    // Долгое чтение: лента глав растёт — когда прокрутка стихла, оставляем по одной главе вокруг текущей
     clearTimeout(trimTimer.current);
-    if (range.end - range.start > 6) trimTimer.current = setTimeout(trimRibbon, 600);
+    // (на слабых телефонах длинная лента — тысячи элементов: держим текущую главу и по одной с каждой стороны)
+    if (range.end - range.start > 4) trimTimer.current = setTimeout(trimRibbon, 600);
     // Колесо и обычная прокрутка: остановились — доводим вторую панель (пальцем на телефоне — сигнал из useSyncTouchScroll)
     if (settings.syncScroll && !touchSync && isDriver(index) && !kept) {
       clearTimeout(settleTimer.current);
@@ -520,14 +534,18 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       prependAt.current = Date.now();
       pending.current = { type: 'prepend', top: y, height: el.scrollHeight };
       setRange((r) => ({ ...r, start: r.start - 1 }));
-    } else if (down) {
+    } else if (down && !appending.current) {
+      // пока глава не встала в ленту, следующую не заказываем (каждое событие прокрутки добавляло бы ещё одну)
+      appending.current = true;
       setRange((r) => ({ ...r, end: r.end + 1 }));
     }
   };
   const fetching = useRef(false);
+  const appending = useRef(false);
   // После каждого изменения ленты — ещё раз: у самого верха прокрутки событий уже нет, а сверху может
   // не хватать глав (быстро долистали до начала ленты)
   useEffect(() => {
+    appending.current = false;
     const id = setTimeout(loadEdges, 350);
     return () => clearTimeout(id);
   }, [range]);
@@ -539,15 +557,15 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     const at = verseAtTop();
     if (!el || !at || !range || pending.current) return;
     const c = at.found.c;
-    const start = Math.max(range.start, c - 2);
-    const end = Math.min(range.end, c + 2);
+    const start = Math.max(range.start, c - 1);
+    const end = Math.min(range.end, c + 1);
     if (start === range.start && end === range.end) return;
     const anchor = el.querySelector(`.chapter[data-c="${c}"]`);
     if (!anchor) return;
     pending.current = { type: 'trim', c, top: anchor.offsetTop, st: el.scrollTop };
     setRange((r) => {
-      const s = Math.max(r.start, c - 2);
-      const e = Math.min(r.end, c + 2);
+      const s = Math.max(r.start, c - 1);
+      const e = Math.min(r.end, c + 1);
       if (s === r.start && e === r.end) {
         pending.current = null; // обрезать нечего — без перерисовки, иначе подгрузка глав осталась бы заблокированной
         return r;
@@ -800,7 +818,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     // В режиме выделения нажатие на стих добавляет или убирает его из выделения
     // Выбор части стиха: нажатия по словам этого стиха задают начало и конец
     if (part && `${vref.book}.${vref.chapter}.${vref.verse}` === part.key) {
-      const w = e.target.closest('.w');
+      const w = wordFromEvent(e);
       if (w) onPart?.(+w.dataset.i);
       return;
     }
@@ -824,14 +842,15 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     if (act === 'illus') return openSheet('illus', index, { ref: vref, items: illus?.get(`${vref.book}.${vref.chapter}.${vref.verse}`) || [] });
     // Номер стиха — то же, что долгое нажатие: выделение стиха и одна общая панель действий
     if (act === 'verse') return onSelect?.(vref, 'start');
-    const sn = e.target.closest('.sn');
+    const sn = wordFromEvent(e, '.sn');
     if (sn) {
       const token = wordAt(text, +sn.dataset.i);
       if (!token?.strongs) return;
       closePopover();
       return openSheet('dict', index, { token: { text: token.text, strongs: token.strongs, morph: token.morph || null }, ref: vref, moduleId: module.id, verseText: plainText(text), wi: +sn.dataset.i, autoOpen: true, initial: 'full' });
     }
-    const w = e.target.closest('.w');
+    // стих мог получить слова-элементы только что, по касанию: тогда слово — то, что под пальцем
+    const w = wordFromEvent(e);
     if (w) {
       // Нажатие, которым закрыли выборку, или повторное нажатие на выделенное слово — снимаем выделение, выборку не открываем
       if (wasClosedOnWord(w) || (w === activeWord.current && !popover && !sheet)) {

@@ -154,6 +154,8 @@ async function run(label, viewport, isMobile) {
   }, null, { timeout: 90000, polling: 1000 });
 
   // Слово «Господь» в Нав. 13:33
+  // стихи нарисованы простым текстом — слова-элементы стих получает при наведении или касании, как у человека
+  await page.hover('#v-13-33 .vt');
   const word = page.locator('#v-13-33 .w', { hasText: 'Господь' }).first();
   // Полоса прогресса книги под верхней панелью
   const prog = await page.$eval('.read-progress', (e) => ({ v: +e.getAttribute('aria-valuenow'), w: e.firstElementChild.getBoundingClientRect().width }));
@@ -421,6 +423,7 @@ async function run(label, viewport, isMobile) {
   await page.keyboard.press('Enter');
   await page.waitForSelector('#v-14-15');
   await page.waitForTimeout(500);
+  await page.hover('#v-14-15 .vt');
   await page.locator('#v-14-15 .w', { hasText: 'Хеврону' }).click();
   await page.waitForSelector('.word-pop .wp-place', { timeout: 15000 });
   const placeItem = await page.textContent('.word-pop .wp-place');

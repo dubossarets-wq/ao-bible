@@ -1788,20 +1788,7 @@ html.has-tabbar:not(.reading-hidden):not(.kb-open) { --tabbar-h: var(--tabbar-ba
 /* на широком экране капсула не растягивается: по центру, не шире 520 (как на большом телефоне) */
 @media (min-width: 600px) { .tabbar { left: max(calc(env(safe-area-inset-left, 0px) + var(--tb-side)), calc(50% - 260px)); right: max(calc(env(safe-area-inset-right, 0px) + var(--tb-side)), calc(50% - 260px)); } }
 html.reading-hidden .tabbar { margin: 0; transform: translateY(calc(100% + 16px)); opacity: 0; pointer-events: none; }
-/* Под вкладками всё (глава, окно, список) плавно гаснет от верха капсулы к её середине — цветом того, что под ней.
-   Слой между окнами (z 40–41) и вкладками (42; ::before идёт раньше вкладок, поэтому под ними) */
-html.has-tabbar .app.with-tabbar::before { content: ''; position: fixed; left: 0; right: 0; bottom: 0; height: calc(64px + var(--tb-bottom)); z-index: 42; pointer-events: none; background: linear-gradient(to bottom, color-mix(in srgb, var(--bg) 0%, transparent), var(--bg) 32px); transition: opacity .25s ease; }
-html.has-tabbar:has(.sheet-layer) .app.with-tabbar::before { background: linear-gradient(to bottom, color-mix(in srgb, var(--panel) 0%, transparent), var(--panel) 32px); }
-html.reading-hidden .app.with-tabbar::before, html.kb-open .app.with-tabbar::before { opacity: 0; }
-/* Над главой — не цветной слой, а маска самого текста: он растворяется от верха капсулы вкладок к её середине,
-   и сквозь него виден настоящий фон страницы (свой цвет, фото). Цветной слой остаётся только над окнами и проигрывателем */
-html.has-tabbar:not(.player-open):not(:has(.sheet-layer)) .app.with-tabbar::before { display: none; }
-html.has-tabbar:not(.reading-hidden):not(.kb-open) .reader .scroller {
-  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - var(--tb-bottom) - 64px), transparent calc(100% - var(--tb-bottom) - 32px));
-  mask-image: linear-gradient(to bottom, #000 calc(100% - var(--tb-bottom) - 64px), transparent calc(100% - var(--tb-bottom) - 32px));
-}
-/* растворяется под вкладками только нижняя панель (их несколько — средние тоже не под вкладками) */
-html.has-tabbar .split.rows.is-split .pane-slot:not(:last-child) .reader .scroller { -webkit-mask-image: none; mask-image: none; }
+/* Под вкладками затухания нет — ни над главой, ни над окнами (просьба владельца, 04.11.2026) */
 .tab { margin: 0; height: 100%; padding: 3px 2px; }
 html.has-tabbar .sheet { bottom: var(--kb, 0px); height: calc(var(--vvh, 100dvh) * var(--sheet-h) / 100); max-height: calc(var(--vvh, 100dvh) - env(safe-area-inset-top, 0px) - 6px); }
 html.has-tabbar .sheet.page { bottom: var(--kb, 0px); }

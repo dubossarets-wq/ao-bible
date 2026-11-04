@@ -440,14 +440,28 @@ export default function App() {
     });
   });
 
-  // Ещё одна панель (до MAX_PANES): перевод — как у первой, место — где сейчас читают первую.
-  // В сохранённом состоянии после закрытия второй панели остаётся [первая, null] — null отбрасываем
-  const openSplit = useEvent(() =>
+  // Ещё одна панель (до MAX_PANES) — сразу под той, где нажали «+» (after; без него — под последней): перевод и место —
+  // как у неё. Панели ниже сдвигаются и остаются там, где их читали (новый nav — панель на этом месте экрана перейдёт
+  // к своему стиху). В сохранённом состоянии после закрытия второй панели остаётся [первая, null] — null отбрасываем
+  const openSplit = useEvent((after) =>
     setPanes((ps) => {
       const list = ps.filter(Boolean);
       if (list.length >= MAX_PANES) return ps;
-      const at = getLivePosition(0) || list[0].ref;
-      return [...list, { ...newPane(list[0].moduleId, { book: at.book, chapter: at.chapter, verse: at.verse }), flash: null }];
+      const i = after == null ? list.length - 1 : Math.min(after, list.length - 1);
+      const src = list[i].kind === 'map' ? list[0] : list[i];
+      const at = getLivePosition(i) || src.ref;
+      const top = Math.max(...list.map((p) => p.nav || 0)) + 1;
+      const fresh = { ...newPane(src.moduleId, { book: at.book, chapter: at.chapter, verse: at.verse }), flash: null };
+      const out = [];
+      list.forEach((p, j) => {
+        if (j <= i || p.kind === 'map') out.push(p);
+        else {
+          const live = getLivePosition(j);
+          out.push({ ...p, ref: live ? { ...p.ref, ...live } : p.ref, nav: top + j + 1, flash: null });
+        }
+        if (j === i) out.push(fresh);
+      });
+      return out;
     })
   );
 

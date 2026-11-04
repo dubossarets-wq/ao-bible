@@ -28,8 +28,8 @@ export default function ReaderToolbar({ index, pane, module }) {
   const split = count > 1;
   // «×» закрывает свою панель: у первой — первую (вторая остаётся одна), у второй — вторую
   const closeLabel = count > 2 || (index === 0 && panes[1]?.kind !== 'map') ? t('Закрыть эту панель') : t('Закрыть вторую панель');
-  // «+» — ещё одна панель: у последней, пока панелей меньше MAX_PANES
-  const canAdd = split && index === count - 1 && count < MAX_PANES;
+  // «+» — ещё одна панель под этой: у каждой, пока панелей меньше MAX_PANES
+  const canAdd = split && count < MAX_PANES;
   // Место при прокрутке меняется на каждом стихе — его показывает отдельная маленькая кнопка (RefButton),
   // а шапка со всеми значками не перерисовывается
   const ref = getLivePosition(index) || pane.ref;
@@ -87,7 +87,7 @@ export default function ReaderToolbar({ index, pane, module }) {
     ),
     add: () =>
       canAdd && (
-        <button key="add" className="tb tb-icon tb-add" onClick={() => openSplit()} aria-label={t('Ещё одна панель')} title={t('Ещё одна панель')}>
+        <button key="add" className="tb tb-icon tb-add" onClick={() => openSplit(index)} aria-label={t('Ещё одна панель')} title={t('Ещё одна панель')}>
           <Plus size={21} />
         </button>
       ),

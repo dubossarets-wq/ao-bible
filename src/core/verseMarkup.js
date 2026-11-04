@@ -59,7 +59,11 @@ const esc = (s) => s.replace(/[&<>"]/g, (c) => ESC[c]);
 
 // HTML стиха со словами-кнопками. Делегирование событий: по data-i ищем токен заново.
 // interlinear — подстрочник: под словом его оригинал и номер Стронга
-export function verseHtml(text, { showStrongs = false, highlight = null, interlinear = false } = {}) {
+// lite — стих простым текстом (курсив остаётся), без элемента на каждое слово: так глава собирается в разы
+// быстрее, и прокрутка на слабых телефонах не дёргается. Слова-элементы стих получает, когда его касаются
+// (Chapter в ChapterView.jsx), — нажатие на слово, наведение, «Часть стиха» работают как прежде.
+export function verseHtml(text, { showStrongs = false, highlight = null, interlinear = false, lite = false } = {}) {
+  if (lite && !showStrongs && !highlight && !interlinear) return liteHtml(text);
   const tokens = tokenize(text);
   let out = '';
   let wi = 0;
@@ -101,6 +105,28 @@ export function verseHtml(text, { showStrongs = false, highlight = null, interli
   }
   if (inItalic) out += '</i>';
   return out;
+}
+
+function liteHtml(text) {
+  let out = '';
+  let inItalic = false;
+  for (const t of tokenize(text)) {
+    if (t.italic !== inItalic) {
+      out += t.italic ? '<i class="add">' : '</i>';
+      inItalic = t.italic;
+    }
+    out += esc(t.text);
+  }
+  if (inItalic) out += '</i>';
+  return out;
+}
+
+// Слово под нажатием: сам элемент слова или (стих только что получил слова-элементы — нажатие пришлось на стих)
+// слово в точке касания
+export function wordFromEvent(e, sel = '.w') {
+  const hit = e.target.closest?.(sel);
+  if (hit || e.clientX == null) return hit || null;
+  return document.elementFromPoint(e.clientX, e.clientY)?.closest?.(sel) || null;
 }
 
 export function wordAt(text, index) {

@@ -10,7 +10,7 @@ import { crossrefCounts } from '../core/crossrefs.js';
 import { commentaryIndexFor } from '../core/commentary.js';
 import { illustrationIndexFor } from '../core/illustrations.js';
 import { setLivePosition, clearLivePosition } from '../core/livePosition.js';
-import { wordAt, plainText } from '../core/verseMarkup.js';
+import { wordAt, plainText, wordFromEvent } from '../core/verseMarkup.js';
 import { wasClosedOnWord, isDoubleTap, pulseFavorite, DOUBLE_TAP_MS } from '../core/tapState.js';
 import { bookMeta } from '../core/books.js';
 import { readingUnits, unitDone, readingDone } from '../core/plans.js';
@@ -306,7 +306,7 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
     if (!vref || !books?.[vref.book]) return;
     // Выбор части стиха: нажатия по словам этого стиха задают начало и конец
     if (part && `${vref.book}.${vref.chapter}.${vref.verse}` === part.key) {
-      const w = e.target.closest('.w');
+      const w = wordFromEvent(e);
       if (w) onPart?.(+w.dataset.i);
       return;
     }
@@ -329,14 +329,14 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
     if (act === 'illus') return openSheet('illus', index, { ref: vref, items: illus?.get(`${vref.book}.${vref.chapter}.${vref.verse}`) || [] });
     // Номер стиха — то же, что долгое нажатие: выделение стиха и одна общая панель действий
     if (act === 'verse') return onSelect?.(vref, 'start');
-    const sn = e.target.closest('.sn');
+    const sn = wordFromEvent(e, '.sn');
     if (sn) {
       const token = wordAt(text, +sn.dataset.i);
       if (!token?.strongs) return;
       closePopover();
       return openSheet('dict', index, { token: { text: token.text, strongs: token.strongs, morph: token.morph || null }, ref: vref, moduleId: module.id, verseText: plainText(text), wi: +sn.dataset.i, autoOpen: true, initial: 'full' });
     }
-    const w = e.target.closest('.w');
+    const w = wordFromEvent(e);
     if (!w) return;
     if (wasClosedOnWord(w) || (w === activeWord.current && !popover && !sheet)) {
       w.classList.remove('active');
