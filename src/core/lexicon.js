@@ -119,6 +119,22 @@ const strongKey = (s) => {
   return m ? `${m[1].toUpperCase()}${m[2]}${m[3] || ''}` : s;
 };
 
+// Словари для слова (Стронг, симфония, Никифор — вместе около 10 МБ) читаются заранее, когда приложение
+// простаивает после запуска: иначе первое нажатие на слово ждало их чтения (на телефоне — около секунды).
+// На телефонах с малой памятью (≤ 2 ГБ) не читаем — там лучше подождать при нажатии.
+export function warmLexicon() {
+  if (typeof navigator !== 'undefined' && navigator.deviceMemory && navigator.deviceMemory <= 2) return;
+  const idle = (fn) => (typeof requestIdleCallback === 'function' ? requestIdleCallback(fn, { timeout: 4000 }) : setTimeout(fn, 500));
+  listModules().then((list) => {
+    const queue = byRank(list.filter((m) => m.type === 'dictionary' && m.enabled !== false && ruStrongs(m))).map((m) => m.id);
+    const next = () => {
+      const id = queue.shift();
+      if (id) getPayload(id).catch(() => {}).finally(() => idle(next)); // по одному: не мешать чтению и прокрутке
+    };
+    idle(next);
+  });
+}
+
 // Последние запросы помним (обещания): выборка словарей начинает искать при касании слова, во время паузы
 // на двойное касание, и окно открывается уже с готовым ответом
 const recent = new Map();
