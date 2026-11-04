@@ -1,9 +1,9 @@
 // Параллельные места стиха: ссылка + текст из перевода текущей панели.
-// Нажатие открывает место во второй панели (экран делится автоматически).
+// Нажатие открывает место в новой панели под этой (панелей уже 4 — в панели ниже).
 import React, { useEffect, useState } from 'react';
 import { Loader2, Columns2, Link2 } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
-import { useApp } from '../App.jsx';
+import { useApp, MAX_PANES } from '../App.jsx';
 import { refsForVerse, textForRef } from '../core/crossrefs.js';
 import { formatRef, bookMeta } from '../core/books.js';
 import { getVerse } from '../core/modules.js';
@@ -12,7 +12,7 @@ import { Empty, Hint } from './ui.jsx';
 import { t } from '../core/i18n.js';
 
 export default function CrossReferencesSheet({ pane, payload, onClose }) {
-  const { openInOther, panes, bibles } = useApp();
+  const { openBelow, panes, bibles } = useApp();
   const moduleId = panes[pane]?.moduleId || payload.moduleId;
   const module = bibles.find((b) => b.id === moduleId);
   const { ref } = payload;
@@ -41,7 +41,7 @@ export default function CrossReferencesSheet({ pane, payload, onClose }) {
 
   const open = (r) => {
     onClose();
-    openInOther(pane, { book: r.book, chapter: r.chapter, verse: r.verse });
+    openBelow(pane, r);
   };
 
   return (
@@ -57,7 +57,13 @@ export default function CrossReferencesSheet({ pane, payload, onClose }) {
         <>
           <h4 className="sheet-h4">
             {t('Места')} · {items.length}
-            <Hint>{pane === 0 ? t('Место откроется во второй панели.') : t('Место откроется здесь; вернуться — кнопкой «назад».')}</Hint>
+            <Hint>
+              {panes.filter(Boolean).length < MAX_PANES
+                ? t('Место откроется в новой панели под этой.')
+                : panes[pane + 1] && panes[pane + 1].kind !== 'map'
+                  ? t('Место откроется в панели ниже.')
+                  : t('Место откроется здесь; вернуться — кнопкой «назад».')}
+            </Hint>
           </h4>
           <ul className="xref-list">
             {items.map((it) => (

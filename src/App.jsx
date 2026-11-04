@@ -435,15 +435,17 @@ export default function App() {
   // Ещё одна панель (до MAX_PANES) — сразу под той, где нажали «+» (after; без него — под последней): перевод и место —
   // как у неё. Панели ниже сдвигаются и остаются там, где их читали (новый nav — панель на этом месте экрана перейдёт
   // к своему стиху). В сохранённом состоянии после закрытия второй панели остаётся [первая, null] — null отбрасываем
-  const openSplit = useEvent((after) =>
+  // place — открыть в ней это место (с миганием стиха), без него — то, что сейчас читают в панели after
+  const openSplit = useEvent((after, place) =>
     setPanes((ps) => {
       const list = ps.filter(Boolean);
       if (list.length >= MAX_PANES) return ps;
       const i = after == null ? list.length - 1 : Math.min(after, list.length - 1);
       const src = list[i].kind === 'map' ? list[0] : list[i];
-      const at = getLivePosition(i) || src.ref;
+      const at = place || getLivePosition(i) || src.ref;
       const top = Math.max(...list.map((p) => p.nav || 0)) + 1;
-      const fresh = { ...newPane(src.moduleId, { book: at.book, chapter: at.chapter, verse: at.verse }), flash: null };
+      const flash = place ? `${at.book}.${at.chapter}.${at.verse}.${Date.now()}` : null;
+      const fresh = { ...newPane(src.moduleId, { book: at.book, chapter: at.chapter, verse: at.verse }), flash };
       const out = [];
       list.forEach((p, j) => {
         if (j <= i || p.kind === 'map') out.push(p);
@@ -497,6 +499,15 @@ export default function App() {
         setPanes((ps) => [ps[0], { ...newPane(ps[0].moduleId, ref), flash: `${ref.book}.${ref.chapter}.${ref.verse}.${Date.now()}` }]);
       } else navigate(1, ref);
     } else navigate(fromPane, ref);
+  });
+
+  // Параллельное место — в новой панели сразу под той, откуда его открыли. Панелей уже MAX_PANES — в панели под ней
+  // (если это чтение, а не карта), у нижней — в ней самой (вернуться — «назад»)
+  const openBelow = useEvent((fromPane, ref) => {
+    const clean = { book: ref.book, chapter: ref.chapter, verse: ref.verse };
+    if (panes.filter(Boolean).length < MAX_PANES) return openSplit(fromPane, clean);
+    const below = panes[fromPane + 1];
+    navigate(below && below.kind !== 'map' ? fromPane + 1 : fromPane, clean);
   });
 
   // То же место в другом переводе в соседней панели (из первой — во второй, из второй — в первой)
@@ -648,6 +659,7 @@ export default function App() {
     go,
     setPaneModule,
     openSplit,
+    openBelow,
     closeSplit,
     openInOther,
     openParallel,

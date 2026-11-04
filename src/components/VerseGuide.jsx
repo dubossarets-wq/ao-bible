@@ -126,7 +126,7 @@ export default function VerseGuide({ pane, payload, onClose }) {
                 <Link2 size={13} /> {t('Параллельные места')}
               </h4>
               {d.xrefs.map((x) => (
-                <button key={x.osis} className="guide-card" onClick={() => go(x.ref)}>
+                <button key={x.osis} className="guide-card" onClick={() => (onClose(), app.openBelow(pane, x.ref))}>
                   <b>{formatRef(x.ref)}</b> {x.parts.map((p) => p.text).join(' ')}
                 </button>
               ))}
