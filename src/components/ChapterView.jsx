@@ -308,8 +308,9 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     const run = () => {
       if (!alive) return;
       crossrefCounts().then((m) => alive && setCounts(m));
-      commentaryIndex().then((m) => alive && setComments(m.size ? m : null));
-      illustrationIndex().then((m) => alive && setIllus(m.size ? m : null));
+      // толкования и иллюстрации — только открытой книги (bookParts.js)
+      commentaryIndex(book.id).then((m) => alive && setComments(m.size ? m : null));
+      illustrationIndex(book.id).then((m) => alive && setIllus(m.size ? m : null));
     };
     const idle = typeof requestIdleCallback === 'function';
     const id = idle ? requestIdleCallback(run, { timeout: 1200 }) : setTimeout(run, 300);
@@ -318,7 +319,7 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
       if (idle) cancelIdleCallback(id);
       else clearTimeout(id);
     };
-  }, [modules, bookReady]);
+  }, [modules, bookReady, book?.id]);
 
   // Навигация: загрузить книгу и прокрутить к стиху
   useEffect(() => {

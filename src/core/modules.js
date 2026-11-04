@@ -8,6 +8,7 @@ import { REMOTE, MIRROR } from './native.js';
 import { CapacitorHttp } from '@capacitor/core';
 import { isOnline, onlineBook, onlineModule, loadChapter, forgetOnline } from './apibible.js';
 import { fromHelloao } from './helloao.js';
+import { forgetBookParts } from './bookParts.js';
 
 // Текст ошибки для человека: нехватку места браузер сообщает по-английски и непонятно — объясняем, что делать
 export const errorText = (e) =>
@@ -104,6 +105,7 @@ export async function installNormalized({ meta, data }, { origin = 'file', catal
 
 async function removeData(id) {
   await forgetOnline(id);
+  await forgetBookParts(id);
   await db.delPrefix(db.STORES.bookdata, `${id}|`);
   await db.del(db.STORES.payload, id);
   for (const k of [...bookCache.keys()]) if (k.startsWith(`${id}|`)) bookCache.delete(k);
@@ -163,6 +165,11 @@ export async function getBook(moduleId, bookId) {
   return p;
 }
 const bookLoading = new Map();
+
+// Модуль целиком больше не нужен в памяти (разложен по книгам — bookParts.js)
+export function dropPayload(moduleId) {
+  payloadCache.delete(moduleId);
+}
 
 export function getPayload(moduleId) {
   if (!payloadCache.has(moduleId)) {

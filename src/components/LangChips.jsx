@@ -1,7 +1,7 @@
 // Выбор языка над списком переводов: «Все», затем первые языки кнопками (свои и самые большие),
 // остальные (их сотни — каталог bible.helloao.org) — в выпадающем списке «Ещё языки» по алфавиту.
 // Выбранный из списка язык встаёт кнопкой рядом, чтобы было видно, что он включён.
-import React from 'react';
+import React, { useMemo } from 'react';
 import { t, locale } from '../core/i18n.js';
 import { langName } from './ModuleLibrary.jsx'; // взаимный импорт: функции нужны только при показе
 
@@ -9,7 +9,11 @@ export default function LangChips({ codes, value, onChange, counts, allValue = n
   const head = codes.slice(0, max);
   const rest = codes.slice(max);
   const extra = value != null && value !== allValue && !head.includes(value) ? [value] : [];
-  const sorted = [...rest].sort((a, b) => langName(a).localeCompare(langName(b), locale()));
+  // по алфавиту — одним Intl.Collator (localeCompare на каждое сравнение создавал бы его заново)
+  const sorted = useMemo(() => {
+    const coll = new Intl.Collator(locale());
+    return rest.map((c) => [c, langName(c)]).sort((a, b) => coll.compare(a[1], b[1])).map(([c]) => c);
+  }, [rest.join(',')]);
   const chip = (k, text) => (
     <button key={k ?? '*'} type="button" className={`chip ${value === k ? 'on' : ''}`} aria-pressed={value === k} onClick={() => onChange(k)}>
       {text}

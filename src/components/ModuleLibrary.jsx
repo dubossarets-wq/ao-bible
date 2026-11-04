@@ -337,19 +337,34 @@ export const LANGS = {
 // i18n-ignore-end
 const ORDER = Object.keys(LANGS);
 export const langRank = (code) => (ORDER.includes(code) ? ORDER.indexOf(code) : ORDER.length + (code ? 0 : 1));
+// Названия помнятся (язык интерфейса + код): языков в каталоге больше тысячи, а Intl.DisplayNames — дорогой —
+// без памяти окно выбора перевода и каталог открывались по секунде (сортировка звала его десятки тысяч раз)
+const langNames = new Map();
+let displayNames = null; // [язык интерфейса, Intl.DisplayNames]
 export const langName = (code) => {
   if (!code) return t('Другие');
+  const key = `${getLang()}|${code}`;
+  let name = langNames.get(key);
+  if (name == null) {
+    name = langNameNow(code);
+    // запасное название из каталога (ещё не загружен) — не запоминаем, позже придёт настоящее
+    if (name !== code.toUpperCase()) langNames.set(key, name);
+  }
+  return name;
+};
+function langNameNow(code) {
   // языка нет в списке выше (их сотни в каталоге bible.helloao.org) — название от браузера и в русском интерфейсе
   if (getLang() !== 'ru' || !LANGS[code]) {
     try {
-      const s = new Intl.DisplayNames([locale()], { type: 'language' }).of(code);
+      if (displayNames?.[0] !== getLang()) displayNames = [getLang(), new Intl.DisplayNames([locale()], { type: 'language' })];
+      const s = displayNames[1].of(code);
       if (s && s !== code) return s[0].toLocaleUpperCase(locale()) + s.slice(1);
     } catch {
       /* старый браузер — ниже запасной вариант */
     }
   }
   return LANGS[code] || repo.catalogLangNames.get(code) || code.toUpperCase();
-};
+}
 
 function LangFilter({ value, onChange, items }) {
   const counts = {};
@@ -362,7 +377,14 @@ function LangFilter({ value, onChange, items }) {
 }
 
 // Поиск по названию, описанию, автору и языку модуля
-const matches = (m, q) => !q || [m.name, m.title, m.description, m.author, langName(m.language)].some((x) => x && x.toLowerCase().replace(/ё/g, 'е').includes(q));
+// строка для поиска собирается один раз на модуль (и язык интерфейса): каталог — полторы тысячи модулей
+const hay = new WeakMap();
+const matches = (m, q) => {
+  if (!q) return true;
+  let h = hay.get(m);
+  if (!h || h.lang !== getLang()) hay.set(m, (h = { lang: getLang(), text: [m.name, m.title, m.description, m.author, langName(m.language)].filter(Boolean).join(' ').toLowerCase().replace(/ё/g, 'е') }));
+  return h.text.includes(q);
+};
 
 function Filter({ value, onChange, counts }) {
   return (

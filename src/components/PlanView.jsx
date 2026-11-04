@@ -7,8 +7,8 @@ import { Check, ChevronDown, ChevronRight, Loader2, X, PartyPopper } from 'lucid
 import { useApp } from '../App.jsx';
 import { getBook } from '../core/modules.js';
 import { crossrefCounts } from '../core/crossrefs.js';
-import { commentaryIndex } from '../core/commentary.js';
-import { illustrationIndex } from '../core/illustrations.js';
+import { commentaryIndexFor } from '../core/commentary.js';
+import { illustrationIndexFor } from '../core/illustrations.js';
 import { setLivePosition, clearLivePosition } from '../core/livePosition.js';
 import { wordAt, plainText } from '../core/verseMarkup.js';
 import { wasClosedOnWord, isDoubleTap, pulseFavorite, DOUBLE_TAP_MS } from '../core/tapState.js';
@@ -67,13 +67,12 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
   const [counts, setCounts] = useState(null);
   const [comments, setComments] = useState(null);
   const [illus, setIllus] = useState(null);
-  useEffect(() => {
-    crossrefCounts().then(setCounts);
-    commentaryIndex().then((m) => setComments(m.size ? m : null));
-  }, [modules]);
-
   // Загружаем все книги дня
   const bookIds = useMemo(() => [...new Set(readings.flatMap((r) => readingUnits(r).map((u) => u.book)))], [readings.join()]);
+  useEffect(() => {
+    crossrefCounts().then(setCounts);
+    commentaryIndexFor(bookIds).then((m) => setComments(m.size ? m : null));
+  }, [modules]);
   useEffect(() => {
     let alive = true;
     setBooks(null);
@@ -82,8 +81,8 @@ export default function PlanView({ index, pane, module, selection, onSelect, sel
     Promise.all([
       Promise.all(bookIds.map((b) => (module.books.some((x) => x.id === b) ? getBook(module.id, b) : null))),
       crossrefCounts().then(setCounts),
-      commentaryIndex().then((m) => setComments(m.size ? m : null)),
-      illustrationIndex().then((m) => setIllus(m.size ? m : null)),
+      commentaryIndexFor(bookIds).then((m) => setComments(m.size ? m : null)),
+      illustrationIndexFor(bookIds).then((m) => setIllus(m.size ? m : null)),
     ]).then(([list]) => {
       if (alive) setBooks(Object.fromEntries(bookIds.map((b, i) => [b, list[i]])));
     });
