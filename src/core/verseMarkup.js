@@ -121,11 +121,14 @@ function liteHtml(text) {
   return out;
 }
 
-// Слово под нажатием: сам элемент слова или (стих только что получил слова-элементы — нажатие пришлось на стих)
-// слово в точке касания
+// Слово под нажатием: сам элемент слова или (стих был простым текстом — получает слова-элементы сейчас, в момент
+// нажатия) слово в точке касания. Пальцем стих не меняется при касании: замена текста под пальцем обрывала
+// начатую прокрутку («скролл через раз»); мышью — уже при наведении (Chapter в ChapterView.jsx)
 export function wordFromEvent(e, sel = '.w') {
   const hit = e.target.closest?.(sel);
   if (hit || e.clientX == null) return hit || null;
+  const vt = e.target.closest?.('.verse')?.querySelector('.vt');
+  if (vt && !vt.querySelector('.w')) vt.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' }));
   return document.elementFromPoint(e.clientX, e.clientY)?.closest?.(sel) || null;
 }
 

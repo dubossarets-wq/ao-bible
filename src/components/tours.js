@@ -35,7 +35,7 @@ const firstWord = () => {
   const hit = firstVisible(P1 + '.verse .w');
   if (hit) return hit;
   const v = firstVisible(P1 + '.verse');
-  v?.querySelector('.vt')?.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }));
+  v?.querySelector('.vt')?.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' }));
   return firstVisible(P1 + '.verse .w');
 };
 

@@ -133,13 +133,15 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
   const [cmSel, setCmSel] = useState(0); // какой из комментариев стиха раскрыт
   const sel = selected ? new Set(selected.split(',').map(Number)) : null;
   const mk = marks ? Object.fromEntries(marks.split(',').map((x) => x.split(':'))) : {};
-  // Стихи — простым текстом (verseHtml lite): слова-элементы получает стих, которого коснулись или над которым мышь,
-  // — до того, как палец отпустят, поэтому нажатие на слово работает как прежде. Выделенные стихи и с любимой
-  // частью — сразу со словами (их части подсвечиваются по словам)
+  // Стихи — простым текстом (verseHtml lite): слова-элементы получает стих, над которым мышь, или в момент нажатия
+  // на него (wordFromEvent) — нажатие на слово работает как прежде. Выделенные стихи и с любимой частью — сразу
+  // со словами (их части подсвечиваются по словам)
   const [touched, setTouched] = useState(() => new Set());
   const touchedRef = useRef(touched);
   touchedRef.current = touched;
   const touch = (e) => {
+    // только мышь (наведение) и клавиатура: под пальцем стих не меняем, иначе обрывается начатая прокрутка
+    if (e.type === 'pointerover' && e.pointerType !== 'mouse') return;
     const v = +e.target.closest?.('.verse')?.dataset.v;
     if (!v || touchedRef.current.has(v)) return;
     touchedRef.current = new Set(touchedRef.current).add(v);
@@ -157,7 +159,7 @@ export const Chapter = memo(function Chapter({ bookId, bookName, c, verses, head
       {c === 1 && !noBookTitle && <h1 className="book-title">{bookName}</h1>}
       {chapIntro.length > 0 && !noChapterTitle && <IntroComments entries={chapIntro} size={opts.cmSize} />}
       {!noChapterTitle && <h2 className="chapter-title">{isPsalm ? t('Псалом {n}', { n: c }) : t('Глава {n}', { n: c })}</h2>}
-      <div className={`verses ${opts.continuous ? 'continuous' : ''}`} onPointerDown={touch} onPointerOver={touch} onFocus={touch}>
+      <div className={`verses ${opts.continuous ? 'continuous' : ''}`} onPointerOver={touch} onFocus={touch}>
         {verses.map((text, i) => {
           const v = i + 1;
           if (!text || v < from || (to && v > to)) return null;
@@ -499,10 +501,9 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     const kept = Math.abs(el.scrollTop - keepTop.current) < 1;
     if (kept) keepTop.current = -1;
     else emitPosition();
-    // Долгое чтение: лента глав растёт — когда прокрутка стихла, оставляем по одной главе вокруг текущей
+    // Долгое чтение: лента глав растёт — когда прокрутка стихла, оставляем по две главы вокруг текущей
     clearTimeout(trimTimer.current);
-    // (на слабых телефонах длинная лента — тысячи элементов: держим текущую главу и по одной с каждой стороны)
-    if (range.end - range.start > 4) trimTimer.current = setTimeout(trimRibbon, 600);
+    if (range.end - range.start > 6) trimTimer.current = setTimeout(trimRibbon, 600);
     // Колесо и обычная прокрутка: остановились — доводим вторую панель (пальцем на телефоне — сигнал из useSyncTouchScroll)
     if (settings.syncScroll && !touchSync && isDriver(index) && !kept) {
       clearTimeout(settleTimer.current);
@@ -557,15 +558,15 @@ export default function ChapterView({ index, pane, module, onScrollDirection, se
     const at = verseAtTop();
     if (!el || !at || !range || pending.current) return;
     const c = at.found.c;
-    const start = Math.max(range.start, c - 1);
-    const end = Math.min(range.end, c + 1);
+    const start = Math.max(range.start, c - 2);
+    const end = Math.min(range.end, c + 2);
     if (start === range.start && end === range.end) return;
     const anchor = el.querySelector(`.chapter[data-c="${c}"]`);
     if (!anchor) return;
     pending.current = { type: 'trim', c, top: anchor.offsetTop, st: el.scrollTop };
     setRange((r) => {
-      const s = Math.max(r.start, c - 1);
-      const e = Math.min(r.end, c + 1);
+      const s = Math.max(r.start, c - 2);
+      const e = Math.min(r.end, c + 2);
       if (s === r.start && e === r.end) {
         pending.current = null; // обрезать нечего — без перерисовки, иначе подгрузка глав осталась бы заблокированной
         return r;
