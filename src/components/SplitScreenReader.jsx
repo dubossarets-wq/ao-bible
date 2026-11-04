@@ -63,7 +63,10 @@ export default function SplitScreenReader() {
     const i = dragging.current;
     if (i == null || !box.current) return;
     const r = box.current.getBoundingClientRect();
-    moveTo(i, orientation === 'columns' ? (e.clientX - r.left) / r.width : (e.clientY - r.top) / r.height);
+    // друг над другом: доли — от высоты без вкладок (их место прибавлено нижней панели, см. ниже)
+    const last = box.current.querySelector(':scope > .pane-slot:last-child');
+    const inset = orientation === 'rows' && last ? parseFloat(getComputedStyle(last).flexBasis) || 0 : 0;
+    moveTo(i, orientation === 'columns' ? (e.clientX - r.left) / r.width : (e.clientY - r.top) / (r.height - inset));
   };
   const onUp = () => {
     if (dragging.current == null) return;
@@ -103,7 +106,9 @@ export default function SplitScreenReader() {
             </div>
           )}
           {/* first / second — у второй и следующих одни правила оформления (шапка без отступа под вырез экрана) */}
-          <div className={`pane-slot ${i === 0 ? 'first' : 'second'} p${i}`} style={split ? { flex: `${sizes[i] ?? 1 / n} 1 0` } : undefined}>
+          {/* друг над другом нижнюю панель снизу закрывают вкладки: их высота (--tabbar-h) — сверх её доли,
+              чтобы видимая часть у всех панелей была поровну */}
+          <div className={`pane-slot ${i === 0 ? 'first' : 'second'} p${i}`} style={split ? { flex: `${sizes[i] ?? 1 / n} 1 ${orientation === 'rows' && i === n - 1 ? 'var(--tabbar-h)' : '0px'}` } : undefined}>
             <BibleReader index={i} />
           </div>
         </React.Fragment>

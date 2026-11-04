@@ -1800,7 +1800,8 @@ html.has-tabbar:not(.reading-hidden):not(.kb-open) .reader .scroller {
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - var(--tb-bottom) - 64px), transparent calc(100% - var(--tb-bottom) - 32px));
   mask-image: linear-gradient(to bottom, #000 calc(100% - var(--tb-bottom) - 64px), transparent calc(100% - var(--tb-bottom) - 32px));
 }
-html.has-tabbar .split.rows.is-split .pane-slot.first .reader .scroller { -webkit-mask-image: none; mask-image: none; }
+/* растворяется под вкладками только нижняя панель (их несколько — средние тоже не под вкладками) */
+html.has-tabbar .split.rows.is-split .pane-slot:not(:last-child) .reader .scroller { -webkit-mask-image: none; mask-image: none; }
 .tab { margin: 0; height: 100%; padding: 3px 2px; }
 html.has-tabbar .sheet { bottom: var(--kb, 0px); height: calc(var(--vvh, 100dvh) * var(--sheet-h) / 100); max-height: calc(var(--vvh, 100dvh) - env(safe-area-inset-top, 0px) - 6px); }
 html.has-tabbar .sheet.page { bottom: var(--kb, 0px); }
