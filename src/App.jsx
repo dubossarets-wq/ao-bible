@@ -26,7 +26,6 @@ import { Toasts } from './components/ui.jsx';
 import { t, useLang } from './core/i18n.js';
 import { verseModules } from './core/verseOfDay.js';
 import { getLivePosition } from './core/livePosition.js';
-import { warmLexicon } from './core/lexicon.js';
 
 const AppCtx = createContext(null);
 // Сколько панелей чтения можно открыть рядом (кнопка «+» в шапке последней панели)
@@ -114,13 +113,6 @@ export default function App() {
   // Виджет «Стих дня» (Android): раз в день — стихи на месяц вперёд из перевода на языке приложения
   // (как у карточки «Стих дня»: перевод первой панели, если он на этом языке)
   const widgetModule = verseModules(bibles, panes, settings, lang)[0]?.id || null;
-  // словари для нажатия на слово — заранее, когда приложение уже показало текст и простаивает
-  const lexReady = !!modules;
-  useEffect(() => {
-    if (!lexReady) return;
-    const id = setTimeout(warmLexicon, 6000);
-    return () => clearTimeout(id);
-  }, [lexReady]);
   useEffect(() => {
     if (!widgetModule) return;
     const id = setTimeout(() => updateWidget(widgetModule), 4000);

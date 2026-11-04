@@ -44,6 +44,9 @@ export function usePinchFont(scroller) {
       const anchor = document.elementFromPoint(mx, my)?.closest('.verse') || el.querySelector('.verse');
       const fs = g?.cur ?? settings.fontSize; // пальцы поставили заново — продолжаем с того же размера
       g = { d: dist(e.touches), fs, cur: fs, anchor, top: anchor?.getBoundingClientRect().top ?? 0 };
+      // блокирующий touchmove — только пока на экране два пальца: постоянный заставлял бы обычную прокрутку
+      // одним пальцем ждать основной поток (занят чтением данных — текст не двигается, пока он не освободится)
+      el.addEventListener('touchmove', onMove, { passive: false });
       showBadge(`${fs} px`);
     };
     const onMove = (e) => {
@@ -60,13 +63,13 @@ export function usePinchFont(scroller) {
       if (!g || e.touches.length >= 2) return;
       const { cur } = g;
       g = null;
+      el.removeEventListener('touchmove', onMove);
       hideBadge();
       if (cur !== settings.fontSize) setSettings({ fontSize: cur });
     };
     // Safari: свой жест увеличения страницы — глушим, размер меняем сами
     const noGesture = (e) => e.preventDefault();
     el.addEventListener('touchstart', onStart, { passive: true });
-    el.addEventListener('touchmove', onMove, { passive: false });
     el.addEventListener('touchend', onEnd);
     el.addEventListener('touchcancel', onEnd);
     el.addEventListener('gesturestart', noGesture);
