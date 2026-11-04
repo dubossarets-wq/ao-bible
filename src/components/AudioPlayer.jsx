@@ -183,8 +183,8 @@ export default function AudioPlayer({ a, onClosed, dl, note, setNote, vol, setVo
   }, [key]);
   useEffect(() => {
     let off = false;
-    Promise.all([getModule(a.moduleId), a.source === 'tts' ? null : getModule(a.source)]).then(([bible, rec]) => {
-      if (!off) setNames({ bible: bible?.name || '', rec: a.source === 'tts' ? t('ИИ-диктор') : rec?.title || rec?.name || '' });
+    Promise.all([getModule(a.moduleId), getModule(a.source)]).then(([bible, rec]) => {
+      if (!off) setNames({ bible: bible?.name || '', rec: rec?.title || rec?.name || '' });
     });
     return () => (off = true);
   }, [a.moduleId, a.source]);

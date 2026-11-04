@@ -112,7 +112,7 @@ export const DEFAULT_SETTINGS = {
   inlineCommentaries: null, // какие комментарии подписывать в тексте: null — все включённые, иначе список id
   primaryModule: 'rst-plus',
   audioFollowsTranslation: true, // сменили перевод во время чтения вслух — запись на его языке
-  ttsFallback: false, // ИИ-диктор (синтез речи), когда к главе нет аудиозаписи
+  ttsFallback: false, // не используется: синтез речи убран (ключ оставлен, чтобы не трогать сохранённые настройки)
   // Что показывать в меню ⋮ (остальное — в «Настройках»)
   menu: { help: true, lastBookmark: true, sermons: true, plans: true, listen: true, maps: true, focus: false, book: false, split: true },
 };

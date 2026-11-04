@@ -9,10 +9,8 @@ import { load, save } from './storage.js';
 import { playableUrl } from './offlineAudio.js';
 import { t } from './i18n.js';
 
-const LANG = { ru: 'ru-RU', en: 'en-US', uk: 'uk-UA', cu: 'ru-RU', he: 'he-IL', grc: 'el-GR' };
-
 let state = {
-  active: false, playing: false, pane: 0, moduleId: null, ref: null, source: 'tts', rate: load('audioRate', 1),
+  active: false, playing: false, pane: 0, moduleId: null, ref: null, source: 'none', rate: load('audioRate', 1),
   sleep: null, // { kind: 'min', until } | { kind: 'chapter', chapter }
   error: null, loading: false,
   follow: true, // текст идёт за чтецом; человек ушёл читать другое место — false, запись играет дальше
@@ -47,7 +45,7 @@ export async function audioSourcesFor(moduleId, ref) {
   const key = `${ref.book}.${ref.chapter}`;
   const fits = mods.filter((m) => (!m.translation || m.translation === moduleId || sameText(m.translation, moduleId)) && (m.chapterKeys || []).includes(key));
   const others = mods.filter((m) => !fits.includes(m) && (m.chapterKeys || []).includes(key));
-  return { recorded: fits, otherRecorded: others, tts: typeof speechSynthesis !== 'undefined' };
+  return { recorded: fits, otherRecorded: others };
 }
 // Подходит ли аудиокнига (её translation) к переводу bibleId
 export const fitsTranslation = (translation, bibleId) => !translation || translation === bibleId || sameText(translation, bibleId);
@@ -56,10 +54,10 @@ const sameText = (a, b) => new Set(['rst', 'rst-plus', 'rst-dc']).has(a) && new 
 
 // --- Управление --------------------------------------------------------------------------
 
-// offerTts — предложить ИИ-диктора (синтез речи), если записи нет
-export function showAudioMessage({ pane, moduleId, ref, error, offerTts = false }) {
+// Сообщение в полосе аудио (например, «Для этой главы нет аудиозаписи»). Только живые чтецы: синтеза речи нет
+export function showAudioMessage({ pane, moduleId, ref, error }) {
   stopEngines();
-  set({ active: true, playing: false, pane, moduleId, ref: { ...ref }, source: 'none', error, offerTts });
+  set({ active: true, playing: false, pane, moduleId, ref: { ...ref }, source: 'none', error });
 }
 
 // Человек сам перешёл в другое место: текст больше не тянем за чтецом
@@ -72,8 +70,9 @@ export function resumeFollow() {
 
 export async function startAudio({ pane, moduleId, ref, source }) {
   stopEngines();
-  const src = source || state.source || 'tts';
-  set({ active: true, pane, moduleId, ref: { ...ref }, source: src, error: null, offerTts: false, playing: true, follow: true });
+  // источник — только запись чтеца ('tts' мог остаться от прежних версий — синтеза речи больше нет)
+  const src = source && source !== 'tts' ? source : state.source && state.source !== 'tts' ? state.source : 'none';
+  set({ active: true, pane, moduleId, ref: { ...ref }, source: src, error: null, playing: true, follow: true });
   await playFrom(ref);
 }
 
@@ -81,7 +80,7 @@ export async function startAudio({ pane, moduleId, ref, source }) {
 // языке (ту, что слушали раньше, или первую) с того же места; записи нет — звучит прежняя
 export async function followTranslation(pane, moduleId) {
   const a = state;
-  if (!a.active || a.pane !== pane || !a.ref || !moduleId || moduleId === a.moduleId || a.source === 'none' || a.source === 'tts') return;
+  if (!a.active || a.pane !== pane || !a.ref || !moduleId || moduleId === a.moduleId || a.source === 'none') return;
   const src = await audioSourcesFor(moduleId, a.ref);
   if (!state.active || state.pane !== pane) return;
   if (src.recorded.some((m) => m.id === a.source)) return set({ moduleId });
@@ -95,15 +94,14 @@ export async function followTranslation(pane, moduleId) {
 
 export function pauseAudio() {
   gen++;
-  if (state.source === 'tts') speechSynthesis.cancel();
-  else el?.pause();
+  el?.pause();
   set({ playing: false });
 }
 
 export async function resumeAudio() {
   if (!state.active || !state.ref) return;
   set({ playing: true });
-  if (state.source !== 'tts' && el && el.src && timing?.key === `${state.ref.book}.${state.ref.chapter}`) {
+  if (el && el.src && timing?.key === `${state.ref.book}.${state.ref.chapter}`) {
     if (graph && graph.ctx.state !== 'running') graph.ctx.resume().catch(() => {});
     el.play().catch((e) => set({ playing: false, error: playError(e) }));
   } else await playFrom(state.ref);
@@ -126,7 +124,7 @@ export async function stepVerse(dir) {
 }
 
 // Слушать с выбранного стиха (нажатие на стих в раскрытом проигрывателе) — так же, как ⏮/⏭:
-// запись перематывается к началу стиха по разметке времени, ИИ-диктор начинает читать этот стих
+// запись перематывается к началу стиха по разметке времени
 export async function playVerse(ref) {
   resumeFollow();
   if (!state.active || !ref) return;
@@ -228,10 +226,6 @@ export function setRate(rate) {
   save('audioRate', rate);
   set({ rate });
   if (el) el.playbackRate = rate;
-  if (state.source === 'tts' && state.playing && state.ref) {
-    stopEngines();
-    playFrom(state.ref);
-  }
 }
 
 export async function setSource(source) {
@@ -265,11 +259,6 @@ function stopEngines() {
   gen++;
   if (el && pendingMeta) el.removeEventListener('loadedmetadata', pendingMeta);
   pendingMeta = null;
-  try {
-    speechSynthesis?.cancel();
-  } catch {
-    /* нет синтеза */
-  }
   if (el) el.pause();
 }
 
@@ -315,35 +304,8 @@ async function playFrom(ref) {
     return;
   }
   set({ ref: { ...ref } });
-  if (state.source === 'tts') return speakVerse(ref);
   if (state.source === 'none') return set({ playing: false });
   return playRecorded(ref);
-}
-
-async function speakVerse(ref) {
-  if (typeof speechSynthesis === 'undefined') return set({ playing: false, error: t('Браузер не поддерживает синтез речи') });
-  const my = ++gen;
-  const mod = await getModule(state.moduleId);
-  const book = await getBook(state.moduleId, ref.book);
-  const raw = book?.chapters?.[ref.chapter - 1]?.[ref.verse - 1];
-  if (raw == null) return set({ playing: false });
-  const u = new SpeechSynthesisUtterance(plainText(raw));
-  const lang = LANG[mod?.language] || 'ru-RU';
-  u.lang = lang;
-  const voice = speechSynthesis.getVoices().find((v) => v.lang?.replace('_', '-').startsWith(lang.slice(0, 2)));
-  if (voice) u.voice = voice;
-  u.rate = state.rate;
-  u.onend = async () => {
-    if (my !== gen || !state.playing) return;
-    const next = await neighbourVerse(state.moduleId, ref, 1);
-    if (!next) return set({ playing: false });
-    playFrom(next);
-  };
-  u.onerror = (e) => {
-    if (my !== gen || e.error === 'interrupted' || e.error === 'canceled') return;
-    set({ playing: false, error: t('Синтез речи недоступен на этом устройстве') });
-  };
-  speechSynthesis.speak(u);
 }
 
 async function playRecorded(ref) {
@@ -355,7 +317,7 @@ async function playRecorded(ref) {
     const ch = p?.chapters?.[key];
     if (my !== gen) return;
     if (!ch) {
-      set({ loading: false, playing: false, error: t('Для этой главы нет аудиозаписи.'), offerTts: true });
+      set({ loading: false, playing: false, error: t('Для этой главы нет аудиозаписи.') });
       return;
     }
     const next = { key, module: state.source, verses: ch.verses, url: ch.url, start: ch.start ?? null, end: ch.end ?? null };

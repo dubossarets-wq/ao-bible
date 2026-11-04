@@ -2,7 +2,7 @@
 // кнопка «скачать книгу» для прослушивания без интернета. Нет записи — сообщение об этом.
 // Нажатие на свободную часть панели (или на место чтения) раскрывает проигрыватель на весь экран (AudioPlayer.jsx).
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Play, Pause, SkipBack, SkipForward, X, SlidersHorizontal, Loader2, CornerUpLeft, Download, CheckCircle2, Sparkles } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, X, SlidersHorizontal, Loader2, CornerUpLeft, Download, CheckCircle2 } from 'lucide-react';
 import { listenFrom } from '../core/listen.js';
 import { useAudio, pauseAudio, resumeAudio, stopAudio, stepVerse, setRate, setSleep, resumeFollow, startAudio, setVolume, followTranslation } from '../core/audio.js';
 import { downloadBook, isBookOffline, removeBook } from '../core/offlineAudio.js';
@@ -122,7 +122,7 @@ export default function AudioBar() {
   const [, tick] = useState(0);
   const bar = useRef(null);
   const swipe = useRef(null);
-  const recorded = a.source !== 'tts' && a.source !== 'none';
+  const recorded = a.source !== 'none';
   const dl = useBookDownload(recorded ? a.source : null, a.ref?.book, setNote);
 
   useEffect(() => setVolume(vol), [vol]);
@@ -148,8 +148,8 @@ export default function AudioBar() {
     return () => clearInterval(t);
   }, [a.sleep]);
 
-  const canExpand = a.active && !!a.ref && a.source !== 'none' && !a.offerTts;
-  // Запись выключили или для главы нет записи (предложение ИИ-диктора видно только в панели) — сворачиваем
+  const canExpand = a.active && !!a.ref && a.source !== 'none';
+  // Запись выключили или для главы нет записи — сворачиваем
   useEffect(() => {
     if (!canExpand && full) setFull(false);
   }, [canExpand, full]);
@@ -177,29 +177,6 @@ export default function AudioBar() {
   return (
     <>
       <div ref={bar} className={`audio-bar${optsOn ? ' opts-open' : ''}${optsOn && !opts ? ' opts-closing' : ''}`} role="region" aria-label={t('Аудиокнига')}>
-        {/* Записи нет — предлагаем ИИ-диктора */}
-        {a.offerTts && !a.playing && (
-          <div className="audio-offer">
-            <p>
-              <strong>{a.error || t('Для этой главы нет аудиозаписи.')}</strong> {t('Включить ИИ-диктора? Он читает не так живо, как чтец.')}
-            </p>
-            <div className="audio-offer-btns">
-              <button
-                className="btn primary"
-                onClick={() => {
-                  setSettings({ ttsFallback: true });
-                  startAudio({ pane: a.pane, moduleId: a.moduleId, ref: a.ref, source: 'tts' });
-                }}
-              >
-                <Sparkles size={16} /> {t('Включить ИИ-диктора')}
-              </button>
-              <button className="btn" onClick={stopAudio}>
-                {t('Не нужно')}
-              </button>
-            </div>
-            <small>{t('Выключить: Настройки → Аудио.')}</small>
-          </div>
-        )}
         {!full && <DownloadNote note={note} setNote={setNote} />}
         {optsOn && (
           <div ref={optsRef} className="audio-opts">
@@ -256,9 +233,9 @@ export default function AudioBar() {
             ) : (
               <span className="audio-ref">{a.ref ? formatRef(a.ref) : ''}</span>
             )}
-            {((a.error && !a.offerTts) || left || a.sleep?.kind === 'chapter' || a.source === 'tts') && (
+            {(a.error || left || a.sleep?.kind === 'chapter') && (
               <span className="audio-src">
-                {a.error && !a.offerTts ? a.error : [a.source === 'tts' && t('ИИ-диктор'), left ? t('сон через {n} мин', { n: left }) : a.sleep?.kind === 'chapter' && t('до конца главы')].filter(Boolean).join(' · ')}
+                {a.error ? a.error : left ? t('сон через {n} мин', { n: left }) : t('до конца главы')}
               </span>
             )}
           </div>
