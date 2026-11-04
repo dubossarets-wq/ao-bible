@@ -14,7 +14,7 @@ import { moreItems, MoreItem } from './moreItems.jsx';
 // Кнопки: module — перевод (пилюля), ref — место (пилюля), back/forward — история переходов,
 // search — поиск, split — разделить экран, more — меню ⋮. Пустая строка '|' — распорка (дальше — прижато вправо).
 export const TOP_BAR = {
-  phone: ['module', 'ref', '|', 'back', 'forward', 'add', 'split'], // поиск и ⋮ — на нижней панели вкладок (TabBar.jsx)
+  phone: ['module', 'ref', '|', 'back', 'forward', 'search', 'add', 'split'], // поиск и ⋮ — на нижней панели вкладок (TabBar.jsx)
   wide: ['module', 'ref', '|', 'back', 'forward', 'search', 'add', 'split', 'more'],
 };
 
@@ -69,11 +69,13 @@ export default function ReaderToolbar({ index, pane, module }) {
           <ArrowRight size={21} />
         </button>
       ),
-    search: () => (
-      <button key="search" className="tb tb-icon tb-search" onClick={() => openSheet('search', index)} aria-label={t('Поиск')} title={t('Поиск')}>
-        <Search size={21} />
-      </button>
-    ),
+    // поиск по всей Библии — у каждой панели, когда их несколько (результаты — в этой панели); панель одна — только в меню
+    search: () =>
+      split && (
+        <button key="search" className="tb tb-icon tb-search" onClick={() => openSheet('search', index)} aria-label={t('Поиск')} title={t('Поиск')}>
+          <Search size={21} />
+        </button>
+      ),
     split: () => (
       <button
         key="split"
