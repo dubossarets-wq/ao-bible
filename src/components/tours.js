@@ -111,7 +111,7 @@ export const TOURS = [
   {
     id: 'search', icon: Search, title: N_('Поиск'), group: N_('Основное'),
     steps: [
-      { text: N_('Нажмите на лупу.'), target: () => (phone() ? tab('search') : $(P1 + `[aria-label="${t('Поиск')}"]`)), next: (api) => api.openSheet('search'), until: () => $('.sheet input') },
+      { text: N_('Нажмите на лупу.'), target: () => tab('search'), next: (api) => api.openSheet('search'), until: () => $('.sheet input') },
       { text: N_('Введите слово — места появятся сразу. Или ссылку: «Ин 3:16».'), target: () => $('.sheet input'), before: (api) => !$('.sheet input') && api.openSheet('search') },
     ],
   },
