@@ -45,14 +45,7 @@ button:disabled { cursor: default; opacity: .4; }
 .pane-slot.first { flex: var(--ratio) 1 0; }
 .pane-slot.second { flex: calc(1 - var(--ratio)) 1 0; }
 .split:not(.is-split) .pane-slot.first { flex: 1 1 0; }
-.divider { flex: 0 0 10px; background: var(--bar); display: grid; place-items: center; touch-action: none; position: relative; z-index: 2; }
-.split.columns .divider { cursor: col-resize; flex-basis: 8px; }
-.split.rows .divider { cursor: row-resize; }
-.divider-grip { width: 40px; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--bar-text) 45%, transparent); }
-.split.columns .divider-grip { width: 4px; height: 40px; }
-@media (hover: hover) { .divider:hover .divider-grip { background: var(--accent); } }
-.divider:focus-visible .divider-grip { background: var(--accent); }
-.resizing, .resizing * { user-select: none; cursor: inherit; }
+.divider { flex: 0 0 1px; position: relative; z-index: 2; }
 
 /* ---------- Панель чтения ---------- */
 .reader { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; container-type: inline-size; position: relative; background: var(--bg); }
@@ -60,7 +53,6 @@ button:disabled { cursor: default; opacity: .4; }
 .reader.bar-hidden .toolbar { margin-top: calc(-1 * var(--bar-h)); }
 /* Нижняя из двух панелей друг над другом не доходит до выреза */
 .split.rows .pane-slot.second .toolbar { --sat: 0px; }
-.split.rows .divider { flex-basis: 10px; }
 .tb { background: none; border: 0; border-right: 1px solid color-mix(in srgb, var(--bar-text) 16%, transparent); color: inherit; display: flex; align-items: center; justify-content: center; padding: 0 10px; min-width: 44px; white-space: nowrap; }
 .tb:last-child, .tb-menu-wrap .tb { border-right: 0; }
 @media (hover: hover) { .tb:hover:not(:disabled) { background: color-mix(in srgb, var(--bar-text) 9%, transparent); } }
@@ -660,23 +652,8 @@ button.wp-item:active { background: color-mix(in srgb, var(--accent) 12%, transp
 .pane-slot:has(.menu) { z-index: 30; }
 .menu { max-height: calc(var(--vvh, 100dvh) - var(--bar-h) - var(--sat) - 34px); overflow-y: auto; overscroll-behavior: contain; }
 
-/* Разделитель панелей: узкая полоса с короткой ручкой (как у системных шторок); зона захвата шире видимой.
-   Наведён, в фокусе или тянется — ручка вытягивается и становится цвета акцента */
-/* без полосы цвета панели: фон страницы, видна только тёмная ручка; текст верхней панели к ручке растворяется, а не режется */
-.divider { background: var(--bg); }
-/* друг над другом: подложки нет совсем — ползунок висит над текстом в 5 px от шапки нижней панели;
-   зона захвата — только вокруг ползунка, текст рядом нажимается как обычно */
-.split.rows .divider { flex-basis: 0; background: none; }
-.split.rows .divider-grip { position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); }
-/* колонки рядом: вдоль линии раздела — сероватая подложка чуть шире ползунка, шапки панелей — через 5 px */
-.split.columns .divider { flex-basis: 5px; background: color-mix(in srgb, var(--text) 9%, var(--bg)); }
-.divider::before { content: ""; position: absolute; inset: -26px calc(50% - 60px) -6px; }
-.split.columns .divider::before { inset: 0 -10px; }
-.divider-grip { width: 36px; height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--text) 60%, transparent); transition: width .16s ease, height .16s ease, background-color .16s ease; }
-.split.columns .divider-grip { width: 3px; height: 36px; border-radius: 2px; }
-@media (hover: hover) { .split.rows .divider:hover .divider-grip { width: 56px; } .split.columns .divider:hover .divider-grip { height: 56px; } }
-.split.rows .divider:focus-visible .divider-grip, .resizing .split.rows .divider-grip { width: 56px; background: var(--accent); }
-.split.columns .divider:focus-visible .divider-grip, .resizing .split.columns .divider-grip { height: 56px; background: var(--accent); }
+/* Разделитель панелей — лёгкая линия (размер панелей не меняется: всегда поровну) */
+.divider { background: var(--line); }
 /* Двухстрочный пункт меню: надпись и под ней место со стихом */
 .menu-item-2 { align-items: flex-start; }
 .menu-item-2 svg { margin-top: 2px; }
@@ -1673,7 +1650,7 @@ html.audio-opts-open .app:has(.audio-bar) .split.rows .pane-slot.first .reader {
 .reader.bar-hidden:has(.chap-nav.next) .listen-fab { opacity: 0; pointer-events: none; }
 .reader:has(.plan-return) { --chap-bottom: calc(var(--sab) + 70px); }
 .app:has(.audio-bar) .reader { --chap-bottom: calc(var(--sab) + var(--audio-h, 64px) + 18px); }
-.app:has(.audio-bar) .split.rows .pane-slot.first .reader { --chap-bottom: calc(var(--sab) + 16px); }
+.app:has(.audio-bar) .split.rows .pane-slot:not(:last-child) .reader { --chap-bottom: calc(var(--sab) + 16px); }
 .reader.bar-hidden .chap-nav { opacity: 0; pointer-events: none; transform: translateY(16px); }
 html.kb-open .chap-nav { display: none; }
 
@@ -2295,7 +2272,7 @@ html.is-android .tab-pill { bottom: calc(6px + env(safe-area-inset-bottom, 0px))
 /* Две панели друг над другом: шапка второй панели пониже */
 .split.rows .pane-slot.second .toolbar { height: calc(var(--bar-h) - 8px); }
 /* Верхняя из двух панелей: нижнего меню под ней нет — стрелки глав и «Слушать» — над ползунком разделителя (16 px от низа, как во Flutter) */
-.split.rows.is-split .pane-slot.first .reader, .app:has(.audio-bar) .split.rows.is-split .pane-slot.first .reader { --chap-bottom: 16px; }
+.split.rows.is-split .pane-slot:not(:last-child) .reader, .app:has(.audio-bar) .split.rows.is-split .pane-slot:not(:last-child) .reader { --chap-bottom: 16px; }
 /* Две панели с синхронной прокруткой на телефоне: прокрутку пальцем ведёт приложение (useSyncTouchScroll) */
 .text-scroller.js-scroll { touch-action: none; }
 /* Стихи в проповеди — без цветной полосы слева: рамка как у остальных блоков */

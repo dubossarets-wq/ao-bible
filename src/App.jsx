@@ -29,7 +29,7 @@ import { getLivePosition } from './core/livePosition.js';
 
 const AppCtx = createContext(null);
 // Сколько панелей чтения можно открыть рядом (кнопка «+» в шапке последней панели)
-export const MAX_PANES = 4;
+export const MAX_PANES = 6;
 
 export const useApp = () => useContext(AppCtx);
 

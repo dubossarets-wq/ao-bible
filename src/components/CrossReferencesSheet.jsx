@@ -1,5 +1,5 @@
 // Параллельные места стиха: ссылка + текст из перевода текущей панели.
-// Нажатие открывает место в новой панели под этой (панелей уже 4 — в панели ниже).
+// Нажатие открывает место в новой панели под этой (панелей уже шесть — в панели ниже).
 import React, { useEffect, useState } from 'react';
 import { Loader2, Columns2, Link2 } from 'lucide-react';
 import BottomSheet from './BottomSheet.jsx';
