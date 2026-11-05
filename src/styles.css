@@ -1280,7 +1280,7 @@ body, .sheet { font-size: var(--ui-fs, 15px); }
 .preview-card { border-radius: min(var(--radius), 28px); padding: 0; overflow: hidden; }
 .pv-bar { display: flex; align-items: center; gap: 8px; height: min(var(--bar-h), 64px); padding: 0 12px; background: var(--bar); color: var(--bar-text); font-family: var(--font-ui); font-size: var(--ui-fs, 15px); font-weight: 700; }
 .pv-pill { padding: 4px 10px; border-radius: 999px; background: color-mix(in srgb, var(--bar-text) 14%, var(--bar)); font-size: .85em; }
-.pv-body { padding: 10px 16px 12px; }
+.pv-body { padding: 10px var(--text-pad, 16px) 12px; } /* поля — как у текста (Оформление → «Поля по бокам») */
 .pv-head { display: block; color: var(--heading, var(--accent)); font-size: var(--heading-size, .8em); font-weight: 650; margin-bottom: .3em; }
 .pv-sn { font-family: var(--font-mono); font-size: var(--sn-size, .5em); color: var(--strong, var(--accent)); vertical-align: var(--sn-va, super); margin-left: .12em; line-height: 1; }
 .color-list { display: flex; flex-direction: column; gap: 2px; }
