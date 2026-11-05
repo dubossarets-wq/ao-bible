@@ -1555,7 +1555,7 @@ h4:has(> .hint-btn) > .hint-btn, .field-label:has(> .hint-btn) > .hint-btn { mar
 .plan-row-run { padding: 1px 8px; border-radius: 999px; background: color-mix(in srgb, var(--ok) 14%, transparent); color: var(--ok); font-weight: 700; }
 .plan-row-chev { flex: none; color: var(--muted); transition: transform .22s; }
 .plan-row.open .plan-row-chev { transform: rotate(180deg); }
-.plan-row-more { display: flex; flex-direction: column; gap: 10px; padding: 0 14px 14px 90px; }
+.plan-row-more { display: flex; flex-direction: column; gap: 10px; padding: 0 12px 14px; } /* описание и «Начать» — на всю ширину карточки */
 .plan-row-more .plan-desc { margin: 0; font-size: .86rem; line-height: 1.45; }
 .plan-row-end { font-size: .82rem; font-weight: 600; color: var(--text); }
 @media (max-width: 380px) { .plan-row-more { padding-left: 14px; } }
