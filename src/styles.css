@@ -86,8 +86,8 @@ button:disabled { cursor: default; opacity: .4; }
 
 /* ---------- Текст ---------- */
 .scroller { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; position: relative; }
-.text-col { max-width: var(--measure); margin: 0 auto; padding: 6px 16px 45vh; font-family: var(--font-text); font-size: var(--fs); font-weight: var(--fw); line-height: var(--lh); color: var(--text); position: relative; }
-@container (min-width: 600px) { .text-col { padding-left: 28px; padding-right: 28px; } }
+.text-col { max-width: var(--measure); margin: 0 auto; padding: 6px var(--text-pad, 16px) 45vh; font-family: var(--font-text); font-size: var(--fs); font-weight: var(--fw); line-height: var(--lh); color: var(--text); position: relative; }
+@container (min-width: 600px) { .text-col { padding-left: var(--text-pad-wide, 28px); padding-right: var(--text-pad-wide, 28px); } }
 .book-title { font-size: .9em; font-weight: 600; color: var(--muted); margin: 1.4em 0 0; text-wrap: balance; }
 .chapter-title { font-size: var(--chapter-size); font-weight: 800; line-height: 1.1; margin: .55em 0 .3em; letter-spacing: -.01em; text-wrap: balance; }
 .section-title { font-size: .8em; font-weight: 650; color: var(--accent); margin: 1.1em 0 .35em; letter-spacing: .01em; line-height: 1.3; text-wrap: balance; }

@@ -303,7 +303,7 @@ const POS = { sup: N_('Над строкой'), inline: N_('В строке'), s
 
 // Всё, что относится к оформлению: «Сбросить оформление» возвращает только это (переводы, меню, аудио не трогает)
 const LOOK_KEYS = [
-  'theme', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'verseSpacing', 'textWidth', 'textAlign', 'showVerseNumbers', 'chapterTitleSize',
+  'theme', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'verseSpacing', 'textWidth', 'textMargin', 'textAlign', 'showVerseNumbers', 'chapterTitleSize',
   'showStrongs', 'showHeadings', 'showXrefButtons', 'showIllustrations', 'continuousVerses', 'bookMode', 'customColors', 'colors', 'colorOverrides',
   'strongSize', 'strongPos', 'verseNumSize', 'verseNumPos', 'headingSize', 'uiFontSize', 'barHeight', 'animations', 'focusMode', 'splitLayout',
   'bgImage', 'bgPhoto', 'bgVeil', 'bgBlur', 'commentaryFontSize',
@@ -425,6 +425,8 @@ export default function AppearanceSettings({ onClose, payload }) {
             </div>
 
             <Range id="set-size" label={t('Размер текста')} big value={s.fontSize} min={13} max={40} step={1} onChange={(fontSize) => set({ fontSize })} word={(v) => `${v} px`} />
+            {/* поля текста по бокам экрана (не задано — 16) */}
+            <Range id="set-margin" label={t('Поля по бокам')} value={s.textMargin >= 0 ? s.textMargin : 16} min={0} max={48} step={2} onChange={(textMargin) => set({ textMargin })} word={(v) => `${v} px`} />
 
             <div className="field">
               <span className="field-label" id="set-view-l">

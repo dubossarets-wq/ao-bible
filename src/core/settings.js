@@ -79,6 +79,7 @@ export const DEFAULT_SETTINGS = {
   lineHeight: 1.45,
   verseSpacing: 0.55, // em
   textWidth: 44, // em
+  textMargin: -1, // поля текста по бокам, px; -1 — как принято (16, на широкой панели 28)
   textAlign: 'left',
   showVerseNumbers: true,
   chapterTitleSize: 2.1, // em
@@ -180,6 +181,8 @@ export function applySettings(settings, themeName) {
     '--font-text': FONTS[settings.fontFamily]?.css || FONTS.system.css,
     '--fs': `${settings.fontSize}px`, '--fw': settings.fontWeight, '--lh': settings.lineHeight,
     '--verse-gap': `${settings.verseSpacing}em`, '--measure': `${settings.textWidth}em`,
+    // поля текста по бокам (Оформление → «Поля по бокам»); не задано — 16, на широкой панели 28
+    '--text-pad': settings.textMargin >= 0 ? `${settings.textMargin}px` : '16px', '--text-pad-wide': settings.textMargin >= 0 ? `${settings.textMargin}px` : '28px',
     '--align': settings.textAlign, '--chapter-size': `${settings.chapterTitleSize}em`,
     '--radius': '12px', '--bar-h': `${settings.barHeight || 54}px`,
     '--heading': t.heading, '--strong': t.strong, '--heading-size': `${settings.headingSize ?? 0.8}em`,
