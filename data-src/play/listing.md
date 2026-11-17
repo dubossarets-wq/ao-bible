@@ -1,4 +1,4 @@
-# AO Bible — материалы для Google Play
+# Колос — материалы для Google Play
 
 Всё, что нужно вставить в Play Console. Картинки лежат рядом:
 - `icon-512.png` — значок приложения (512×512, полный квадрат — Google скругляет сам);
@@ -11,14 +11,14 @@
 ## Описание в магазине — русский (основной язык)
 
 **Название (до 30 знаков):**
-AO Bible — Библия и Стронг
+Колос — Библия и Стронг
 
 **Краткое описание (до 80 знаков):**
 Библия со словарём Стронга, подстрочником, планами чтения и живым чтением
 
 **Полное описание:**
 
-AO Bible — бесплатное приложение для чтения и изучения Библии. Без рекламы, без регистрации, без сбора данных.
+Колос — бесплатное приложение для чтения и изучения Библии. Без рекламы, без регистрации, без сбора данных.
 
 Читать удобно
 • Синодальный перевод с номерами Стронга и другие переводы на русском и десятках языков
@@ -53,14 +53,14 @@ AO Bible — бесплатное приложение для чтения и и
 
 ## Описание — English
 
-**Title:** AO Bible — Bible & Strong's
+**Title:** Колос — Bible & Strong's
 
 **Short description:**
 Bible with Strong's dictionary, interlinear, reading plans and audio Bible
 
 **Full description:**
 
-AO Bible is a free app for reading and studying the Bible. No ads, no sign-up, no data collection.
+Колос is a free app for reading and studying the Bible. No ads, no sign-up, no data collection.
 
 Read comfortably
 • Russian Synodal translation with Strong's numbers and many other translations in dozens of languages

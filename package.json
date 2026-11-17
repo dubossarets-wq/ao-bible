@@ -2,7 +2,7 @@
   "name": "ao-bible",
   "version": "0.1.0",
   "private": true,
-  "description": "AO Bible — веб-приложение для чтения и изучения Библии",
+  "description": "Колос — веб-приложение для чтения и изучения Библии",
   "type": "module",
   "scripts": {
     "data": "python -I scripts/build_data.py && python -I scripts/build_dc.py && python -I scripts/build_places.py && python -I scripts/build_extra.py",

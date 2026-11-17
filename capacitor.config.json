@@ -1,6 +1,6 @@
 {
   "appId": "app.aobible",
-  "appName": "AO Bible",
+  "appName": "Колос",
   "webDir": "dist/app",
   "android": {
     "allowMixedContent": false,

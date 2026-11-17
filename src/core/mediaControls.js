@@ -39,7 +39,7 @@ async function sync() {
   if (key === last.key) return;
   last.key = key;
   const reader = s.source && s.source !== 'tts' ? (await getModule(s.source).catch(() => null))?.name : '';
-  ms.setMetadata({ title: `${bookMeta(s.ref.book)?.name || s.ref.book} ${s.ref.chapter}`, artist: reader || 'AO Bible', album: 'AO Bible', artwork: [{ src: icon(), sizes: '512x512', type: 'image/png' }] }).catch(() => {});
+  ms.setMetadata({ title: `${bookMeta(s.ref.book)?.name || s.ref.book} ${s.ref.chapter}`, artist: reader || 'Колос', album: 'Колос', artwork: [{ src: icon(), sizes: '512x512', type: 'image/png' }] }).catch(() => {});
 }
 
 export function startMediaControls() {

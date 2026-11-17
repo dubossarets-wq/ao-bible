@@ -6,7 +6,7 @@ import { load, save } from '../core/storage.js';
 import { useApp } from '../App.jsx';
 import { t } from '../core/i18n.js';
 
-// Логотип AO Bible («AΩ Bible»: крест над раскрытой Библией) — как значок приложения в Google Play
+// Логотип Колос («AΩ Bible»: крест над раскрытой Библией) — как значок приложения в Google Play
 function AppLogo() {
   return <img className="boot-logo" src="icons/logo-264.jpg" width="132" height="132" alt="" aria-hidden="true" />;
 }
@@ -93,7 +93,7 @@ export default function Bootstrap() {
       <div className="bootstrap-card">
         <AppLogo />
         {/* название — уже на логотипе; для чтения с экрана — скрытым заголовком */}
-        <h1 className="sr-only">AO Bible</h1>
+        <h1 className="sr-only">Колос</h1>
         {state.phase === 'run' && (
           <>
             <p>{t('Готовлю Синодальный перевод, словари и параллельные места…')}</p>

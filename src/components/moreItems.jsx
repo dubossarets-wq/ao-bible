@@ -70,7 +70,7 @@ export function moreItems(app, { index, ref, module, sheet = false }) {
       key: 'report',
       icon: MessageSquareWarning,
       label: t('Сообщить о проблеме'),
-      run: () => (location.href = problemReportUrl({ subject: t('AO Bible: проблема'), intro: t('Что случилось и что вы делали перед этим:'), modules: modules.map((x) => x.id) })),
+      run: () => (location.href = problemReportUrl({ subject: t('Колос: проблема'), intro: t('Что случилось и что вы делали перед этим:'), modules: modules.map((x) => x.id) })),
     });
   // Без двух разделителей подряд и без разделителя в конце
   return out.filter((x, i, a) => !x.sep || (i > 0 && i < a.length - 1 && !a[i + 1].sep && !a[i - 1].sep));

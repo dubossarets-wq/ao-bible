@@ -34,7 +34,7 @@ function platform() {
 export function problemReportUrl({ subject, intro, modules = [] }) {
   const errors = load(KEY, []);
   const info = [
-    `AO Bible ${BUILD} (${CHANNEL})`,
+    `Колос ${BUILD} (${CHANNEL})`,
     `${platform()} · ${navigator.userAgent}`,
     `${screen.width}×${screen.height} · ${getLang()}`,
     `modules: ${modules.length} — ${modules.slice(0, 40).join(', ')}`,

@@ -49,9 +49,9 @@ export async function readDataFile(file) {
   try {
     json = JSON.parse(text);
   } catch {
-    throw new Error(t('Это не файл с данными AO Bible.'));
+    throw new Error(t('Это не файл с данными Колоса.'));
   }
-  if (json?.format !== FORMAT || !json.data || typeof json.data !== 'object') throw new Error(t('Это не файл с данными AO Bible.'));
+  if (json?.format !== FORMAT || !json.data || typeof json.data !== 'object') throw new Error(t('Это не файл с данными Колоса.'));
   return json;
 }
 
@@ -68,12 +68,12 @@ export function importData(json) {
 export async function saveDataFile() {
   const json = exportData();
   // Дата в имени файла — цифрами «16-10-2026», одинаково для всех языков
-  const name = `${t('AO Bible — мои данные')} ${new Date().toLocaleDateString('ru-RU').replace(/\./g, '-')}.json`;
+  const name = `${t('Колос — мои данные')} ${new Date().toLocaleDateString('ru-RU').replace(/\./g, '-')}.json`;
   const blob = new Blob([JSON.stringify(json)], { type: 'application/json' });
   const file = new File([blob], name, { type: 'application/json' });
   if (navigator.canShare?.({ files: [file] }) && matchMedia('(pointer: coarse)').matches) {
     try {
-      await navigator.share({ files: [file], title: t('AO Bible — мои данные') });
+      await navigator.share({ files: [file], title: t('Колос — мои данные') });
       return 'shared';
     } catch (e) {
       if (e?.name === 'AbortError') return 'cancelled';
