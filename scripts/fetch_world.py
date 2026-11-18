@@ -26,7 +26,7 @@ ALL_BIBLES = BIBLES + DOUBTFUL
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "data-src" / "extra"
-UA = {"User-Agent": "AOBibleBuilder/1.0 (https://dubossarets-wq.github.io/ao-bible/; module builder)"}
+UA = {"User-Agent": "KolosBuilder/1.0 (https://dubossarets-wq.github.io/ao-bible/; module builder)"}
 
 # Модули CrossWire, кроме переводов из BIBLES (комментарии и словари; лицензии — в conf-файлах)
 CROSSWIRE_EXTRA = ["Clarke", "Wesley", "Scofield", "Geneva", "PNT", "Burkitt", "Catena", "TDavid", "KD", "Lightfoot",

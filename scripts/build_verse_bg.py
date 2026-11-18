@@ -35,7 +35,7 @@ from PIL import Image, ImageCms, ImageFilter, ImageOps, ImageStat  # noqa: E402
 SRC_DIR = os.path.join(ROOT, "data-src", "verse-bg-src")
 OUT_DIR = os.path.join(ROOT, "public", "images", "verse-bg")
 API = "https://commons.wikimedia.org/w/api.php"
-UA = "AOBible-verse-bg/1.0 (personal Bible PWA; github.com/dubossarets-wq)"
+UA = "Kolos-verse-bg/1.0 (personal Bible PWA; github.com/dubossarets-wq)"
 ALLOWED = {"Public domain", "CC0"}
 SIZE, THUMB = (1080, 1350), (160, 200)
 MAX_BYTES = 220 * 1024

@@ -38,7 +38,7 @@ ROOT = Path(__file__).resolve().parent.parent
 MOD = ROOT / "public" / "modules"
 CACHE = ROOT / "data-src" / "vin" / "cache"
 APPROVED = ROOT / "scripts" / "approved-modules.json"
-UA = "AOBible/1.0 (https://dubossarets-wq.github.io/ao-bible/)"
+UA = "Kolos/1.0 (https://dubossarets-wq.github.io/ao-bible/)"
 URL = "https://azbyka.ru/biblia/podstrochnik/{}.{}"
 
 # id книги в приложении -> код Азбуки веры

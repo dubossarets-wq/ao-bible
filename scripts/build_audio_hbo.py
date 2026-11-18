@@ -36,7 +36,7 @@ WORDS = ROOT / "data-src" / "audio" / "hbo" / "words.json"  # начала сл�
 APPROVED = ROOT / "scripts" / "approved-modules.json"
 EPUB_INDEX = "https://ebible.org/multimedia/hbo/"
 ITEM = "HebBible_AShmuelof"
-UA = {"User-Agent": "AOBibleAudio/1.0 (https://dubossarets-wq.github.io/ao-bible/)"}
+UA = {"User-Agent": "KolosAudio/1.0 (https://dubossarets-wq.github.io/ao-bible/)"}
 
 
 def get(url, rng=None):

@@ -32,7 +32,7 @@ ROOT = Path(__file__).resolve().parent.parent
 CACHE = ROOT / "data-src" / "extra" / "sinaiticus" / "pages.json"
 OUT = ROOT / "src" / "core" / "sinaiticus.json"
 SITE = "https://codexsinaiticus.org/en/manuscript.aspx?book={}&chapter={}&verse={}&lid=en&side=r&zoomSlider=0"
-UA = {"User-Agent": "AOBibleBuilder/1.0 (https://aobible.app; verse links to codexsinaiticus.org)"}
+UA = {"User-Agent": "KolosBuilder/1.0 (https://aobible.app; verse links to codexsinaiticus.org)"}
 
 # Книга приложения -> (номер книги на сайте, название в подписи листа, книга Брентона для нумерации)
 OT = {

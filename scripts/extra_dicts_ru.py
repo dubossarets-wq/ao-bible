@@ -110,7 +110,7 @@ def _api(**params):
     body = urllib.parse.urlencode(params).encode("utf-8")  # POST: 50 длинных заглавий не помещаются в адрес
     for i in range(12):
         try:
-            req = urllib.request.Request(url, data=body, headers={"User-Agent": "AOBible-build/1.0 (dictionary import)"})
+            req = urllib.request.Request(url, data=body, headers={"User-Agent": "Kolos-build/1.0 (dictionary import)"})
             with urllib.request.urlopen(req, timeout=120) as r:
                 return json.load(r)
         except Exception as e:  # noqa: BLE001

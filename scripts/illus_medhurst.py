@@ -39,7 +39,7 @@ from extra_lib import kjv2syn, synodal  # noqa: E402
 CACHE = ROOT / "data-src" / "illustrations" / "cache-medhurst"
 OUT = ROOT / "data-src" / "illustrations" / "parts" / "medhurst.json"
 API = "https://commons.wikimedia.org/w/api.php"
-UA = "AOBible-illustrations/1.0 (https://github.com/dubossarets-wq; kordeko.md@gmail.com)"
+UA = "Kolos-illustrations/1.0 (https://github.com/dubossarets-wq; kordeko.md@gmail.com)"
 COLLECTION = "Phillip Medhurst Collection"
 USERS = ["Phillip Medhurst", "Philip De Vere"]
 CATEGORIES = ["Category:The Phillip Medhurst Collection", "Category:The Phillip Medhurst Picture Torah"]

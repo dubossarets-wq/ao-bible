@@ -1,7 +1,7 @@
 """Старые русские переводы Библии (общественное достояние) -> модули-Библии aob-module.
 
 Запуск:  python -I -X utf8 scripts/build_ru_old.py [fetch] [build]      (без аргументов: build из кэша)
-  fetch — докачать страницы в data-src/ru-old/cache/ (пауза >= 1 с, User-Agent AOBible/1.0);
+  fetch — докачать страницы в data-src/ru-old/cache/ (пауза >= 1 с, User-Agent Kolos/1.0);
   build — собрать модули в public/modules/, дописать каталог (merge_catalog), проверить против rst.json.
 
 Источники:

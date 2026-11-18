@@ -55,7 +55,7 @@ def strip(s):
 
 def build(m):
     url = f"https://bolls.life/static/translations/{m['bolls']}.json"
-    with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'AOBible-build'})) as r:
+    with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'Kolos-build'})) as r:
         verses = json.load(r)
     books = {}
     for v in verses:

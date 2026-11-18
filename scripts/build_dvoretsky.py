@@ -17,6 +17,10 @@ import unicodedata
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import dvoretsky_fmt as F
+import dvoretsky_rich as R
+
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "data-src" / "dvoretsky" / "greek-dvoresky.xml"
 OUT = ROOT / "public" / "modules"
@@ -37,6 +41,8 @@ def base(w):
 
 root = ET.parse(SRC).getroot()
 marks = {m.get("key"): m.text for m in root.find("marks")}
+AUTHORS = F.build_table(root.find("authors"))
+R.set_marks(marks, json.loads((ROOT / "data-src" / "dvoretsky" / "printed_marks.json").read_text(encoding="utf-8")))
 
 
 def head_of(entry):
@@ -54,11 +60,13 @@ def render(el, head):
     def walk(e):
         tag = e.tag
         if tag == "tilde":
-            out.append(head)
+            out.append(head.replace("-", ""))
         elif tag == "br":
             out.append("\n")
         elif tag == "mark":
             out.append((e.text or "").replace("_", " "))
+        elif tag == "author":
+            out.append(F.MARK_A + (e.text or "") + F.MARK_B)
         else:
             if e.text:
                 out.append(e.text)
@@ -82,11 +90,11 @@ def article(entry):
         lines = []
         for part in body:
             if part.tag == "text":
-                lines.append(render(part, head))
+                lines.append(F.fmt_line(render(part, head), AUTHORS))
             elif part.tag == "list":
                 for it in part.findall("item"):
                     lvl = int(it.get("level") or 1)
-                    lines.append(("   " * (lvl - 1)) + render(it, head))
+                    lines.append(("   " * (lvl - 1)) + F.fmt_line(render(it, head), AUTHORS, item=True))
         parts.append("\n".join(re.sub(r"[ \t]+", " ", x).strip() for x in lines if x.strip()))
     return "\n\n".join(x for x in parts if x)
 
@@ -117,7 +125,12 @@ for num, s in strongs.items():
         b = base(lemma)
         for v in (b + "σ", b[:-1] if b.endswith("σ") else None, b[:-1] + "ομαι" if b.endswith("ω") else None,
                   b[:-4] + "ω" if b.endswith("ομαι") else None, b.replace("ττ", "σσ"), b.replace("σσ", "ττ"),
-                  b.replace("μψ", "ψ"), b.replace("μπτ", "πτ")):
+                  b.replace("μψ", "ψ"), b.replace("μπτ", "πτ"),
+                  # γίνομαι — γίγνομαι, κυλιόω — κυλίω, ἐπανίσταμαι — ἐπανίστημι, -ώτερος — -ός
+                  b.replace("γιν", "γιγν"), b.replace("γιγν", "γιν"), b.replace("ιοω", "ιω"),
+                  b[:-4] + "ημι" if b.endswith("αμαι") else None, b[:-3] + "ος" if b.endswith("τερος") else None,
+                  b[:-2] + "μι" if b.endswith("ω") else None, b[:-2] + "ω" if b.endswith("μι") else None,
+                  b.replace("ρρ", "ρ"), b.replace("ρ", "ρρ", 1)):
             if v and v != b and loose.get(v):
                 hit, kind = loose[v], "другое написание"
                 break
@@ -127,7 +140,21 @@ for num, s in strongs.items():
         continue
     how[kind] += 1
     text = "\n\n".join(article(e) for e in hit[:3])  # омонимы — все (до трёх) подряд
-    entries[num] = {"lemma": lemma, "text": text}
+    blocks, inline = [], []
+    for i, e in enumerate(hit[:3]):
+        b, k = R.article_blocks(e, head_of(e), AUTHORS)
+        if i:
+            blocks.append({"k": "hr"})
+        blocks += b
+        inline += [x for x in k if x not in inline]
+    legend = []
+    for k in inline:
+        nm, yr = AUTHORS.get(k) or AUTHORS.get(k.rstrip(".")) or (None, None)
+        if nm and yr and [nm, yr] not in legend:
+            legend.append([nm, yr])
+    if legend:
+        blocks.append({"k": "legend", "a": legend})
+    entries[num] = {"lemma": lemma, "text": text, "rich": blocks}
 
 print(f"номеров Стронга: {len(strongs)}, статей найдено: {len(entries)}")
 for k, v in how.items():

@@ -50,7 +50,7 @@ PARTS = ROOT / "data-src" / "illustrations" / "parts"
 APPROVED = ROOT / "scripts" / "approved-modules.json"
 MODULE_ID = "bible-illustrations"
 MAX_PER_VERSE = 2
-UA = "AOBible-illustrations/1.0 (https://github.com/dubossarets-wq; kordeko.md@gmail.com)"
+UA = "Kolos-illustrations/1.0 (https://github.com/dubossarets-wq; kordeko.md@gmail.com)"
 LICENSE_RE = re.compile(r"^(Public domain|PD\b.*|CC0.*|CC BY(-SA)? \d(\.\d)?.*)$", re.I)
 
 # Собрание: (вес при выборе, род: «g» — гравюра/чёрно-белая, «c» — цветная, название по-русски для описания)

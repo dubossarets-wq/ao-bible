@@ -7,7 +7,7 @@ import urllib.request
 from pathlib import Path
 
 CACHE = Path(__file__).resolve().parent.parent / "data-src" / "ru-old" / "cache"
-UA = "AOBible/1.0 (https://dubossarets-wq.github.io/ao-bible/)"
+UA = "Kolos/1.0 (https://dubossarets-wq.github.io/ao-bible/)"
 BASE = "http://biblia.russportal.ru/index.php?id="  # у https-сертификата другое имя хоста
 _last = [0.0]
 
