@@ -10,7 +10,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TOOLS = process.env.AOB_ANDROID_TOOLS || 'G:/android-build';
 const JDK = `${TOOLS}/jdk21/jdk-21.0.12.1+1`;
 const SDK = `${TOOLS}/sdk`;
-const KEY = `${TOOLS}/keys/aobible-upload.jks`;
+const KEY = `${TOOLS}/keys/kolos-upload.jks`;
 const versionName = process.argv[2] || '1.0';
 // Номер версии для Play растёт каждую минуту: 30 000 000 + минуты с 1.1.2026 (UTC).
 // Больше прежних номеров вида ГГММДДЧЧ (26102210) и не повторяется, даже если собирать дважды за час.
@@ -39,7 +39,7 @@ sh([process.platform === 'win32' ? '.' + path.sep + 'gradlew.bat' : './gradlew',
 
 const out = `${TOOLS}/out`;
 mkdirSync(out, { recursive: true });
-const name = `aobible-${versionName}-${versionCode}`;
+const name = `kolos-${versionName}-${versionCode}`;
 copyFileSync(path.join(root, 'android/app/build/outputs/bundle/release/app-release.aab'), `${out}/${name}.aab`);
 copyFileSync(path.join(root, 'android/app/build/outputs/apk/release/app-release.apk'), `${out}/${name}.apk`);
 console.log(`ГОТОВО: ${out}/${name}.aab (в Google Play) и .apk (поставить на телефон), versionCode ${versionCode}`);
