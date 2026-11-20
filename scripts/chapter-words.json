@@ -1,0 +1,178 @@
+{
+ "be": [
+  "Раздзел %d",
+  "Псальм %d"
+ ],
+ "bg": [
+  "Глава %d",
+  "Псалом %d"
+ ],
+ "cs": [
+  "Kapitola %d",
+  "Žalm %d"
+ ],
+ "de": [
+  "Kapitel %d",
+  "Psalm %d"
+ ],
+ "en": [
+  "Chapter %d",
+  "Psalm %d"
+ ],
+ "es": [
+  "Capítulo %d",
+  "Salmo %d"
+ ],
+ "fr": [
+  "Chapitre %d",
+  "Psaume %d"
+ ],
+ "hi": [
+  "अध्याय %d",
+  "भजन %d"
+ ],
+ "hy": [
+  "Գլուխ %d",
+  "Սաղմոս %d"
+ ],
+ "id": [
+  "Pasal %d",
+  "Mazmur %d"
+ ],
+ "it": [
+  "Capitolo %d",
+  "Salmo %d"
+ ],
+ "ja": [
+  "第%d章",
+  "詩篇 第%d篇"
+ ],
+ "ka": [
+  "თავი %d",
+  "ფსალმუნი %d"
+ ],
+ "ko": [
+  "%d장",
+  "시편 %d편"
+ ],
+ "pl": [
+  "Rozdział %d",
+  "Psalm %d"
+ ],
+ "pt": [
+  "Capítulo %d",
+  "Salmo %d"
+ ],
+ "ro": [
+  "Capitolul %d",
+  "Psalmul %d"
+ ],
+ "sr": [
+  "Глава %d",
+  "Псалам %d"
+ ],
+ "sw": [
+  "Sura %d",
+  "Zaburi %d"
+ ],
+ "uk": [
+  "Розділ %d",
+  "Псалом %d"
+ ],
+ "zh": [
+  "第 %d 章",
+  "诗篇第 %d 篇"
+ ],
+ "grc": [
+  "Κεφάλαιον %d",
+  "Ψαλμός %d"
+ ],
+ "el": [
+  "Κεφάλαιο %d",
+  "Ψαλμός %d"
+ ],
+ "he": [
+  "פרק %d",
+  "מזמור %d"
+ ],
+ "hu": [
+  "%d. fejezet",
+  "%d. zsoltár"
+ ],
+ "fi": [
+  "Luku %d",
+  "Psalmi %d"
+ ],
+ "hr": [
+  "Poglavlje %d",
+  "Psalam %d"
+ ],
+ "ar": [
+  "الأصحاح %d",
+  "المزمور %d"
+ ],
+ "vi": [
+  "Chương %d",
+  "Thi Thiên %d"
+ ],
+ "da": [
+  "Kapitel %d",
+  "Salme %d"
+ ],
+ "et": [
+  "Peatükk %d",
+  "Psalm %d"
+ ],
+ "eo": [
+  "Ĉapitro %d",
+  "Psalmo %d"
+ ],
+ "nb": [
+  "Kapittel %d",
+  "Salme %d"
+ ],
+ "fa": [
+  "فصل %d",
+  "مزمور %d"
+ ],
+ "sk": [
+  "Kapitola %d",
+  "Žalm %d"
+ ],
+ "nl": [
+  "Hoofdstuk %d",
+  "Psalm %d"
+ ],
+ "sv": [
+  "Kapitel %d",
+  "Psalm %d"
+ ],
+ "tl": [
+  "Kabanata %d",
+  "Awit %d"
+ ],
+ "tr": [
+  "Bölüm %d",
+  "Mezmur %d"
+ ],
+ "_manual": [
+  "ar",
+  "da",
+  "el",
+  "eo",
+  "et",
+  "fa",
+  "fi",
+  "grc",
+  "he",
+  "hr",
+  "hu",
+  "nb",
+  "nl",
+  "sk",
+  "sv",
+  "tl",
+  "tr",
+  "vi"
+ ]
+}
