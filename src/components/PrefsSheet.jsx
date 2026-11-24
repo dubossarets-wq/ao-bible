@@ -10,6 +10,7 @@ import { IS_PWA_BUILD, applyUpdate, buildDate, BUILD } from '../core/updates.js'
 import { NATIVE } from '../core/native.js';
 import { usePlayUpdate, checkPlayUpdate, installPlayUpdate } from '../core/playUpdate.js';
 import { saveDataFile, readDataFile, describeData, importData } from '../core/dataFile.js';
+import { GOOGLE_WEB_CLIENT_ID, loadState, onAccount, loadGoogle, signInWithCredential, signOut, deleteAccount, syncNow } from '../core/accountSync.js';
 import { listOffline, removeBook } from '../core/offlineAudio.js';
 import { bookMeta } from '../core/books.js';
 import { t, N_, LANGS, getLang, setLang, langInfo, fmtDate, locale } from '../core/i18n.js';
@@ -82,6 +83,103 @@ function LangList({ onPicked }) {
   );
 }
 
+const accountError = (e) =>
+  ({
+    'not-configured': t('Вход через Google скоро заработает.'),
+    offline: t('Нет связи с интернетом — данные сойдутся, когда она появится.'),
+    auth: t('Вход больше не действует — войдите снова.'),
+    quota: t('В аккаунте закончилось место.'),
+    google: t('Google не подтвердил вход. Попробуйте ещё раз.'),
+  })[e] || t('Не удалось: {error}', { error: e });
+
+// Аккаунт Колоса: всё сохраняется в нём и появляется на других устройствах человека
+function Account() {
+  const [st, setSt] = useState(loadState);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+  const btn = useRef(null);
+  useEffect(
+    () =>
+      onAccount((s) => {
+        setBusy(!!s.busy);
+        if (!s.busy) setSt(loadState());
+      }),
+    [],
+  );
+  // кнопка Google — их собственная (Google Identity Services), скрипт грузится только здесь
+  useEffect(() => {
+    if (st.token || !GOOGLE_WEB_CLIENT_ID) return;
+    let alive = true;
+    loadGoogle()
+      .then((g) => {
+        if (!alive || !btn.current) return;
+        g.accounts.id.initialize({
+          client_id: GOOGLE_WEB_CLIENT_ID,
+          callback: async (resp) => {
+            setErr(null);
+            const e = await signInWithCredential(resp.credential);
+            if (e) setErr(accountError(e));
+          },
+        });
+        g.accounts.id.renderButton(btn.current, { theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', locale: getLang() });
+      })
+      .catch(() => setErr(accountError('offline')));
+    return () => {
+      alive = false;
+    };
+  }, [st.token]);
+
+  if (!st.token)
+    return (
+      <section className="settings-group">
+        <h4>{t('Аккаунт')}</h4>
+        <p className="pref-note">{t('Войдите через Google — закладки, заметки, выделения, проповеди, планы, история и настройки сохранятся в аккаунте и появятся на других ваших устройствах (iPhone, Android, сайт).')}</p>
+        {st.error === 'auth' && <p className="error-text small">{accountError('auth')}</p>}
+        {GOOGLE_WEB_CLIENT_ID ? <div ref={btn} className="pref-btns" /> : <p className="pref-note">{accountError('not-configured')}</p>}
+        {err && <p className="error-text small">{err}</p>}
+      </section>
+    );
+  const status = busy
+    ? t('Синхронизация…')
+    : st.error
+      ? accountError(st.error)
+      : st.lastSync
+        ? t('Синхронизировано: {time}', { time: new Date(st.lastSync).toLocaleString(locale(), { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) })
+        : '';
+  return (
+    <section className="settings-group">
+      <h4>{t('Аккаунт')}</h4>
+      <p>
+        <b>{st.email || st.name}</b>
+      </p>
+      {status && <p className="pref-note">{status}</p>}
+      <div className="pref-btns">
+        <button className="btn" disabled={busy} onClick={() => syncNow().then((c) => c && location.reload())}>
+          <RefreshCw size={17} /> {t('Синхронизировать')}
+        </button>
+        <button className="btn" disabled={busy} onClick={() => signOut().then(() => setSt(loadState()))}>
+          {t('Выйти')}
+        </button>
+      </div>
+      <div className="pref-btns">
+        <ConfirmButton
+          className="btn"
+          confirmText={t('Удалить')}
+          onConfirm={async () => {
+            const e = await deleteAccount();
+            setErr(e ? accountError(e) : null);
+            setSt(loadState());
+          }}
+        >
+          <Trash2 size={17} /> {t('Удалить аккаунт и данные на сервере')}
+        </ConfirmButton>
+      </div>
+      <p className="pref-note">{t('Изменения сходятся при открытии и когда вы уходите со страницы. При удалении аккаунта данные здесь останутся.')}</p>
+      {err && <p className="error-text small">{err}</p>}
+    </section>
+  );
+}
+
 function MyData() {
   const { toast } = useApp();
   const input = useRef(null);
@@ -105,6 +203,8 @@ function MyData() {
   };
   const d = pending && describeData(pending);
   return (
+    <>
+    <Account />
     <section className="settings-group">
       <p className="pref-note">
         {t('Закладки, заметки, любимые стихи, выделения, планы, проповеди и настройки — в одном файле. Чтобы ничего не потерять или перейти на новый телефон.')}
@@ -138,6 +238,7 @@ function MyData() {
         </div>
       )}
     </section>
+    </>
   );
 }
 

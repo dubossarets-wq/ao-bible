@@ -12,6 +12,7 @@ import { startMediaControls } from './core/mediaControls.js';
 import { installErrorLog } from './core/errorLog.js';
 import { P } from './core/channel.js';
 import { listModules, getBook } from './core/modules.js';
+import { startAccountSync } from './core/accountSync.js';
 
 installErrorLog(); // последние ошибки — для письма «Сообщить о проблеме» (только на устройстве)
 // Интерфейс не увеличивается щипком: в Safari на iPhone user-scalable=no не действует — гасим его жест увеличения
@@ -32,6 +33,7 @@ try {
   /* хранилище недоступно */
 }
 installNative(); // приложение из Google Play: системные «Поделиться» и буфер обмена
+startAccountSync(); // аккаунт Колоса: данные сходятся с другими устройствами
 // Android: свой вид нижнего меню (сплошная полоса во всю ширину, styles.css → html.is-android)
 if (/Android/i.test(navigator.userAgent)) document.documentElement.classList.add('is-android');
 startMediaControls(); // ▶/⏸ и ⏮/⏭ на экране блокировки
