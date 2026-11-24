@@ -1,0 +1,19 @@
+# Аккаунт Колоса: синхронизация «Моих данных» между устройствами (см. src/index.js).
+# Выкладка: из папки worker/apibible — npx wrangler deploy -c ../sync/wrangler.toml
+# Таблицы: npx wrangler d1 execute aobible-sync --remote --file=../sync/schema.sql -c ../sync/wrangler.toml
+# Проверка на этом компьютере: npx wrangler dev -c ../sync/wrangler.toml --local --var ALLOW_TEST_LOGIN:1
+name = "aobible-sync"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+routes = [{ pattern = "aobible.app/sync/*", zone_name = "aobible.app" }]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "aobible-sync"
+database_id = "e1875784-cf36-4e5a-a8ea-e8ffcfb52175"
+
+[vars]
+# клиенты OAuth Google (веб, Android, iPhone) через запятую — чьи ID-токены принимаем. Идентификаторы клиентов
+# не секретны. Пусто — вход пока выключен (сервер отвечает not-configured)
+GOOGLE_CLIENT_IDS = ""
